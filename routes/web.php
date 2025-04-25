@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\LoginController;
+use App\Http\Controllers\loginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -10,9 +10,9 @@ use App\Http\Controllers\LoginController;
 */
 
 // Rutas de autenticación
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::get('/login', [loginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [loginController::class, 'login']);
+Route::post('/logout', [loginController::class, 'logout'])->name('logout');
 
 // Middleware personalizado para verificar sesión
 Route::middleware(['web'])->group(function () {
