@@ -1,0 +1,240 @@
+* {
+    outline-width: 0;
+    font-family: "Montserrat", sans-serif !important;
+}
+
+/* Estilos generales */
+body {
+    margin: 0;
+    padding: 0;
+    background: url('../img/fondo.jpg') no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+#cont {
+    height: 100vh;
+    background-size: cover !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#invContainer {
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    border-radius: 5px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+#invContainer .acptContainer {
+    padding: 45px 30px;
+    box-sizing: border-box;
+    width: 400px;
+    margin-left: -400px;
+    overflow: hidden;
+    height: 0;
+    opacity: 0;
+}
+
+#invContainer .acptContainer.loadIn {
+    opacity: 1;
+    margin-left: 0;
+    transition: 0.5s ease;
+}
+
+#invContainer .acptContainer:before {
+    content: "";
+    background-size: cover !important;
+    box-shadow: inset 0 0 0 3000px rgba(40, 43, 48, 0.75);
+    filter: blur(10px);
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    top: -50px;
+    left: -50px;
+}
+
+form {
+    position: relative;
+    text-align: center;
+    height: 100%;
+}
+
+form h1 {
+    margin: 0 0 15px 0;
+    font-family: "Work Sans", sans-serif !important;
+    font-weight: 700;
+    font-size: 20px;
+    color: #fff;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    opacity: 0;
+    left: -30px;
+    position: relative;
+    transition: 0.5s ease;
+}
+
+form h1.loadIn {
+    left: 0;
+    opacity: 1;
+}
+
+.frmContainer {
+    text-align: left;
+}
+
+.frmContainer .frmDiv {
+    margin-bottom: 30px;
+    left: -25px;
+    opacity: 0;
+    transition: 0.5s ease;
+    position: relative;
+}
+
+.frmContainer .frmDiv.loadIn {
+    opacity: 1;
+    left: 0;
+}
+
+.frmContainer .frmDiv:last-child {
+    margin-bottom: 0;
+}
+
+.frmContainer p {
+    margin: 0;
+    font-weight: 700;
+    color: #aaa;
+    font-size: 10px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.frmContainer input[type="password"],
+.frmContainer input[type="text"] {
+    background: transparent;
+    border: none;
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.15);
+    padding: 15px 0;
+    box-sizing: border-box;
+    color: #fff;
+    width: 100%;
+}
+
+.frmContainer .frmDiv p {
+    position: relative;
+}
+
+.frmContainer .frmDiv p i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.frmContainer input[type="password"],
+.frmContainer input[type="text"] {
+    padding-left: 40px;
+}
+
+.frmContainer .fa-user,
+.frmContainer .fa-lock {
+    position: absolute;
+    top: 25px;
+    left: 10px;
+    color: #ffffff;
+    font-size: 18px;
+}
+
+.logoCont {
+    padding: 45px 35px;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    transform: scale(0, 0);
+    background-color: #fff;
+}
+
+.logoCont img {
+    width: 150px;
+    margin-bottom: -5px;
+    display: block;
+    position: relative;
+}
+
+.logoCont .logo {
+    position: relative;
+    top: -20px;
+    opacity: 0;
+}
+
+.logoCont .logo.loadIn {
+    top: 0;
+    opacity: 1;
+    transition: 0.8s ease;
+}
+
+.logoCont:before {
+    content: "";
+    background-size: cover !important;
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    width: 150%;
+    height: 150%;
+    filter: blur(10px);
+    box-shadow: inset 0 0 0 3000px rgb(255, 255, 255);
+}
+
+.frgtPas {
+    color: #aaa;
+    opacity: 0.8;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 10px;
+    margin-top: 15px;
+    display: block;
+    transition: 0.2s ease;
+}
+
+.frgtPas:hover {
+    opacity: 1;
+    color: #fff;
+}
+
+.acptBtn {
+    margin-top: 20px;
+    width: 100%;
+    box-sizing: border-box;
+    background: #d67e29;
+    border: none;
+    color: #fff;
+    padding: 20px 0;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: 0.2s ease;
+    user-select: none;
+}
+
+.acptBtn:hover {
+    background: #ff7b00ef;
+}
+
+.error-message {
+    color: #ff5252;
+    font-size: 11px;
+    margin-top: 5px;
+    display: block;
+}
