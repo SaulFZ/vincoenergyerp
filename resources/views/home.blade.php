@@ -1,289 +1,238 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Vinco Energy</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Montserrat', sans-serif;
-        }
-
-        body {
-            background-color: #f5f5f5;
-        }
-
-        .container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 250px;
-            background-color: #2c3e50;
-            color: #fff;
-            padding-top: 20px;
-        }
-
-        .sidebar .logo {
-            text-align: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #3d556c;
-        }
-
-        .sidebar .logo img {
-            width: 120px;
-        }
-
-        .sidebar ul {
-            list-style: none;
-            padding: 20px 0;
-        }
-
-        .sidebar ul li {
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .sidebar ul li:hover {
-            background-color: #3d556c;
-        }
-
-        .sidebar ul li.active {
-            background-color: #d67e29;
-        }
-
-        .sidebar ul li i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .content {
-            flex: 1;
-            padding: 20px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            font-size: 24px;
-            color: #333;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-        }
-
-        .user-info img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-
-        .user-info .name {
-            font-weight: 500;
-        }
-
-        .user-info .dropdown {
-            margin-left: 10px;
-            cursor: pointer;
-        }
-
-        .dashboard {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .dashboard h2 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-        }
-
-        .stat-card .icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-size: 24px;
-        }
-
-        .stat-card.orange .icon {
-            background-color: #ffe0c3;
-            color: #d67e29;
-        }
-
-        .stat-card.blue .icon {
-            background-color: #c3dfff;
-            color: #2980b9;
-        }
-
-        .stat-card.green .icon {
-            background-color: #c3ffe0;
-            color: #27ae60;
-        }
-
-        .stat-card.purple .icon {
-            background-color: #e0c3ff;
-            color: #8e44ad;
-        }
-
-        .stat-card .data h3 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .stat-card .data p {
-            color: #777;
-            font-size: 14px;
-        }
-
-        .logout-btn {
-            color: #fff;
-            text-decoration: none;
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 20px;
-            margin-left: 20px;
-            margin-right: 20px;
-            background-color: #e74c3c;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .logout-btn:hover {
-            background-color: #c0392b;
-        }
-
-        .logout-btn i {
-            margin-right: 5px;
-        }
-    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vinco ERP</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+ <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}" />
 </head>
+
 <body>
-    <div class="container">
-        <div class="sidebar">
+    <header class="header">
+        <div class="header-content">
             <div class="logo">
-                <img src="{{ asset('assets/img/logo.png') }}" alt="Vinco Logo">
+                <img src="../img/logovinco2.png" alt="Logo Empresa" />
+                <h2 class="dashboard-title">Panel de Areas Vinco Energy</h2>
             </div>
-            <ul>
-                <li class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
-                <li><i class="fas fa-chart-line"></i> Estadísticas</li>
-                <li><i class="fas fa-users"></i> Usuarios</li>
-                <li><i class="fas fa-cog"></i> Configuración</li>
-                <li><i class="fas fa-question-circle"></i> Ayuda</li>
-            </ul>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                </button>
-            </form>
+            <div class="user-profile">
+                <div id="userAvatarContainer" class="user-avatar-container">
+                    <div class="user-avatar">
+                        <span>SF</span>
+                    </div>
+                    <div class="user-info">
+                        <h1>Saul Falcon Perez</h1>
+                    </div>
+                    <i class="fas fa-chevron-down chevron-down"></i>
+                </div>
+                <div id="userDropdown" class="user-dropdown">
+                    <div class="dropdown-header">
+                        <div class="user-avatar">
+                            <span>SF</span>
+                        </div>
+                        <div class="dropdown-header-info">
+                            <p>Saul Falcon</p>
+                            <p>saul.falcon@empresa.com</p>
+                        </div>
+                    </div>
+                    <button class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Cerrar Sesión
+                    </button>
+                </div>
+                <div id="dropdownOverlay" class="dropdown-overlay"></div>
+            </div>
         </div>
+    </header>
 
-        <div class="content">
-            <div class="header">
-                <h1>Dashboard</h1>
-                <div class="user-info">
-                    <img src="{{ asset('assets/img/user.png') }}" alt="User">
-                    <div>
-                        <div class="name">{{ session('auth_user')['name'] }}</div>
-                        <div class="role">{{ session('auth_user')['role'] }}</div>
-                    </div>
-                    <div class="dropdown">
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
+    <main class="container">
+        <!-- HTML con IDs únicos -->
+        <div class="department">
+            <div class="card" id="card-administracion">
+                <img src="/img/administracion.png" alt="Administracion" />
+                <div class="card-content">
+                    <h1>Administracion</h1>
+                    <p>Gestión eficiente de recursos y procesos administrativos.</p>
                 </div>
             </div>
 
-            <div class="dashboard">
-                <h2>Bienvenido a Vinco Energy ERP</h2>
+            <div class="card" id="card-qhse">
+                <img src="/img/QHSE.png" alt="QHSE" />
+                <div class="card-content">
+                    <h1>QHSE</h1>
+                    <p>Calidad, Salud, Seguridad y Medio Ambiente.</p>
+                </div>
+            </div>
 
-                <div class="stats">
-                    <div class="stat-card orange">
-                        <div class="icon">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                        <div class="data">
-                            <h3>$24,500</h3>
-                            <p>Ingresos</p>
-                        </div>
-                    </div>
+            <div class="card" id="card-ventas">
+                <img src="/img/ventas.png" alt="Ventas" />
+                <div class="card-content">
+                    <h1>Ventas</h1>
+                    <p>Estrategias de venta y relaciones con clientes.</p>
+                </div>
+            </div>
+            <div class="card" id="card-recursos-humanos">
+                <img src="/img/rh.png" alt="Recursos Humanos" />
+                <div class="card-content">
+                    <h1>Recursos Humanos</h1>
+                    <p>Gestión del personal y desarrollo organizacional.</p>
+                </div>
+            </div>
 
-                    <div class="stat-card blue">
-                        <div class="icon">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="data">
-                            <h3>145</h3>
-                            <p>Ventas</p>
-                        </div>
-                    </div>
 
-                    <div class="stat-card green">
-                        <div class="icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="data">
-                            <h3>250</h3>
-                            <p>Clientes</p>
-                        </div>
-                    </div>
+            <div class="card" id="card-suministro">
+                <img src="/img/suministro.png" alt="Suministro" />
+                <div class="card-content">
+                    <h1>Suministro</h1>
+                    <p>Gestión de la cadena de suministro y logística.</p>
+                </div>
+            </div>
 
-                    <div class="stat-card purple">
-                        <div class="icon">
-                            <i class="fas fa-tasks"></i>
-                        </div>
-                        <div class="data">
-                            <h3>15</h3>
-                            <p>Proyectos</p>
-                        </div>
-                    </div>
+            <div class="card" id="card-operaciones">
+                <img src="/img/operaciones.png" alt="Operaciones" />
+                <div class="card-content">
+                    <h1>Operaciones</h1>
+                    <p>Coordinación y optimización de procesos operativos.</p>
+                </div>
+            </div>
+
+            <div class="card" id="card-sistemas">
+                <img src="/img/sistemas.png" alt="Sistemas" />
+                <div class="card-content">
+                    <h1>Sistemas</h1>
+                    <p>Desarrollo y mantenimiento de infraestructura tecnológica.</p>
+                </div>
+            </div>
+
+            <div class="card" id="card-almacen">
+                <img src="/img/almacen.png" alt="Almacen" />
+                <div class="card-content">
+                    <h1>Almacen</h1>
+                    <p>Gestión de inventario y almacenamiento de productos.</p>
+                </div>
+            </div>
+
+            <div class="card" id="card-geociencias">
+                <img src="/img/geociencias.png" alt="Geociencias" />
+                <div class="card-content">
+                    <h1>Geociencias</h1>
+                    <p>
+                        Estudios geológicos y geofísicos para exploración y producción.
+                    </p>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const userAvatarContainer = document.getElementById(
+                "userAvatarContainer"
+            );
+            const userDropdown = document.getElementById("userDropdown");
+            const dropdownOverlay = document.getElementById("dropdownOverlay");
+
+            userAvatarContainer.addEventListener("click", (e) => {
+                e.stopPropagation();
+                userAvatarContainer.classList.toggle("active");
+                userDropdown.classList.toggle("show");
+                dropdownOverlay.classList.toggle("active");
+            });
+
+            dropdownOverlay.addEventListener("click", () => {
+                userAvatarContainer.classList.remove("active");
+                userDropdown.classList.remove("show");
+                dropdownOverlay.classList.remove("active");
+            });
+
+            // Prevent dropdown from closing when clicking inside
+            userDropdown.addEventListener("click", (e) => {
+                e.stopPropagation();
+            });
+        });
+
+        // Configuración de rutas para cada área
+        const ROUTES_CONFIG = {
+            administracion: "../modulos/administracion/loginadministracion.html",
+            qhse: "../modulos/qhse/loginqhse.html",
+            ventas: "../modulos/ventas/loginventas.html",
+            suministro: "../modulos/suministro/loginsuministro.html",
+            operaciones: "../modulos/operaciones/loginoperaciones.html",
+            sistemas: "../modulos/sistemas/loginsistemas.html",
+            almacen: "../modulos/almacen/loginalmacen.html",
+            geociencias: "../modulos/geociencias/logingeociencias.html"
+        };
+
+        class CardNavigationHandler {
+            constructor() {
+                this.addEventListeners();
+                this.initializeStyles();
+            }
+
+            addEventListeners() {
+                document.querySelectorAll(".card").forEach((card) => {
+                    card.addEventListener("click", this.handleCardClick.bind(this));
+                    card.style.cursor = "pointer";
+                });
+            }
+
+            handleCardClick(event) {
+                const card = event.currentTarget;
+                const cardId = card.id.replace("card-", "");
+                const route = ROUTES_CONFIG[cardId];
+
+                if (route) {
+                    this.addClickEffect(card);
+                    setTimeout(() => this.navigateToLogin(route), 200);
+                } else {
+                    console.warn(`Ruta no encontrada para: ${cardId}`);
+                }
+            }
+
+            addClickEffect(card) {
+                card.classList.add("card-clicked");
+                setTimeout(() => card.classList.remove("card-clicked"), 200);
+            }
+
+            navigateToLogin(route) {
+                try {
+                    window.location.href = route;
+                } catch (error) {
+                    console.error("Error al navegar:", error);
+                    window.open(route, "_blank");
+                }
+            }
+
+            initializeStyles() {
+                const styleElement = document.createElement("style");
+                styleElement.textContent = `
+      .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .card-clicked {
+        transform: scale(0.95);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+    `;
+                document.head.appendChild(styleElement);
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener("DOMContentLoaded", () => {
+            new CardNavigationHandler();
+        });
+    </script>
+    <footer class="footer">
+        <p>&copy; 2024 ERP Vinco. Todos los derechos reservados.</p>
+    </footer>
 </body>
+
 </html>
