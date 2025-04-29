@@ -52,14 +52,6 @@
 
     <script>
         $(function() {
-            var backgroundImage = "{{ asset('assets/img/fondo.jpg') }}";
-
-            $("#cont").append(
-                "<style>#cont, .acptContainer:before, .logoCont:before {background: url(" +
-                backgroundImage +
-                ") center fixed no-repeat; background-size: cover;}</style>"
-            );
-
             setTimeout(function() {
                 $(".logoCont").transition({
                     scale: 1

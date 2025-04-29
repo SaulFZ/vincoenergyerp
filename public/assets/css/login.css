@@ -27,7 +27,6 @@ body {
     overflow: hidden;
     position: relative;
     border-radius: 5px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 #invContainer .acptContainer {
@@ -218,7 +217,7 @@ form h1.loadIn {
     margin-top: 20px;
     width: 100%;
     box-sizing: border-box;
-    background: #d67e29;
+    background: #ff7b00ef;
     border: none;
     color: #fff;
     padding: 20px 0;
@@ -229,7 +228,7 @@ form h1.loadIn {
 }
 
 .acptBtn:hover {
-    background: #ff7b00ef;
+    background: #d67e29;
 }
 
 .error-message {
