@@ -33,18 +33,6 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        // Verificar si los datos coinciden con el usuario temporal
-        if ($request->username === 'admin' && $request->password === 'admin') {
-            // Crear una sesión manual para el usuario admin
-            session(['auth_user' => [
-                'name' => 'Administrador',
-                'username' => 'admin',
-                'role' => 'Administrador'
-            ]]);
-
-            return redirect()->intended('home');
-        }
-
         // Buscar usuario en la base de datos
         $user = User::where('username', $request->username)->first();
 
