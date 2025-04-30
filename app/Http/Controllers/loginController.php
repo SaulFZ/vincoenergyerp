@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Auth\User;
 use App\Http\Controllers\Controller;
 
 class LoginController extends Controller
@@ -31,9 +33,9 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        // Validación temporal de admin/admin
+        // Verificar si los datos coinciden con el usuario temporal
         if ($request->username === 'admin' && $request->password === 'admin') {
-            // Crear una sesión manual
+            // Crear una sesión manual para el usuario admin
             session(['auth_user' => [
                 'name' => 'Administrador',
                 'username' => 'admin',
@@ -43,6 +45,43 @@ class LoginController extends Controller
             return redirect()->intended('home');
         }
 
+        // Buscar usuario en la base de datos
+        $user = User::where('username', $request->username)->first();
+
+        // Verificar si existe el usuario
+        if ($user) {
+            $passwordMatches = false;
+
+            // Intentar primero con una comparación de texto plano
+            if ($request->password === $user->password) {
+                $passwordMatches = true;
+            }
+            // Intentar después con Hash::check por si la contraseña está hasheada
+            else {
+                try {
+                    if (Hash::check($request->password, $user->password)) {
+                        $passwordMatches = true;
+                    }
+                } catch (\Exception $e) {
+                    // Ignorar errores de formato de hash incompatible
+                }
+            }
+
+            // Si la contraseña coincide de cualquier manera
+            if ($passwordMatches) {
+                // Crear una sesión para el usuario de la base de datos
+                session(['auth_user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'username' => $user->username,
+                    'email' => $user->email
+                ]]);
+
+                return redirect()->intended('home');
+            }
+        }
+
+        // Si no se encuentra el usuario o la contraseña es incorrecta
         return back()->withErrors([
             'username' => 'Las credenciales proporcionadas no son correctas.',
         ])->onlyInput('username');
