@@ -24,14 +24,22 @@ class LoginController extends Controller
      * Handle login request
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\Response
      */
     public function login(Request $request)
     {
-        $request->validate([
-            'username' => ['required'],
-            'password' => ['required'],
-        ]);
+        // Si la solicitud no espera JSON, pero es AJAX, configúrela para esperar JSON
+        if ($request->ajax() && !$request->expectsJson()) {
+            $request->headers->set('Accept', 'application/json');
+        }
+
+        // Verificar si los campos están vacíos
+        if (empty($request->username) || empty($request->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Por favor, completa todos los campos'
+            ]);
+        }
 
         // Buscar usuario en la base de datos
         $user = User::where('username', $request->username)->first();
@@ -65,14 +73,26 @@ class LoginController extends Controller
                     'email' => $user->email
                 ]]);
 
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'redirect' => route('home')
+                    ]);
+                }
+
                 return redirect()->intended('home');
             }
         }
 
         // Si no se encuentra el usuario o la contraseña es incorrecta
-        return back()->withErrors([
-            'username' => 'Las credenciales proporcionadas no son correctas.',
-        ])->onlyInput('username');
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Las credenciales proporcionadas no son correctas.'
+            ]);
+        }
+
+        return back()->with('error', 'Las credenciales proporcionadas no son correctas.');
     }
 
     /**

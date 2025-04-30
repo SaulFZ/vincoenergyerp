@@ -6,40 +6,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vinco ERP</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
- <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}" />
 </head>
 
 <body>
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <img src="../img/logovinco2.png" alt="Logo Empresa" />
+                <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Logo Empresa" />
                 <h2 class="dashboard-title">Panel de Areas Vinco Energy</h2>
             </div>
             <div class="user-profile">
                 <div id="userAvatarContainer" class="user-avatar-container">
                     <div class="user-avatar">
-                        <span>SF</span>
+                        @php
+                            $initials = '';
+                            $name = session('auth_user')['name'] ?? 'Usuario';
+                            $nameParts = explode(' ', $name);
+                            foreach($nameParts as $part) {
+                                if(!empty($part)) {
+                                    $initials .= substr($part, 0, 1);
+                                }
+                                if(strlen($initials) >= 2) break;
+                            }
+                        @endphp
+                        <span>{{ strtoupper($initials) }}</span>
                     </div>
                     <div class="user-info">
-                        <h1>Saul Falcon Perez</h1>
+                        <h1>{{ session('auth_user')['name'] ?? 'Usuario' }}</h1>
                     </div>
                     <i class="fas fa-chevron-down chevron-down"></i>
                 </div>
                 <div id="userDropdown" class="user-dropdown">
                     <div class="dropdown-header">
                         <div class="user-avatar">
-                            <span>SF</span>
+                            <span>{{ strtoupper($initials) }}</span>
                         </div>
                         <div class="dropdown-header-info">
-                            <p>Saul Falcon</p>
-                            <p>saul.falcon@empresa.com</p>
+                            <p>{{ session('auth_user')['name'] ?? 'Usuario' }}</p>
+                            <p>{{ session('auth_user')['email'] ?? 'correo@vinco.com' }}</p>
                         </div>
                     </div>
-                    <button class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Cerrar Sesión
-                    </button>
+                    <form action="{{ route('logout') }}" method="POST" class="logout-form">
+                        @csrf
+                        <button type="submit" class="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Cerrar Sesión
+                        </button>
+                    </form>
                 </div>
                 <div id="dropdownOverlay" class="dropdown-overlay"></div>
             </div>
@@ -50,7 +64,7 @@
         <!-- HTML con IDs únicos -->
         <div class="department">
             <div class="card" id="card-administracion">
-                <img src="/img/administracion.png" alt="Administracion" />
+                <img src="{{ asset('assets/img/administracion.png') }}" alt="Administracion" />
                 <div class="card-content">
                     <h1>Administracion</h1>
                     <p>Gestión eficiente de recursos y procesos administrativos.</p>
@@ -58,7 +72,7 @@
             </div>
 
             <div class="card" id="card-qhse">
-                <img src="/img/QHSE.png" alt="QHSE" />
+                <img src="{{ asset('assets/img/QHSE.png') }}" alt="QHSE" />
                 <div class="card-content">
                     <h1>QHSE</h1>
                     <p>Calidad, Salud, Seguridad y Medio Ambiente.</p>
@@ -66,23 +80,22 @@
             </div>
 
             <div class="card" id="card-ventas">
-                <img src="/img/ventas.png" alt="Ventas" />
+                <img src="{{ asset('assets/img/ventas.png') }}" alt="Ventas" />
                 <div class="card-content">
                     <h1>Ventas</h1>
                     <p>Estrategias de venta y relaciones con clientes.</p>
                 </div>
             </div>
             <div class="card" id="card-recursos-humanos">
-                <img src="/img/rh.png" alt="Recursos Humanos" />
+                <img src="{{ asset('assets/img/rh.png') }}" alt="Recursos Humanos" />
                 <div class="card-content">
                     <h1>Recursos Humanos</h1>
                     <p>Gestión del personal y desarrollo organizacional.</p>
                 </div>
             </div>
 
-
             <div class="card" id="card-suministro">
-                <img src="/img/suministro.png" alt="Suministro" />
+                <img src="{{ asset('assets/img/suministro.png') }}" alt="Suministro" />
                 <div class="card-content">
                     <h1>Suministro</h1>
                     <p>Gestión de la cadena de suministro y logística.</p>
@@ -90,7 +103,7 @@
             </div>
 
             <div class="card" id="card-operaciones">
-                <img src="/img/operaciones.png" alt="Operaciones" />
+                <img src="{{ asset('assets/img/operaciones.png') }}" alt="Operaciones" />
                 <div class="card-content">
                     <h1>Operaciones</h1>
                     <p>Coordinación y optimización de procesos operativos.</p>
@@ -98,7 +111,7 @@
             </div>
 
             <div class="card" id="card-sistemas">
-                <img src="/img/sistemas.png" alt="Sistemas" />
+                <img src="{{ asset('assets/img/sistemas.png') }}" alt="Sistemas" />
                 <div class="card-content">
                     <h1>Sistemas</h1>
                     <p>Desarrollo y mantenimiento de infraestructura tecnológica.</p>
@@ -106,7 +119,7 @@
             </div>
 
             <div class="card" id="card-almacen">
-                <img src="/img/almacen.png" alt="Almacen" />
+                <img src="{{ asset('assets/img/almacen.png') }}" alt="Almacen" />
                 <div class="card-content">
                     <h1>Almacen</h1>
                     <p>Gestión de inventario y almacenamiento de productos.</p>
@@ -114,7 +127,7 @@
             </div>
 
             <div class="card" id="card-geociencias">
-                <img src="/img/geociencias.png" alt="Geociencias" />
+                <img src="{{ asset('assets/img/geociencias.png') }}" alt="Geociencias" />
                 <div class="card-content">
                     <h1>Geociencias</h1>
                     <p>
@@ -154,14 +167,15 @@
 
         // Configuración de rutas para cada área
         const ROUTES_CONFIG = {
-            administracion: "../modulos/administracion/loginadministracion.html",
-            qhse: "../modulos/qhse/loginqhse.html",
-            ventas: "../modulos/ventas/loginventas.html",
-            suministro: "../modulos/suministro/loginsuministro.html",
-            operaciones: "../modulos/operaciones/loginoperaciones.html",
-            sistemas: "../modulos/sistemas/loginsistemas.html",
-            almacen: "../modulos/almacen/loginalmacen.html",
-            geociencias: "../modulos/geociencias/logingeociencias.html"
+            administracion: "{{ asset('modulos/administracion/loginadministracion.html') }}",
+            qhse: "{{ asset('modulos/qhse/loginqhse.html') }}",
+            ventas: "{{ asset('modulos/ventas/loginventas.html') }}",
+            "recursos-humanos": "{{ asset('modulos/recursoshumanos/loginrecursoshumanos.html') }}",
+            suministro: "{{ asset('modulos/suministro/loginsuministro.html') }}",
+            operaciones: "{{ asset('modulos/operaciones/loginoperaciones.html') }}",
+            sistemas: "{{ asset('modulos/sistemas/loginsistemas.html') }}",
+            almacen: "{{ asset('modulos/almacen/loginalmacen.html') }}",
+            geociencias: "{{ asset('modulos/geociencias/logingeociencias.html') }}"
         };
 
         class CardNavigationHandler {

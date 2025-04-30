@@ -25,10 +25,10 @@ Route::middleware(['web'])->group(function () {
         return view('home');
     })->name('home');
 
-    // Aquí puedes agregar más rutas protegidas
+    // Aquí puedes agregar más rutas protegidas que requieran autenticación
 });
 
-// Redirección de la página principal al login
+// Redirección de la página principal al login o al home según la autenticación
 Route::get('/', function () {
-    return redirect()->route('login');
+    return session()->has('auth_user') ? redirect()->route('home') : redirect()->route('login');
 });
