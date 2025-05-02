@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Work+Sans:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/login.css') }}" />
+    <style>
+
+    </style>
 </head>
 
 <body>
@@ -37,7 +40,12 @@
                             <input type="password" name="password" />
                         </div>
                         <div class="frmDiv" style="transition-delay: 0.6s">
-                            <button class="acptBtn" type="submit">Login</button>
+                            <button class="acptBtn" type="submit">
+                                <span class="btn-text">Login</span>
+                                <span class="btn-loader-container">
+                                    <div class="loader"></div>
+                                </span>
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -74,6 +82,13 @@
             $('#loginForm').on('submit', function(e) {
                 e.preventDefault();
 
+                // Animación del botón - Mostrar animación de carga
+                const $button = $(this).find('.acptBtn');
+                $button.addClass('loading');
+
+                // Deshabilitar el botón durante la petición
+                $button.prop('disabled', true);
+
                 $.ajax({
                     url: $(this).attr('action'),
                     method: $(this).attr('method'),
@@ -83,6 +98,10 @@
                         if (response.success) {
                             window.location.href = response.redirect;
                         } else {
+                            // Restaurar el botón
+                            $button.removeClass('loading');
+                            $button.prop('disabled', false);
+
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error de acceso',
@@ -92,6 +111,10 @@
                         }
                     },
                     error: function() {
+                        // Restaurar el botón
+                        $button.removeClass('loading');
+                        $button.prop('disabled', false);
+
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',

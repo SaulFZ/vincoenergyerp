@@ -64,7 +64,7 @@
         <!-- HTML con IDs únicos -->
         <div class="department">
             <div class="card" id="card-administracion">
-                <img src="{{ asset('assets/img/administracion.png') }}" alt="Administracion" />
+                <img src="{{ asset('assets/img/areas/administracion.png') }}" alt="Administracion" />
                 <div class="card-content">
                     <h1>Administracion</h1>
                     <p>Gestión eficiente de recursos y procesos administrativos.</p>
@@ -72,7 +72,7 @@
             </div>
 
             <div class="card" id="card-qhse">
-                <img src="{{ asset('assets/img/QHSE.png') }}" alt="QHSE" />
+                <img src="{{ asset('assets/img/areas/QHSE.png') }}" alt="QHSE" />
                 <div class="card-content">
                     <h1>QHSE</h1>
                     <p>Calidad, Salud, Seguridad y Medio Ambiente.</p>
@@ -80,14 +80,14 @@
             </div>
 
             <div class="card" id="card-ventas">
-                <img src="{{ asset('assets/img/ventas.png') }}" alt="Ventas" />
+                <img src="{{ asset('assets/img/areas/ventas.png') }}" alt="Ventas" />
                 <div class="card-content">
                     <h1>Ventas</h1>
                     <p>Estrategias de venta y relaciones con clientes.</p>
                 </div>
             </div>
             <div class="card" id="card-recursos-humanos">
-                <img src="{{ asset('assets/img/rh.png') }}" alt="Recursos Humanos" />
+                <img src="{{ asset('assets/img/areas/rh.png') }}" alt="Recursos Humanos" />
                 <div class="card-content">
                     <h1>Recursos Humanos</h1>
                     <p>Gestión del personal y desarrollo organizacional.</p>
@@ -95,7 +95,7 @@
             </div>
 
             <div class="card" id="card-suministro">
-                <img src="{{ asset('assets/img/suministro.png') }}" alt="Suministro" />
+                <img src="{{ asset('assets/img/areas/suministro.png') }}" alt="Suministro" />
                 <div class="card-content">
                     <h1>Suministro</h1>
                     <p>Gestión de la cadena de suministro y logística.</p>
@@ -103,7 +103,7 @@
             </div>
 
             <div class="card" id="card-operaciones">
-                <img src="{{ asset('assets/img/operaciones.png') }}" alt="Operaciones" />
+                <img src="{{ asset('assets/img/areas/operaciones.png') }}" alt="Operaciones" />
                 <div class="card-content">
                     <h1>Operaciones</h1>
                     <p>Coordinación y optimización de procesos operativos.</p>
@@ -111,7 +111,7 @@
             </div>
 
             <div class="card" id="card-sistemas">
-                <img src="{{ asset('assets/img/sistemas.png') }}" alt="Sistemas" />
+                <img src="{{ asset('assets/img/areas/sistemas.png') }}" alt="Sistemas" />
                 <div class="card-content">
                     <h1>Sistemas</h1>
                     <p>Desarrollo y mantenimiento de infraestructura tecnológica.</p>
@@ -119,7 +119,7 @@
             </div>
 
             <div class="card" id="card-almacen">
-                <img src="{{ asset('assets/img/almacen.png') }}" alt="Almacen" />
+                <img src="{{ asset('assets/img//areas/almacen.png') }}" alt="Almacen" />
                 <div class="card-content">
                     <h1>Almacen</h1>
                     <p>Gestión de inventario y almacenamiento de productos.</p>
@@ -127,7 +127,7 @@
             </div>
 
             <div class="card" id="card-geociencias">
-                <img src="{{ asset('assets/img/geociencias.png') }}" alt="Geociencias" />
+                <img src="{{ asset('assets/img/areas/geociencias.png') }}" alt="Geociencias" />
                 <div class="card-content">
                     <h1>Geociencias</h1>
                     <p>

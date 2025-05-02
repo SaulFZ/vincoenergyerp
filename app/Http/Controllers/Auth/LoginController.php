@@ -41,8 +41,8 @@ class LoginController extends Controller
             ]);
         }
 
-        // Buscar usuario en la base de datos
-        $user = User::where('username', $request->username)->first();
+        // Buscar usuario en la base de datos usando comparación exacta
+        $user = User::whereRaw('BINARY username = ?', [$request->username])->first();
 
         // Verificar si existe el usuario
         if ($user) {
