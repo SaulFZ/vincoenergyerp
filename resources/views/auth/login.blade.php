@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,9 +14,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Work+Sans:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/login.css') }}" />
-    <style>
-
-    </style>
 </head>
 
 <body>
@@ -96,7 +94,8 @@
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
-                            window.location.href = response.redirect;
+                            // Mostrar pantalla de carga en lugar de redireccionar directamente
+                            window.location.href = "{{ route('splash') }}";
                         } else {
                             // Restaurar el botón
                             $button.removeClass('loading');
@@ -127,4 +126,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -76,10 +76,10 @@ class LoginController extends Controller
                 if ($request->expectsJson()) {
                     return response()->json([
                         'success' => true,
-                        'redirect' => route('home')
+                        'redirect' => route('splash')
                     ]);
                 }
-
+                
                 return redirect()->intended('home');
             }
         }

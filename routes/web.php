@@ -3,11 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
+/* |-------------------------------------------------------------------------- | Web Routes |-------------------------------------------------------------------------- */
 
 // Rutas de autenticación
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -27,6 +23,14 @@ Route::middleware(['web'])->group(function () {
 
     // Aquí puedes agregar más rutas protegidas que requieran autenticación
 });
+
+Route::get('/splash', function () {
+    // Verificar si el usuario está autenticado
+    if (!session()->has('auth_user')) {
+        return redirect('/login');
+    }
+    return view('components.ui.splash');
+})->name('splash');
 
 // Redirección de la página principal al login o al home según la autenticación
 Route::get('/', function () {
