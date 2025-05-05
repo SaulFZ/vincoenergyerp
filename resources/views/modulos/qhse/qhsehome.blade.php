@@ -585,12 +585,6 @@
                 <div class="footer-info">
                     <p>&copy; 2024 QHSE Systems Dashboard</p>
                 </div>
-                <div class="footer-links">
-                    <a href="#" class="footer-link">Centro de Ayuda</a>
-                    <a href="#" class="footer-link">Documentación</a>
-                    <a href="#" class="footer-link">Términos de Uso</a>
-                    <a href="#" class="footer-link">Contacto</a>
-                </div>
             </div>
         </div>
     </footer>

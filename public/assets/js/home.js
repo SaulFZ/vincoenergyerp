@@ -30,6 +30,7 @@ function initUserDropdown() {
 }
 
 // Navegación a las diferentes áreas - Simplificada para usar solo rutas Laravel
+// Modificación a tu archivo initCardNavigation() existente
 function initCardNavigation() {
     document.querySelectorAll(".card").forEach((card) => {
         card.addEventListener("click", function () {
@@ -38,15 +39,27 @@ function initCardNavigation() {
             // Agregar efecto de clic
             this.classList.add("card-clicked");
 
-            // Usar el atributo data-route que se agregará a cada tarjeta
+            // Obtener datos para la transición
             const route = this.getAttribute("data-route");
+            const moduleName = this.getAttribute("data-module-name") || this.querySelector("h1")?.textContent || area;
+            const moduleIcon = this.getAttribute("data-icon") || "fa-circle-notch";
+            const moduleDescription = this.getAttribute("data-description") || this.querySelector("p")?.textContent || "";
 
-            // Redirigir después de un breve retraso para permitir la animación
+            // Redirigir a la página de transición con parámetros
+            const transitionUrl = `/transition?module=${encodeURIComponent(moduleName)}&icon=${encodeURIComponent(moduleIcon)}&description=${encodeURIComponent(moduleDescription)}&redirect=${encodeURIComponent(route)}`;
+
+            // Redirigir después de un breve retraso para permitir la animación de clic
             setTimeout(() => {
-                window.location.href = route;
+                window.location.href = transitionUrl;
             }, 300);
         });
     });
+}
+
+// Opcional: Puedes usar esto como un helper de transición independiente para otras partes de la app
+function navigateWithTransition(route, moduleName, moduleIcon = 'fa-circle-notch', moduleDescription = '') {
+    const transitionUrl = `/transition?module=${encodeURIComponent(moduleName)}&icon=${encodeURIComponent(moduleIcon)}&description=${encodeURIComponent(moduleDescription)}&redirect=${encodeURIComponent(route)}`;
+    window.location.href = transitionUrl;
 }
 
 // Efecto de brillo al pasar el mouse

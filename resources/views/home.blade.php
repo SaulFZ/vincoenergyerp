@@ -20,15 +20,17 @@
                 <div id="userAvatarContainer" class="user-avatar-container">
                     <div class="user-avatar">
                         @php
-                        $initials = '';
-                        $name = session('auth_user')['name'] ?? 'Usuario';
-                        $nameParts = explode(' ', $name);
-                        foreach($nameParts as $part) {
-                        if(!empty($part)) {
-                        $initials .= substr($part, 0, 1);
-                        }
-                        if(strlen($initials) >= 2) break;
-                        }
+                            $initials = '';
+                            $name = session('auth_user')['name'] ?? 'Usuario';
+                            $nameParts = explode(' ', $name);
+                            foreach ($nameParts as $part) {
+                                if (!empty($part)) {
+                                    $initials .= substr($part, 0, 1);
+                                }
+                                if (strlen($initials) >= 2) {
+                                    break;
+                                }
+                            }
                         @endphp
                         <span>{{ strtoupper($initials) }}</span>
                     </div>

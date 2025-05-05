@@ -62,4 +62,7 @@ Route::middleware(['web'])->group(function () {
             return view('modulos.geociencias.geocienciashome');
         })->name('modulo.geociencias');
     });
+    Route::get('/transition', function () {
+        return view('components.ui.transition');
+    })->name('transition');
 });
