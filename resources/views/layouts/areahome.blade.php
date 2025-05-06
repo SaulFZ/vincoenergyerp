@@ -21,7 +21,12 @@
                 <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Logo Vinco" />
                 <h2 class="module-title">Módulo de @yield('module-name', 'Área')</h2>
             </div>
+
             <div class="user-actions">
+                <a href="{{ route('home') }}" class="home-button">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
                 <div class="user-profile">
                     <div class="user-avatar-container">
                         <div class="user-avatar">
@@ -45,10 +50,6 @@
                         </div>
                     </div>
                 </div>
-                <a href="{{ route('home') }}" class="home-button">
-                    <i class="fas fa-home"></i>
-                    <span>Inicio</span>
-                </a>
             </div>
         </div>
     </header>
