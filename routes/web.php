@@ -30,15 +30,31 @@ Route::middleware(['web'])->group(function () {
             return view('modulos.administracion.administracionhome');
         })->name('modulo.administracion');
 
-        Route::get('/qhse', function () {
+      // QHSE y sus subsistemas
+      Route::prefix('qhse')->group(function () {
+        Route::get('/', function () {
             return view('modulos.qhse.qhsehome');
         })->name('modulo.qhse');
+
+        Route::get('/vescap', function () {
+            return view('modulos.qhse.sistemas.vescap.index');
+        })->name('qhse.vescap');
+
+        Route::get('/incidencias', function () {
+            return view('modulos.qhse.sistemas.tacisqhse.index');
+        })->name('qhse.incidencias');
+
+        Route::get('/auditorias', function () {
+            return view('modulos.qhse.sistemas.auditorias.index');
+        })->name('qhse.auditorias');
+    });
+
 
         Route::get('/ventas', function () {
             return view('modulos.ventas.ventashome');
         })->name('modulo.ventas');
 
-        Route::get('/recursos-humanos', function () {
+        Route::get('/recursoshumanos', function () {
             return view('modulos.recursoshumanos.recursoshumanoshome');
         })->name('modulo.recursoshumanos');
 

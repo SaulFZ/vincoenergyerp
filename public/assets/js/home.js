@@ -29,8 +29,7 @@ function initUserDropdown() {
     });
 }
 
-// Navegación a las diferentes áreas - Simplificada para usar solo rutas Laravel
-// Modificación a tu archivo initCardNavigation() existente
+// Navegación a las diferentes áreas con imagen
 function initCardNavigation() {
     document.querySelectorAll(".card").forEach((card) => {
         card.addEventListener("click", function () {
@@ -45,8 +44,11 @@ function initCardNavigation() {
             const moduleIcon = this.getAttribute("data-icon") || "fa-circle-notch";
             const moduleDescription = this.getAttribute("data-description") || this.querySelector("p")?.textContent || "";
 
-            // Redirigir a la página de transición con parámetros
-            const transitionUrl = `/transition?module=${encodeURIComponent(moduleName)}&icon=${encodeURIComponent(moduleIcon)}&description=${encodeURIComponent(moduleDescription)}&redirect=${encodeURIComponent(route)}`;
+            // Obtener la URL de la imagen
+            const moduleImage = this.querySelector("img")?.src || "";
+
+            // Redirigir a la página de transición con parámetros, incluyendo la imagen
+            const transitionUrl = `/transition?module=${encodeURIComponent(moduleName)}&icon=${encodeURIComponent(moduleIcon)}&description=${encodeURIComponent(moduleDescription)}&image=${encodeURIComponent(moduleImage)}&redirect=${encodeURIComponent(route)}`;
 
             // Redirigir después de un breve retraso para permitir la animación de clic
             setTimeout(() => {
@@ -56,9 +58,9 @@ function initCardNavigation() {
     });
 }
 
-// Opcional: Puedes usar esto como un helper de transición independiente para otras partes de la app
-function navigateWithTransition(route, moduleName, moduleIcon = 'fa-circle-notch', moduleDescription = '') {
-    const transitionUrl = `/transition?module=${encodeURIComponent(moduleName)}&icon=${encodeURIComponent(moduleIcon)}&description=${encodeURIComponent(moduleDescription)}&redirect=${encodeURIComponent(route)}`;
+// Opcional: Helper de transición independiente actualizado para incluir imagen
+function navigateWithTransition(route, moduleName, moduleIcon = 'fa-circle-notch', moduleDescription = '', moduleImage = '') {
+    const transitionUrl = `/transition?module=${encodeURIComponent(moduleName)}&icon=${encodeURIComponent(moduleIcon)}&description=${encodeURIComponent(moduleDescription)}&image=${encodeURIComponent(moduleImage)}&redirect=${encodeURIComponent(route)}`;
     window.location.href = transitionUrl;
 }
 
