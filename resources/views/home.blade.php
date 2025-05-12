@@ -91,7 +91,7 @@
                 </div>
             </div>
 
-            <div class="card" id="card-recursos-humanos" data-area="recursos-humanos" data-route="/recursos-humanos">
+            <div class="card" id="card-recursos-humanos" data-area="recursoshumanos" data-route="/recursoshumanos">
                 <div class="card-shine"></div>
                 <img src="assets/img/areas/rh.png" alt="Recursos Humanos" />
                 <div class="card-content">

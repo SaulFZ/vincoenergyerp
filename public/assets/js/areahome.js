@@ -2,24 +2,28 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Añadir efectos de hover y transiciones para elementos interactivos
     initButtonEffects();
+    initCardDirectNavigation();
+
 
     // Para futuras expansiones, podemos agregar más inicializadores aquí
 });
+
+
 
 function initButtonEffects() {
     // Efecto de hover para el botón de inicio
     const homeButton = document.querySelector('.home-button');
     if (homeButton) {
-        homeButton.addEventListener('mouseenter', function() {
+        homeButton.addEventListener('mouseenter', function () {
             this.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
         });
 
-        homeButton.addEventListener('mouseleave', function() {
+        homeButton.addEventListener('mouseleave', function () {
             this.style.boxShadow = 'none';
         });
 
         // Efecto de clic
-        homeButton.addEventListener('click', function() {
+        homeButton.addEventListener('click', function () {
             // Añadir clase que reduce ligeramente el tamaño del botón al hacer clic
             this.classList.add('clicked');
 
@@ -30,6 +34,8 @@ function initButtonEffects() {
         });
     }
 }
+
+
 
 // Función auxiliar para añadir la animación de transición al navegar entre páginas
 function navigateWithTransition(url) {
@@ -54,4 +60,16 @@ function navigateWithTransition(url) {
     setTimeout(() => {
         window.location.href = url;
     }, 300);
+}
+
+
+function initCardDirectNavigation() {
+    document.querySelectorAll(".card:not(.disabled)").forEach((card) => {
+        card.addEventListener("click", function () {
+            const route = this.getAttribute("data-route");
+            if (route && route !== "#") {
+                window.location.href = route;
+            }
+        });
+    });
 }

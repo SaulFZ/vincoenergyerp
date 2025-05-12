@@ -14,8 +14,8 @@
 </div>
 
 <div class="grid">
-    <a href="{{ route('qhse.vescap') }}" class="card">
-        <img src="{{ asset('assets/img/areas/vescap.png') }}" alt="VESCAP" class="card-image">
+    <div class="card" id="card-vescap" data-area="qhse" data-route="/vescap">
+        <img src="{{ asset('assets/img/qhse/vescap.png') }}" alt="VESCAP" class="card-image">
         <div class="card-content">
             <h3 class="card-title">
                 <span class="card-icon">
@@ -28,10 +28,10 @@
                 <span>Sistema Activo</span>
             </div>
         </div>
-    </a>
+    </div>
 
-    <a href="{{ route('qhse.incidencias') }}" class="card">
-        <img src="{{ asset('assets/img/areas/incidencia.png') }}" alt="Gestión de Incidencias QHSE" class="card-image">
+    <div class="card" id="card-incidencias" data-area="qhse" data-route="/incidencias">
+        <img src="{{ asset('assets/img/qhse/incidencia.png') }}" alt="Gestión de Incidencias QHSE" class="card-image">
         <div class="card-content">
             <h3 class="card-title">
                 <span class="card-icon">
@@ -44,10 +44,10 @@
                 <span>Sistema Activo</span>
             </div>
         </div>
-    </a>
+    </div>
 
-    <a href="{{ route('qhse.auditorias') }}" class="card">
-        <img src="{{ asset('assets/img/areas/auditorias.png') }}" alt="Sistema de Auditorías" class="card-image">
+    <div class="card" id="card-auditorias" data-area="qhse" data-route="/auditorias">
+        <img src="{{ asset('assets/img/qhse/img.png') }}" alt="Sistema de Auditorías" class="card-image">
         <div class="card-content">
             <h3 class="card-title">
                 <span class="card-icon">
@@ -60,10 +60,10 @@
                 <span>Sistema Activo</span>
             </div>
         </div>
-    </a>
+    </div>
 
-    <a href="#" class="card disabled">
-        <img src="{{ asset('assets/img/areas/new-system.png') }}" alt="Nuevo Sistema" class="card-image">
+    <div class="card disabled" id="card-nuevo" data-area="qhse" data-route="#">
+        <img src="{{ asset('assets/img/qhse/new-system.png') }}" alt="Nuevo Sistema" class="card-image">
         <div class="card-content">
             <h3 class="card-title">
                 <span class="card-icon">
@@ -76,10 +76,10 @@
                 <span>Próximamente</span>
             </div>
         </div>
-    </a>
+    </div>
 </div>
 @endsection
 
 @section('scripts')
-<script src="{{ asset('assets/js/qhse.js') }}"></script>
+    <script src="{{ asset('assets/js/areahome.js') }}"></script>
 @endsection
