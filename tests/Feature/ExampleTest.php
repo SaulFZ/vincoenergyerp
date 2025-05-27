@@ -8,11 +8,22 @@ use Tests\TestCase;
 class ExampleTest extends TestCase
 {
     /**
-     * A basic test example.
+     * Test that home page redirects to login when not authenticated.
      */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_home_redirects_to_login_when_not_authenticated(): void
     {
-        // En lugar de probar '/', probamos la página de login que sí devuelve 200
+        $response = $this->get('/');
+
+        // Probamos que efectivamente redirige al login
+        $response->assertStatus(302);
+        $response->assertRedirect(route('login'));
+    }
+
+    /**
+     * Test that login page loads successfully.
+     */
+    public function test_login_page_loads_successfully(): void
+    {
         $response = $this->get('/login');
 
         $response->assertStatus(200);
