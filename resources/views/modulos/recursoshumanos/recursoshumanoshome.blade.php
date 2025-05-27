@@ -5,7 +5,7 @@
 @section('module-name', 'Recursos Humanos')
 
 @section('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/recursoshumanos/recursoshumanos.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/areahome.css') }}">
 @endsection
 
 @section('content')

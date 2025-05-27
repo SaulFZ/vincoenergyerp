@@ -1,13 +1,43 @@
-// Este script contiene funcionalidades compartidas para todos los layouts de área
+  // Este script contiene funcionalidades compartidas para todos los layouts de área
 document.addEventListener("DOMContentLoaded", () => {
+    // Verificar si hay mensajes de error de permisos
+    checkPermissionErrors();
+
     // Añadir efectos de hover y transiciones para elementos interactivos
     initButtonEffects();
     initCardDirectNavigation();
 
-
     // Para futuras expansiones, podemos agregar más inicializadores aquí
 });
 
+// Verificar y mostrar alertas de permisos
+function checkPermissionErrors() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const permissionError = urlParams.get('permission_error');
+    const errorType = urlParams.get('error_type');
+
+    console.log("¿Hay error?", permissionError, errorType); // <-- Línea temporal
+
+    if (permissionError) {
+        let message = 'No tienes acceso a este recurso';
+
+        if (errorType === 'module') {
+            message = 'No tienes acceso a este módulo';
+        } else if (errorType === 'system') {
+            message = 'No tienes acceso a este sistema';
+        }
+
+        Swal.fire({
+            title: 'Acceso Denegado',
+            text: message,
+            icon: 'error',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Entendido'
+        }).then(() => {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        });
+    }
+}
 
 
 function initButtonEffects() {
@@ -35,8 +65,6 @@ function initButtonEffects() {
     }
 }
 
-
-
 // Función auxiliar para añadir la animación de transición al navegar entre páginas
 function navigateWithTransition(url) {
     // Crear y aplicar un efecto de desvanecimiento antes de la navegación
@@ -61,7 +89,6 @@ function navigateWithTransition(url) {
         window.location.href = url;
     }, 300);
 }
-
 
 function initCardDirectNavigation() {
     document.querySelectorAll(".card:not(.disabled)").forEach((card) => {

@@ -4,11 +4,52 @@ document.addEventListener("DOMContentLoaded", () => {
     initCardHoverEffects();
 });
 
+
+function checkPermissionAndNavigate(module, permission, route, moduleName, moduleIcon, moduleDescription, moduleImage) {
+    // Si no se especificó un permiso, usar 'general' por defecto
+    permission = permission || 'general';
+
+    console.log(`Verificando permiso: ${module}/${permission}`);
+
+    fetch(`/api/check-permission/${module}/${permission}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === 'Permiso concedido.') {
+                // Tiene permiso, ir a transición
+                const transitionUrl = `/transition?module=${encodeURIComponent(moduleName)}&icon=${encodeURIComponent(moduleIcon)}&description=${encodeURIComponent(moduleDescription)}&image=${encodeURIComponent(moduleImage)}&redirect=${encodeURIComponent(route)}`;
+                window.location.href = transitionUrl;
+            } else {
+                // Mostrar alerta si no tiene permiso
+                Swal.fire({
+                    title: 'Acceso Denegado',
+                    icon: 'error',
+                    confirmButtonColor: '#3085d6',
+                    confirmButtonText: 'Entendido',
+                    text: 'No tienes permiso para acceder a este modulo.'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error al verificar permisos:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Ocurrió un error al verificar los permisos. Por favor, intenta nuevamente.'
+            });
+        });
+}
+
+
 // Manejo del dropdown del usuario
 function initUserDropdown() {
     const userAvatarContainer = document.getElementById("userAvatarContainer");
     const userDropdown = document.getElementById("userDropdown");
     const dropdownOverlay = document.getElementById("dropdownOverlay");
+
+    if (!userAvatarContainer || !userDropdown || !dropdownOverlay) {
+        console.warn("Elementos de usuario no encontrados");
+        return;
+    }
 
     userAvatarContainer.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -33,27 +74,20 @@ function initUserDropdown() {
 function initCardNavigation() {
     document.querySelectorAll(".card").forEach((card) => {
         card.addEventListener("click", function () {
-            const area = this.getAttribute("data-area");
-
-            // Agregar efecto de clic
-            this.classList.add("card-clicked");
-
-            // Obtener datos para la transición
             const route = this.getAttribute("data-route");
-            const moduleName = this.getAttribute("data-module-name") || this.querySelector("h1")?.textContent || area;
-            const moduleIcon = this.getAttribute("data-icon") || "fa-circle-notch";
-            const moduleDescription = this.getAttribute("data-description") || this.querySelector("p")?.textContent || "";
+            const moduleName = this.getAttribute("data-module-name") || this.querySelector("h1")?.textContent || "Módulo";
 
-            // Obtener la URL de la imagen
+            // Obtener el módulo y permiso de los atributos de la tarjeta
+            const module = this.getAttribute("data-area");
+            const permission = this.getAttribute("data-permission") || 'general';
+            const moduleIcon = this.getAttribute("data-icon") || "fa-circle-notch";
+            const moduleDescription = this.getAttribute("data-description") || "";
             const moduleImage = this.querySelector("img")?.src || "";
 
-            // Redirigir a la página de transición con parámetros, incluyendo la imagen
-            const transitionUrl = `/transition?module=${encodeURIComponent(moduleName)}&icon=${encodeURIComponent(moduleIcon)}&description=${encodeURIComponent(moduleDescription)}&image=${encodeURIComponent(moduleImage)}&redirect=${encodeURIComponent(route)}`;
+            console.log(`Intentando navegar a: ${module} / ${permission}`);
 
-            // Redirigir después de un breve retraso para permitir la animación de clic
-            setTimeout(() => {
-                window.location.href = transitionUrl;
-            }, 300);
+            // Llama a la función con validación previa
+            checkPermissionAndNavigate(module, permission, route, moduleName, moduleIcon, moduleDescription, moduleImage);
         });
     });
 }
@@ -69,19 +103,20 @@ function initCardHoverEffects() {
     const cards = document.querySelectorAll('.card');
 
     cards.forEach(card => {
+        const shine = card.querySelector('.card-shine');
+        if (!shine) return;
+
         card.addEventListener('mousemove', function (e) {
             const rect = this.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
             // Actualizar la posición del efecto de brillo
-            const shine = this.querySelector('.card-shine');
             shine.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 60%)`;
             shine.style.opacity = '1';
         });
 
         card.addEventListener('mouseleave', function () {
-            const shine = this.querySelector('.card-shine');
             shine.style.opacity = '0';
         });
     });

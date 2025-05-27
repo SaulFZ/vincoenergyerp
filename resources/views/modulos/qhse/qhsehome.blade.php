@@ -5,7 +5,7 @@
 @section('module-name', 'QHSE')
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/qhse/qhse.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/areahome.css') }}">
 @endsection
 
 @section('content')

@@ -79,7 +79,7 @@ class LoginController extends Controller
                         'redirect' => route('splash')
                     ]);
                 }
-                
+
                 return redirect()->intended('home');
             }
         }

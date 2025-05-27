@@ -11,7 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Aquí registras middlewares globales o aliases
+
+        // Alias para usar en rutas como ->middleware('check.permission')
+        $middleware->alias([
+            'check.permission' => \App\Http\Middleware\CheckModulePermission::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
