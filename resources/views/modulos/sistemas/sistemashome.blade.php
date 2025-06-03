@@ -15,7 +15,7 @@
 
     <div class="grid">
         <div class="card" id="card-roles" data-area="sistemas" data-route="/sistemas/gestionderoles">
-            <img src="{{ asset('assets/img/sistemas/gestionderoles.png') }}" alt="Gestión de Roles" class="card-image">
+            <img src="{{ asset('assets/img/sistemas/gestionderoles/gestion.png') }}" alt="Gestión de Roles" class="card-image">
             <div class="card-content">
                 <h3 class="card-title">
                     <span class="card-icon">
