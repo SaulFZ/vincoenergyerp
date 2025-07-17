@@ -12,7 +12,9 @@
         integrity="sha256-mkdmXjMvBcpAyyFNCVdbwg4v+ycJho65QLDwVE3ViDs=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Work+Sans:wght@700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Work+Sans:wght@700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/login.css') }}" />
 </head>
 
@@ -35,8 +37,12 @@
                         <div class="frmDiv" style="transition-delay: 0.4s">
                             <i class="fas fa-lock"></i>
                             <p>Contraseña</p>
-                            <input type="password" name="password" />
+                            <input type="password" name="password" id="password" />
+                            <span class="toggle-password">
+                                <i id="eyeIcon" class="fas fa-eye-slash"></i>
+                            </span>
                         </div>
+
                         <div class="frmDiv" style="transition-delay: 0.6s">
                             <button class="acptBtn" type="submit">
                                 <span class="btn-text">Login</span>
@@ -52,6 +58,19 @@
     </div>
 
     <script>
+        $(document).ready(function() {
+            $('.toggle-password').on('click', function() {
+                const passwordInput = $('#password');
+                const eyeIcon = $('#eyeIcon');
+
+                const isPasswordVisible = passwordInput.attr('type') === 'text';
+                passwordInput.attr('type', isPasswordVisible ? 'password' : 'text');
+
+                eyeIcon.removeClass('fa-eye fa-eye-slash');
+                eyeIcon.addClass(isPasswordVisible ? 'fa-eye-slash' : 'fa-eye');
+            });
+        });
+
         // Inicialización de la animación
         $(function() {
             setTimeout(function() {

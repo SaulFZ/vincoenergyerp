@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <div class="card" id="card-loadchart" data-area="recursoshumanos" data-route="/recursoshumanos/loandchart">
+        <div class="card" id="card-loadchart" data-area="recursoshumanos" data-route="/recursoshumanos/loadchart">
             <img src="{{ asset('assets/img/recursoshumanos/loadchart.png') }}" alt="LoadChart" class="card-image">
             <div class="card-content">
                 <h3 class="card-title">

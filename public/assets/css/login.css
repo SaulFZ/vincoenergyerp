@@ -126,6 +126,22 @@ form h1.loadIn {
     color: #fff;
     width: 100%;
 }
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 20px; /* ajustado para alinear mejor con el input */
+    font-size: 20px; /* tamaño más grande */
+    color: #ccc; /* más contraste */
+    cursor: pointer;
+    transition: transform 0.3s ease, color 0.3s ease;
+    z-index: 2;
+}
+
+.toggle-password:hover {
+    color: #fff;
+    transform: scale(1.2);
+}
+
 
 .frmContainer .frmDiv p {
     position: relative;

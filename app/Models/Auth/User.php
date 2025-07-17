@@ -2,78 +2,69 @@
 
 namespace App\Models\Auth;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+  use Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+  protected $fillable = [
+    "name",
+    "username",
+    "email",
+    "password",
+    "status",
+    "employee_id",
+    "role_id", // Añadimos role_id a los fillable
+  ];
 
-     public function permissions()
+  protected $hidden = ["password", "remember_token"];
+
+  protected $casts = [
+    "email_verified_at" => "datetime",
+    "password" => "hashed",
+  ];
+
+  public function employee()
+  {
+    return $this->belongsTo(
+      \App\Models\Employee::class,
+      "employee_id",
+      "id"
+    )->withTrashed();
+  }
+
+  // Agrega este método a la clase User
+public function directPermissions()
 {
-    return $this->hasOne(\App\Models\Sistemas\UserPermission::class);
+    return $this->belongsToMany(Permission::class, 'user_direct_permissions')
+                ->withTimestamps();
 }
-    protected $fillable = [
-        'name',
-        'username',
-        'email',
-        'password',
-        'status', // Campo agregado
-    ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+  public function role()
+  {
+    return $this->belongsTo(Role::class);
+  }
 
+  public function permissions()
+  {
+    return $this->hasOne(\App\Models\Sistemas\UserPermission::class);
+  }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+  public function isActive()
+  {
+    return $this->status === "active";
+  }
 
-    /**
-     * Verifica si el usuario está activo
-     */
-    public function isActive()
-    {
-        return $this->status === 'active';
-    }
+  public function scopeActive($query)
+  {
+    return $query->where("status", "active");
+  }
 
-    /**
-     * Scope para obtener solo usuarios activos
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('status', 'active');
-    }
-
-    /**
-     * Scope para obtener solo usuarios inactivos
-     */
-    public function scopeInactive($query)
-    {
-        return $query->where('status', 'inactive');
-    }
+  public function scopeInactive($query)
+  {
+    return $query->where("status", "inactive");
+  }
 }

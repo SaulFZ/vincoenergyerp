@@ -502,6 +502,17 @@
             }
         }
 
+
+
+
+
+
+
+
+
+
+
+
         /* Modal Styles */
         .modal-overlay {
             position: fixed;
@@ -538,7 +549,7 @@
             border-radius: 24px;
             box-shadow: 0 32px 64px rgba(0, 0, 0, 0.25);
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
             max-height: 95vh;
             overflow: hidden;
             animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -559,7 +570,7 @@
         }
 
         .modal-header {
-            padding: 2.5rem 3rem;
+            padding: 2rem 3rem;
             border-bottom: 4px solid #dc143c;
             background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
             display: flex;
@@ -636,7 +647,7 @@
         }
 
         .modal-body {
-            padding: 3rem;
+            padding: 2rem 3rem;
             overflow-y: auto;
             flex: 1;
         }
@@ -646,11 +657,11 @@
             font-size: 1.25rem;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
             border-bottom: 2px solid #f1f3f4;
         }
 
@@ -673,29 +684,28 @@
             padding: 0 15px;
         }
 
+        .col-md-4 {
+            flex: 0 0 33.333%;
+            max-width: 33.333%;
+            padding: 0 15px;
+        }
+
         .col-md-6 {
             flex: 0 0 50%;
             max-width: 50%;
             padding: 0 15px;
         }
 
-        @media (max-width: 768px) {
-            .col-md-6 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
-
         .mb-3 {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .mb-4 {
-            margin-bottom: 2.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .mt-4 {
-            margin-top: 2.5rem;
+            margin-top: 1.5rem;
         }
 
         .me-2 {
@@ -704,20 +714,20 @@
 
         .form-label {
             display: block;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
             font-weight: 600;
             color: #2c2c2c;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             letter-spacing: 0.25px;
         }
 
         .form-control,
         .form-select {
             width: 100%;
-            padding: 1rem 1.25rem;
+            padding: 0.875rem 1.25rem;
             border: 2px solid #e9ecef;
-            border-radius: 16px;
-            font-size: 0.95rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             background: white;
             color: #2c2c2c;
@@ -728,34 +738,102 @@
         .form-select:focus {
             outline: none;
             border-color: #dc143c;
-            box-shadow: 0 0 0 6px rgba(220, 20, 60, 0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 4px rgba(220, 20, 60, 0.1);
+            transform: translateY(-1px);
         }
 
         .form-control::placeholder {
             color: #adb5bd;
         }
 
-        /* Module Styles */
-        .module-area {
-            background: white;
-            border: 2px solid #f1f3f4;
-            border-radius: 20px;
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        .suggestions-dropdown {
+            position: absolute;
+            z-index: 1000;
+            width: 100%;
+            /* Mismo ancho que el input */
+            max-height: 240px;
+            overflow-y: auto;
+            background: #ffffff;
+            border: 1px solid #ced4da;
+            /* Coincide con el borde de Bootstrap */
+            border-top: none;
+            /* Elimina el borde superior para unión visual con el input */
+            border-radius: 0 0 0.375rem 0.375rem;
+            /* Radio igual a Bootstrap */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            font-family: inherit;
+            /* Hereda la fuente del contenedor */
+            scrollbar-width: thin;
+            scrollbar-color: #adb5bd #f8f9fa;
+            box-sizing: border-box;
+            top: 100%;
+            /* Posiciona justo debajo del input */
+            left: 0;
+            margin-top: -1px;
+            /* Solapa 1px para unión perfecta */
         }
 
-        .module-area:hover {
+        /* Scrollbar para WebKit */
+        .suggestions-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-track {
+            background: #f8f9fa;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-thumb {
+            background-color: #adb5bd;
+            border-radius: 3px;
+        }
+
+        .suggestion-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            font-size: 0.875rem;
+            color: #212529;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .suggestion-item.highlighted {
+            background-color: #e9ecef;
+            color: #000;
+        }
+
+        /* Asegura que el contenedor tenga posición relativa para el dropdown absoluto */
+        .col-md-4.mb-3 {
+            position: relative;
+        }
+
+        /* Module Styles - Compact Version */
+        .module-area.compact {
+            background: white;
+            border: 2px solid #f1f3f4;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .module-area.compact:hover {
             border-color: #dc143c;
-            box-shadow: 0 8px 24px rgba(220, 20, 60, 0.1);
+            box-shadow: 0 4px 12px rgba(220, 20, 60, 0.1);
             transform: translateY(-2px);
         }
 
-        .module-header {
+        .module-area.compact .module-header {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 1.5rem 2rem;
+            padding: 1rem 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -764,90 +842,92 @@
             border-bottom: 1px solid #f1f3f4;
         }
 
-        .module-header:hover {
+        .module-area.compact .module-header:hover {
             background: linear-gradient(135deg, #dc143c 0%, #b8102f 100%);
         }
 
-        .module-header:hover .module-title {
+        .module-area.compact .module-header:hover .module-title {
             color: white;
         }
 
-        .module-header:hover .module-title i {
+        .module-area.compact .module-header:hover .module-title i {
             color: white;
             background: rgba(255, 255, 255, 0.2);
         }
 
-        .module-title {
-            font-size: 1.1rem;
+        .module-area.compact .module-title {
+            font-size: 0.95rem;
             font-weight: 600;
             color: #2c2c2c;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
             transition: all 0.3s ease;
+            margin: 0;
         }
 
-        .module-title i {
+        .module-area.compact .module-title i {
             background: rgba(220, 20, 60, 0.1);
             color: #dc143c;
-            padding: 0.5rem;
-            border-radius: 10px;
+            padding: 0.4rem;
+            border-radius: 8px;
             transition: all 0.3s ease;
+            font-size: 0.9rem;
         }
 
-        .module-body {
+        .module-area.compact .module-body {
             padding: 0;
             max-height: 0;
             overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .module-body.active {
+        .module-area.compact .module-body.active {
             max-height: 500px;
-            padding: 1.5rem 2rem;
+            padding: 0.5rem 1.5rem;
         }
 
-        .permission-item {
+        .module-area.compact .permission-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem 0;
+            padding: 0.6rem 0;
             border-bottom: 1px solid #f1f3f4;
             transition: all 0.3s ease;
         }
 
-        .permission-item:last-child {
+        .module-area.compact .permission-item:last-child {
             border-bottom: none;
         }
 
-        .permission-item:hover {
+        .module-area.compact .permission-item:hover {
             background: rgba(220, 20, 60, 0.05);
-            padding-left: 1rem;
-            margin: 0 -1rem;
-            border-radius: 12px;
+            padding-left: 0.5rem;
+            margin: 0 -0.5rem;
+            border-radius: 8px;
         }
 
-        .permission-item span {
-            font-size: 0.95rem;
+        .module-area.compact .permission-item span {
+            font-size: 0.85rem;
             font-weight: 500;
             color: #2c2c2c;
         }
 
-        /* Switch Styles */
-        .switch {
+        /* Compact Switch Styles */
+        .module-area.compact .switch {
             position: relative;
             display: inline-block;
-            width: 60px;
-            height: 32px;
+            width: 48px;
+            height: 26px;
         }
 
-        .switch input {
+        .module-area.compact .switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
 
-        .slider {
+        .module-area.compact .slider {
             position: absolute;
             cursor: pointer;
             top: 0;
@@ -855,31 +935,31 @@
             right: 0;
             bottom: 0;
             background-color: #cdd4da;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 32px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 26px;
         }
 
-        .slider:before {
+        .module-area.compact .slider:before {
             position: absolute;
             content: "";
-            height: 24px;
-            width: 24px;
-            left: 4px;
-            bottom: 4px;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
             background-color: white;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
         }
 
-        input:checked+.slider {
+        .module-area.compact input:checked+.slider {
             background-color: #dc143c;
-            box-shadow: 0 0 0 4px rgba(220, 20, 60, 0.2);
+            box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.2);
         }
 
-        input:checked+.slider:before {
-            transform: translateX(28px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        .module-area.compact input:checked+.slider:before {
+            transform: translateX(22px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
         }
 
         /* Button Styles */
@@ -887,39 +967,39 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem 2rem;
+            padding: 0.875rem 1.75rem;
             border: none;
-            border-radius: 16px;
-            font-size: 0.95rem;
+            border-radius: 14px;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             font-family: inherit;
-            min-width: 140px;
+            min-width: 120px;
         }
 
         .btn-primary {
             background: linear-gradient(135deg, #dc143c 0%, #b8102f 100%);
             color: white;
-            box-shadow: 0 4px 16px rgba(220, 20, 60, 0.3);
+            box-shadow: 0 4px 12px rgba(220, 20, 60, 0.25);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(220, 20, 60, 0.4);
+            box-shadow: 0 6px 16px rgba(220, 20, 60, 0.35);
         }
 
         .btn-secondary {
             background: #6c757d;
             color: white;
-            box-shadow: 0 4px 16px rgba(108, 117, 125, 0.3);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
         }
 
         .btn-secondary:hover {
             background: #5a6268;
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(108, 117, 125, 0.4);
+            box-shadow: 0 6px 16px rgba(108, 117, 125, 0.35);
         }
 
         .text-end {
@@ -928,11 +1008,18 @@
 
         .text-muted {
             color: #6c757d;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             line-height: 1.5;
+            margin-bottom: 1rem;
         }
 
         /* Responsive Design */
+        @media (max-width: 992px) {
+            .modal {
+                max-width: 800px;
+            }
+        }
+
         @media (max-width: 768px) {
             .modal {
                 margin: 10px;
@@ -940,15 +1027,21 @@
             }
 
             .modal-header {
-                padding: 2rem;
+                padding: 1.5rem;
             }
 
             .modal-header h3 {
-                font-size: 1.5rem;
+                font-size: 1.4rem;
             }
 
             .modal-body {
-                padding: 2rem;
+                padding: 1.5rem;
+            }
+
+            .col-md-4,
+            .col-md-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
             }
 
             .text-end {
@@ -961,470 +1054,621 @@
             }
         }
 
-/* ===== MODAL DE VISUALIZACIÓN DE USUARIO ===== */
-/* Contenedor principal del modal */
-.user-view-modal-popup {
-    border-radius: 24px !important;
-    box-shadow: 0 32px 64px rgba(0, 0, 0, 0.25) !important;
-    border: none !important;
-    overflow: hidden !important;
-}
+        @media (max-width: 576px) {
+            .modal-header {
+                padding: 1.25rem;
+            }
 
-/* Título del modal */
-.user-view-modal-title {
-    background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%) !important;
-    color: white !important;
-    padding: 1rem 2rem !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    font-size: 1.75rem !important;
-    font-weight: 900 !important;
-    border-bottom: 2px solid #dc143c !important;
-    position: relative !important;
-    overflow: hidden !important;
-}
+            .modal-header h3 {
+                font-size: 1.2rem;
+            }
 
-.user-view-modal-title::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 0%, rgba(220, 20, 60, 0.05) 50%, transparent 100%);
-    animation: shimmer 6s ease-in-out infinite;
-}
+            .close-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
 
-@keyframes shimmer {
-    0%, 100% {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-    50% {
-        transform: translateX(100%);
-        opacity: 1;
-    }
-}
+            .modal-body {
+                padding: 1.25rem;
+            }
 
-.uvm-title-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    justify-content: center;
-    z-index: 1;
-    position: relative;
-}
+            .section-title {
+                font-size: 1.1rem;
+            }
 
-.uvm-user-avatar {
-    color: #dc143c;
-    font-size: 1.5rem;
-    background: rgba(220, 20, 60, 0.2);
-    padding: 0.5rem;
-    border-radius: 12px;
-    filter: none;
-}
+            .form-control,
+            .form-select {
+                padding: 0.75rem 1rem;
+            }
 
-.uvm-user-name {
-    font-size: 1.75rem;
-    font-weight: 700;
-    text-shadow: none;
-}
+            .btn {
+                padding: 0.75rem 1.5rem;
+                min-width: auto;
+            }
+        }
 
-/* Contenido del modal */
-.user-view-modal-html {
-    padding: 0 !important;
-    margin: 0 !important;
-}
+        /* Estilos para las pestañas */
+        .permission-tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 1.5rem;
+        }
 
-.user-view-modal-content {
-    padding: 1rem;
-    background: white;
-    min-height: 400px;
-}
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+        }
 
-/* Información básica - diseño limpio en 2 filas */
-.uvm-info-grid {
-    margin-bottom: 2.5rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
+        .tab-btn i {
+            margin-right: 0.5rem;
+            font-size: 0.9rem;
+        }
 
-.uvm-info-item {
-    background: white;
-    padding: 1.5rem;
-    border-bottom: 1px solid #f1f3f4;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-radius: 12px;
-    border: 1px solid #f1f3f4;
-    transition: all 0.2s ease;
-}
+        .tab-btn.active {
+            color: #dc143c;
+            border-bottom-color: #dc143c;
+            background: rgba(220, 20, 60, 0.05);
+        }
 
-.uvm-info-item:hover {
-    border-color: rgba(220, 20, 60, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-}
+        .tab-btn:hover:not(.active) {
+            color: #495057;
+            background: rgba(108, 117, 125, 0.05);
+        }
 
-.uvm-info-label {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #2c2c2c;
-    letter-spacing: 0.25px;
-}
+        .tab-content {
+            display: none;
+        }
 
-.uvm-info-label i {
-    background: rgba(220, 20, 60, 0.1);
-    color: #dc143c;
-    padding: 0.5rem;
-    border-radius: 10px;
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
 
-.uvm-info-value {
-    font-size: 0.95rem;
-    color: #2c2c2c;
-    font-weight: 500;
-    word-break: break-word;
-}
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
 
-/* Estados */
-.uvm-status {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-.uvm-status-active {
-    background: rgba(40, 167, 69, 0.15);
-    color: #28a745;
-    border: 1px solid rgba(40, 167, 69, 0.3);
-}
+        /* Estilos para la sección de Rol y Permisos */
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
 
-.uvm-status-inactive {
-    background: rgba(220, 20, 60, 0.15);
-    color: #dc143c;
-    border: 1px solid rgba(220, 20, 60, 0.3);
-}
+        .permission-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
 
-/* Sección de permisos */
-.uvm-permissions-section {
-    margin-top: 2.5rem;
-}
+        .permission-checkbox:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
 
-.uvm-section-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 2rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid #f1f3f4;
-}
+        .permission-checkbox input[type="checkbox"] {
+            margin-right: 0.75rem;
+            width: 18px;
+            height: 18px;
+            accent-color: #dc143c;
+            cursor: pointer;
+        }
 
-.uvm-section-header i {
-    background: rgba(220, 20, 60, 0.1);
-    color: #dc143c;
-    padding: 0.5rem;
-    border-radius: 10px;
-}
+        .permission-checkbox label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #2c2c2c;
+            cursor: pointer;
+            flex: 1;
+        }
 
-.uvm-permissions-container {
-    max-height: 400px;
-    overflow-y: auto;
-    padding-right: 10px;
-    /* Grid en 2 columnas para módulos */
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-}
 
-/* Scrollbar personalizado para el contenedor de permisos */
-.uvm-permissions-container::-webkit-scrollbar {
-    width: 6px;
-}
 
-.uvm-permissions-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-}
 
-.uvm-permissions-container::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-}
 
-.uvm-permissions-container::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
 
-/* Bloques de módulos */
-.uvm-module-block {
-    background: white;
-    border: 2px solid #f1f3f4;
-    border-radius: 16px;
-    margin-bottom: 0;
-    overflow: hidden;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    height: fit-content;
-}
 
-.uvm-module-block:hover {
-    border-color: rgba(220, 20, 60, 0.3);
-    box-shadow: 0 4px 12px rgba(220, 20, 60, 0.08);
-    transform: translateY(-1px);
-}
 
-.uvm-module-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    padding: 1.25rem 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid #f1f3f4;
-    transition: all 0.2s ease;
-}
 
-.uvm-module-header:hover {
-    background: linear-gradient(135deg, rgba(220, 20, 60, 0.05) 0%, rgba(220, 20, 60, 0.08) 100%);
-}
 
-.uvm-module-header:hover .uvm-module-name {
-    color: #dc143c;
-}
 
-.uvm-module-header:hover .uvm-module-icon {
-    color: #dc143c;
-    background: rgba(220, 20, 60, 0.15);
-    transform: scale(1.05);
-}
 
-.uvm-module-icon {
-    background: rgba(220, 20, 60, 0.1);
-    color: #dc143c;
-    padding: 0.5rem;
-    border-radius: 10px;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-}
 
-.uvm-module-name {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #2c2c2c;
-    flex-grow: 1;
-    text-transform: capitalize;
-    margin-left: 0.75rem;
-    transition: all 0.2s ease;
-}
 
-.uvm-permissions-count {
-    background: #dc143c;
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    min-width: 24px;
-    text-align: center;
-    transition: all 0.2s ease;
-}
 
-/* Permisos en 3 columnas */
-.uvm-module-permissions {
-    padding: 1.25rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.75rem;
-}
+        /* ===== MODAL DE VISUALIZACIÓN DE USUARIO ===== */
+        /* Contenedor principal del modal */
+        .user-view-modal-popup {
+            border-radius: 24px !important;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.25) !important;
+            border: none !important;
+            overflow: hidden !important;
+        }
 
-.uvm-permission-item {
-    background: #fafbfc;
-    border: 1px solid #e9ecef;
-    padding: 0.6rem 0.8rem;
-    border-radius: 10px;
-    font-size: 0.85rem;
-    color: #2c2c2c;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.15s ease;
-    font-weight: 500;
-    text-align: center;
-    justify-content: center;
-}
+        /* Título del modal */
+        .user-view-modal-title {
+            background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%) !important;
+            color: white !important;
+            padding: 1rem 2rem !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            font-size: 1.75rem !important;
+            font-weight: 900 !important;
+            border-bottom: 2px solid #dc143c !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
 
-.uvm-permission-item:hover {
-    background: rgba(220, 20, 60, 0.05);
-    color: #dc143c;
-    border-color: rgba(220, 20, 60, 0.2);
-    transform: scale(1.02);
-}
+        .user-view-modal-title::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 0%, rgba(220, 20, 60, 0.05) 50%, transparent 100%);
+            animation: shimmer 6s ease-in-out infinite;
+        }
 
-.uvm-permission-item i {
-    font-size: 0.75em;
-    color: #28a745;
-    transition: all 0.15s ease;
-}
+        @keyframes shimmer {
 
-.uvm-permission-item:hover i {
-    color: #dc143c;
-}
+            0%,
+            100% {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
 
-/* Sin permisos */
-.uvm-no-permissions {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 12px;
-    padding: 30px;
-    text-align: center;
-    color: #856404;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    grid-column: 1 / -1;
-}
+            50% {
+                transform: translateX(100%);
+                opacity: 1;
+            }
+        }
 
-.uvm-no-permissions i {
-    font-size: 1.5em;
-    color: #f39c12;
-}
+        .uvm-title-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
+            z-index: 1;
+            position: relative;
+        }
 
-/* Botón de cerrar */
-.user-view-modal-button {
-    background: rgba(220, 20, 60, 0.15) !important;
-    border: 2px solid #dc143c !important;
-    color: #dc143c !important;
-    padding: 12px 25px !important;
-    font-weight: 600 !important;
-    border-radius: 50px !important;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-}
+        .uvm-user-avatar {
+            color: #dc143c;
+            font-size: 1.5rem;
+            background: rgba(220, 20, 60, 0.2);
+            padding: 0.5rem;
+            border-radius: 12px;
+            filter: none;
+        }
 
-.user-view-modal-button:hover {
-    background: #dc143c !important;
-    color: white !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(220, 20, 60, 0.3) !important;
-}
+        .uvm-user-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            text-shadow: none;
+        }
 
-/* Animaciones más sutiles */
-@keyframes uvmSlideInUp {
-    from {
-        opacity: 0;
-        transform: translate3d(0, 20px, 0);
-    }
-    to {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-    }
-}
+        /* Contenido del modal */
+        .user-view-modal-html {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
 
-@keyframes uvmSlideOutDown {
-    from {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-    }
-    to {
-        opacity: 0;
-        transform: translate3d(0, 20px, 0);
-    }
-}
+        .user-view-modal-content {
+            padding: 1rem;
+            background: white;
+            min-height: 400px;
+        }
 
-.uvm-animate-in {
-    animation: uvmSlideInUp 0.3s ease-out;
-}
+        /* Información básica - diseño limpio en 2 filas */
+        .uvm-info-grid {
+            margin-bottom: 2.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
 
-.uvm-animate-out {
-    animation: uvmSlideOutDown 0.2s ease-in;
-}
+        .uvm-info-item {
+            background: white;
+            padding: 1.5rem;
+            border-bottom: 1px solid #f1f3f4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 12px;
+            border: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+        }
 
-/* Responsive */
-@media (max-width: 1024px) {
-    .uvm-permissions-container {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
+        .uvm-info-item:hover {
+            border-color: rgba(220, 20, 60, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
 
-    .uvm-module-permissions {
-        grid-template-columns: 1fr 1fr;
-    }
-}
+        .uvm-info-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2c2c2c;
+            letter-spacing: 0.25px;
+        }
 
-@media (max-width: 768px) {
-    .user-view-modal-popup {
-        width: 95% !important;
-        margin: 10px !important;
-    }
+        .uvm-info-label i {
+            background: rgba(220, 20, 60, 0.1);
+            color: #dc143c;
+            padding: 0.5rem;
+            border-radius: 10px;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    .user-view-modal-content {
-        padding: 20px;
-    }
+        .uvm-info-value {
+            font-size: 0.95rem;
+            color: #2c2c2c;
+            font-weight: 500;
+            word-break: break-word;
+        }
 
-    .uvm-info-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
+        /* Estados */
+        .uvm-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-    .uvm-title-section {
-        flex-direction: column;
-        gap: 10px;
-    }
+        .uvm-status-active {
+            background: rgba(40, 167, 69, 0.15);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
 
-    .uvm-user-avatar {
-        font-size: 2em;
-    }
+        .uvm-status-inactive {
+            background: rgba(220, 20, 60, 0.15);
+            color: #dc143c;
+            border: 1px solid rgba(220, 20, 60, 0.3);
+        }
 
-    .uvm-permissions-container {
-        max-height: 300px;
-        grid-template-columns: 1fr;
-    }
+        /* Sección de permisos */
+        .uvm-permissions-section {
+            margin-top: 2.5rem;
+        }
 
-    .uvm-module-permissions {
-        padding: 15px;
-        grid-template-columns: 1fr 1fr;
-    }
-}
+        .uvm-section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 2rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f1f3f4;
+        }
 
-@media (max-width: 480px) {
-    .uvm-module-header {
-        padding: 12px 15px;
-        flex-wrap: wrap;
-    }
+        .uvm-section-header i {
+            background: rgba(220, 20, 60, 0.1);
+            color: #dc143c;
+            padding: 0.5rem;
+            border-radius: 10px;
+        }
 
-    .uvm-permission-item {
-        font-size: 0.8em;
-        padding: 6px 10px;
-    }
+        .uvm-permissions-container {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+            /* Grid en 2 columnas para módulos */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
 
-    .uvm-info-item {
-        padding: 15px;
-    }
+        /* Scrollbar personalizado para el contenedor de permisos */
+        .uvm-permissions-container::-webkit-scrollbar {
+            width: 6px;
+        }
 
-    .uvm-module-permissions {
-        grid-template-columns: 1fr;
-    }
-}
+        .uvm-permissions-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .uvm-permissions-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .uvm-permissions-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Bloques de módulos */
+        .uvm-module-block {
+            background: white;
+            border: 2px solid #f1f3f4;
+            border-radius: 16px;
+            margin-bottom: 0;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            height: fit-content;
+        }
+
+        .uvm-module-block:hover {
+            border-color: rgba(220, 20, 60, 0.3);
+            box-shadow: 0 4px 12px rgba(220, 20, 60, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .uvm-module-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+        }
+
+        .uvm-module-header:hover {
+            background: linear-gradient(135deg, rgba(220, 20, 60, 0.05) 0%, rgba(220, 20, 60, 0.08) 100%);
+        }
+
+        .uvm-module-header:hover .uvm-module-name {
+            color: #dc143c;
+        }
+
+        .uvm-module-header:hover .uvm-module-icon {
+            color: #dc143c;
+            background: rgba(220, 20, 60, 0.15);
+            transform: scale(1.05);
+        }
+
+        .uvm-module-icon {
+            background: rgba(220, 20, 60, 0.1);
+            color: #dc143c;
+            padding: 0.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .uvm-module-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c2c2c;
+            flex-grow: 1;
+            text-transform: capitalize;
+            margin-left: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .uvm-permissions-count {
+            background: #dc143c;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        /* Permisos en 3 columnas */
+        .uvm-module-permissions {
+            padding: 1.25rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .uvm-permission-item {
+            background: #fafbfc;
+            border: 1px solid #e9ecef;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: #2c2c2c;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+            font-weight: 500;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .uvm-permission-item:hover {
+            background: rgba(220, 20, 60, 0.05);
+            color: #dc143c;
+            border-color: rgba(220, 20, 60, 0.2);
+            transform: scale(1.02);
+        }
+
+        .uvm-permission-item i {
+            font-size: 0.75em;
+            color: #28a745;
+            transition: all 0.15s ease;
+        }
+
+        .uvm-permission-item:hover i {
+            color: #dc143c;
+        }
+
+        /* Sin permisos */
+        .uvm-no-permissions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            color: #856404;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            grid-column: 1 / -1;
+        }
+
+        .uvm-no-permissions i {
+            font-size: 1.5em;
+            color: #f39c12;
+        }
+
+        /* Botón de cerrar */
+        .user-view-modal-button {
+            background: rgba(220, 20, 60, 0.15) !important;
+            border: 2px solid #dc143c !important;
+            color: #dc143c !important;
+            padding: 12px 25px !important;
+            font-weight: 600 !important;
+            border-radius: 50px !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+
+        .user-view-modal-button:hover {
+            background: #dc143c !important;
+            color: white !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(220, 20, 60, 0.3) !important;
+        }
+
+        /* Animaciones más sutiles */
+        @keyframes uvmSlideInUp {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 20px, 0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        @keyframes uvmSlideOutDown {
+            from {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translate3d(0, 20px, 0);
+            }
+        }
+
+        .uvm-animate-in {
+            animation: uvmSlideInUp 0.3s ease-out;
+        }
+
+        .uvm-animate-out {
+            animation: uvmSlideOutDown 0.2s ease-in;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .uvm-permissions-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .uvm-module-permissions {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .user-view-modal-popup {
+                width: 95% !important;
+                margin: 10px !important;
+            }
+
+            .user-view-modal-content {
+                padding: 20px;
+            }
+
+            .uvm-info-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .uvm-title-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .uvm-user-avatar {
+                font-size: 2em;
+            }
+
+            .uvm-permissions-container {
+                max-height: 300px;
+                grid-template-columns: 1fr;
+            }
+
+            .uvm-module-permissions {
+                padding: 15px;
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .uvm-module-header {
+                padding: 12px 15px;
+                flex-wrap: wrap;
+            }
+
+            .uvm-permission-item {
+                font-size: 0.8em;
+                padding: 6px 10px;
+            }
+
+            .uvm-info-item {
+                padding: 15px;
+            }
+
+            .uvm-module-permissions {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -1515,8 +1759,6 @@
             </div>
         </div>
     </div>
-
-
     </div>
 
     <!-- Modal Nuevo Usuario -->
@@ -1528,32 +1770,34 @@
             </div>
             <div class="modal-body">
                 <form id="permissionsForm">
-                    <!-- Sección de datos del usuario -->
+                    <!-- Sección de datos del usuario - Nueva disposición de 3 campos por fila -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <h4 class="section-title"><i class="fas fa-user me-2"></i>Datos del Usuario</h4>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="name" class="form-label">Nombre Completo</label>
                             <input type="text" class="form-control" id="name" name="name"
-                                placeholder="Ingrese el nombre completo" required>
+                                placeholder="Ingrese el nombre completo" required autocomplete="off">
+                            <input type="hidden" id="employee_id" name="employee_id">
+                            <div id="employeeSuggestions" class="suggestions-dropdown" style="display: none;"></div>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="username" class="form-label">Nombre de Usuario</label>
                             <input type="text" class="form-control" id="username" name="username"
                                 placeholder="Ingrese el nombre de usuario" required>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Correo Electrónico</label>
-                            <input type="email" class="form-control" id="email" name="email"
-                                placeholder="ejemplo@correo.com" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="password" class="form-label">Contraseña</label>
                             <input type="password" class="form-control" id="password" name="password"
                                 placeholder="Ingrese una contraseña segura" required>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="email" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                placeholder="ejemplo@correo.com" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label for="status" class="form-label">Estado</label>
                             <select class="form-select" id="status" name="status" required>
                                 <option value="" selected disabled>Seleccione un estado</option>
@@ -1563,251 +1807,295 @@
                         </div>
                     </div>
 
-                    <!-- Sección de permisos -->
-                    <div class="row">
-                        <div class="col-12">
-                            <h4 class="section-title"><i class="fas fa-key me-2"></i>Configuración de Permisos</h4>
-                            <p class="text-muted mb-4">Seleccione las áreas y módulos a los que el usuario tendrá
-                                acceso. Haga clic en cada módulo para expandir sus opciones.</p>
-                        </div>
 
-                        <!-- Módulo Administración -->
+                    <!-- Dentro del modal-body, después de la sección de Datos del Usuario -->
+                    <div class="row mb-3">
                         <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('administracion-body')">
-                                    <h5 class="module-title"><i class="fas fa-cogs me-2"></i>Administración</h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="administracion">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="administracion-body">
-                                    <div class="permission-item">
-                                        <span>Configuración general</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[administracion][config]">
+                            <div class="permission-tabs">
+                                <button class="tab-btn active" data-tab="module-permissions">
+                                    <i class="fas fa-cubes me-2"></i>Configuración de Permisos
+                                </button>
+                                <button class="tab-btn" data-tab="role-permissions">
+                                    <i class="fas fa-user-tag me-2"></i>Rol y Permisos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contenido de Configuración de Permisos (tu sección actual) -->
+                    <div id="module-permissions" class="tab-content active">
+                        <!-- Todo tu contenido actual de Configuración de Permisos aquí -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h4 class="section-title"><i class="fas fa-key me-2"></i>Configuración de Permisos
+                                </h4>
+                                <p class="text-muted mb-4">Seleccione los módulos a los que el usuario tendrá acceso.
+                                </p>
+                            </div>
+
+                            <!-- Columna 1 -->
+                            <div class="col-md-6">
+                                <!-- Módulo Administración -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('administracion-body')">
+                                        <h5 class="module-title"><i class="fas fa-cogs me-2"></i>Administración</h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle"
+                                                data-module="administracion">
                                             <span class="slider"></span>
                                         </label>
+                                    </div>
+                                    <div class="module-body" id="administracion-body">
+                                        <div class="permission-item">
+                                            <span>Configuración general</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[administracion][config]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Módulo QHSE -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('qhse-body')">
+                                        <h5 class="module-title"><i class="fas fa-shield-alt me-2"></i>QHSE</h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle" data-module="qhse">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="module-body" id="qhse-body">
+                                        <div class="permission-item">
+                                            <span>VESCAP</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[qhse][vescap]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="permission-item">
+                                            <span>Incidencias</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[qhse][incidencias]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="permission-item">
+                                            <span>Auditorías</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[qhse][auditorias]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Módulo Ventas -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('ventas-body')">
+                                        <h5 class="module-title"><i class="fas fa-chart-line me-2"></i>Ventas</h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle" data-module="ventas">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="module-body" id="ventas-body">
+                                        <div class="permission-item">
+                                            <span>Clientes</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[ventas][clientes]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="permission-item">
+                                            <span>Cotizaciones</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[ventas][cotizaciones]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="permission-item">
+                                            <span>Oportunidades</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[ventas][oportunidades]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- Módulo Recursos Humanos -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('recursoshumanos-body')">
+                                        <h5 class="module-title"><i class="fas fa-users me-2"></i>Recursos Humanos
+                                        </h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle"
+                                                data-module="recursoshumanos">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="module-body" id="recursoshumanos-body">
+                                        <div class="permission-item">
+                                            <span>Altas de empleados</span>
+                                            <label class="switch">
+                                                <input type="checkbox"
+                                                    name="permissions[recursoshumanos][altasempleados]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="permission-item">
+                                            <span>L&O Chart</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[recursoshumanos][loadchart]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Módulo Sistemas -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('sistemas-body')">
+                                        <h5 class="module-title"><i class="fas fa-laptop-code me-2"></i>Sistemas</h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle" data-module="sistemas">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="module-body" id="sistemas-body">
+                                        <div class="permission-item">
+                                            <span>Gestión de roles</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[sistemas][gestionderoles]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Columna 2 -->
+                            <div class="col-md-6">
+                                <!-- Módulo Suministro -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('suministro-body')">
+                                        <h5 class="module-title"><i class="fas fa-truck me-2"></i>Suministro</h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle" data-module="suministro">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="module-body" id="suministro-body">
+                                        <div class="permission-item">
+                                            <span>Pedidos</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[suministro][pedidos]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Módulo Operaciones -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('operaciones-body')">
+                                        <h5 class="module-title"><i class="fas fa-cog me-2"></i>Operaciones</h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle" data-module="operaciones">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="module-body" id="operaciones-body">
+                                        <div class="permission-item">
+                                            <span>Procesos</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[operaciones][procesos]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Módulo Almacén -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('almacen-body')">
+                                        <h5 class="module-title"><i class="fas fa-warehouse me-2"></i>Almacén</h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle" data-module="almacen">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="module-body" id="almacen-body">
+                                        <div class="permission-item">
+                                            <span>Inventario</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[almacen][inventario]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Módulo Geociencias -->
+                                <div class="module-area compact">
+                                    <div class="module-header" onclick="toggleModule('geociencias-body')">
+                                        <h5 class="module-title"><i class="fas fa-globe-americas me-2"></i>Geociencias
+                                        </h5>
+                                        <label class="switch" onclick="event.stopPropagation()">
+                                            <input type="checkbox" class="module-toggle" data-module="geociencias">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="module-body" id="geociencias-body">
+                                        <div class="permission-item">
+                                            <span>Exploraciones</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[geociencias][exploraciones]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="permission-item">
+                                            <span>Análisis</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[geociencias][analisis]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Módulo QHSE -->
-                        <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('qhse-body')">
-                                    <h5 class="module-title"><i class="fas fa-shield-alt me-2"></i>QHSE</h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="qhse">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="qhse-body">
-                                    <div class="permission-item">
-                                        <span>VESCAP</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[qhse][vescap]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="permission-item">
-                                        <span>Incidencias</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[qhse][incidencias]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="permission-item">
-                                        <span>Auditorías</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[qhse][auditorias]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    </div>
 
-                        <!-- Módulo Recursos Humanos -->
-                        <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('recursoshumanos-body')">
-                                    <h5 class="module-title"><i class="fas fa-users me-2"></i>Recursos Humanos</h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="recursoshumanos">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="recursoshumanos-body">
-                                    <div class="permission-item">
-                                        <span>Altas de empleados</span>
-                                        <label class="switch">
-                                            <input type="checkbox"
-                                                name="permissions[recursoshumanos][altasempleados]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="permission-item">
-                                        <span>L&O Chart</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[recursoshumanos][loandchart]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
+                    <!-- Nueva sección de Rol y Permisos -->
+                    <div id="role-permissions" class="tab-content">
+                        <div class="row">
+                            <div class="col-12">
+                                <h4 class="section-title"><i class="fas fa-user-tag me-2"></i>Rol y Permisos</h4>
+                                <p class="text-muted mb-4">Asigne un rol y defina los permisos específicos para este
+                                    usuario.</p>
                             </div>
-                        </div>
 
-                        <!-- Módulo Sistemas -->
-                        <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('sistemas-body')">
-                                    <h5 class="module-title"><i class="fas fa-laptop-code me-2"></i>Sistemas</h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="sistemas">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="sistemas-body">
-                                    <div class="permission-item">
-                                        <span>Gestión de roles</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[sistemas][gestionderoles]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="user_role" class="form-label">Rol del Usuario</label>
+                                <select class="form-select" id="user_role" name="user_role">
+                                    <option value="" selected disabled>Seleccione un rol</option>
+                                    <!-- Las opciones se llenarán dinámicamente con JavaScript -->
+                                </select>
                             </div>
-                        </div>
 
-                        <!-- Módulo Ventas -->
-                        <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('ventas-body')">
-                                    <h5 class="module-title"><i class="fas fa-chart-line me-2"></i>Ventas</h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="ventas">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="ventas-body">
-                                    <div class="permission-item">
-                                        <span>Clientes</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[ventas][clientes]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="permission-item">
-                                        <span>Cotizaciones</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[ventas][cotizaciones]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="permission-item">
-                                        <span>Oportunidades</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[ventas][oportunidades]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Módulo Suministro -->
-                        <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('suministro-body')">
-                                    <h5 class="module-title"><i class="fas fa-truck me-2"></i>Suministro</h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="suministro">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="suministro-body">
-                                    <div class="permission-item">
-                                        <span>Pedidos</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[suministro][pedidos]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Módulo Operaciones -->
-                        <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('operaciones-body')">
-                                    <h5 class="module-title"><i class="fas fa-cog me-2"></i>Operaciones</h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="operaciones">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="operaciones-body">
-                                    <div class="permission-item">
-                                        <span>Procesos</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[operaciones][procesos]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Módulo Almacén -->
-                        <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('almacen-body')">
-                                    <h5 class="module-title"><i class="fas fa-warehouse me-2"></i>Almacén</h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="almacen">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="almacen-body">
-                                    <div class="permission-item">
-                                        <span>Inventario</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[almacen][inventario]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Módulo Geociencias -->
-                        <div class="col-12">
-                            <div class="module-area">
-                                <div class="module-header" onclick="toggleModule('geociencias-body')">
-                                    <h5 class="module-title"><i class="fas fa-globe-americas me-2"></i>Geociencias
-                                    </h5>
-                                    <label class="switch" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="geociencias">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <div class="module-body" id="geociencias-body">
-                                    <div class="permission-item">
-                                        <span>Exploraciones</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[geociencias][exploraciones]">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="permission-item">
-                                        <span>Análisis</span>
-                                        <label class="switch">
-                                            <input type="checkbox" name="permissions[geociencias][analisis]">
-                                            <span class="slider"></span>
-                                        </label>
+                            <!-- Reemplaza la sección de permisos del rol con esto: -->
+                            <div class="col-12">
+                                <h5 class="subsection-title"><i class="fas fa-key me-2"></i>Permisos Directos</h5>
+                                <div class="permissions-grid" id="directPermissionsContainer">
+                                    <!-- Los permisos se cargarán dinámicamente aquí -->
+                                    <div class="text-center py-3">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando permisos...</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1880,6 +2168,204 @@
                 });
             }
         }
+
+        // Función para cargar roles desde el backend
+        async function loadRoles() {
+            try {
+                const response = await fetch('/sistemas/roles/get-roles', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                            'content')
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar los roles');
+                }
+
+                const data = await response.json();
+                if (data.success && data.roles) {
+                    const roleSelect = document.getElementById('user_role');
+                    roleSelect.innerHTML = '<option value="" selected disabled>Seleccione un rol</option>';
+
+                    for (const [id, name] of Object.entries(data.roles)) {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = name;
+                        roleSelect.appendChild(option);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar roles:', error);
+            }
+        }
+
+        // Agrega esta función para cargar los permisos
+        async function loadPermissions() {
+            try {
+                const response = await fetch('/sistemas/roles/get-permissions', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                            'content')
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar los permisos');
+                }
+
+                const data = await response.json();
+                if (data.success && data.permissions) {
+                    renderPermissions(data.permissions);
+                }
+            } catch (error) {
+                console.error('Error al cargar permisos:', error);
+                document.getElementById('directPermissionsContainer').innerHTML = `
+            <div class="alert alert-danger">
+                Error al cargar los permisos. Intente recargar la página.
+            </div>
+        `;
+            }
+        }
+
+        // Función para renderizar los permisos
+        function renderPermissions(permissions) {
+            const container = document.getElementById('directPermissionsContainer');
+            container.innerHTML = '';
+
+            if (permissions.length === 0) {
+                container.innerHTML = '<p class="text-muted">No hay permisos disponibles</p>';
+                return;
+            }
+
+            permissions.forEach(permission => {
+                const permId = `direct_perm_${permission.id}`;
+                const permElement = document.createElement('div');
+                permElement.className = 'permission-checkbox';
+                permElement.innerHTML = `
+            <input type="checkbox" id="${permId}" name="direct_permissions[]"
+                   value="${permission.id}" data-name="${permission.name}">
+            <label for="${permId}" title="${permission.description || 'Sin descripción'}">
+                ${permission.display_name}
+            </label>
+        `;
+                container.appendChild(permElement);
+            });
+        }
+
+
+        // Función para buscar empleados
+        async function searchEmployees(query) {
+            try {
+                const response = await fetch(`/sistemas/roles/search-employees?query=${encodeURIComponent(query)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                            'content')
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error en la búsqueda de empleados');
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return [];
+            }
+        }
+
+        // Función para mostrar sugerencias
+        function showSuggestions(suggestions) {
+            const dropdown = document.getElementById('employeeSuggestions');
+            dropdown.innerHTML = '';
+
+            if (suggestions.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            suggestions.forEach(employee => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.textContent = employee.full_name;
+                item.dataset.id = employee.id;
+
+                item.addEventListener('click', () => {
+                    document.getElementById('name').value = employee.full_name;
+                    document.getElementById('employee_id').value = employee.id;
+                    dropdown.style.display = 'none';
+                });
+
+                dropdown.appendChild(item);
+            });
+
+            dropdown.style.display = 'block';
+        }
+
+        // Event listener para el input de búsqueda
+        document.getElementById('name').addEventListener('input', async function(e) {
+            const query = e.target.value.trim();
+            const dropdown = document.getElementById('employeeSuggestions');
+
+            if (query.length < 2) {
+                dropdown.style.display = 'none';
+                document.getElementById('employee_id').value = '';
+                return;
+            }
+
+            const employees = await searchEmployees(query);
+            showSuggestions(employees);
+        });
+
+        // Manejar navegación con teclado
+        document.getElementById('name').addEventListener('keydown', function(e) {
+            const dropdown = document.getElementById('employeeSuggestions');
+            if (dropdown.style.display === 'none') return;
+
+            const items = dropdown.querySelectorAll('.suggestion-item');
+            if (items.length === 0) return;
+
+            let currentIndex = -1;
+            items.forEach((item, index) => {
+                if (item.classList.contains('highlighted')) {
+                    currentIndex = index;
+                    item.classList.remove('highlighted');
+                }
+            });
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextIndex = (currentIndex + 1) % items.length;
+                items[nextIndex].classList.add('highlighted');
+                items[nextIndex].scrollIntoView({
+                    block: 'nearest'
+                });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevIndex = (currentIndex - 1 + items.length) % items.length;
+                items[prevIndex].classList.add('highlighted');
+                items[prevIndex].scrollIntoView({
+                    block: 'nearest'
+                });
+            } else if (e.key === 'Enter' && currentIndex >= 0) {
+                e.preventDefault();
+                items[currentIndex].click();
+            }
+        });
+
+        // Ocultar dropdown al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#name') && !e.target.closest('#employeeSuggestions')) {
+                document.getElementById('employeeSuggestions').style.display = 'none';
+            }
+        });
 
         // Función para obtener clase CSS de módulo
         function getModuleClass(module) {
@@ -2047,27 +2533,27 @@
             document.getElementById('lastPage').disabled = currentPage === totalPages;
         }
 
- function viewUser(userId) {
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
+        function viewUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
 
-    const detailedPermissions = formatDetailedPermissions(user.permissions?.permissions || {});
+            const detailedPermissions = formatDetailedPermissions(user.permissions?.permissions || {});
 
-    let permissionsHtml = '';
-    if (detailedPermissions.length > 0) {
-        // Agrupar permisos por módulo para mejor visualización
-        const groupedPermissions = {};
-        detailedPermissions.forEach(perm => {
-            if (!groupedPermissions[perm.module]) {
-                groupedPermissions[perm.module] = [];
-            }
-            groupedPermissions[perm.module].push(perm.permission);
-        });
+            let permissionsHtml = '';
+            if (detailedPermissions.length > 0) {
+                // Agrupar permisos por módulo para mejor visualización
+                const groupedPermissions = {};
+                detailedPermissions.forEach(perm => {
+                    if (!groupedPermissions[perm.module]) {
+                        groupedPermissions[perm.module] = [];
+                    }
+                    groupedPermissions[perm.module].push(perm.permission);
+                });
 
-        // Aleatorizar también el orden de los módulos agrupados
-        const moduleEntries = shuffleArray(Object.entries(groupedPermissions));
+                // Aleatorizar también el orden de los módulos agrupados
+                const moduleEntries = shuffleArray(Object.entries(groupedPermissions));
 
-        permissionsHtml = moduleEntries.map(([module, permissions]) => `
+                permissionsHtml = moduleEntries.map(([module, permissions]) => `
             <div class="uvm-module-block">
                 <div class="uvm-module-header">
                     <i class="uvm-module-icon fas fa-folder"></i>
@@ -2077,32 +2563,32 @@
                 <div class="uvm-module-permissions">
                     ${shuffleArray(permissions).map(permission =>
                         `<span class="uvm-permission-item">
-                            <i class="fas fa-check-circle"></i>
-                            ${permission}
-                        </span>`
+                                                                        <i class="fas fa-check-circle"></i>
+                                                                        ${permission}
+                                                                    </span>`
                     ).join('')}
                 </div>
             </div>
         `).join('');
-    } else {
-        permissionsHtml = `
+            } else {
+                permissionsHtml = `
             <div class="uvm-no-permissions">
                 <i class="fas fa-exclamation-triangle"></i>
                 <span>Sin permisos asignados</span>
             </div>
         `;
-    }
+            }
 
-    // Determinar el icono de estado
-    const statusIcon = user.status === 'active' ? 'fas fa-check-circle' : 'fas fa-times-circle';
-    const statusText = user.status === 'active' ? 'Activo' : 'Inactivo';
+            // Determinar el icono de estado
+            const statusIcon = user.status === 'active' ? 'fas fa-check-circle' : 'fas fa-times-circle';
+            const statusText = user.status === 'active' ? 'Activo' : 'Inactivo';
 
-    Swal.fire({
-        title: `<div class="uvm-title-section">
+            Swal.fire({
+                title: `<div class="uvm-title-section">
                     <i class="fas fa-user-circle uvm-user-avatar"></i>
                     <span class="uvm-user-name">${user.name}</span>
                 </div>`,
-        html: `
+                html: `
         <div class="user-view-modal-content">
             <div class="uvm-info-grid">
                 <div class="uvm-info-item">
@@ -2151,28 +2637,28 @@
             </div>
         </div>
         `,
-        width: 1200,
-        confirmButtonText: '<i class="fas fa-times"></i> Cerrar',
-        confirmButtonColor: '#6c757d',
-        customClass: {
-            popup: 'user-view-modal-popup',
-            title: 'user-view-modal-title',
-            htmlContainer: 'user-view-modal-html',
-            confirmButton: 'user-view-modal-button'
-        },
-        showClass: {
-            popup: 'uvm-animate-in'
-        },
-        hideClass: {
-            popup: 'uvm-animate-out'
+                width: 1200,
+                confirmButtonText: '<i class="fas fa-times"></i> Cerrar',
+                confirmButtonColor: '#6c757d',
+                customClass: {
+                    popup: 'user-view-modal-popup',
+                    title: 'user-view-modal-title',
+                    htmlContainer: 'user-view-modal-html',
+                    confirmButton: 'user-view-modal-button'
+                },
+                showClass: {
+                    popup: 'uvm-animate-in'
+                },
+                hideClass: {
+                    popup: 'uvm-animate-out'
+                }
+            });
         }
-    });
-}
 
+        // Modificar la función editUser para cargar el rol del usuario
         function editUser(userId) {
             const user = users.find(u => u.id === userId);
             if (!user) return;
-
             editingUserId = userId;
 
             // Cambiar el título del modal
@@ -2183,9 +2669,30 @@
             document.getElementById('name').value = user.name || '';
             document.getElementById('username').value = user.username || '';
             document.getElementById('email').value = user.email || '';
-            document.getElementById('password').value = ''; // Dejar vacío para no cambiar
+            document.getElementById('password').value = '';
+            document.getElementById('password').removeAttribute('required');
             document.getElementById('password').placeholder = 'Dejar vacío para mantener contraseña actual';
             document.getElementById('status').value = user.status || 'inactive';
+            document.getElementById('employee_id').value = user.employee_id || '';
+
+            // Establecer el rol del usuario
+            if (user.role_id) {
+                document.getElementById('user_role').value = user.role_id;
+            }
+
+            // Cargar permisos directos del usuario
+            if (user.direct_permissions && user.direct_permissions.length > 0) {
+                // Esperar a que se carguen los permisos antes de marcar los checkboxes
+                setTimeout(() => {
+                    user.direct_permissions.forEach(perm => {
+                        const checkbox = document.querySelector(
+                            `input[name="direct_permissions[]"][value="${perm.id}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    });
+                }, 300);
+            }
 
             // Limpiar permisos previos
             document.querySelectorAll('.module-toggle').forEach(toggle => {
@@ -2295,6 +2802,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Cargar usuarios al inicializar
             loadUsers();
+            loadRoles();
+    loadPermissions(); // <-- Agrega esta línea
+
 
             // Event listeners para paginación
             document.getElementById('itemsPerPage').addEventListener('change', function() {
@@ -2579,7 +3089,13 @@
                         username: $('#username').val(),
                         email: $('#email').val(),
                         status: $('#status').val(),
-                        permissions: {}
+                        employee_id: $('#employee_id').val(),
+                        role_id: $('#user_role').val(),
+                        permissions: {},
+                        direct_permissions: $('input[name="direct_permissions[]"]:checked').map(
+                            function() {
+                                return $(this).val();
+                            }).get()
                     };
 
                     const passwordValue = $('#password').val();
@@ -2690,6 +3206,23 @@
                 });
             });
         }
+
+        // Manejar cambio de pestañas
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault(); // Esto previene el envío del formulario
+
+                // Remover active de todos los botones y contenidos
+                document.querySelectorAll('.tab-btn, .tab-content').forEach(el => {
+                    el.classList.remove('active');
+                });
+
+                // Activar la pestaña clickeada
+                this.classList.add('active');
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
     </script>
 
 </body>

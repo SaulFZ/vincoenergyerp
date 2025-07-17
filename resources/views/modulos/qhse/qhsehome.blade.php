@@ -14,7 +14,7 @@
 </div>
 
 <div class="grid">
-    <div class="card" id="card-vescap" data-area="qhse" data-route="/vescap">
+    <div class="card" id="card-vescap" data-area="qhse" data-route="/qhse/vescap">
         <img src="{{ asset('assets/img/qhse/vescap.png') }}" alt="VESCAP" class="card-image">
         <div class="card-content">
             <h3 class="card-title">
@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <div class="card" id="card-incidencias" data-area="qhse" data-route="/incidencias">
+    <div class="card" id="card-incidencias" data-area="qhse" data-route="/qhse/incidencias">
         <img src="{{ asset('assets/img/qhse/incidencia.png') }}" alt="Gestión de Incidencias QHSE" class="card-image">
         <div class="card-content">
             <h3 class="card-title">

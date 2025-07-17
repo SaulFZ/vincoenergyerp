@@ -2,8 +2,8 @@
 
 namespace App\Models\Sistemas;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Auth\User;
+use Illuminate\Database\Eloquent\Model;
 
 class UserPermission extends Model
 {
@@ -19,10 +19,7 @@ class UserPermission extends Model
      *
      * @var array
      */
-    protected $fillable = [
-        'user_id',
-        'permissions',
-    ];
+    protected $fillable = ['user_id', 'permissions'];
 
     /**
      * Los atributos que deben convertirse a tipos nativos.
@@ -30,7 +27,7 @@ class UserPermission extends Model
      * @var array
      */
     protected $casts = [
-        'permissions' => 'json', // Convierte automáticamente JSON a/desde array
+        'permissions' => 'json',  // Convierte automáticamente JSON a/desde array
     ];
 
     /**
@@ -61,7 +58,8 @@ class UserPermission extends Model
 
         // Verifica si el módulo existe y si contiene el permiso específico
         return isset($permissions[$module]) &&
-               (in_array($permission, $permissions[$module]) || empty($permissions[$module]));
+            (in_array($permission, $permissions[$module]) ||
+                empty($permissions[$module]));
     }
 
     /**
