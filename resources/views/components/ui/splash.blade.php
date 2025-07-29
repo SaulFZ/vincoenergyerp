@@ -88,8 +88,6 @@
             height: auto;
         }
 
-
-
         .loading-container {
             display: flex;
             flex-direction: column;
@@ -192,7 +190,6 @@
                 <img class="logo" src="{{ asset('assets/img/logovinco1.png') }}" alt="Logo Vinco" />
             </div>
 
-
             <div class="loading-container">
                 <div class="loading-bar">
                     <div class="loading-progress"></div>
@@ -209,8 +206,8 @@
 
     <script>
         $(document).ready(function() {
-            // Obtener datos del usuario de la sesión
-            var userName = "{{ session('auth_user')['name'] ?? 'Usuario' }}";
+            // Obtener datos del usuario autenticado
+            var userName = "{{ Auth::check() ? Auth::user()->name : 'Usuario' }}";
 
             // Actualizar el mensaje de bienvenida con el nombre del usuario
             setTimeout(function() {

@@ -1,4 +1,92 @@
 document.addEventListener('DOMContentLoaded', function() {
+
+
+ const quincenaModal = document.getElementById('quincena-modal');
+    const openBtn = document.getElementById('days-quincena');
+    const closeBtn = quincenaModal.querySelector('.quincena-close-btn');
+    const cancelBtn = quincenaModal.querySelector('.quincena-cancel-btn');
+    const prevMonthBtn = quincenaModal.querySelector('.quincena-prev-month');
+    const nextMonthBtn = quincenaModal.querySelector('.quincena-next-month');
+    const monthTitle = quincenaModal.querySelector('.quincena-month-title');
+    const calendarGrid = quincenaModal.querySelector('.quincena-calendar-grid');
+
+    let currentDate = new Date();
+
+    // Abrir modal
+    if(openBtn) {
+        openBtn.addEventListener('click', function() {
+            quincenaModal.style.display = 'flex';
+            renderQuincenaCalendar(currentDate);
+        });
+    }
+
+    // Cerrar modal
+    function closeQuincenaModal() {
+        quincenaModal.style.display = 'none';
+    }
+
+    if(closeBtn) closeBtn.addEventListener('click', closeQuincenaModal);
+    if(cancelBtn) cancelBtn.addEventListener('click', closeQuincenaModal);
+
+    // Navegación de meses
+    if(prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', function() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderQuincenaCalendar(currentDate);
+        });
+    }
+
+    if(nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', function() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderQuincenaCalendar(currentDate);
+        });
+    }
+
+    // Renderizar calendario
+    function renderQuincenaCalendar(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+
+        monthTitle.textContent = `${getMonthName(month)} ${year}`;
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDay = firstDay.getDay();
+
+        // Limpiar celdas de días (excepto headers)
+        const dayCells = calendarGrid.querySelectorAll('.quincena-day-cell');
+        dayCells.forEach(cell => cell.remove());
+
+        // Días del mes anterior (celdas vacías)
+        for(let i = 0; i < startDay; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'quincena-day-cell disabled';
+            calendarGrid.appendChild(emptyCell);
+        }
+
+        // Días del mes actual
+        for(let day = 1; day <= lastDay.getDate(); day++) {
+            const dayCell = document.createElement('div');
+            dayCell.className = 'quincena-day-cell';
+            dayCell.textContent = day;
+
+            // Marcar días de fin de quincena
+            if(day === 15 || day === lastDay.getDate()) {
+                dayCell.classList.add('quincena-end');
+            }
+
+            calendarGrid.appendChild(dayCell);
+        }
+    }
+
+    function getMonthName(monthIndex) {
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        return months[monthIndex];
+    }
+
+
     // Back to calendar button - navegación Laravel real
     const backToCalendarBtn = document.getElementById('back-to-calendar');
     if (backToCalendarBtn) {
@@ -222,3 +310,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+

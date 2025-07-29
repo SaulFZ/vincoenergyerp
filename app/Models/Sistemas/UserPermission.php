@@ -42,11 +42,11 @@ class UserPermission extends Model
      * Verifica si un usuario tiene un permiso específico.
      *
      * @param int $userId
-     * @param string $module
+     * @param string $system
      * @param string $permission
      * @return bool
      */
-    public static function hasPermission($userId, $module, $permission)
+    public static function hasPermission($userId, $system, $permission)
     {
         $userPermission = self::where('user_id', $userId)->first();
 
@@ -57,9 +57,9 @@ class UserPermission extends Model
         $permissions = $userPermission->permissions;
 
         // Verifica si el módulo existe y si contiene el permiso específico
-        return isset($permissions[$module]) &&
-            (in_array($permission, $permissions[$module]) ||
-                empty($permissions[$module]));
+        return isset($permissions[$system]) &&
+            (in_array($permission, $permissions[$system]) ||
+                empty($permissions[$system]));
     }
 
     /**
@@ -69,7 +69,7 @@ class UserPermission extends Model
      * @param string $module
      * @return bool
      */
-    public static function hasModuleAccess($userId, $module)
+    public static function hasModuleAccess($userId, $system)
     {
         $userPermission = self::where('user_id', $userId)->first();
 
@@ -80,7 +80,7 @@ class UserPermission extends Model
         $permissions = $userPermission->permissions;
 
         // Si el módulo existe en los permisos, entonces el usuario tiene acceso
-        return isset($permissions[$module]);
+        return isset($permissions[$system]);
     }
 
     /**

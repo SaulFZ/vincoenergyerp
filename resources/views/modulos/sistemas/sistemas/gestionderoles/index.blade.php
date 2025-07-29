@@ -1669,6 +1669,65 @@
                 grid-template-columns: 1fr;
             }
         }
+
+
+        /* Estilos para el contenedor de foto */
+.employee-photo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.photo-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    transition: all 0.3s ease;
+}
+
+.photo-preview.has-photo {
+    border-color: #4361ee;
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+/* Estilos para los botones de foto */
+.photo-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Estilos para la vista modal de usuario */
+.uvm-user-avatar {
+    font-size: 3rem;
+    color: #4361ee;
+    margin-right: 1rem;
+}
+
+.uvm-user-avatar img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #4361ee;
+}
     </style>
 </head>
 
@@ -1775,6 +1834,32 @@
                         <div class="col-12">
                             <h4 class="section-title"><i class="fas fa-user me-2"></i>Datos del Usuario</h4>
                         </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Foto del Empleado</label>
+                            <div class="employee-photo-container">
+                                <div class="photo-preview" id="photoPreview">
+                                    <img id="photoDisplay" src="{{ asset('assets/img/fotouser.png') }}"
+                                        alt="Foto del empleado">
+                                </div>
+                                <div class="photo-actions">
+                                    <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                                    <button type="button" class="btn btn-sm btn-primary"
+                                        onclick="document.getElementById('photoInput').click()">
+                                        <i class="fas fa-upload"></i> Cambiar Foto
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" id="removePhotoBtn"
+                                        style="display: none;">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
+                                </div>
+                                <input type="hidden" id="photo" name="photo">
+                            </div>
+                        </div>
+
+
+
+
                         <div class="col-md-4 mb-3">
                             <label for="name" class="form-label">Nombre Completo</label>
                             <input type="text" class="form-control" id="name" name="name"
@@ -2172,7 +2257,7 @@
         // Función para cargar roles desde el backend
         async function loadRoles() {
             try {
-                const response = await fetch('/sistemas/roles/get-roles', {
+                const response = await fetch('get-roles', {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
@@ -2205,7 +2290,7 @@
         // Agrega esta función para cargar los permisos
         async function loadPermissions() {
             try {
-                const response = await fetch('/sistemas/roles/get-permissions', {
+                const response = await fetch('get-permissions', {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
@@ -2261,7 +2346,7 @@
         // Función para buscar empleados
         async function searchEmployees(query) {
             try {
-                const response = await fetch(`/sistemas/roles/search-employees?query=${encodeURIComponent(query)}`, {
+                const response = await fetch(`search-employees?query=${encodeURIComponent(query)}`, {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
@@ -2366,6 +2451,39 @@
                 document.getElementById('employeeSuggestions').style.display = 'none';
             }
         });
+
+
+        // Agregar estas funciones para manejar la foto
+        function setupPhotoUpload() {
+            const photoInput = document.getElementById('photoInput');
+            const photoDisplay = document.getElementById('photoDisplay');
+            const photoPreview = document.getElementById('photoPreview');
+            const removePhotoBtn = document.getElementById('removePhotoBtn');
+            const photoHidden = document.getElementById('photo');
+
+            photoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        photoDisplay.src = event.target.result;
+                        photoHidden.value = event.target.result;
+                        removePhotoBtn.style.display = 'inline-block';
+                        photoPreview.classList.add('has-photo');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            removePhotoBtn.addEventListener('click', function() {
+                photoDisplay.src = "{{ asset('assets/img/fotouser.png') }}";
+                photoHidden.value = '';
+                removePhotoBtn.style.display = 'none';
+                photoPreview.classList.remove('has-photo');
+                photoInput.value = '';
+            });
+        }
+
 
         // Función para obtener clase CSS de módulo
         function getModuleClass(module) {
@@ -2563,9 +2681,9 @@
                 <div class="uvm-module-permissions">
                     ${shuffleArray(permissions).map(permission =>
                         `<span class="uvm-permission-item">
-                                                                        <i class="fas fa-check-circle"></i>
-                                                                        ${permission}
-                                                                    </span>`
+                                                                                <i class="fas fa-check-circle"></i>
+                                                                                ${permission}
+                                                                            </span>`
                     ).join('')}
                 </div>
             </div>
@@ -2678,6 +2796,18 @@
             // Establecer el rol del usuario
             if (user.role_id) {
                 document.getElementById('user_role').value = user.role_id;
+            }
+
+            if (user.employee_photo) {
+                document.getElementById('photoDisplay').src = "/" + user.employee_photo;
+                document.getElementById('photo').value = "/" + user.employee_photo;
+                document.getElementById('removePhotoBtn').style.display = 'inline-block';
+                document.getElementById('photoPreview').classList.add('has-photo');
+            } else {
+                document.getElementById('photoDisplay').src = "{{ asset('assets/img/fotouser.png') }}";
+                document.getElementById('photo').value = '';
+                document.getElementById('removePhotoBtn').style.display = 'none';
+                document.getElementById('photoPreview').classList.remove('has-photo');
             }
 
             // Cargar permisos directos del usuario
@@ -2803,7 +2933,9 @@
             // Cargar usuarios al inicializar
             loadUsers();
             loadRoles();
-    loadPermissions(); // <-- Agrega esta línea
+            loadPermissions(); // <-- Agrega esta línea
+                setupPhotoUpload();
+
 
 
             // Event listeners para paginación
@@ -2999,6 +3131,13 @@
                 body.classList.remove('active');
             });
 
+            // Resetear foto
+            document.getElementById('photoDisplay').src = "{{ asset('assets/img/fotouser.png') }}";
+            document.getElementById('photo').value = '';
+            document.getElementById('removePhotoBtn').style.display = 'none';
+            document.getElementById('photoPreview').classList.remove('has-photo');
+            document.getElementById('photoInput').value = '';
+
             document.getElementById('newUserModal').classList.add('show');
         }
 
@@ -3092,10 +3231,13 @@
                         employee_id: $('#employee_id').val(),
                         role_id: $('#user_role').val(),
                         permissions: {},
+                        photo: $('#photo').val(), // Agregar la foto
+
                         direct_permissions: $('input[name="direct_permissions[]"]:checked').map(
                             function() {
                                 return $(this).val();
                             }).get()
+
                     };
 
                     const passwordValue = $('#password').val();

@@ -30,17 +30,19 @@
     --medium-gray: #4a5568;
     --light-gray: #e2e8f0;
     --background-gray: #f7fafc;
-    --work-base: #004B87;
-    --work-well: #00BFFF;
-    --rest: #FFFF00;
-    --vacation: #FFD700;
-    --training: #B6B6B6;
-    --medical: #E67E22;
+    --work-base: #334c95;
+    --work-well: #6475aa;
+    --home-office: #7293ff;
+    --traveling: #a2b5ff;
+    --rest: #00aa61;
+    --vacation: #66cf66;
+    --training: #a5a5a5;
+    --medical: #FFA726;
     --approved: #51a764ef;
     --not-approved: #fffb00;
-    --payroll-start-1: #006400;
-    --payroll-start-2: #000080;
-    --payroll-end: #FF8C00;
+    --payroll-start-1: #00a700;
+    --payroll-start-2: #004bad;
+    --payroll-end: #d61c1c;
 
 }
 
@@ -114,6 +116,12 @@ body {
     padding: 6px 10px;
     border-radius: 4px;
     transition: all 0.3s ease;
+    cursor: pointer;
+    /* Asegura que muestre el cursor de mano */
+    display: inline-flex;
+    /* Para mejor alineación con iconos */
+    align-items: center;
+    /* Alinea verticalmente icono y texto */
 }
 
 .nav-links a:hover,
@@ -146,28 +154,32 @@ body {
     color: var(--primary-blue);
 }
 
-    /* Estilo minimalista manteniendo la clase original */
-    .logout {
-        display: flex;
-        align-items: center;
-        padding: 10px 15px;
-        color: #e74c3c; /* Rojo suave para el texto */
-        background-color: #ecf0f1; /* Gris claro */
-        border: none;
-        cursor: pointer;
-        font-size: 14px;
-        border-radius: 4px;
-        margin: 5px 0;
-    }
+/* Estilo minimalista manteniendo la clase original */
+.logout {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    color: #e74c3c;
+    /* Rojo suave para el texto */
+    background-color: #ecf0f1;
+    /* Gris claro */
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 4px;
+    margin: 5px 0;
+}
 
-    .logout i {
-        margin-right: 10px;
-        color: inherit; /* Hereda el color rojo del texto */
-    }
+.logout i {
+    margin-right: 10px;
+    color: inherit;
+    /* Hereda el color rojo del texto */
+}
 
-    .logout:hover {
-        background-color: #dfe6e9; /* Gris un poco más oscuro al hover */
-    }
+.logout:hover {
+    background-color: #dfe6e9;
+    /* Gris un poco más oscuro al hover */
+}
 
 /* Main Content */
 .container {
@@ -219,8 +231,8 @@ body {
 }
 
 .employee-photo-container {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     overflow: hidden;
     border: 3px solid var(--primary-orange);
@@ -230,7 +242,7 @@ body {
 .employee-photo {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 .employee-info {
@@ -412,6 +424,7 @@ body {
     margin-bottom: 5px;
     font-size: 14px;
 }
+
 .activity-tag {
     padding: 2px 4px;
     border-radius: 4px;
@@ -439,17 +452,17 @@ body {
 
 .activity-tag.rest {
     background-color: var(--rest);
-    color: #333;
+    color: #ffffff;
 }
 
 .activity-tag.vacation {
     background-color: var(--vacation);
-    color: #333;
+    color: #ffffff;
 }
 
 .activity-tag.training {
     background-color: var(--training);
-    color: #333;
+    color: #ffffff;
 }
 
 .activity-tag.medical {
@@ -1019,6 +1032,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    gap: 15px;
 }
 
 .approval-header h2 {
@@ -1029,20 +1043,29 @@ body {
     gap: 10px;
     font-weight: 600;
     margin: 0;
+    white-space: nowrap;
+}
+
+.center-navigation {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.period-navigation {
+    display: flex;
+    gap: 8px;
+    margin: 0 15px;
 }
 
 .approval-actions {
     display: flex;
     gap: 10px;
     align-items: center;
+    white-space: nowrap;
 }
 
-.period-navigation {
-    display: flex;
-    gap: 8px;
-}
-
-.period-btn {
+.period-btn, .action-btn {
     padding: 8px 12px;
     border-radius: 6px;
     background-color: #e2e8f0;
@@ -1050,15 +1073,64 @@ body {
     cursor: pointer;
     font-size: 13px;
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
-.period-btn:hover {
+.period-btn:hover, .action-btn:hover {
     background-color: #cbd5e0;
 }
 
 .period-btn.active {
     background-color: var(--primary-blue);
     color: white;
+}
+
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.back-btn:hover {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.back-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.back-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.3);
+}
+
+.back-btn i {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.back-btn:hover i {
+    transform: translateX(-3px);
 }
 
 .approval-table {
@@ -1161,7 +1233,7 @@ body {
 }
 
 .status-n {
-    background-color:  #727272;
+    background-color: #727272;
     color: rgb(255, 255, 255);
 }
 
@@ -1272,6 +1344,275 @@ body {
     border: 1px solid #e0e0e0;
 }
 
+
+
+ /* Estilos mejorados para el modal dividido */
+        .quincena-modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.452);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1050;
+        }
+
+        .quincena-modal-card {
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .quincena-modal-header {
+            padding: 18px 24px;
+            background-color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .quincena-modal-title {
+            margin: 0;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .quincena-close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+            opacity: 0.8;
+            transition: all 0.2s;
+            padding: 2px;
+            line-height: 1;
+        }
+
+        .quincena-close-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .quincena-modal-content {
+            display: flex;
+            min-height: 400px;
+        }
+
+        /* Sección de quincenas (izquierda) */
+        .quincena-selection-section {
+            flex: 1;
+            padding: 20px;
+            background-color: white;
+            border-right: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .quincena-selection-group {
+            margin-bottom: 25px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .quincena-select-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .quincena-badge {
+            background-color: #2c3e50;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        .quincena-select-title {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .quincena-date-range {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .quincena-date-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .quincena-date-field label {
+            font-size: 0.85rem;
+            color: #495057;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .quincena-date-input {
+            padding: 10px 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background-color: white;
+            transition: all 0.2s;
+        }
+
+        .quincena-date-input:focus {
+            outline: none;
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.1);
+        }
+
+        .quincena-actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding-top: 15px;
+        }
+
+        /* Sección de calendario (derecha) */
+        .quincena-calendar-section {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .quincena-month-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .quincena-month-title {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .quincena-nav-btn {
+            background-color: #e9ecef;
+            border: none;
+            cursor: pointer;
+            color: #2c3e50;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quincena-nav-btn:hover {
+            background-color: #dee2e6;
+        }
+
+        .quincena-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .quincena-day-label {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #495057;
+            font-weight: 600;
+            padding: 8px 0;
+            text-transform: uppercase;
+        }
+
+        .quincena-day-cell {
+            padding: 10px 0;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            background-color: white;
+            border: 1px solid #e9ecef;
+            font-weight: 500;
+        }
+
+        .quincena-day-cell:hover {
+            background-color: #f1f3f5;
+            border-color: #ced4da;
+        }
+
+        .quincena-day-cell.quincena-end {
+            background-color: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .quincena-day-cell.disabled {
+            color: #adb5bd;
+            cursor: not-allowed;
+            background-color: transparent;
+            border-color: transparent;
+        }
+
+        /* Botones */
+        .quincena-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .quincena-cancel-btn {
+            background-color: #f8f9fa;
+            color: #495057;
+            border: 1px solid #e9ecef;
+        }
+
+        .quincena-cancel-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .quincena-save-btn {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        .quincena-save-btn:hover {
+            background-color: #34495e;
+            transform: translateY(-1px);
+        }
+
+
 /* Estilos responsivos */
 @media (max-width: 992px) {
     .calendar td {
@@ -1361,49 +1702,4 @@ body {
         font-size: 9px;
         padding: 2px;
     }
-}
-
-.back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-    position: relative;
-    overflow: hidden;
-}
-
-.back-btn:hover {
-    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.back-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.back-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.3);
-}
-
-.back-btn i {
-    font-size: 16px;
-    transition: transform 0.3s ease;
-}
-
-.back-btn:hover i {
-    transform: translateX(-3px);
 }

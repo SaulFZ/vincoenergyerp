@@ -7,7 +7,7 @@
             <div class="approval-container">
                 <div class="approval-header">
                     <h2><i class="fas fa-check-circle"></i> Aprobación de Load Chart - Junio 2025</h2>
-                    <div class="approval-actions">
+                    <div class="period-navigation-container">
                         <div class="period-navigation">
                             <button class="period-btn" id="prev-period"><i class="fas fa-chevron-left"></i></button>
                             <button class="period-btn active" id="quincena1">Quincena 1</button>
@@ -15,11 +15,18 @@
                             <button class="period-btn" id="full-month">Mes Completo</button>
                             <button class="period-btn" id="next-period"><i class="fas fa-chevron-right"></i></button>
                         </div>
+                    </div>
+                    <div class="approval-actions">
+                        <button class="back-btn" id="days-quincena">
+                            <i class="fas fa-calendar-day"></i> Días de Quincena
+                        </button>
                         <button class="back-btn" id="back-to-calendar" data-route="/calendar">
                             <i class="fas fa-arrow-left"></i> Volver al Calendario
                         </button>
                     </div>
                 </div>
+
+
 
                 <table class="approval-table">
                     <thead>
@@ -316,6 +323,87 @@
             </div>
         </div>
     </div>
+
+    <div id="quincena-modal" class="quincena-modal-container" style="display: none;">
+        <div class="quincena-modal-card">
+            <div class="quincena-modal-header">
+                <h3 class="quincena-modal-title">Configurar Quincenas</h3>
+                <button class="quincena-close-btn">&times;</button>
+            </div>
+
+            <div class="quincena-modal-content">
+                <!-- Sección de quincenas (izquierda) -->
+                <div class="quincena-selection-section">
+                    <div class="quincena-selection-group">
+                        <div class="quincena-select-header">
+                            <span class="quincena-badge">1</span>
+                            <h4 class="quincena-select-title">Primera Quincena</h4>
+                        </div>
+                        <div class="quincena-date-range">
+                            <div class="quincena-date-field">
+                                <label>Fecha Inicio</label>
+                                <input type="date" id="q1-start" class="quincena-date-input">
+                            </div>
+                            <div class="quincena-date-field">
+                                <label>Fecha Fin</label>
+                                <input type="date" id="q1-end" class="quincena-date-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quincena-selection-group">
+                        <div class="quincena-select-header">
+                            <span class="quincena-badge">2</span>
+                            <h4 class="quincena-select-title">Segunda Quincena</h4>
+                        </div>
+                        <div class="quincena-date-range">
+                            <div class="quincena-date-field">
+                                <label>Fecha Inicio</label>
+                                <input type="date" id="q2-start" class="quincena-date-input">
+                            </div>
+                            <div class="quincena-date-field">
+                                <label>Fecha Fin</label>
+                                <input type="date" id="q2-end" class="quincena-date-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quincena-actions">
+                        <button class="quincena-btn quincena-cancel-btn">Cancelar</button>
+                        <button class="quincena-btn quincena-save-btn">Guardar Cambios</button>
+                    </div>
+                </div>
+
+                <!-- Sección de calendario (derecha) -->
+                <div class="quincena-calendar-section">
+                    <div class="quincena-month-nav">
+                        <button class="quincena-nav-btn quincena-prev-month">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h4 class="quincena-month-title">Junio 2025</h4>
+                        <button class="quincena-nav-btn quincena-next-month">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="quincena-calendar-grid">
+                        <div class="quincena-day-label">Dom</div>
+                        <div class="quincena-day-label">Lun</div>
+                        <div class="quincena-day-label">Mar</div>
+                        <div class="quincena-day-label">Mié</div>
+                        <div class="quincena-day-label">Jue</div>
+                        <div class="quincena-day-label">Vie</div>
+                        <div class="quincena-day-label">Sáb</div>
+
+                        <!-- Días se generarán dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
 
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/approval.js') }}"></script>
 @endsection

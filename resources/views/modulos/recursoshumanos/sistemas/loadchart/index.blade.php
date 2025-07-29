@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
     <link href="{{ asset('assets/css/recursoshumanos/loadchart/index.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 
 <body>
@@ -22,20 +24,20 @@
             </div>
         </div>
         <div class="nav-links">
-            <a href="#" class="active" data-route="calendar"><i class="fas fa-home"></i> Inicio</a>
-            <a href="#" data-route="history"><i class="fas fa-history"></i> Historial</a>
-            <a href="#" data-route="stats"><i class="fas fa-chart-bar"></i> Estadísticas</a>
+            <a data-route="calendar"><i class="fas fa-home"></i> Inicio</a>
+            <a data-route="history"><i class="fas fa-history"></i> Historial</a>
+            <a data-route="stats"><i class="fas fa-chart-bar"></i> Estadísticas</a>
         </div>
         <div class="user-info">
             <div class="welcome">
-                <i class="fas fa-user-circle"></i> Bienvenido, Saul Falcon
+
+                <i class="fas fa-user-circle"></i> {{ Auth::user()->name }}
             </div>
             <div class="logout" onclick="window.location.href='{{ route('home') }}'">
                 <i class="fas fa-home"></i> Salir
             </div>
         </div>
     </header>
-
     <!-- Main Content -->
     <div class="container" id="main-content">
         <!-- Content will be loaded here dynamically -->

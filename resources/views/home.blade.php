@@ -2,25 +2,28 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ERP Vinco Energy</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         :root {
-            --naranja: #D67E29;
-            --naranja-claro: #FF9D42;
-            --naranja-oscuro: #B96520;
+            --naranja: #d67e29;
+            --naranja-claro: #ff9d42;
+            --naranja-oscuro: #b96520;
             --azul: #334c95;
-            --azul-oscuro: #1A2A5F;
-            --azul-claro: #4B6BC6;
-            --blanco: #FFFFFF;
-            --negro: #1E293B;
-            --gris-claro: #F8FAFC;
-            --gris-medio: #E2E8F0;
-            --gris-oscuro: #64748B;
-            --sombra: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --sombra-intensa: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --azul-oscuro: #1a2a5f;
+            --azul-claro: #4b6bc6;
+            --blanco: #ffffff;
+            --negro: #1e293b;
+            --gris-claro: #f8fafc;
+            --gris-medio: #e2e8f0;
+            --gris-oscuro: #64748b;
+            --sombra:
+                0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --sombra-intensa:
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
             --sombra-suave: 0 2px 4px rgba(0, 0, 0, 0.05);
             --transicion: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --transicion-rapida: all 0.2s ease;
@@ -50,7 +53,7 @@
 
         /* Header Moderno y Mejorado */
         .header {
-            background: linear-gradient(135deg, var(--azul-oscuro) 0%, var(--azul) 50%, var(--azul-claro) 100%);
+            background: var(--azul-oscuro);
             height: 75px;
             display: flex;
             align-items: center;
@@ -126,11 +129,10 @@
         .user-actions {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
         }
 
-        .notification-icon,
-        .user-icon {
+        .notification-icon {
             width: 48px;
             height: 48px;
             border-radius: 50%;
@@ -141,9 +143,6 @@
             transition: var(--transicion);
             position: relative;
             border: 2px solid transparent;
-        }
-
-        .notification-icon {
             background: rgba(255, 255, 255, 0.15);
             color: var(--blanco);
             backdrop-filter: blur(10px);
@@ -159,7 +158,9 @@
             position: absolute;
             top: -8px;
             right: -8px;
-            background: linear-gradient(135deg, var(--naranja) 0%, var(--naranja-claro) 100%);
+            background: linear-gradient(135deg,
+                    var(--naranja) 0%,
+                    var(--naranja-claro) 100%);
             color: var(--blanco);
             border-radius: 50%;
             width: 24px;
@@ -170,30 +171,60 @@
             font-size: 11px;
             font-weight: 700;
             border: 2px solid var(--blanco);
-            box-shadow: var(--sombra);
+            box-shadow:
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
             animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transicion);
+            padding: 4px 8px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .user-photo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--blanco);
+            box-shadow:
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: var(--transicion);
+        }
+
+        .user-photo:hover {
+            transform: scale(1.05);
+            box-shadow: var(--sombra-intensa);
         }
 
         .user-icon {
-            background: linear-gradient(135deg, var(--naranja) 0%, var(--naranja-claro) 100%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: var(--blanco);
             box-shadow: var(--sombra);
         }
 
-        .user-icon:hover {
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: var(--sombra-intensa);
-        }
-
         .user-name {
-            margin-left: 12px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 1rem;
             color: var(--blanco);
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -206,8 +237,8 @@
             background: var(--blanco);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
             border-radius: var(--border-radius);
-            width: 260px;
-            padding: 12px 0;
+            width: 340px;
+            padding: 0;
             display: none;
             border: 1px solid var(--gris-medio);
             z-index: 1001;
@@ -220,19 +251,59 @@
             animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-15px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+        .dropdown-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, var(--azul) 0%, var(--azul) 100%);
+            color: var(--blanco);
+        }
+
+        .dropdown-photo {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--blanco);
+            box-shadow: var(--sombra);
+        }
+
+        .dropdown-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--blanco);
+            font-size: 20px;
+        }
+
+        .dropdown-user-info {
+            flex: 1;
+        }
+
+        .dropdown-username {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .dropdown-email {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--gris-claro);
+            margin: 0;
         }
 
         .dropdown-item {
-            padding: 16px 24px;
+            padding: 14px 20px;
             cursor: pointer;
             transition: var(--transicion);
             display: flex;
@@ -259,17 +330,32 @@
         }
 
         .logout {
-            color: var(--naranja) !important;
-            border-top: 1px solid var(--gris-medio);
-            margin-top: 8px;
+            color: #ff0000 !important;
+            /* Texto rojo */
+            border-top: 1px solid #e0e0e0;
+            /* Borde gris claro */
+            margin-top: 0;
+            transition: all 0.3s ease;
+            /* Transición suave */
         }
 
         .logout i {
-            color: var(--naranja) !important;
+            color: #ff0000 !important;
+            /* Icono rojo */
+            transition: all 0.3s ease;
+            /* Transición suave */
         }
 
         .logout:hover {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            background: #ff0000 !important;
+            /* Fondo rojo sólido al pasar el mouse */
+            color: white !important;
+            /* Texto blanco al pasar el mouse */
+        }
+
+        .logout:hover i {
+            color: white !important;
+            /* Icono blanco al pasar el mouse */
         }
 
         .logout-form {
@@ -277,10 +363,38 @@
             padding: 0;
         }
 
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-15px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         /* Sidebar Moderno y Mejorado */
         .sidebar {
             width: 320px;
-            background: linear-gradient(180deg, var(--azul-oscuro) 0%, var(--azul) 100%);
+            background: linear-gradient(180deg,
+                    var(--azul-oscuro) 0%,
+                    var(--azul) 100%);
             padding: 90px 0 20px 0;
             position: fixed;
             height: 100vh;
@@ -380,7 +494,9 @@
         }
 
         .system-item.active {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+            background: linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.2) 0%,
+                    rgba(255, 255, 255, 0.1) 100%);
             font-weight: 600;
             color: var(--blanco);
             border-left: 4px solid var(--naranja);
@@ -439,8 +555,15 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
         .empty-state h2 {
@@ -462,6 +585,7 @@
             .sidebar {
                 width: 280px;
             }
+
             .main-content {
                 margin-left: 280px;
                 padding: 100px 30px 30px 30px;
@@ -472,6 +596,7 @@
             .sidebar {
                 width: 260px;
             }
+
             .main-content {
                 margin-left: 260px;
             }
@@ -553,7 +678,8 @@
         }
 
         /* Animaciones adicionales */
-        .system-item, .area-header {
+        .system-item,
+        .area-header {
             animation: slideInFromLeft 0.3s ease-out;
         }
 
@@ -562,6 +688,7 @@
                 opacity: 0;
                 transform: translateX(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateX(0);
@@ -582,7 +709,7 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="logo">
-                    <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Vinco Energy Logo">
+                    <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Vinco Energy Logo" />
                 </div>
                 <h1 class="company-name">Vinco Energy</h1>
             </div>
@@ -591,17 +718,62 @@
                     <i class="fas fa-bell"></i>
                     <span class="notification-count">3</span>
                 </div>
-                <div class="user-icon" id="userDropdownBtn">
-                    <i class="fas fa-user"></i>
+                <div class="user-profile" id="userDropdownBtn">
+                    @auth
+                        @if (Auth::user()->employee && Auth::user()->employee->photo)
+                            <img src="{{ asset(Auth::user()->employee->photo) }}" alt="Foto de perfil" class="user-photo" />
+                        @else
+                            <div class="user-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        @endif
+                        <div class="user-name">{{ Auth::user()->name }}</div>
+                    @else
+                        <div class="user-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-name">Usuario</div>
+                    @endauth
                 </div>
-                <div class="user-name">{{ session('auth_user')['name'] ?? 'Usuario' }}</div>
                 <div class="user-dropdown" id="userDropdown">
-                    <div class="dropdown-item"><i class="fas fa-user-circle"></i> Mi perfil</div>
-                    <div class="dropdown-item"><i class="fas fa-cog"></i> Configuración</div>
+                    <div class="dropdown-header">
+                        @auth
+                            @if (Auth::user()->employee && Auth::user()->employee->photo)
+                                <img src="{{ asset(Auth::user()->employee->photo) }}" alt="Foto de perfil"
+                                    class="dropdown-photo" />
+                            @else
+                                <div class="dropdown-icon">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                            @endif
+                            <div class="dropdown-user-info">
+                                <div class="dropdown-username">{{ Auth::user()->name }}</div>
+                                <div class="dropdown-email">{{ Auth::user()->email }}</div>
+                            </div>
+                        @else
+                            <div class="dropdown-icon">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="dropdown-user-info">
+                                <div class="dropdown-username">Usuario</div>
+                                <div class="dropdown-email">No autenticado</div>
+                            </div>
+                        @endauth
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item">
+                        <i class="fas fa-user-circle"></i>
+                        Mi perfil
+                    </a>
+                    <a class="dropdown-item">
+                        <i class="fas fa-cog"></i>
+                        Configuración
+                    </a>
                     <form action="{{ route('logout') }}" method="POST" class="logout-form">
                         @csrf
                         <button type="submit" class="dropdown-item logout">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                            <i class="fas fa-sign-out-alt"></i>
+                            Cerrar sesión
                         </button>
                     </form>
                 </div>
@@ -612,15 +784,19 @@
         <aside class="sidebar" id="sidebar">
             <!-- Verificación de permisos para cada área -->
             @php
-                $userId = session('auth_user.id') ?? null;
-                $userPermissions = $userId ? \App\Models\Sistemas\UserPermission::getUserPermissions($userId) : [];
+                $userPermissions = Auth::check()
+                    ? \App\Models\Sistemas\UserPermission::getUserPermissions(Auth::id())
+                    : [];
             @endphp
 
             <!-- Área de Administración -->
             @if (isset($userPermissions['administracion']))
                 <div class="area-section">
                     <div class="area-header active">
-                        <span><i class="fas fa-cogs"></i> Administración</span>
+                        <span>
+                            <i class="fas fa-cogs"></i>
+                            Administración
+                        </span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <ul class="systems-list active">
@@ -638,7 +814,10 @@
             @if (isset($userPermissions['recursoshumanos']))
                 <div class="area-section">
                     <div class="area-header active">
-                        <span><i class="fas fa-users-cog"></i> Recursos Humanos</span>
+                        <span>
+                            <i class="fas fa-users-cog"></i>
+                            Recursos Humanos
+                        </span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <ul class="systems-list active">
@@ -663,7 +842,10 @@
             @if (isset($userPermissions['qhse']))
                 <div class="area-section">
                     <div class="area-header active">
-                        <span><i class="fas fa-shield-alt"></i> QHSE</span>
+                        <span>
+                            <i class="fas fa-shield-alt"></i>
+                            QHSE
+                        </span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <ul class="systems-list active">
@@ -688,7 +870,10 @@
             @if (isset($userPermissions['sistemas']))
                 <div class="area-section">
                     <div class="area-header active">
-                        <span><i class="fas fa-server"></i> Sistemas</span>
+                        <span>
+                            <i class="fas fa-server"></i>
+                            Sistemas
+                        </span>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <ul class="systems-list active">
@@ -709,23 +894,47 @@
         </main>
     </div>
 
+    @if (session('swal'))
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: '{{ session('swal')['icon'] }}',
+                    title: '{{ session('swal')['title'] }}',
+                    text: '{{ session('swal')['text'] }}',
+                    timer: {{ session('swal')['timer'] ?? 4000 }},
+                    showConfirmButton: false
+                });
+            });
+        </script>
+    @endif
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Toggle user dropdown
-        document.getElementById('userDropdownBtn').addEventListener('click', function(e) {
-            e.stopPropagation();
-            document.getElementById('userDropdown').classList.toggle('active');
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const userDropdownBtn = document.getElementById('userDropdownBtn');
+            const userDropdown = document.getElementById('userDropdown');
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.user-dropdown')) {
-                document.getElementById('userDropdown').classList.remove('active');
+            if (userDropdownBtn && userDropdown) {
+                userDropdownBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userDropdown.classList.toggle('active');
+                });
+
+                // Cerrar el dropdown al hacer clic fuera
+                document.addEventListener('click', function(e) {
+                    if (
+                        !userDropdown.contains(e.target) &&
+                        e.target !== userDropdownBtn
+                    ) {
+                        userDropdown.classList.remove('active');
+                    }
+                });
             }
         });
 
         // Toggle area sections
-        document.querySelectorAll('.area-header').forEach(header => {
+        document.querySelectorAll('.area-header').forEach((header) => {
             header.addEventListener('click', function() {
                 this.classList.toggle('active');
                 const systemsList = this.nextElementSibling;
@@ -734,10 +943,12 @@
         });
 
         // Navegación a sistemas
-        document.querySelectorAll('.system-item').forEach(item => {
+        document.querySelectorAll('.system-item').forEach((item) => {
             item.addEventListener('click', function() {
                 // Remover clase active de todos los items
-                document.querySelectorAll('.system-item').forEach(i => i.classList.remove('active'));
+                document
+                    .querySelectorAll('.system-item')
+                    .forEach((i) => i.classList.remove('active'));
                 // Agregar clase active al item clickeado
                 this.classList.add('active');
 
@@ -765,7 +976,7 @@
         });
 
         // Cerrar sidebar al hacer click en un item (móvil)
-        document.querySelectorAll('.system-item').forEach(item => {
+        document.querySelectorAll('.system-item').forEach((item) => {
             item.addEventListener('click', function() {
                 if (window.innerWidth <= 768) {
                     sidebar.classList.remove('active');
@@ -776,7 +987,9 @@
 
         // Animación de entrada para elementos del sidebar
         document.addEventListener('DOMContentLoaded', function() {
-            const sidebarItems = document.querySelectorAll('.system-item, .area-header');
+            const sidebarItems = document.querySelectorAll(
+                '.system-item, .area-header',
+            );
             sidebarItems.forEach((item, index) => {
                 item.style.animationDelay = `${index * 0.1}s`;
             });

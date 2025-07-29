@@ -2,35 +2,37 @@
 
 @section('content')
     <div id="normalView">
+
+
         <div class="content-layout">
             <!-- Employee Details -->
             <div class="employee-details" id="employeeDetails">
                 <div class="employee-header">
                     <div class="employee-photo-container">
-                        <img src="{{ asset('assets/img/perfil.png') }}" alt="" class="employee-photo">
+                        <img src="{{ $employee_photo }}" alt="Foto de perfil" class="employee-photo">
                     </div>
                     <h2>Mis Datos</h2>
                 </div>
                 <div class="employee-info">
                     <div class="info-group">
                         <h3>Nombre</h3>
-                        <p>Saul Falcon</p>
+                        <p>{{ $employee->full_name ?? 'N/A' }}</p>
                     </div>
                     <div class="info-group">
                         <h3>Número de empleado</h3>
-                        <p>V10056</p>
+                        <p>{{ $employee->employee_number ?? 'N/A' }}</p>
                     </div>
                     <div class="info-group">
                         <h3>Departamento</h3>
-                        <p>Administración</p>
+                        <p>{{ $employee->department ?? 'N/A' }}</p>
                     </div>
                     <div class="info-group">
                         <h3>Puesto</h3>
-                        <p>Desarrollador</p>
+                        <p>{{ $employee->job_title ?? 'N/A' }}</p>
                     </div>
                     <div class="info-group">
                         <h3>Fecha de Ingreso</h3>
-                        <p>15-Mar-2020</p>
+                        <p>{{ $hire_date }}</p>
                     </div>
                     <div class="info-group">
                         <h3>Vacaciones</h3>
@@ -42,7 +44,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Load Chart Section -->
             <div class="load-chart-container" id="loadChart">
                 <div class="chart-header">
@@ -53,9 +54,11 @@
                             <span>Junio 2025</span>
                             <button id="next-month"><i class="fas fa-chevron-right"></i></button>
                         </div>
-                        <button class="btn btn-orange" id="approve-loadchart" data-route="/approval">
-                            <i class="fas fa-check-circle"></i> Aprobar Loadchart
-                        </button>
+                        @if (\App\Helpers\PermissionHelper::hasDirectPermission('aprobar_loadchart'))
+                            <button class="btn btn-orange" id="approve-loadchart" data-route="/approval">
+                                <i class="fas fa-check-circle"></i> Aprobar Loadchart
+                            </button>
+                        @endif
                     </div>
                 </div>
 
@@ -268,6 +271,15 @@
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--work-well);"></div>
                         <div>Trabajo en Pozo</div>
+                    </div>
+                    <!-- Nuevos items -->
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--home-office);"></div>
+                        <div>Home Office</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--traveling);"></div>
+                        <div>Viaje</div>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--rest);"></div>

@@ -20,8 +20,13 @@ return new class extends Migration {
       $table->string("employment_status")->default("active");
       $table->string("position");
       $table->string("job_title")->nullable();
-      $table->string("manager")->nullable();
       $table->string("department");
+
+      // Jefe (autorreferencia)
+      $table->unsignedBigInteger("manager_id")->nullable();
+      $table->foreign("manager_id")->references("id")->on("employees")
+            ->onDelete("set null")
+            ->onUpdate("cascade");
 
       // Datos personales
       $table->string("first_name");

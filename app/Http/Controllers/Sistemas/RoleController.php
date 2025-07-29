@@ -5,8 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Auth\Permission;
 use App\Models\Auth\Role;
 use App\Models\Auth\User;
-use App\Models\Sistemas\UserPermission;
 use App\Models\Employee;
+use App\Models\Sistemas\UserPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -17,47 +17,63 @@ class RoleController extends Controller
      * Muestra la vista principal de gestión de roles o devuelve datos JSON
      */
     public function index(Request $request)
-{
-    // Si es una petición AJAX, devolver JSON
-    if ($request->expectsJson() || $request->ajax()) {
-        $users = User::with(['permissions', 'employee', 'role', 'directPermissions'])
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'username' => $user->username,
-                    'email' => $user->email,
-                    'status' => $user->status ?? 'inactive',
-                    'employee_id' => $user->employee_id,
-                    'employee_name' => $user->employee ? $user->employee->full_name : null,
-                    'role_id' => $user->role_id,
-                    'role_name' => $user->role ? $user->role->name : null,
-                    'permissions' => $user->permissions,
-                    'direct_permissions' => $user->directPermissions->map(function($perm) {
-                        return [
-                            'id' => $perm->id,
-                            'name' => $perm->name,
-                            'display_name' => $perm->display_name
-                        ];
-                    }),
-                    'created_at' => $user->created_at,
-                    'updated_at' => $user->updated_at,
-                ];
-            });
+    {
+        if ($request->expectsJson() || $request->ajax()) {
+            $users = User::with([
+                'permissions',
+                'employee',
+                'role',
+                'directPermissions',
+            ])
+                ->get()
+                ->map(function ($user) {
+                    return [
+                        'id'                 => $user->id,
+                        'name'               => $user->name,
+                        'username'           => $user->username,
+                        'email'              => $user->email,
+                        'status'             => $user->status ?? 'inactive',
+                        'employee_id'        => $user->employee_id,
+                        'employee_name'      => $user->employee
+                        ? $user->employee->full_name
+                        : null,
+                        'employee_photo'     => $user->employee ? $user->employee->photo : null,
+                        'role_id'            => $user->role_id,
+                        'role_name'          => $user->role ? $user->role->name : null,
+                        'permissions'        => $user->permissions,
+                        'direct_permissions' => $user->directPermissions->map(function (
+                            $perm
+                        ) {
+                            return [
+                                'id'           => $perm->id,
+                                'name'         => $perm->name,
+                                'display_name' => $perm->display_name,
+                            ];
+                        }),
+                        'created_at'         => $user->created_at,
+                        'updated_at'         => $user->updated_at,
+                    ];
+                });
 
-        return response()->json([
-            'success' => true,
-            'users' => $users
-        ]);
+            return response()->json([
+                'success' => true,
+                'users'   => $users,
+            ]);
+        }
+
+        $users = User::with([
+            'permissions',
+            'employee',
+            'role',
+            'directPermissions',
+        ])->get();
+        $roles = Role::getRolesForSelect();
+
+        return view(
+            'modulos.sistemas.sistemas.gestionderoles.index',
+            compact('users', 'roles')
+        );
     }
-
-    // Si es una petición normal, devolver la vista
-    $users = User::with(['permissions', 'employee', 'role', 'directPermissions'])->get();
-    $roles = Role::getRolesForSelect();
-
-    return view('modulos.sistemas.sistemas.gestionderoles.index', compact('users', 'roles'));
-}
 
     /**
      * Busca empleados por nombre completo
@@ -98,28 +114,28 @@ class RoleController extends Controller
         $data = $request->json()->all();
 
         $validated = validator($data, [
-            'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:8',
-            'status' => 'required|in:active,inactive',
-            'employee_id' => 'nullable|exists:employees,id',
-            'role_id' => 'required|exists:roles,id',
-            'permissions' => 'required|array',
-            'direct_permissions' => 'sometimes|array',
+            'name'                 => 'required|string|max:255',
+            'username'             => 'required|string|max:255|unique:users',
+            'email'                => 'required|email|unique:users',
+            'password'             => 'required|string|min:8',
+            'status'               => 'required|in:active,inactive',
+            'employee_id'          => 'nullable|exists:employees,id',
+            'role_id'              => 'required|exists:roles,id',
+            'permissions'          => 'required|array',
+            'direct_permissions'   => 'sometimes|array',
             'direct_permissions.*' => 'exists:permissions,id',
         ])->validate();
 
         DB::beginTransaction();
         try {
             $user = User::create([
-                'name' => $validated['name'],
-                'username' => $validated['username'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'status' => $validated['status'],
+                'name'        => $validated['name'],
+                'username'    => $validated['username'],
+                'email'       => $validated['email'],
+                'password'    => Hash::make($validated['password']),
+                'status'      => $validated['status'],
                 'employee_id' => $validated['employee_id'] ?? null,
-                'role_id' => $validated['role_id'],
+                'role_id'     => $validated['role_id'],
             ]);
 
             $formattedPermissions = $this->formatPermissionsForStorage(
@@ -128,7 +144,7 @@ class RoleController extends Controller
             UserPermission::updatePermissions($user->id, $formattedPermissions);
 
             // Sincronizar permisos directos - ESTA ES LA PARTE CLAVE
-            if (!empty($validated['direct_permissions'])) {
+            if (! empty($validated['direct_permissions'])) {
                 $user->directPermissions()->sync($validated['direct_permissions']);
             }
 
@@ -137,7 +153,7 @@ class RoleController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Usuario y permisos guardados correctamente',
-                'user' => $user,
+                'user'    => $user,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -156,9 +172,9 @@ class RoleController extends Controller
      */
     public function edit($id)
     {
-        $user = User::with(['employee', 'role'])->findOrFail($id);
+        $user        = User::with(['employee', 'role'])->findOrFail($id);
         $permissions = UserPermission::getUserPermissions($id);
-        $roles = Role::getRolesForSelect();
+        $roles       = Role::getRolesForSelect();
 
         return view(
             'modulos.sistemas.sistemas.gestionderoles.index',
@@ -170,66 +186,79 @@ class RoleController extends Controller
      * Actualiza los permisos de un usuario
      */
     public function update(Request $request, $id)
-{
-    $data = $request->isJson() ? $request->json()->all() : $request->all();
+    {
+        $data = $request->isJson() ? $request->json()->all() : $request->all();
 
-    $validatedData = validator($data, [
-        'name' => 'required|string|max:255',
-        'username' => 'required|string|max:255|unique:users,username,' . $id,
-        'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-        'password' => 'nullable|string|min:5',
-        'status' => 'required|in:active,inactive',
-        'employee_id' => 'nullable|exists:employees,id',
-        'role_id' => 'required|exists:roles,id',
-        'permissions' => 'required|array',
-        'direct_permissions' => 'sometimes|array',
-        'direct_permissions.*' => 'exists:permissions,id'
-    ])->validate();
+        $validatedData = validator($data, [
+            'name'                 => 'required|string|max:255',
+            'username'             => 'required|string|max:255|unique:users,username,' . $id,
+            'email'                => 'required|string|email|max:255|unique:users,email,' . $id,
+            'password'             => 'nullable|string|min:5',
+            'status'               => 'required|in:active,inactive',
+            'employee_id'          => 'nullable|exists:employees,id',
+            'role_id'              => 'required|exists:roles,id',
+            'permissions'          => 'required|array',
+            'direct_permissions'   => 'sometimes|array',
+            'direct_permissions.*' => 'exists:permissions,id',
+            'photo'                => 'nullable|string', // Para la foto en base64
+        ])->validate();
 
-    try {
-        DB::beginTransaction();
+        try {
+            DB::beginTransaction();
 
-        $user = User::findOrFail($id);
-        $user->name = $validatedData['name'];
-        $user->username = $validatedData['username'];
-        $user->email = $validatedData['email'];
-        $user->status = $validatedData['status'];
-        $user->employee_id = $validatedData['employee_id'] ?? null;
-        $user->role_id = $validatedData['role_id'];
+            $user              = User::findOrFail($id);
+            $user->name        = $validatedData['name'];
+            $user->username    = $validatedData['username'];
+            $user->email       = $validatedData['email'];
+            $user->status      = $validatedData['status'];
+            $user->employee_id = $validatedData['employee_id'] ?? null;
+            $user->role_id     = $validatedData['role_id'];
 
-        if (!empty($validatedData['password'])) {
-            $user->password = Hash::make($validatedData['password']);
+            if (! empty($validatedData['password'])) {
+                $user->password = Hash::make($validatedData['password']);
+            }
+
+            $user->save();
+
+            // Actualizar foto del empleado si existe
+            if ($user->employee_id && isset($validatedData['photo'])) {
+                $employee = Employee::find($user->employee_id);
+                if ($employee) {
+                    $photoPath = $this->processPhoto($validatedData['photo'], $employee->photo);
+                    if ($photoPath) {
+                        $employee->photo = $photoPath;
+                        $employee->save();
+                    }
+                }
+            }
+
+            $formattedPermissions = $this->formatPermissionsForStorage($validatedData['permissions']);
+            UserPermission::updatePermissions($id, $formattedPermissions);
+
+            if (isset($validatedData['direct_permissions'])) {
+                $user->directPermissions()->sync($validatedData['direct_permissions']);
+            } else {
+                $user->directPermissions()->detach();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success'        => true,
+                'message'        => 'Usuario y permisos actualizados correctamente',
+                'user'           => $user,
+                'employee_photo' => $employee->photo ?? null,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el usuario y permisos: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $user->save();
-
-        $formattedPermissions = $this->formatPermissionsForStorage($validatedData['permissions']);
-        UserPermission::updatePermissions($id, $formattedPermissions);
-
-        // Sincronizar permisos directos - ESTA ES LA PARTE CLAVE
-        if (isset($validatedData['direct_permissions'])) {
-            $user->directPermissions()->sync($validatedData['direct_permissions']);
-        } else {
-            // Si no vienen permisos directos, eliminamos todos
-            $user->directPermissions()->detach();
-        }
-
-        DB::commit();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Usuario y permisos actualizados correctamente',
-            'user' => $user
-        ]);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al actualizar el usuario y permisos: ' . $e->getMessage(),
-        ], 500);
     }
-}
+
     /**
      * Elimina un usuario y sus permisos
      */
@@ -272,7 +301,7 @@ class RoleController extends Controller
         $formattedPermissions = [];
 
         foreach ($permissions as $module => $modulePermissions) {
-            if (!empty($modulePermissions) && is_array($modulePermissions)) {
+            if (! empty($modulePermissions) && is_array($modulePermissions)) {
                 $formattedPermissions[$module] = [];
 
                 foreach ($modulePermissions as $permission => $value) {
@@ -293,17 +322,44 @@ class RoleController extends Controller
     {
         $permissions = Permission::all()->map(function ($permission) {
             return [
-                'id' => $permission->id,
-                'name' => $permission->name,
+                'id'           => $permission->id,
+                'name'         => $permission->name,
                 'display_name' => $permission->display_name,
-                'description' => $permission->description,
+                'description'  => $permission->description,
             ];
         });
 
         return response()->json([
-            'success' => true,
+            'success'     => true,
             'permissions' => $permissions,
         ]);
+    }
+
+    // Método para procesar la foto
+    private function processPhoto($base64Photo, $currentPhoto = null)
+    {
+        if (strpos($base64Photo, 'base64') !== false) {
+            // Eliminar la foto anterior si existe
+            if ($currentPhoto) {
+                $oldPhotoPath = public_path($currentPhoto);
+                if (file_exists($oldPhotoPath)) {
+                    unlink($oldPhotoPath);
+                }
+            }
+
+            // Procesar nueva foto
+            $image     = explode(',', $base64Photo)[1];
+            $imageData = base64_decode($image);
+            $fileName  = 'employee_' . time() . '.png';
+            $path      = 'assets/img/employees/' . $fileName;
+
+            // Guardar la imagen en el servidor
+            file_put_contents(public_path($path), $imageData);
+
+            return $path;
+        }
+
+        return $currentPhoto; // Si no es una nueva foto, mantener la existente
     }
 
     /**
@@ -314,7 +370,7 @@ class RoleController extends Controller
         $roles = Role::getRolesForSelect();
         return response()->json([
             'success' => true,
-            'roles' => $roles,
+            'roles'   => $roles,
         ]);
     }
 }
