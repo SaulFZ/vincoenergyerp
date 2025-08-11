@@ -3,11 +3,7 @@
 @section('content')
 
     <style>
-        .statistics-container {
-            padding: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+
 
         .statistics-container h1 {
             color: #2c3e50;

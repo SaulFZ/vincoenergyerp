@@ -17,6 +17,11 @@
                         </div>
                     </div>
                     <div class="approval-actions">
+
+                        <button class="squad-btn" id="squad-control">
+                            <i class="fas fa-users-cog"></i> Control de Cuadrillas
+                        </button>
+
                         <button class="back-btn" id="days-quincena">
                             <i class="fas fa-calendar-day"></i> Días de Quincena
                         </button>

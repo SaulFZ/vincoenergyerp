@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
 
- const quincenaModal = document.getElementById('quincena-modal');
+    const quincenaModal = document.getElementById('quincena-modal');
     const openBtn = document.getElementById('days-quincena');
     const closeBtn = quincenaModal.querySelector('.quincena-close-btn');
     const cancelBtn = quincenaModal.querySelector('.quincena-cancel-btn');

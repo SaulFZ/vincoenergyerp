@@ -3,7 +3,6 @@
 @section('content')
     <div id="normalView">
 
-
         <div class="content-layout">
             <!-- Employee Details -->
             <div class="employee-details" id="employeeDetails">
@@ -54,7 +53,7 @@
                             <span>Junio 2025</span>
                             <button id="next-month"><i class="fas fa-chevron-right"></i></button>
                         </div>
-                        @if (\App\Helpers\PermissionHelper::hasDirectPermission('aprobar_loadchart'))
+                        @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_loadchart'))
                             <button class="btn btn-orange" id="approve-loadchart" data-route="/approval">
                                 <i class="fas fa-check-circle"></i> Aprobar Loadchart
                             </button>
@@ -345,8 +344,7 @@
                         <label for="activity-date">Fecha</label>
                         <div class="input-with-icon">
                             <i class="far fa-calendar-alt"></i>
-                            <input type="text" id="activity-date" class="input-custom" value="19 de Junio, 2025"
-                                readonly>
+                            <input type="text" id="activity-date" class="input-custom" value="19 de Junio, 2025" readonly>
                         </div>
                     </div>
 
@@ -360,47 +358,59 @@
                             <div class="select-options" id="activity-type-options">
                                 <div class="activity-option" data-value="B">
                                     <div class="option-content">
-                                        <div class="color-indicator" style="background-color: var(--work-base);">
-                                        </div>
+                                        <div class="color-indicator" style="background-color: var(--work-base);"></div>
                                         <div class="activity-label">Trabajo en Base</div>
                                     </div>
-                                    <div class="activity-code">B</div>
+                                    <div class="activity-code" style="background-color: var(--work-base); color: white;">B</div>
                                 </div>
                                 <div class="activity-option" data-value="P">
                                     <div class="option-content">
-                                        <div class="color-indicator" style="background-color: var(--work-well);">
-                                        </div>
+                                        <div class="color-indicator" style="background-color: var(--work-well);"></div>
                                         <div class="activity-label">Trabajo en Pozo</div>
                                     </div>
-                                    <div class="activity-code">P</div>
+                                    <div class="activity-code" style="background-color: var(--work-well); color: white;">P</div>
+                                </div>
+                                <div class="activity-option" data-value="H">
+                                    <div class="option-content">
+                                        <div class="color-indicator" style="background-color: var(--home-office);"></div>
+                                        <div class="activity-label">Home Office</div>
+                                    </div>
+                                    <div class="activity-code" style="background-color: var(--home-office); color: white;">H</div>
+                                </div>
+                                <div class="activity-option" data-value="V">
+                                    <div class="option-content">
+                                        <div class="color-indicator" style="background-color: var(--traveling);"></div>
+                                        <div class="activity-label">Viaje</div>
+                                    </div>
+                                    <div class="activity-code" style="background-color: var(--traveling); color: white;">V</div>
                                 </div>
                                 <div class="activity-option" data-value="D">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--rest);"></div>
                                         <div class="activity-label">Descanso</div>
                                     </div>
-                                    <div class="activity-code">D</div>
+                                    <div class="activity-code" style="background-color: var(--rest); color: white;">D</div>
                                 </div>
-                                <div class="activity-option" data-value="V">
+                                <div class="activity-option" data-value="VAC">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--vacation);"></div>
                                         <div class="activity-label">Vacaciones</div>
                                     </div>
-                                    <div class="activity-code">V</div>
+                                    <div class="activity-code" style="background-color: var(--vacation); color: white;">VAC</div>
                                 </div>
                                 <div class="activity-option" data-value="E">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--training);"></div>
                                         <div class="activity-label">Entrenamiento</div>
                                     </div>
-                                    <div class="activity-code">E</div>
+                                    <div class="activity-code" style="background-color: var(--training); color: white;">E</div>
                                 </div>
                                 <div class="activity-option" data-value="M">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--medical);"></div>
                                         <div class="activity-label">Médico</div>
                                     </div>
-                                    <div class="activity-code">M</div>
+                                    <div class="activity-code" style="background-color: var(--medical); color: white;">M</div>
                                 </div>
                             </div>
                         </div>
@@ -413,14 +423,13 @@
                             <option value="E">E - Entrenamiento</option>
                             <option value="M">M - Médico</option>
                         </select>
-                        <div class="error-message" id="activity-type-error">Debes seleccionar un tipo de actividad
-                        </div>
+                        <div class="error-message" id="activity-type-error">Debes seleccionar un tipo de actividad</div>
                     </div>
 
                     <div class="form-group">
-                        <label for="food-type">Numero de Comidas</label>
-                        <select id="food-type" class="select-custom">
-                            <option value="">Seleccionar numero de comidas...</option>
+                        <label for="food-bonus">Bono de Comida</label>
+                        <select id="food-bonus" class="select-custom">
+                            <option value="">Seleccionar bono de comida...</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
@@ -428,12 +437,22 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="bonus-type">Tipo de Bono</label>
-                        <select id="bonus-type" class="select-custom">
-                            <option value="">Seleccionar bono...</option>
-                            <option value="performance">Bono por desempeño</option>
-                            <option value="attendance">Bono por asistencia</option>
-                            <option value="special">Bono especial</option>
+                        <label for="field-bonus">Bono de Campo</label>
+                        <select id="field-bonus" class="select-custom">
+                            <option value="">Seleccionar bono de campo...</option>
+                            <option value="bono1">Bono Campo 1</option>
+                            <option value="bono2">Bono Campo 2</option>
+                            <option value="bono3">Bono Campo 3</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="payroll-bonus">Bono de Nómina</label>
+                        <select id="payroll-bonus" class="select-custom">
+                            <option value="">Seleccionar bono de nómina...</option>
+                            <option value="bono_nomina1">Bono Nómina 1</option>
+                            <option value="bono_nomina2">Bono Nómina 2</option>
+                            <option value="bono_nomina3">Bono Nómina 3</option>
                         </select>
                     </div>
                 </div>
@@ -441,22 +460,47 @@
                 <!-- Servicio Tab -->
                 <div class="tab-content" id="service-tab">
                     <div class="form-group">
-                        <label for="service-category">Categoría de Servicio</label>
-                        <select id="service-category" class="select-custom">
-                            <option value="">Seleccionar categoría...</option>
-                            <option value="electrical">Eléctrico</option>
-                            <option value="mechanical">Mecánico</option>
-                            <option value="maintenance">Mantenimiento</option>
-                            <option value="inspection">Inspección</option>
-                        </select>
+                        <label for="work-type">Tipo de Trabajo</label>
+                        <div class="work-type-options">
+                            <div class="work-type-option" data-value="land">
+                                <input type="radio" name="work-type" id="work-land" value="land">
+                                <span class="work-type-label">
+                                    <i class="fas fa-mountain"></i> Tierra
+                                </span>
+                            </div>
+                            <div class="work-type-option" data-value="marine">
+                                <input type="radio" name="work-type" id="work-marine" value="marine">
+                                <span class="work-type-label">
+                                    <i class="fas fa-water"></i> Marina
+                                </span>
+                            </div>
+                        </div>
+                        <div class="error-message" id="work-type-error">Debes seleccionar un tipo de trabajo</div>
                     </div>
+
                     <div class="form-group">
                         <label for="service-type">Tipo de Servicio</label>
                         <select id="service-type" class="select-custom" disabled>
-                            <option value="">Primero seleccione una categoría</option>
+                            <option value="">Seleccionar tipo de servicio...</option>
                         </select>
+                        <div class="error-message" id="service-type-error">Debes seleccionar un tipo de servicio</div>
                     </div>
 
+                    <div class="form-group">
+                        <label for="service-performed">Servicio Realizado</label>
+                        <select id="service-performed" class="select-custom" disabled>
+                            <option value="">Seleccionar servicio realizado...</option>
+                        </select>
+                        <div class="error-message" id="service-performed-error">Debes seleccionar un servicio realizado</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="service">Servicio</label>
+                        <select id="service" class="select-custom" disabled>
+                            <option value="">Seleccionar servicio...</option>
+                        </select>
+                        <div class="error-message" id="service-error">Debes seleccionar un servicio</div>
+                    </div>
                 </div>
 
                 <div class="form-actions">
@@ -471,6 +515,7 @@
             </div>
         </div>
     </div>
+
 
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/calendar.js') }}"></script>
 @endsection
