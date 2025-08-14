@@ -11,6 +11,8 @@
     <link href="{{ asset('assets/css/recursoshumanos/loadchart/index.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 
 <body>
@@ -41,6 +43,7 @@
             </div>
         </div>
     </header>
+
     <!-- Main Content -->
     <div class="container" id="main-content">
         <!-- Content will be loaded here dynamically -->

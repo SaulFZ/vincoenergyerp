@@ -4,29 +4,27 @@ namespace App\Http\Controllers\RecursosHumanos\LoadChart;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
-use App\Models\Auth\User; // Asegúrate de que este es el namespace correcto de tu modelo de usuario
+use App\Models\Auth\User;
+use App\Models\RecursosHumanos\LoadChart\LoadChartAssignment;
 use Illuminate\Http\Request;
 
 class AssignmentController extends Controller
 {
     public function index()
     {
-        // Obtener todos los departamentos distintos de la tabla employees
         $departments = Employee::select("department")
             ->whereNotNull("department")
             ->distinct()
             ->orderBy("department")
             ->pluck("department");
 
-        // Obtener usuarios con el permiso 'revisar_loadchart'
         $reviewers = User::whereHas('directPermissions', function ($query) {
             $query->where('name', 'revisar_loadchart');
-        })->get(['id', 'name']); // Usamos 'name' en lugar de 'full_name' ya que es el campo del modelo User
+        })->get(['id', 'name']);
 
-        // Obtener usuarios con el permiso 'aprobar_loadchart'
         $approvers = User::whereHas('directPermissions', function ($query) {
             $query->where('name', 'aprobar_loadchart');
-        })->get(['id', 'name']); // Usamos 'name' en lugar de 'full_name'
+        })->get(['id', 'name']);
 
         return view(
             "modulos.recursoshumanos.sistemas.loadchart.review_assignments",
@@ -47,7 +45,6 @@ class AssignmentController extends Controller
         $sortBy = $request->input("sort_by", "employee_number");
         $sortDirection = $request->input("sort_direction", "asc");
 
-        // Consulta base
         $query = Employee::query()->select([
             "id",
             "employee_number",
@@ -57,12 +54,10 @@ class AssignmentController extends Controller
             "job_title",
         ]);
 
-        // Aplicar filtro de departamento si es necesario
         if ($department !== "all") {
             $query->where("department", $department);
         }
 
-        // Aplicar búsqueda general si se proporciona
         if (!empty($searchQuery)) {
             $query->where(function ($q) use ($searchQuery) {
                 $q->where("full_name", "like", "%" . $searchQuery . "%")
@@ -73,10 +68,8 @@ class AssignmentController extends Controller
             });
         }
 
-        // Aplicar ordenamiento
         $query->orderBy($sortBy, $sortDirection);
 
-        // Paginación o todos los registros
         if ($perPage === "all") {
             $employees = $query->get();
             return response()->json([
@@ -97,5 +90,49 @@ class AssignmentController extends Controller
             "current_page" => $employees->currentPage(),
             "last_page" => $employees->lastPage(),
         ]);
+    }
+
+    public function getExistingAssignments(Request $request)
+    {
+        $employeeIds = $request->input('employee_ids', []);
+
+        $assignments = LoadChartAssignment::whereIn('employee_id', $employeeIds)
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item['employee_id'] => $item];
+            });
+
+        return response()->json($assignments);
+    }
+
+    public function saveAssignment(Request $request)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'reviewer_id' => 'nullable|exists:users,id',
+            'approver_id' => 'nullable|exists:users,id',
+        ]);
+
+        try {
+            $assignment = LoadChartAssignment::updateOrCreate(
+                ['employee_id' => $validated['employee_id']],
+                [
+                    'reviewer_id' => $validated['reviewer_id'],
+                    'approver_id' => $validated['approver_id']
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Asignación guardada correctamente',
+                'data' => $assignment
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar la asignación: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

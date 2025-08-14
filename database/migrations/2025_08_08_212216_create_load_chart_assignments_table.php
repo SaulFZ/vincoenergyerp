@@ -13,6 +13,24 @@ return new class extends Migration
     {
         Schema::create('load_chart_assignments', function (Blueprint $table) {
             $table->id();
+
+            // ID del empleado que será revisado/aprobado
+            $table->foreignId('employee_id')
+                  ->constrained('employees')
+                  ->onDelete('cascade');
+
+            // ID del usuario asignado como revisor
+            $table->foreignId('reviewer_id')
+                  ->nullable()
+                  ->constrained('users')
+                  ->onDelete('set null');
+
+            // ID del usuario asignado como aprobador
+            $table->foreignId('approver_id')
+                  ->nullable()
+                  ->constrained('users')
+                  ->onDelete('set null');
+
             $table->timestamps();
         });
     }

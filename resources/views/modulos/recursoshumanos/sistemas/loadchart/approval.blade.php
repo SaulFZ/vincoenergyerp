@@ -6,7 +6,7 @@
         <div id="approvalView">
             <div class="approval-container">
                 <div class="approval-header">
-                    <h2><i class="fas fa-check-circle"></i> Aprobación de Load Chart - Junio 2025</h2>
+                    <h2><i class="fas fa-check-circle"></i>Load Chart - Junio 2025</h2>
                     <div class="period-navigation-container">
                         <div class="period-navigation">
                             <button class="period-btn" id="prev-period"><i class="fas fa-chevron-left"></i></button>
@@ -30,8 +30,6 @@
                         </button>
                     </div>
                 </div>
-
-
 
                 <table class="approval-table">
                     <thead>
@@ -408,7 +406,203 @@
     </div>
 
 
+    <div id="squad-control-modal" class="squad-modal-container">
+        <div class="squad-modal-card">
+            <div class="squad-modal-header">
+                <div class="header-content">
+                    <i class="fas fa-users-cog header-icon"></i>
+                    <div>
+                        <h3>Gestión de Cuadrillas</h3>
+                        <p class="subtitle">Administra los grupos de operadores</p>
+                    </div>
+                </div>
+                <button class="squad-close-btn">&times;</button>
+            </div>
 
+            <div class="squad-modal-content">
+                <div class="toolbar">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Buscar cuadrilla u operador...">
+                        <button class="search-clear"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="toolbar-buttons">
+                        <button class="toolbar-btn primary" id="add-new-squad">
+                            <i class="fas fa-plus"></i> Nueva Cuadrilla
+                        </button>
+                    </div>
+                </div>
+
+                <div class="responsive-table-container">
+                    <table class="squad-table">
+                        <thead>
+                            <tr>
+                                <th width="120px" class="centered-cell">Núm Cuadrilla</th>
+                                <th>Operadores</th>
+                                <th width="120px">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="squad-row">
+                                <td class="centered-cell">
+                                    <span class="squad-badge">Cuadrilla-01</span>
+                                </td>
+                                <td>
+                                    <div class="operators-grid">
+                                        <div class="operator-card">
+                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
+                                            <div class="operator-info">
+                                                <span class="operator-name">Saul Falcon Perez</span>
+                                                <span class="operator-id">ID: OP-001</span>
+                                            </div>
+                                        </div>
+                                        <div class="operator-card">
+                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
+                                            <div class="operator-info">
+                                                <span class="operator-name">Juan Pérez López</span>
+                                                <span class="operator-id">ID: OP-002</span>
+                                            </div>
+                                        </div>
+                                        <div class="operator-card">
+                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
+                                            <div class="operator-info">
+                                                <span class="operator-name">María García Ruiz</span>
+                                                <span class="operator-id">ID: OP-003</span>
+                                            </div>
+                                        </div>
+                                        <div class="operator-card">
+                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
+                                            <div class="operator-info">
+                                                <span class="operator-name">Carlos Martínez Soto</span>
+                                                <span class="operator-id">ID: OP-004</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn edit" title="Editar"><i
+                                                class="fas fa-pencil-alt"></i></button>
+                                        <button class="action-btn delete" title="Eliminar"><i
+                                                class="fas fa-trash-alt"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="squad-row incomplete-row">
+                                <td class="centered-cell">
+                                    <span class="squad-badge">Cuadrilla-02</span>
+                                </td>
+                                <td>
+                                    <div class="operators-grid">
+                                        <div class="operator-card">
+                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
+                                            <div class="operator-info">
+                                                <span class="operator-name">Luis Hernández</span>
+                                                <span class="operator-id">ID: OP-005</span>
+                                            </div>
+                                        </div>
+                                        <div class="operator-card vacant">
+                                            <div class="operator-avatar"><i class="fas fa-user-plus"></i></div>
+                                            <div class="operator-info"><span class="operator-name">Vacío</span></div>
+                                        </div>
+                                        <div class="operator-card vacant">
+                                            <div class="operator-avatar"><i class="fas fa-user-plus"></i></div>
+                                            <div class="operator-info"><span class="operator-name">Vacío</span></div>
+                                        </div>
+                                        <div class="operator-card vacant">
+                                            <div class="operator-avatar"><i class="fas fa-user-plus"></i></div>
+                                            <div class="operator-info"><span class="operator-name">Vacío</span></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn edit" title="Editar"><i
+                                                class="fas fa-pencil-alt"></i></button>
+                                        <button class="action-btn delete" title="Eliminar"><i
+                                                class="fas fa-trash-alt"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="squad-form-modal" class="form-modal">
+        <div class="form-modal-content">
+            <div class="form-header">
+                <h4><i class="fas fa-users"></i> <span id="form-title">Nueva Cuadrilla</span></h4>
+                <button class="form-close-btn">&times;</button>
+            </div>
+            <div class="form-body">
+                <div class="form-group">
+                    <label for="squad-select">Número de Cuadrilla</label>
+                    <select class="form-select" id="squad-select">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Seleccionar 4 Operadores</label>
+                    <div class="operator-selection">
+                        <div class="operator-selector">
+                            <label>Operador 1</label>
+                            <select class="form-select">
+                                <option value="">Seleccionar...</option>
+                                <option value="OP-001">Saul Falcon Perez</option>
+                                <option value="OP-002">Juan Pérez López</option>
+                                <option value="OP-003">María García Ruiz</option>
+                                <option value="OP-004">Carlos Martínez Soto</option>
+                                <option value="OP-005">Luis Hernández</option>
+                            </select>
+                        </div>
+                        <div class="operator-selector">
+                            <label>Operador 2</label>
+                            <select class="form-select">
+                                <option value="">Seleccionar...</option>
+                                <option value="OP-001">Saul Falcon Perez</option>
+                                <option value="OP-002">Juan Pérez López</option>
+                                <option value="OP-003">María García Ruiz</option>
+                                <option value="OP-004">Carlos Martínez Soto</option>
+                                <option value="OP-005">Luis Hernández</option>
+                            </select>
+                        </div>
+                        <div class="operator-selector">
+                            <label>Operador 3</label>
+                            <select class="form-select">
+                                <option value="">Seleccionar...</option>
+                                <option value="OP-001">Saul Falcon Perez</option>
+                                <option value="OP-002">Juan Pérez López</option>
+                                <option value="OP-003">María García Ruiz</option>
+                                <option value="OP-004">Carlos Martínez Soto</option>
+                                <option value="OP-005">Luis Hernández</option>
+                            </select>
+                        </div>
+                        <div class="operator-selector">
+                            <label>Operador 4</label>
+                            <select class="form-select">
+                                <option value="">Seleccionar...</option>
+                                <option value="OP-001">Saul Falcon Perez</option>
+                                <option value="OP-002">Juan Pérez López</option>
+                                <option value="OP-003">María García Ruiz</option>
+                                <option value="OP-004">Carlos Martínez Soto</option>
+                                <option value="OP-005">Luis Hernández</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button class="form-btn cancel-sq-btn">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="form-btn save-sq-btn">
+                    <i class="fas fa-save"></i> Guardar Cuadrilla
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/approval.js') }}"></script>
 @endsection

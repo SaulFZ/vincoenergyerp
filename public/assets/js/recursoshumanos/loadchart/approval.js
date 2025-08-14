@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-
+    /* ================================================================= */
+    /* === LÓGICA PARA GESTIÓN DE CALENDARIO Y EMPLEADOS =============== */
+    /* ================================================================= */
     const quincenaModal = document.getElementById('quincena-modal');
     const openBtn = document.getElementById('days-quincena');
     const closeBtn = quincenaModal.querySelector('.quincena-close-btn');
@@ -13,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
 
     // Abrir modal
-    if(openBtn) {
+    if (openBtn) {
         openBtn.addEventListener('click', function() {
             quincenaModal.style.display = 'flex';
             renderQuincenaCalendar(currentDate);
@@ -25,18 +27,18 @@ document.addEventListener('DOMContentLoaded', function() {
         quincenaModal.style.display = 'none';
     }
 
-    if(closeBtn) closeBtn.addEventListener('click', closeQuincenaModal);
-    if(cancelBtn) cancelBtn.addEventListener('click', closeQuincenaModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeQuincenaModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeQuincenaModal);
 
     // Navegación de meses
-    if(prevMonthBtn) {
+    if (prevMonthBtn) {
         prevMonthBtn.addEventListener('click', function() {
             currentDate.setMonth(currentDate.getMonth() - 1);
             renderQuincenaCalendar(currentDate);
         });
     }
 
-    if(nextMonthBtn) {
+    if (nextMonthBtn) {
         nextMonthBtn.addEventListener('click', function() {
             currentDate.setMonth(currentDate.getMonth() + 1);
             renderQuincenaCalendar(currentDate);
@@ -59,20 +61,20 @@ document.addEventListener('DOMContentLoaded', function() {
         dayCells.forEach(cell => cell.remove());
 
         // Días del mes anterior (celdas vacías)
-        for(let i = 0; i < startDay; i++) {
+        for (let i = 0; i < startDay; i++) {
             const emptyCell = document.createElement('div');
             emptyCell.className = 'quincena-day-cell disabled';
             calendarGrid.appendChild(emptyCell);
         }
 
         // Días del mes actual
-        for(let day = 1; day <= lastDay.getDate(); day++) {
+        for (let day = 1; day <= lastDay.getDate(); day++) {
             const dayCell = document.createElement('div');
             dayCell.className = 'quincena-day-cell';
             dayCell.textContent = day;
 
             // Marcar días de fin de quincena
-            if(day === 15 || day === lastDay.getDate()) {
+            if (day === 15 || day === lastDay.getDate()) {
                 dayCell.classList.add('quincena-end');
             }
 
@@ -82,7 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getMonthName(monthIndex) {
         const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
         return months[monthIndex];
     }
 
@@ -309,6 +312,134 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+
+    /* ================================================================= */
+    /* === LÓGICA PARA GESTIÓN DE CUADRILLAS (SQUAD CONTROL) ========= */
+    /* ================================================================= */
+    const squadModal = document.getElementById('squad-control-modal');
+    const squadControlBtn = document.getElementById('squad-control');
+    const squadFormModal = document.getElementById('squad-form-modal');
+
+    const closeSquadModalBtn = squadModal.querySelector('.squad-close-btn');
+    const closeFormModalBtns = squadFormModal.querySelectorAll('.form-close-btn, .cancel-sq-btn');
+
+    const addNewSquadBtn = document.getElementById('add-new-squad');
+    const saveFormBtn = document.querySelector('.save-sq-btn');
+    const formTitle = document.getElementById('form-title');
+    const squadSelect = document.getElementById('squad-select');
+    const operatorSelects = document.querySelectorAll('.operator-selection .form-select');
+
+    function showModalSquad(modalElement) {
+        modalElement.classList.add('is-visible');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideModalSquad(modalElement) {
+        modalElement.classList.remove('is-visible');
+        if (!document.querySelector('.is-visible')) {
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    function generateSquadOptions() {
+        squadSelect.innerHTML = '<option value="">Seleccionar Cuadrilla...</option>';
+        for (let i = 1; i <= 20; i++) {
+            const option = document.createElement('option');
+            const squadNumber = i.toString().padStart(2, '0');
+            option.value = `Cuadrilla-${squadNumber}`;
+            option.textContent = `Cuadrilla-${squadNumber}`;
+            squadSelect.appendChild(option);
+        }
+    }
+
+    function resetForm() {
+        squadSelect.value = '';
+        operatorSelects.forEach(select => select.value = '');
+    }
+
+    generateSquadOptions();
+
+    if (squadControlBtn) {
+        squadControlBtn.addEventListener('click', () => showModalSquad(squadModal));
+    }
+
+    closeSquadModalBtn.addEventListener('click', () => hideModalSquad(squadModal));
+
+    closeFormModalBtns.forEach(btn => btn.addEventListener('click', () => hideModalSquad(squadFormModal)));
+
+    addNewSquadBtn.addEventListener('click', () => {
+        formTitle.textContent = 'Nueva Cuadrilla';
+        resetForm();
+        showModalSquad(squadFormModal);
+    });
+
+    document.querySelector('.squad-table').addEventListener('click', function(event) {
+        const editBtn = event.target.closest('.action-btn.edit');
+        const deleteBtn = event.target.closest('.action-btn.delete');
+
+        if (editBtn) {
+            const squadRow = editBtn.closest('.squad-row');
+            const squadId = squadRow.querySelector('.squad-badge').textContent;
+            formTitle.textContent = `Editar ${squadId}`;
+            showModalSquad(squadFormModal);
+        }
+
+        if (deleteBtn) {
+            const squadRow = deleteBtn.closest('.squad-row');
+            const squadId = squadRow.querySelector('.squad-badge').textContent;
+
+            Swal.fire({
+                title: `¿Estás seguro?`,
+                text: `Esta acción eliminará la cuadrilla ${squadId}. ¡No podrás revertirlo!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    squadRow.remove();
+                    Swal.fire(
+                        '¡Eliminada!',
+                        `La cuadrilla ${squadId} ha sido eliminada.`,
+                        'success'
+                    );
+                }
+            });
+        }
+    });
+
+    saveFormBtn.addEventListener('click', function() {
+        const squadId = squadSelect.value;
+        const selectedOperators = Array.from(operatorSelects).map(select => select.value).filter(op => op);
+
+        if (!squadId) {
+            Swal.fire('Error', 'Por favor selecciona un número de cuadrilla.', 'error');
+            return;
+        }
+
+        if (selectedOperators.length === 0) {
+            Swal.fire('Error', 'Debes seleccionar al menos un operador.', 'error');
+            return;
+        }
+
+        if (new Set(selectedOperators).size !== selectedOperators.length) {
+            Swal.fire('Error', 'No puede haber operadores duplicados.', 'error');
+            return;
+        }
+
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        setTimeout(() => {
+            this.innerHTML = '<i class="fas fa-save"></i> Guardar Cuadrilla';
+            hideModalSquad(squadFormModal);
+            Swal.fire('¡Guardado!', `Cuadrilla ${squadId} actualizada correctamente.`, 'success');
+            resetForm();
+        }, 1500);
+    });
+
+    document.querySelector('.search-clear').addEventListener('click', () => {
+        document.querySelector('.search-input').value = '';
+    });
 });
-
-

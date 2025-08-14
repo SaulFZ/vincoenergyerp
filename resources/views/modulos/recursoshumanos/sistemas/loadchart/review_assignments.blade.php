@@ -234,17 +234,19 @@
             box-shadow: 0 0 0 2px rgba(51, 76, 149, 0.2);
         }
 
-        /* ===== Botones de Acción Mejorados ===== */
+        /* ===== Botón de Guardar Mejorado ===== */
         .action-btn {
             width: 36px;
             height: 36px;
             border-radius: var(--border-radius-sm);
-            display: inline-flex;
+            display: flex;
             align-items: center;
             justify-content: center;
             transition: var(--transition-fast);
             cursor: pointer;
             border: none;
+            margin: 0 auto;
+            /* Centrado horizontal */
         }
 
         .save-btn {
@@ -255,6 +257,27 @@
         .save-btn:hover {
             background-color: var(--primary-darker-blue);
             transform: translateY(-1px);
+        }
+
+        /* Estado de éxito */
+        .save-btn.success {
+            background-color: #28a745;
+            /* Verde de éxito */
+            animation: pulse 0.5s;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         /* ===== Paginación Mejorada ===== */
@@ -301,6 +324,73 @@
             color: var(--medium-gray);
             pointer-events: none;
             background-color: var(--lighter-gray);
+        }
+
+        /* Toast Styles */
+
+        .toast {
+            position: fixed;
+            /* Cambia la posición a la parte superior */
+            top: 100px;
+            right: 20px;
+            background: white;
+            /* Sombra más sutil y moderna */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            /* Bordes más redondeados */
+            padding: 16px 20px;
+            /* Aumenta el padding para un mejor espacio */
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            /* Usa gap en lugar de margin para el icono */
+            z-index: 1000;
+            /* Animación para que aparezca desde arriba y se desvanezca */
+            transform: translateY(-100px);
+            opacity: 0;
+            transition: all 0.4s ease-out;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            /* Tamaño del icono ajustado para un mejor visual */
+            font-size: 16px;
+        }
+
+        /* Toast de éxito */
+        .toast.success .toast-icon {
+            background: #28a745;
+            /* Un verde más vibrante */
+        }
+
+        /* Toast de error */
+        .toast.error .toast-icon {
+            background: #dc3545;
+            /* Un rojo más fuerte */
+        }
+
+        /* Toast de advertencia (opcional) */
+        .toast.warning .toast-icon {
+            background: #ffc107;
+        }
+
+        /* Estilos del mensaje */
+        .toast-message {
+            margin: 0;
+            font-size: 15px;
+            /* Fuente ligeramente más grande */
+            color: #333;
         }
 
         /* ===== Responsive ===== */
@@ -355,7 +445,6 @@
         }
     </style>
 
-@section('content')
     <div class="assignment-container">
         <div class="control-panel">
             <div class="panel-header">
@@ -418,6 +507,14 @@
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" style="display: none;">
+        <div class="toast-icon"></div>
+        <div class="toast-content">
+            <p class="toast-message"></p>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Variables del DOM
@@ -427,30 +524,52 @@
             const employeesTableBody = document.getElementById('employees-table-body');
             const paginationList = document.getElementById('pagination-list');
             const tableHeaders = document.querySelectorAll('.assignment-table th[data-sort]');
+            const toast = document.getElementById('toast');
 
             let currentPage = 1;
             let currentSortColumn = 'employee_number';
             let currentSortDirection = 'asc';
             const urlGetEmployees = '{{ route('loadchart.getEmployees') }}';
+            const urlGetAssignments = '{{ route('loadchart.getExistingAssignments') }}';
+            const urlSaveAssignment = '{{ route('loadchart.saveAssignment') }}';
 
             // Variables de datos de la vista pasadas desde Laravel
             const reviewers = @json($reviewers);
             const approvers = @json($approvers);
 
+            // Función para mostrar notificaciones Toast
+            function showToast(type, message) {
+                toast.className = `toast ${type}`;
+                toast.querySelector('.toast-icon').innerHTML =
+                    type === 'success' ? '<i class="fas fa-check"></i>' : '<i class="fas fa-exclamation"></i>';
+                toast.querySelector('.toast-message').textContent = message;
+                toast.style.display = 'flex';
+                toast.classList.add('show');
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        toast.style.display = 'none';
+                    }, 300);
+                }, 3000);
+            }
+
             // Función para generar las opciones del selector de revisores
-            function createReviewerOptions() {
+            function createReviewerOptions(selectedId = null) {
                 let options = '<option value="">Seleccionar...</option>';
                 reviewers.forEach(reviewer => {
-                    options += `<option value="${reviewer.id}">${reviewer.name}</option>`;
+                    const selected = selectedId == reviewer.id ? 'selected' : '';
+                    options += `<option value="${reviewer.id}" ${selected}>${reviewer.name}</option>`;
                 });
                 return options;
             }
 
             // Función para generar las opciones del selector de aprobadores
-            function createApproverOptions() {
+            function createApproverOptions(selectedId = null) {
                 let options = '<option value="">Seleccionar...</option>';
                 approvers.forEach(approver => {
-                    options += `<option value="${approver.id}">${approver.name}</option>`;
+                    const selected = selectedId == approver.id ? 'selected' : '';
+                    options += `<option value="${approver.id}" ${selected}>${approver.name}</option>`;
                 });
                 return options;
             }
@@ -483,7 +602,7 @@
                     sort_direction: currentSortDirection
                 });
 
-                // Hacer la solicitud fetch
+                // Hacer la solicitud fetch para obtener empleados
                 fetch(`${urlGetEmployees}?${params.toString()}`, {
                         headers: {
                             'Accept': 'application/json',
@@ -492,65 +611,89 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        employeesTableBody.innerHTML = '';
                         if (data.employees.length === 0) {
                             employeesTableBody.innerHTML = `
-                            <tr>
-                                <td colspan="8">
-                                    <div class="no-results-message">
-                                        <i class="fas fa-info-circle"></i>
-                                        <span>No se encontraron empleados con los filtros aplicados.</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="no-results-message">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>No se encontraron empleados con los filtros aplicados.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
                             paginationList.innerHTML = '';
                             return;
                         }
 
-                        // Generar opciones de revisor y aprobador fuera del bucle para mayor eficiencia
-                        const reviewerOptions = createReviewerOptions();
-                        const approverOptions = createApproverOptions();
+                        // Obtener IDs de empleados para buscar sus asignaciones
+                        const employeeIds = data.employees.map(emp => emp.id);
 
-                        // Llenar la tabla con los empleados
-                        data.employees.forEach(employee => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                            <td class="employee-id">${employee.employee_number || 'N/A'}</td>
-                            <td>${employee.full_name || 'N/A'}</td>
-                            <td>${employee.department || 'N/A'}</td>
-                            <td>${employee.position || 'N/A'}</td>
-                            <td>${employee.job_title || 'N/A'}</td>
-                            <td>
-                                <select class="assignment-select reviewer-select">
-                                    ${reviewerOptions}
-                                </select>
-                            </td>
-                            <td>
-                                <select class="assignment-select approver-select">
-                                    ${approverOptions}
-                                </select>
-                            </td>
-                            <td>
-                                <button class="action-btn save-btn" data-employee-id="${employee.id}">
-                                    <i class="fas fa-save"></i>
-                                </button>
-                            </td>
-                        `;
-                            employeesTableBody.appendChild(row);
-                        });
+                        // Obtener asignaciones existentes para estos empleados
+                        return fetch(urlGetAssignments, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    employee_ids: employeeIds
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(assignments => {
+                                // Construir la tabla con los empleados y sus asignaciones
+                                employeesTableBody.innerHTML = '';
 
-                        // Actualizar la paginación
-                        updatePagination(data);
+                                data.employees.forEach(employee => {
+                                    const assignment = assignments[employee.id] || {};
+                                    const row = document.createElement('tr');
+
+                                    row.innerHTML = `
+                                    <td class="employee-id">${employee.employee_number || 'N/A'}</td>
+                                    <td>${employee.full_name || 'N/A'}</td>
+                                    <td>${employee.department || 'N/A'}</td>
+                                    <td>${employee.position || 'N/A'}</td>
+                                    <td>${employee.job_title || 'N/A'}</td>
+                                    <td>
+                                        <select class="assignment-select reviewer-select">
+                                            ${createReviewerOptions(assignment.reviewer_id)}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select class="assignment-select approver-select">
+                                            ${createApproverOptions(assignment.approver_id)}
+                                        </select>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <button class="action-btn save-btn" data-employee-id="${employee.id}">
+                                            <i class="fas fa-save"></i>
+                                        </button>
+                                    </td>
+                                `;
+
+                                    employeesTableBody.appendChild(row);
+                                });
+
+                                // Actualizar la paginación
+                                updatePagination(data);
+                            });
                     })
                     .catch(error => {
                         console.error('Error al cargar empleados:', error);
-                        employeesTableBody.innerHTML =
-                            '<tr><td colspan="8" class="text-center text-danger">Error al cargar los empleados</td></tr>';
+                        employeesTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="text-center text-danger">
+                                    Error al cargar los empleados. Por favor, intente nuevamente.
+                                </td>
+                            </tr>
+                        `;
+                        showToast('error', 'Error al cargar empleados');
                     });
             }
 
-            // ... (El resto de las funciones de paginación y event listeners se mantienen igual) ...
+            // Función para actualizar la paginación
             function updatePagination(data) {
                 paginationList.innerHTML = '';
 
@@ -562,11 +705,43 @@
                 paginationList.appendChild(prevLi);
 
                 // Números de página
-                for (let i = 1; i <= data.last_page; i++) {
+                const startPage = Math.max(1, data.current_page - 2);
+                const endPage = Math.min(data.last_page, data.current_page + 2);
+
+                if (startPage > 1) {
+                    const li = document.createElement('li');
+                    li.className = 'page-item';
+                    li.innerHTML = `<a href="#" class="page-link" data-page="1">1</a>`;
+                    paginationList.appendChild(li);
+
+                    if (startPage > 2) {
+                        const dotsLi = document.createElement('li');
+                        dotsLi.className = 'page-item disabled';
+                        dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                        paginationList.appendChild(dotsLi);
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
                     const pageLi = document.createElement('li');
                     pageLi.className = `page-item ${i === data.current_page ? 'active' : ''}`;
                     pageLi.innerHTML = `<a href="#" class="page-link" data-page="${i}">${i}</a>`;
                     paginationList.appendChild(pageLi);
+                }
+
+                if (endPage < data.last_page) {
+                    if (endPage < data.last_page - 1) {
+                        const dotsLi = document.createElement('li');
+                        dotsLi.className = 'page-item disabled';
+                        dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                        paginationList.appendChild(dotsLi);
+                    }
+
+                    const li = document.createElement('li');
+                    li.className = 'page-item';
+                    li.innerHTML =
+                        `<a href="#" class="page-link" data-page="${data.last_page}">${data.last_page}</a>`;
+                    paginationList.appendChild(li);
                 }
 
                 // Botón Siguiente
@@ -589,7 +764,60 @@
                 });
             }
 
-            // Event listeners para los filtros y búsqueda (automáticos)
+            // Función para guardar una asignación
+            function saveAssignment(employeeId, reviewerId, approverId) {
+                const saveBtn = document.querySelector(`.save-btn[data-employee-id="${employeeId}"]`);
+                const originalIcon = saveBtn.innerHTML;
+                const originalClass = saveBtn.className;
+
+                // Estado de carga
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                saveBtn.disabled = true;
+                saveBtn.classList.remove('success');
+
+                const data = {
+                    employee_id: employeeId,
+                    reviewer_id: reviewerId || null,
+                    approver_id: approverId || null,
+                    _token: '{{ csrf_token() }}'
+                };
+
+                fetch(urlSaveAssignment, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Estado de éxito
+                            saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+                            saveBtn.classList.add('success');
+                            showToast('success', data.message);
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        saveBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        showToast('error', error.message);
+                    })
+                    .finally(() => {
+                        setTimeout(() => {
+                            // Restaurar estado original
+                            saveBtn.innerHTML = originalIcon;
+                            saveBtn.className = originalClass;
+                            saveBtn.disabled = false;
+                        }, 2000);
+                    });
+            }
+
+            // Event listeners para los filtros y búsqueda
             departmentFilter.addEventListener('change', function() {
                 currentPage = 1;
                 loadEmployees(currentPage);
@@ -600,9 +828,14 @@
                 loadEmployees(currentPage);
             });
 
+            // Debounce para la búsqueda
+            let searchTimeout;
             searchFilter.addEventListener('keyup', function() {
-                currentPage = 1;
-                loadEmployees(currentPage);
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    loadEmployees(currentPage);
+                }, 500);
             });
 
             // Event listeners para ordenar la tabla
@@ -617,13 +850,31 @@
                         currentSortDirection = 'asc';
                     }
 
-                    tableHeaders.forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
-                    this.classList.add(currentSortDirection === 'asc' ? 'sorted-asc' :
-                        'sorted-desc');
+                    tableHeaders.forEach(th => {
+                        th.classList.remove('sorted-asc', 'sorted-desc');
+                        th.querySelector('i').className = 'fas fa-sort';
+                    });
+
+                    this.classList.add(`sorted-${currentSortDirection}`);
+                    this.querySelector('i').className =
+                        currentSortDirection === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
 
                     currentPage = 1;
                     loadEmployees(currentPage);
                 });
+            });
+
+            // Event delegation para los botones de guardar
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.save-btn')) {
+                    const saveBtn = e.target.closest('.save-btn');
+                    const row = saveBtn.closest('tr');
+                    const employeeId = saveBtn.getAttribute('data-employee-id');
+                    const reviewerId = row.querySelector('.reviewer-select').value;
+                    const approverId = row.querySelector('.approver-select').value;
+
+                    saveAssignment(employeeId, reviewerId, approverId);
+                }
             });
 
             // Cargar empleados al iniciar
