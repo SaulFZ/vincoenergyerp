@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+<meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
 <body>

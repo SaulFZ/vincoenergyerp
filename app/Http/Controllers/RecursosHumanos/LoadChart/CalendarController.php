@@ -5,6 +5,7 @@ namespace App\Http\Controllers\RecursosHumanos\LoadChart;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Employee;
+use App\Models\RecursosHumanos\LoadChart\Services;
 
 class CalendarController extends Controller
 {
@@ -16,18 +17,33 @@ class CalendarController extends Controller
         // Obtener los datos del empleado con relación al usuario
         $employee = Employee::with('user')->find($user->employee_id);
 
-        // Formatear la fecha de ingreso en formato "15 de Marzo de 2020"
+        // Formatear la fecha de ingreso
         $hire_date = $employee ? $this->formatDate($employee->hire_date) : 'N/A';
 
-        // Obtener la foto del empleado o usar una por defecto
+        // Obtener la foto del empleado
         $photo = $employee && $employee->photo
             ? asset($employee->photo)
             : asset('assets/img/perfil.png');
 
+        // Obtener servicios en formato plano (sin agrupamiento complejo)
+        $services = Services::select(
+                'operation_type',
+                'service_type',
+                'service_performed',
+                'identifier',
+                'service_description'
+            )
+            ->orderBy('operation_type')
+            ->orderBy('service_type')
+            ->orderBy('service_performed')
+            ->get()
+            ->groupBy('operation_type'); // Solo agrupar por operation_type
+
         return view('modulos.recursoshumanos.sistemas.loadchart.calendar', [
             'employee' => $employee,
             'hire_date' => $hire_date,
-            'employee_photo' => $photo
+            'employee_photo' => $photo,
+            'services' => $services // Cambiado de groupedServices a services
         ]);
     }
 

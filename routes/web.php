@@ -113,10 +113,19 @@ Route::middleware(['web', 'auth'])->group(function () {
                     ->name('loadchart.calendar')
                     ->middleware('check.permission:recursoshumanos,loadchart,calendar');
 
+
+
                 Route::get('/approval', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.approval');
                 })->name('loadchart.approval');
+// ... (Tus otras rutas) ...
 
+Route::get('/approval', [SquadController::class, 'index'])->name('loadchart.approval');
+Route::get('/recursos-humanos/loadchart/get-operadores', [SquadController::class, 'getOperadores'])->name('squads.get_operadores');
+Route::get('/recursos-humanos/loadchart/get-squads', [SquadController::class, 'getSquads'])->name('squads.get_squads');
+Route::post('/squads/store', [SquadController::class, 'store'])->name('squads.store');
+Route::delete('/squads/{squadNumber}', [SquadController::class, 'destroy'])->name('squads.destroy');
+Route::get('/squads/{squadNumber}', [SquadController::class, 'show'])->name('squads.show');
 
                 Route::get('/history', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.history');

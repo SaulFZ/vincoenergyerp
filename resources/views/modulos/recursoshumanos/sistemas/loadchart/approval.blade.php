@@ -406,203 +406,274 @@
     </div>
 
 
-    <div id="squad-control-modal" class="squad-modal-container">
-        <div class="squad-modal-card">
-            <div class="squad-modal-header">
-                <div class="header-content">
-                    <i class="fas fa-users-cog header-icon"></i>
-                    <div>
-                        <h3>Gestión de Cuadrillas</h3>
-                        <p class="subtitle">Administra los grupos de operadores</p>
-                    </div>
+<div id="squad-control-modal" class="squad-modal-container">
+    <div class="squad-modal-card">
+        <div class="squad-modal-header">
+            <div class="header-content">
+                <i class="fas fa-users-cog header-icon"></i>
+                <div>
+                    <h3>Gestión de Cuadrillas</h3>
+                    <p class="subtitle">Administra los grupos de operadores</p>
                 </div>
-                <button class="squad-close-btn">&times;</button>
+            </div>
+            <button class="squad-close-btn">&times;</button>
+        </div>
+
+        <div class="squad-modal-content">
+            <div class="toolbar">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Buscar cuadrilla u operador...">
+                    <button class="search-clear"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="toolbar-buttons">
+                    <button class="toolbar-btn primary" id="add-new-squad">
+                        <i class="fas fa-plus"></i> Nueva Cuadrilla
+                    </button>
+                </div>
             </div>
 
-            <div class="squad-modal-content">
-                <div class="toolbar">
-                    <div class="search-container">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" class="search-input" placeholder="Buscar cuadrilla u operador...">
-                        <button class="search-clear"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="toolbar-buttons">
-                        <button class="toolbar-btn primary" id="add-new-squad">
-                            <i class="fas fa-plus"></i> Nueva Cuadrilla
-                        </button>
-                    </div>
-                </div>
-
-                <div class="responsive-table-container">
-                    <table class="squad-table">
-                        <thead>
-                            <tr>
-                                <th width="120px" class="centered-cell">Núm Cuadrilla</th>
-                                <th>Operadores</th>
-                                <th width="120px">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="squad-row">
-                                <td class="centered-cell">
-                                    <span class="squad-badge">Cuadrilla-01</span>
-                                </td>
-                                <td>
-                                    <div class="operators-grid">
-                                        <div class="operator-card">
-                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
-                                            <div class="operator-info">
-                                                <span class="operator-name">Saul Falcon Perez</span>
-                                                <span class="operator-id">ID: OP-001</span>
-                                            </div>
-                                        </div>
-                                        <div class="operator-card">
-                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
-                                            <div class="operator-info">
-                                                <span class="operator-name">Juan Pérez López</span>
-                                                <span class="operator-id">ID: OP-002</span>
-                                            </div>
-                                        </div>
-                                        <div class="operator-card">
-                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
-                                            <div class="operator-info">
-                                                <span class="operator-name">María García Ruiz</span>
-                                                <span class="operator-id">ID: OP-003</span>
-                                            </div>
-                                        </div>
-                                        <div class="operator-card">
-                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
-                                            <div class="operator-info">
-                                                <span class="operator-name">Carlos Martínez Soto</span>
-                                                <span class="operator-id">ID: OP-004</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="action-btn edit" title="Editar"><i
-                                                class="fas fa-pencil-alt"></i></button>
-                                        <button class="action-btn delete" title="Eliminar"><i
-                                                class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="squad-row incomplete-row">
-                                <td class="centered-cell">
-                                    <span class="squad-badge">Cuadrilla-02</span>
-                                </td>
-                                <td>
-                                    <div class="operators-grid">
-                                        <div class="operator-card">
-                                            <div class="operator-avatar"><i class="fas fa-user"></i></div>
-                                            <div class="operator-info">
-                                                <span class="operator-name">Luis Hernández</span>
-                                                <span class="operator-id">ID: OP-005</span>
-                                            </div>
-                                        </div>
-                                        <div class="operator-card vacant">
-                                            <div class="operator-avatar"><i class="fas fa-user-plus"></i></div>
-                                            <div class="operator-info"><span class="operator-name">Vacío</span></div>
-                                        </div>
-                                        <div class="operator-card vacant">
-                                            <div class="operator-avatar"><i class="fas fa-user-plus"></i></div>
-                                            <div class="operator-info"><span class="operator-name">Vacío</span></div>
-                                        </div>
-                                        <div class="operator-card vacant">
-                                            <div class="operator-avatar"><i class="fas fa-user-plus"></i></div>
-                                            <div class="operator-info"><span class="operator-name">Vacío</span></div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="action-btn edit" title="Editar"><i
-                                                class="fas fa-pencil-alt"></i></button>
-                                        <button class="action-btn delete" title="Eliminar"><i
-                                                class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
+            <div class="responsive-table-container">
+                <table class="squad-table">
+                    <thead>
+                        <tr>
+                            <th width="120px" class="centered-cell">Núm Cuadrilla</th>
+                            <th>Operadores</th>
+                            <th width="120px">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                         </tbody>
-                    </table>
-                </div>
+                </table>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="squad-form-modal" class="form-modal">
-        <div class="form-modal-content">
-            <div class="form-header">
-                <h4><i class="fas fa-users"></i> <span id="form-title">Nueva Cuadrilla</span></h4>
-                <button class="form-close-btn">&times;</button>
-            </div>
-            <div class="form-body">
-                <div class="form-group">
-                    <label for="squad-select">Número de Cuadrilla</label>
-                    <select class="form-select" id="squad-select">
+<div id="squad-form-modal" class="form-modal">
+    <div class="form-modal-content">
+        <div class="form-header">
+            <h4><i class="fas fa-users"></i> <span id="form-title">Nueva Cuadrilla</span></h4>
+            <button class="form-close-btn">&times;</button>
+        </div>
+        <div class="form-body">
+            <div class="form-group">
+                <label for="squad-select">Número de Cuadrilla</label>
+                <select class="form-select" id="squad-select">
                     </select>
-                </div>
-                <div class="form-group">
-                    <label>Seleccionar 4 Operadores</label>
-                    <div class="operator-selection">
-                        <div class="operator-selector">
-                            <label>Operador 1</label>
-                            <select class="form-select">
-                                <option value="">Seleccionar...</option>
-                                <option value="OP-001">Saul Falcon Perez</option>
-                                <option value="OP-002">Juan Pérez López</option>
-                                <option value="OP-003">María García Ruiz</option>
-                                <option value="OP-004">Carlos Martínez Soto</option>
-                                <option value="OP-005">Luis Hernández</option>
-                            </select>
-                        </div>
-                        <div class="operator-selector">
-                            <label>Operador 2</label>
-                            <select class="form-select">
-                                <option value="">Seleccionar...</option>
-                                <option value="OP-001">Saul Falcon Perez</option>
-                                <option value="OP-002">Juan Pérez López</option>
-                                <option value="OP-003">María García Ruiz</option>
-                                <option value="OP-004">Carlos Martínez Soto</option>
-                                <option value="OP-005">Luis Hernández</option>
-                            </select>
-                        </div>
-                        <div class="operator-selector">
-                            <label>Operador 3</label>
-                            <select class="form-select">
-                                <option value="">Seleccionar...</option>
-                                <option value="OP-001">Saul Falcon Perez</option>
-                                <option value="OP-002">Juan Pérez López</option>
-                                <option value="OP-003">María García Ruiz</option>
-                                <option value="OP-004">Carlos Martínez Soto</option>
-                                <option value="OP-005">Luis Hernández</option>
-                            </select>
-                        </div>
-                        <div class="operator-selector">
-                            <label>Operador 4</label>
-                            <select class="form-select">
-                                <option value="">Seleccionar...</option>
-                                <option value="OP-001">Saul Falcon Perez</option>
-                                <option value="OP-002">Juan Pérez López</option>
-                                <option value="OP-003">María García Ruiz</option>
-                                <option value="OP-004">Carlos Martínez Soto</option>
-                                <option value="OP-005">Luis Hernández</option>
-                            </select>
-                        </div>
+            </div>
+            <div class="form-group">
+                <label>Seleccionar Operadores (Máximo 4)</label>
+                <div class="operator-selection">
+                    <div class="operator-selector">
+                        <label>Operador 1</label>
+                        <select class="form-select operator-select">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="operator-selector">
+                        <label>Operador 2</label>
+                        <select class="form-select operator-select">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="operator-selector">
+                        <label>Operador 3</label>
+                        <select class="form-select operator-select">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="operator-selector">
+                        <label>Operador 4</label>
+                        <select class="form-select operator-select">
+                            <option value="">Seleccionar...</option>
+                        </select>
                     </div>
                 </div>
             </div>
-            <div class="form-footer">
-                <button class="form-btn cancel-sq-btn">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-                <button class="form-btn save-sq-btn">
-                    <i class="fas fa-save"></i> Guardar Cuadrilla
-                </button>
-            </div>
+        </div>
+
+        <div class="form-footer">
+            <button class="form-btn cancel-sq-btn">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button class="form-btn save-sq-btn">
+                <i class="fas fa-save"></i> Guardar Cuadrilla
+            </button>
         </div>
     </div>
+</div>
+
+<style>
+    /* Animaciones y estilos para la gestión de cuadrillas */
+
+/* Skeleton loading */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    color: transparent !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-badge {
+    width: 100px;
+    height: 28px;
+    display: inline-block;
+}
+
+.skeleton-text {
+    height: 12px;
+    margin: 4px 0;
+    display: block;
+}
+
+.skeleton-btn {
+    width: 30px;
+    height: 30px;
+    display: inline-block;
+    margin: 0 5px;
+    border-radius: 50%;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Loading form */
+.loading-form .form-body {
+    position: relative;
+}
+
+.loading-form .form-body::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 10;
+}
+
+.loading-form .form-body::before {
+    content: 'Cargando...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 11;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+/* Success animation */
+.success-animation .form-modal-content {
+    animation: pulseSuccess 0.5s 2;
+    position: relative;
+}
+
+.success-animation .form-modal-content::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    color: #28a745;
+    z-index: 10;
+}
+
+@keyframes pulseSuccess {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+/* Transiciones suaves */
+.squad-row {
+    transition: all 0.3s ease;
+}
+
+.squad-modal-card {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.is-visible .squad-modal-card {
+    animation: modalEnter 0.4s ease forwards;
+}
+
+@keyframes modalEnter {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Operadores deshabilitados */
+select option:disabled {
+    color: #999;
+    font-style: italic;
+    background-color: #f8f9fa;
+}
+
+/* Error state */
+.error {
+    color: #dc3545;
+    text-align: center;
+    padding: 2rem;
+}
+
+.error i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.retry-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background 0.3s;
+}
+
+.retry-btn:hover {
+    background: #c82333;
+}
+
+/* Estilos para cuadrillas existentes deshabilitadas */
+select option[disabled] {
+    color: #6c757d;
+}
+
+/* Tooltip para opciones deshabilitadas */
+select option[disabled]:hover {
+    cursor: not-allowed;
+}
+</style>
+<script>
+        // Definición de rutas
+        window.appRoutes = {
+            getOperadores: '{{ route('squads.get_operadores') }}',
+            getSquads: '{{ route('squads.get_squads') }}',
+            storeSquad: '{{ route('squads.store') }}',
+            destroySquad: '{{ route('squads.destroy', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace(
+                '__SQUAD_NUMBER__', ''),
+            showSquad: '{{ route('squads.show', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace('__SQUAD_NUMBER__',
+                '')
+        };
+    </script>
 
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/approval.js') }}"></script>
 @endsection

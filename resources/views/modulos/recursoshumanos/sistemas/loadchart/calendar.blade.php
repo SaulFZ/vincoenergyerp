@@ -344,7 +344,8 @@
                         <label for="activity-date">Fecha</label>
                         <div class="input-with-icon">
                             <i class="far fa-calendar-alt"></i>
-                            <input type="text" id="activity-date" class="input-custom" value="19 de Junio, 2025" readonly>
+                            <input type="text" id="activity-date" class="input-custom" value="19 de Junio, 2025"
+                                readonly>
                         </div>
                     </div>
 
@@ -361,56 +362,64 @@
                                         <div class="color-indicator" style="background-color: var(--work-base);"></div>
                                         <div class="activity-label">Trabajo en Base</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--work-base); color: white;">B</div>
+                                    <div class="activity-code" style="background-color: var(--work-base); color: white;">B
+                                    </div>
                                 </div>
                                 <div class="activity-option" data-value="P">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--work-well);"></div>
                                         <div class="activity-label">Trabajo en Pozo</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--work-well); color: white;">P</div>
+                                    <div class="activity-code" style="background-color: var(--work-well); color: white;">P
+                                    </div>
                                 </div>
                                 <div class="activity-option" data-value="H">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--home-office);"></div>
                                         <div class="activity-label">Home Office</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--home-office); color: white;">H</div>
+                                    <div class="activity-code"
+                                        style="background-color: var(--home-office); color: white;">H</div>
                                 </div>
                                 <div class="activity-option" data-value="V">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--traveling);"></div>
                                         <div class="activity-label">Viaje</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--traveling); color: white;">V</div>
+                                    <div class="activity-code" style="background-color: var(--traveling); color: white;">V
+                                    </div>
                                 </div>
                                 <div class="activity-option" data-value="D">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--rest);"></div>
                                         <div class="activity-label">Descanso</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--rest); color: white;">D</div>
+                                    <div class="activity-code" style="background-color: var(--rest); color: white;">D
+                                    </div>
                                 </div>
                                 <div class="activity-option" data-value="VAC">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--vacation);"></div>
                                         <div class="activity-label">Vacaciones</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--vacation); color: white;">VAC</div>
+                                    <div class="activity-code" style="background-color: var(--vacation); color: white;">
+                                        VAC</div>
                                 </div>
                                 <div class="activity-option" data-value="E">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--training);"></div>
                                         <div class="activity-label">Entrenamiento</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--training); color: white;">E</div>
+                                    <div class="activity-code" style="background-color: var(--training); color: white;">E
+                                    </div>
                                 </div>
                                 <div class="activity-option" data-value="M">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--medical);"></div>
                                         <div class="activity-label">Médico</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--medical); color: white;">M</div>
+                                    <div class="activity-code" style="background-color: var(--medical); color: white;">M
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -457,19 +466,24 @@
                     </div>
                 </div>
 
-                <!-- Servicio Tab -->
+                <!-- Pasar datos al JavaScript -->
+                <script id="service-data" type="application/json">
+                    @json($services->toArray())
+                </script>
+
+                <!-- Estructura HTML de los selectores -->
                 <div class="tab-content" id="service-tab">
                     <div class="form-group">
                         <label for="work-type">Tipo de Trabajo</label>
                         <div class="work-type-options">
-                            <div class="work-type-option" data-value="land">
-                                <input type="radio" name="work-type" id="work-land" value="land">
+                            <div class="work-type-option" data-value="Tierra">
+                                <input type="radio" name="work-type" id="work-land" value="Tierra">
                                 <span class="work-type-label">
                                     <i class="fas fa-mountain"></i> Tierra
                                 </span>
                             </div>
-                            <div class="work-type-option" data-value="marine">
-                                <input type="radio" name="work-type" id="work-marine" value="marine">
+                            <div class="work-type-option" data-value="Marina">
+                                <input type="radio" name="work-type" id="work-marine" value="Marina">
                                 <span class="work-type-label">
                                     <i class="fas fa-water"></i> Marina
                                 </span>
@@ -491,7 +505,8 @@
                         <select id="service-performed" class="select-custom" disabled>
                             <option value="">Seleccionar servicio realizado...</option>
                         </select>
-                        <div class="error-message" id="service-performed-error">Debes seleccionar un servicio realizado</div>
+                        <div class="error-message" id="service-performed-error">Debes seleccionar un servicio realizado
+                        </div>
                     </div>
 
                     <div class="form-group">

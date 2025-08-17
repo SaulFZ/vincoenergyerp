@@ -43,4 +43,6 @@ class Employee extends Model
     return $this->hasOne(\App\Models\Auth\User::class, "employee_id", "id");
   }
 
+
+
 }
