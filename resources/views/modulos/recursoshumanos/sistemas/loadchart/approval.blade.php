@@ -327,83 +327,63 @@
         </div>
     </div>
 
-    <div id="quincena-modal" class="quincena-modal-container" style="display: none;">
-        <div class="quincena-modal-card">
-            <div class="quincena-modal-header">
-                <h3 class="quincena-modal-title">Configurar Quincenas</h3>
-                <button class="quincena-close-btn">&times;</button>
+<div id="quincena-modal" class="quincena-modal-container" style="display: none;">
+    <div class="quincena-modal-card">
+        <div class="quincena-modal-header">
+            <h5 class="quincena-modal-title">Gestión de Quincenas</h5>
+            <button type="button" class="quincena-close-btn">&times;</button>
+        </div>
+        <div class="quincena-modal-content">
+            <div class="quincena-selection-section">
+                <div class="quincena-selection-group">
+                    <div class="quincena-select-header">
+                        <span class="quincena-badge">1</span>
+                        <h6 class="quincena-select-title">Primera Quincena</h6>
+                    </div>
+                    <div class="quincena-date-range">
+                        <div class="quincena-date-field">
+                            <label for="q1-start">Inicio:</label>
+                            <input type="date" id="q1-start" class="quincena-date-input" readonly>
+                        </div>
+                        <div class="quincena-date-field">
+                            <label for="q1-end">Fin:</label>
+                            <input type="date" id="q1-end" class="quincena-date-input" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="quincena-selection-group">
+                    <div class="quincena-select-header">
+                        <span class="quincena-badge">2</span>
+                        <h6 class="quincena-select-title">Segunda Quincena</h6>
+                    </div>
+                    <div class="quincena-date-range">
+                        <div class="quincena-date-field">
+                            <label for="q2-start">Inicio:</label>
+                            <input type="date" id="q2-start" class="quincena-date-input" readonly>
+                        </div>
+                        <div class="quincena-date-field">
+                            <label for="q2-end">Fin:</label>
+                            <input type="date" id="q2-end" class="quincena-date-input" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="quincena-actions">
+                    <button type="button" class="quincena-btn quincena-edit-btn"><i class="fas fa-edit"></i> Editar</button>
+                    <button type="button" class="quincena-btn quincena-cancel-btn" style="display: none;"><i class="fas fa-times"></i> Cancelar</button>
+                    <button type="button" class="quincena-btn quincena-save-btn" disabled><i class="fas fa-save"></i> Guardar Cambios</button>
+                </div>
             </div>
-
-            <div class="quincena-modal-content">
-                <!-- Sección de quincenas (izquierda) -->
-                <div class="quincena-selection-section">
-                    <div class="quincena-selection-group">
-                        <div class="quincena-select-header">
-                            <span class="quincena-badge">1</span>
-                            <h4 class="quincena-select-title">Primera Quincena</h4>
-                        </div>
-                        <div class="quincena-date-range">
-                            <div class="quincena-date-field">
-                                <label>Fecha Inicio</label>
-                                <input type="date" id="q1-start" class="quincena-date-input">
-                            </div>
-                            <div class="quincena-date-field">
-                                <label>Fecha Fin</label>
-                                <input type="date" id="q1-end" class="quincena-date-input">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="quincena-selection-group">
-                        <div class="quincena-select-header">
-                            <span class="quincena-badge">2</span>
-                            <h4 class="quincena-select-title">Segunda Quincena</h4>
-                        </div>
-                        <div class="quincena-date-range">
-                            <div class="quincena-date-field">
-                                <label>Fecha Inicio</label>
-                                <input type="date" id="q2-start" class="quincena-date-input">
-                            </div>
-                            <div class="quincena-date-field">
-                                <label>Fecha Fin</label>
-                                <input type="date" id="q2-end" class="quincena-date-input">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="quincena-actions">
-                        <button class="quincena-btn quincena-cancel-btn">Cancelar</button>
-                        <button class="quincena-btn quincena-save-btn">Guardar Cambios</button>
-                    </div>
+            <div class="quincena-calendar-section">
+                <div class="quincena-month-nav">
+                    <button type="button" class="quincena-nav-btn quincena-prev-month"><i class="fas fa-chevron-left"></i></button>
+                    <h5 class="quincena-month-title"></h5>
+                    <button type="button" class="quincena-nav-btn quincena-next-month"><i class="fas fa-chevron-right"></i></button>
                 </div>
-
-                <!-- Sección de calendario (derecha) -->
-                <div class="quincena-calendar-section">
-                    <div class="quincena-month-nav">
-                        <button class="quincena-nav-btn quincena-prev-month">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <h4 class="quincena-month-title">Junio 2025</h4>
-                        <button class="quincena-nav-btn quincena-next-month">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-
-                    <div class="quincena-calendar-grid">
-                        <div class="quincena-day-label">Dom</div>
-                        <div class="quincena-day-label">Lun</div>
-                        <div class="quincena-day-label">Mar</div>
-                        <div class="quincena-day-label">Mié</div>
-                        <div class="quincena-day-label">Jue</div>
-                        <div class="quincena-day-label">Vie</div>
-                        <div class="quincena-day-label">Sáb</div>
-
-                        <!-- Días se generarán dinámicamente -->
-                    </div>
-                </div>
+                <div class="quincena-calendar-grid"></div>
             </div>
         </div>
     </div>
+</div>34
 
 
 <div id="squad-control-modal" class="squad-modal-container">
@@ -504,175 +484,17 @@
     </div>
 </div>
 
-<style>
-    /* Animaciones y estilos para la gestión de cuadrillas */
 
-/* Skeleton loading */
-.skeleton {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-    color: transparent !important;
-    position: relative;
-    overflow: hidden;
-}
-
-.skeleton-badge {
-    width: 100px;
-    height: 28px;
-    display: inline-block;
-}
-
-.skeleton-text {
-    height: 12px;
-    margin: 4px 0;
-    display: block;
-}
-
-.skeleton-btn {
-    width: 30px;
-    height: 30px;
-    display: inline-block;
-    margin: 0 5px;
-    border-radius: 50%;
-}
-
-@keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
-/* Loading form */
-.loading-form .form-body {
-    position: relative;
-}
-
-.loading-form .form-body::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.7);
-    z-index: 10;
-}
-
-.loading-form .form-body::before {
-    content: 'Cargando...';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 11;
-    font-size: 1.2rem;
-    color: #333;
-}
-
-/* Success animation */
-.success-animation .form-modal-content {
-    animation: pulseSuccess 0.5s 2;
-    position: relative;
-}
-
-.success-animation .form-modal-content::after {
-    content: '✓';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 4rem;
-    color: #28a745;
-    z-index: 10;
-}
-
-@keyframes pulseSuccess {
-    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
-    70% { box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-}
-
-/* Transiciones suaves */
-.squad-row {
-    transition: all 0.3s ease;
-}
-
-.squad-modal-card {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.is-visible .squad-modal-card {
-    animation: modalEnter 0.4s ease forwards;
-}
-
-@keyframes modalEnter {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Operadores deshabilitados */
-select option:disabled {
-    color: #999;
-    font-style: italic;
-    background-color: #f8f9fa;
-}
-
-/* Error state */
-.error {
-    color: #dc3545;
-    text-align: center;
-    padding: 2rem;
-}
-
-.error i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    display: block;
-}
-
-.retry-btn {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 1rem;
-    transition: background 0.3s;
-}
-
-.retry-btn:hover {
-    background: #c82333;
-}
-
-/* Estilos para cuadrillas existentes deshabilitadas */
-select option[disabled] {
-    color: #6c757d;
-}
-
-/* Tooltip para opciones deshabilitadas */
-select option[disabled]:hover {
-    cursor: not-allowed;
-}
-</style>
 <script>
         // Definición de rutas
         window.appRoutes = {
             getOperadores: '{{ route('squads.get_operadores') }}',
             getSquads: '{{ route('squads.get_squads') }}',
             storeSquad: '{{ route('squads.store') }}',
-            destroySquad: '{{ route('squads.destroy', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace(
-                '__SQUAD_NUMBER__', ''),
-            showSquad: '{{ route('squads.show', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace('__SQUAD_NUMBER__',
-                '')
+            destroySquad: '{{ route('squads.destroy', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace('__SQUAD_NUMBER__', ''),
+            showSquad: '{{ route('squads.show', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace('__SQUAD_NUMBER__','')
         };
+
     </script>
 
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/approval.js') }}"></script>

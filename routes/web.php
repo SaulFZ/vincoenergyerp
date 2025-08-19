@@ -1,14 +1,21 @@
 <?php
+use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\Auth\LoginController;
 /* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\CalendarController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;;
 
 
-use App\Http\Controllers\Sistemas\RoleController;
 /* CONTROLADORES DE SISTEMAS */
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Sistemas\RoleController;
+
+
+
+
+
 
 // ===================================================
 // RUTAS DE AUTENTICACIÓN
@@ -20,8 +27,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Redirección de la página principal según estado de autenticación
 Route::get('/', function () {
     return session()->has('auth')
-        ? redirect()->route('home')
-        : redirect()->route('login');
+    ? redirect()->route('home')
+    : redirect()->route('login');
 });
 
 // ===================================================
@@ -113,20 +120,35 @@ Route::middleware(['web', 'auth'])->group(function () {
                     ->name('loadchart.calendar')
                     ->middleware('check.permission:recursoshumanos,loadchart,calendar');
 
+                    // Ruta para la vista del calendario
+Route::get('/recursoshumanos/loadchart/calendar', [LoadchartController::class, 'showCalendar']);
 
+// Ruta para obtener la configuración de quincenas (para llamadas AJAX)
+Route::get('/recursoshumanos/loadchart/fortnightly-config/{year}/{month}', [LoadchartController::class, 'getFortnightlyConfig']);
 
                 Route::get('/approval', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.approval');
                 })->name('loadchart.approval');
-// ... (Tus otras rutas) ...
 
-Route::get('/approval', [SquadController::class, 'index'])->name('loadchart.approval');
-Route::get('/recursos-humanos/loadchart/get-operadores', [SquadController::class, 'getOperadores'])->name('squads.get_operadores');
-Route::get('/recursos-humanos/loadchart/get-squads', [SquadController::class, 'getSquads'])->name('squads.get_squads');
-Route::post('/squads/store', [SquadController::class, 'store'])->name('squads.store');
-Route::delete('/squads/{squadNumber}', [SquadController::class, 'destroy'])->name('squads.destroy');
-Route::get('/squads/{squadNumber}', [SquadController::class, 'show'])->name('squads.show');
+                Route::get('/approval', [SquadController::class, 'index'])->name('loadchart.approval');
+                Route::get('/recursos-humanos/loadchart/get-operadores', [SquadController::class, 'getOperadores'])->name('squads.get_operadores');
+                Route::get('/recursos-humanos/loadchart/get-squads', [SquadController::class, 'getSquads'])->name('squads.get_squads');
+                Route::post('/squads/store', [SquadController::class, 'store'])->name('squads.store');
+                Route::delete('/squads/{squadNumber}', [SquadController::class, 'destroy'])->name('squads.destroy');
+                Route::get('/squads/{squadNumber}', [SquadController::class, 'show'])->name('squads.show');
 
+  // Rutas para FortnightlyConfigController
+
+// Ruta para obtener la configuración de un mes y año específicos
+Route::get('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'getConfig']);
+// Ruta para guardar o actualizar la configuración
+Route::post('fortnightly-config', [FortnightlyConfigController::class, 'store']);
+// Ruta para eliminar una configuración (opcional, pero buena práctica)
+Route::delete('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'destroy']);
+// Ruta para obtener todas las configuraciones de un año
+Route::get('fortnightly-config/year/{year}', [FortnightlyConfigController::class, 'getYearConfigs']);
+// Ruta para generar una configuración por defecto
+Route::post('fortnightly-config/generate-default', [FortnightlyConfigController::class, 'generateDefault']);
                 Route::get('/history', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.history');
                 })->name('loadchart.history');
@@ -177,11 +199,6 @@ Route::get('/squads/{squadNumber}', [SquadController::class, 'show'])->name('squ
                         'check.permission:recursoshumanos,loadchart,review_assignments'
                     );
 
-
-
-
-
-
             });
         });
 
@@ -200,11 +217,11 @@ Route::get('/squads/{squadNumber}', [SquadController::class, 'show'])->name('squ
             Route::resource('roles', RoleController::class)
                 ->except(['show'])
                 ->names([
-                    'index' => 'sistemas.roles.index',
-                    'create' => 'sistemas.roles.create',
-                    'store' => 'sistemas.roles.store',
-                    'edit' => 'sistemas.roles.edit',
-                    'update' => 'sistemas.roles.update',
+                    'index'   => 'sistemas.roles.index',
+                    'create'  => 'sistemas.roles.create',
+                    'store'   => 'sistemas.roles.store',
+                    'edit'    => 'sistemas.roles.edit',
+                    'update'  => 'sistemas.roles.update',
                     'destroy' => 'sistemas.roles.destroy',
                 ]);
 
