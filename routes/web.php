@@ -1,21 +1,15 @@
 <?php
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\Auth\LoginController;
-/* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
+/* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RecursosHumanos\LoadChart\CalendarController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;;
-
-
-/* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
 
-
-
-
-
+/* CONTROLADORES DE SISTEMAS */
+use Illuminate\Support\Facades\Route;
 
 // ===================================================
 // RUTAS DE AUTENTICACIÓN
@@ -115,16 +109,16 @@ Route::middleware(['web', 'auth'])->group(function () {
                     ->name('recursoshumanos.loadchart')
                     ->middleware('check.permission:recursoshumanos,loadchart');
 
-                // Ruta calendar
-                Route::get('/calendar', [CalendarController::class, 'index'])
-                    ->name('loadchart.calendar')
-                    ->middleware('check.permission:recursoshumanos,loadchart,calendar');
+                // Esta ruta carga la vista HTML completa para la primera vez.
+                Route::get('/calendar', [CalendarController::class, 'index'])->name('loadchart.calendar');
 
-                    // Ruta para la vista del calendario
-Route::get('/recursoshumanos/loadchart/calendar', [LoadchartController::class, 'showCalendar']);
+                // Esta es la NUEVA ruta que usará AJAX para cargar los datos del calendario.
+                Route::get('/calendar-data', [CalendarController::class, 'getCalendarData']);
 
-// Ruta para obtener la configuración de quincenas (para llamadas AJAX)
-Route::get('/recursoshumanos/loadchart/fortnightly-config/{year}/{month}', [LoadchartController::class, 'getFortnightlyConfig']);
+                // Las rutas existentes para la configuración quincenal se mantienen.
+                Route::get('/fortnightly-config/{year}/{month}', [CalendarController::class, 'getFortnightlyConfig']);
+                Route::post('/fortnightly-config/generate-default', [CalendarController::class, 'generateDefaultConfig']);
+                Route::post('/fortnightly-config', [CalendarController::class, 'storeFortnightlyConfig']);
 
                 Route::get('/approval', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.approval');
@@ -136,19 +130,18 @@ Route::get('/recursoshumanos/loadchart/fortnightly-config/{year}/{month}', [Load
                 Route::post('/squads/store', [SquadController::class, 'store'])->name('squads.store');
                 Route::delete('/squads/{squadNumber}', [SquadController::class, 'destroy'])->name('squads.destroy');
                 Route::get('/squads/{squadNumber}', [SquadController::class, 'show'])->name('squads.show');
+                Route::get('/info-services', [InfoServicesController::class, 'getServicesAndBonuses'])->name('info.services.json');
 
-  // Rutas para FortnightlyConfigController
-
-// Ruta para obtener la configuración de un mes y año específicos
-Route::get('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'getConfig']);
-// Ruta para guardar o actualizar la configuración
-Route::post('fortnightly-config', [FortnightlyConfigController::class, 'store']);
-// Ruta para eliminar una configuración (opcional, pero buena práctica)
-Route::delete('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'destroy']);
-// Ruta para obtener todas las configuraciones de un año
-Route::get('fortnightly-config/year/{year}', [FortnightlyConfigController::class, 'getYearConfigs']);
-// Ruta para generar una configuración por defecto
-Route::post('fortnightly-config/generate-default', [FortnightlyConfigController::class, 'generateDefault']);
+                // Ruta para obtener la configuración de un mes y año específicos
+                Route::get('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'getConfig']);
+                // Ruta para guardar o actualizar la configuración
+                Route::post('fortnightly-config', [FortnightlyConfigController::class, 'store']);
+                // Ruta para eliminar una configuración (opcional, pero buena práctica)
+                Route::delete('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'destroy']);
+                // Ruta para obtener todas las configuraciones de un año
+                Route::get('fortnightly-config/year/{year}', [FortnightlyConfigController::class, 'getYearConfigs']);
+                // Ruta para generar una configuración por defecto
+                Route::post('fortnightly-config/generate-default', [FortnightlyConfigController::class, 'generateDefault']);
                 Route::get('/history', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.history');
                 })->name('loadchart.history');
@@ -198,7 +191,6 @@ Route::post('fortnightly-config/generate-default', [FortnightlyConfigController:
                     ->middleware(
                         'check.permission:recursoshumanos,loadchart,review_assignments'
                     );
-
             });
         });
 

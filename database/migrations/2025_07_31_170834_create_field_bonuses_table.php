@@ -22,7 +22,7 @@ return new class extends Migration
 
             // Identificador flexible
             $table->string('bonus_identifier', 15)->nullable(false)
-                ->comment('ID del bono (ej: "0.5", "A", "X1", "DOBLE")');
+                ->comment('ID del bono (ej: "0.5", "1", "1.5")');
 
             $table->timestamps();
 

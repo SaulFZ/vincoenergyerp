@@ -1,603 +1,747 @@
-document.addEventListener("DOMContentLoaded", function () {/*
- ================================================================= *
- === LÓGICA PARA GESTIÓN DE CALENDARIO Y QUINCENAS =============== *
- ================================================================= */
+document.addEventListener('DOMContentLoaded', function() {
 
-const quincenaModal = document.getElementById("quincena-modal");
-const openBtn = document.getElementById("days-quincena");
-const closeBtn = quincenaModal.querySelector(".quincena-close-btn");
-const cancelBtn = quincenaModal.querySelector(".quincena-cancel-btn");
-const saveBtn = quincenaModal.querySelector(".quincena-save-btn");
-const editBtn = quincenaModal.querySelector(".quincena-edit-btn");
-const prevMonthBtn = quincenaModal.querySelector(".quincena-prev-month");
-const nextMonthBtn = quincenaModal.querySelector(".quincena-next-month");
-const monthTitle = quincenaModal.querySelector(".quincena-month-title");
-const calendarGrid = quincenaModal.querySelector(".quincena-calendar-grid");
+    // =================================================================
+    // === LÓGICA PARA SERVICIOS Y BONOS ===============================
+    // =================================================================
 
-// Inputs de fechas
-const q1StartInput = document.getElementById("q1-start");
-const q1EndInput = document.getElementById("q1-end");
-const q2StartInput = document.getElementById("q2-start");
-const q2EndInput = document.getElementById("q2-end");
+    const servicesInfoBtn = document.getElementById('services-info');
+    const servicesModal = document.getElementById('services-modal');
+    const servicesCloseBtn = document.querySelector('.services-close-btn');
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-let currentDate = new Date();
-let currentQuincenaConfig = null;
-let originalQuincenaConfig = null; // Guardar la configuración original para el botón de cancelar
+    if (servicesInfoBtn) {
+        servicesInfoBtn.addEventListener('click', function() {
+            servicesModal.style.display = 'flex';
+            loadServicesAndBonuses();
+        });
+    }
 
-// Abrir modal
-if (openBtn) {
-    openBtn.addEventListener("click", function () {
-        quincenaModal.style.display = "flex";
-        loadCurrentMonthConfig();
-    });
-}
+    if (servicesCloseBtn) {
+        servicesCloseBtn.addEventListener('click', function() {
+            servicesModal.style.display = 'none';
+        });
+    }
 
-// Cerrar modal
-function closeQuincenaModal() {
-    quincenaModal.style.display = "none";
-    resetForm();
-}
-
-if (closeBtn) closeBtn.addEventListener("click", closeQuincenaModal);
-if (cancelBtn) {
-    cancelBtn.addEventListener("click", function() {
-        if (originalQuincenaConfig) {
-            populateFormWithConfig(originalQuincenaConfig);
+    // Cierra el modal si el usuario hace clic fuera de él
+    window.addEventListener('click', function(event) {
+        if (event.target === servicesModal) {
+            servicesModal.style.display = 'none';
         }
-        disableEditMode();
     });
-}
-if (editBtn) editBtn.addEventListener("click", enableEditMode);
 
-// Navegación de meses
-if (prevMonthBtn) {
-    prevMonthBtn.addEventListener("click", function () {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        loadCurrentMonthConfig();
+    // Funcionalidad de pestañas
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            const targetTab = this.getAttribute('data-tab');
+            document.getElementById(targetTab).classList.add('active');
+            this.classList.add('active');
+        });
     });
-}
-if (nextMonthBtn) {
-    nextMonthBtn.addEventListener("click", function () {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        loadCurrentMonthConfig();
-    });
-}
 
-// Guardar configuración
-if (saveBtn) {
-    saveBtn.addEventListener("click", saveQuincenaConfig);
-}
+    /**
+     * Carga servicios y bonos del servidor y los muestra en el modal.
+     */
+    async function loadServicesAndBonuses() {
+        const servicesPlaceholder = document.getElementById('services-placeholder');
+        const bonusesPlaceholder = document.getElementById('bonuses-placeholder');
 
-// Escuchar cambios en los inputs para actualizar el calendario
-document.querySelectorAll('.quincena-date-input').forEach(input => {
-    input.addEventListener("change", updateCalendarFromInputs);
-});
+        servicesPlaceholder.innerHTML = '<p>Cargando servicios...</p>';
+        bonusesPlaceholder.innerHTML = '<p>Cargando bonos...</p>';
 
-// Función para habilitar la edición
-function enableEditMode() {
-    saveBtn.disabled = false;
-    editBtn.style.display = 'none';
-    cancelBtn.style.display = 'inline-flex';
+        try {
+            const response = await fetch('/recursoshumanos/loadchart/info-services');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+
+            renderServices(servicesPlaceholder, data.services);
+            renderBonuses(bonusesPlaceholder, data.bonuses);
+
+        } catch (error) {
+            console.error('Error fetching services and bonuses:', error);
+            servicesPlaceholder.innerHTML = '<p style="color: red;">Error al cargar los servicios.</p>';
+            bonusesPlaceholder.innerHTML = '<p style="color: red;">Error al cargar los bonos.</p>';
+        }
+    }
+
+    /**
+     * Renderiza los datos de servicios en un formato de tabla.
+     * @param {HTMLElement} placeholder - El elemento DOM donde renderizar.
+     * @param {Object} servicesData - Los datos de servicios agrupados.
+     */
+    function renderServices(placeholder, servicesData) {
+        if (Object.keys(servicesData).length === 0) {
+            placeholder.innerHTML = '<p>No hay servicios disponibles.</p>';
+            return;
+        }
+
+        const servicesTable = document.createElement('div');
+        servicesTable.className = 'services-table';
+        servicesTable.innerHTML = `
+            <div class="table-header">
+                <div class="col-1">Tipo de Operación</div>
+                <div class="col-2">Tipo de Servicio</div>
+                <div class="col-3">Servicio Realizado</div>
+                <div class="col-4">ID</div>
+                <div class="col-5">Descripción</div>
+            </div>
+        `;
+
+        for (const operationType in servicesData) {
+            const operationGroup = servicesData[operationType];
+            for (const serviceType in operationGroup) {
+                const serviceTypeGroup = operationGroup[serviceType];
+                for (const servicePerformed in serviceTypeGroup) {
+                    const servicesArray = serviceTypeGroup[servicePerformed];
+                    servicesArray.forEach(service => {
+                        const row = document.createElement('div');
+                        row.className = 'table-row';
+                        row.innerHTML = `
+                            <div class="col-1">${service.operation_type}</div>
+                            <div class="col-2">${service.service_type}</div>
+                            <div class="col-3">${service.service_performed}</div>
+                            <div class="col-4">${service.identifier}</div>
+                            <div class="col-5">${service.service_description}</div>
+                        `;
+                        servicesTable.appendChild(row);
+                    });
+                }
+            }
+        }
+        placeholder.innerHTML = '';
+        placeholder.appendChild(servicesTable);
+    }
+
+    /**
+     * Renderiza los datos de bonos en un formato de tabla.
+     * @param {HTMLElement} placeholder - El elemento DOM donde renderizar.
+     * @param {Array} bonusesData - El array de objetos de bonos.
+     */
+    function renderBonuses(placeholder, bonusesData) {
+        if (bonusesData.length === 0) {
+            placeholder.innerHTML = '<p>No hay bonos disponibles.</p>';
+            return;
+        }
+
+        const bonusesTable = document.createElement('div');
+        bonusesTable.className = 'bonuses-table';
+        bonusesTable.innerHTML = `
+            <div class="table-header">
+                <div class="col-1">Categoría de Empleado</div>
+                <div class="col-2">Tipo de Bono</div>
+                <div class="col-3">Identificador</div>
+            </div>
+        `;
+
+        bonusesData.forEach(bonus => {
+            const row = document.createElement('div');
+            row.className = 'table-row';
+            row.innerHTML = `
+                <div class="col-1">${bonus.employee_category}</div>
+                <div class="col-2">${bonus.bonus_type}</div>
+                <div class="col-3">${bonus.bonus_identifier}</div>
+            `;
+            bonusesTable.appendChild(row);
+        });
+
+        placeholder.innerHTML = '';
+        placeholder.appendChild(bonusesTable);
+    }
+
+    // =================================================================
+    // === LÓGICA PARA CALENDARIO Y QUINCENAS ==========================
+    // =================================================================
+
+    const quincenaModal = document.getElementById("quincena-modal");
+    const openBtn = document.getElementById("days-quincena");
+    const quincenaCloseBtn = quincenaModal.querySelector(".quincena-close-btn");
+    const cancelBtn = quincenaModal.querySelector(".quincena-cancel-btn");
+    const saveBtn = quincenaModal.querySelector(".quincena-save-btn");
+    const editBtn = quincenaModal.querySelector(".quincena-edit-btn");
+    const prevMonthBtn = quincenaModal.querySelector(".quincena-prev-month");
+    const nextMonthBtn = quincenaModal.querySelector(".quincena-next-month");
+    const monthTitle = quincenaModal.querySelector(".quincena-month-title");
+    const calendarGrid = quincenaModal.querySelector(".quincena-calendar-grid");
+
+    // Inputs de fechas
+    const q1StartInput = document.getElementById("q1-start");
+    const q1EndInput = document.getElementById("q1-end");
+    const q2StartInput = document.getElementById("q2-start");
+    const q2EndInput = document.getElementById("q2-end");
+
+    let currentDate = new Date();
+    let currentQuincenaConfig = null;
+    let originalQuincenaConfig = null;
+
+    if (openBtn) {
+        openBtn.addEventListener("click", function () {
+            quincenaModal.style.display = "flex";
+            loadCurrentMonthConfig();
+        });
+    }
+
+    function closeQuincenaModal() {
+        quincenaModal.style.display = "none";
+        resetForm();
+    }
+
+    if (quincenaCloseBtn) quincenaCloseBtn.addEventListener("click", closeQuincenaModal);
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", function() {
+            if (originalQuincenaConfig) {
+                populateFormWithConfig(originalQuincenaConfig);
+            }
+            disableEditMode();
+        });
+    }
+    if (editBtn) editBtn.addEventListener("click", enableEditMode);
+
+    if (prevMonthBtn) {
+        prevMonthBtn.addEventListener("click", function () {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            loadCurrentMonthConfig();
+        });
+    }
+    if (nextMonthBtn) {
+        nextMonthBtn.addEventListener("click", function () {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            loadCurrentMonthConfig();
+        });
+    }
+
+    if (saveBtn) {
+        saveBtn.addEventListener("click", saveQuincenaConfig);
+    }
+
     document.querySelectorAll('.quincena-date-input').forEach(input => {
-        input.removeAttribute('readonly');
+        input.addEventListener("change", updateCalendarFromInputs);
     });
-    showNotification('Modo de edición activado. Puedes modificar las fechas.', 'info');
-    renderQuincenaCalendar(currentDate);
-}
 
-// Función para deshabilitar el modo de edición
-function disableEditMode() {
-    saveBtn.disabled = true;
-    editBtn.style.display = 'inline-flex';
-    cancelBtn.style.display = 'none';
-    document.querySelectorAll('.quincena-date-input').forEach(input => {
-        input.setAttribute('readonly', true);
-    });
-    renderQuincenaCalendar(currentDate);
-}
+    function enableEditMode() {
+        saveBtn.disabled = false;
+        editBtn.style.display = 'none';
+        cancelBtn.style.display = 'inline-flex';
+        document.querySelectorAll('.quincena-date-input').forEach(input => {
+            input.removeAttribute('readonly');
+        });
+        showNotification('Modo de edición activado. Puedes modificar las fechas.', 'info');
+        renderQuincenaCalendar(currentDate);
+    }
 
-// Función para cargar la configuración del mes actual
-async function loadCurrentMonthConfig() {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + 1;
-    try {
-        const response = await fetch(`/recursoshumanos/loadchart/fortnightly-config/${year}/${month}`);
-        if (response.ok) {
-            const config = await response.json();
-            if (config) {
-                currentQuincenaConfig = config;
+    function disableEditMode() {
+        saveBtn.disabled = true;
+        editBtn.style.display = 'inline-flex';
+        cancelBtn.style.display = 'none';
+        document.querySelectorAll('.quincena-date-input').forEach(input => {
+            input.setAttribute('readonly', true);
+        });
+        renderQuincenaCalendar(currentDate);
+    }
+
+    async function loadCurrentMonthConfig() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        try {
+            const response = await fetch(`/recursoshumanos/loadchart/fortnightly-config/${year}/${month}`);
+            if (response.ok) {
+                const config = await response.json();
+                if (config) {
+                    currentQuincenaConfig = config;
+                } else {
+                    currentQuincenaConfig = await generateDefaultConfig(year, month);
+                }
             } else {
                 currentQuincenaConfig = await generateDefaultConfig(year, month);
             }
-        } else {
-            currentQuincenaConfig = await generateDefaultConfig(year, month);
-        }
-        originalQuincenaConfig = { ...currentQuincenaConfig }; // Guardar una copia para el botón cancelar
-        populateFormWithConfig(currentQuincenaConfig);
-        disableEditMode(); // Siempre iniciar en modo de visualización
-    } catch (error) {
-        console.error('Error loading config:', error);
-        currentQuincenaConfig = await generateDefaultConfig(year, month);
-        originalQuincenaConfig = { ...currentQuincenaConfig };
-        populateFormWithConfig(currentQuincenaConfig);
-        disableEditMode();
-    }
-}
-
-// Función para generar configuración por defecto
-async function generateDefaultConfig(year, month) {
-    try {
-        const response = await fetch('/recursoshumanos/loadchart/fortnightly-config/generate-default', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({ year, month })
-        });
-        const result = await response.json();
-        if (response.ok) {
-            return result.data;
-        }
-    } catch (error) {
-        console.error('Error generating default config:', error);
-    }
-    // Fallback si el endpoint falla
-    const firstDay = new Date(year, month - 1, 1);
-    const lastDay = new Date(year, month, 0);
-    const fifteenthDay = new Date(year, month - 1, 15);
-    const sixteenthDay = new Date(year, month - 1, 16);
-    if (sixteenthDay.getMonth() + 1 !== month) {
-        sixteenthDay.setDate(lastDay.getDate());
-    }
-    return {
-        year: year,
-        month: month,
-        q1_start: formatDateForInput(firstDay),
-        q1_end: formatDateForInput(fifteenthDay),
-        q2_start: formatDateForInput(sixteenthDay),
-        q2_end: formatDateForInput(lastDay)
-    };
-}
-
-// Función para poblar el formulario con la configuración
-function populateFormWithConfig(config) {
-    q1StartInput.value = config.q1_start ? new Date(config.q1_start).toISOString().split('T')[0] : '';
-    q1EndInput.value = config.q1_end ? new Date(config.q1_end).toISOString().split('T')[0] : '';
-    q2StartInput.value = config.q2_start ? new Date(config.q2_start).toISOString().split('T')[0] : '';
-    q2EndInput.value = config.q2_end ? new Date(config.q2_end).toISOString().split('T')[0] : '';
-    renderQuincenaCalendar(currentDate);
-}
-
-// Función para formatear fecha para input
-function formatDateForInput(date) {
-    const d = new Date(date);
-    let month = '' + (d.getMonth() + 1);
-    let day = '' + d.getDate();
-    const year = d.getFullYear();
-    if (month.length < 2) month = '0' + month;
-    if (day.length < 2) day = '0' + day;
-    return [year, month, day].join('-');
-}
-
-// Función para actualizar el calendario cuando cambian los inputs
-function updateCalendarFromInputs() {
-    renderQuincenaCalendar(currentDate);
-}
-
-// Función para verificar si una fecha está en una quincena
-function isDateInQuincena(date) {
-    const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
-    const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
-    const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
-    const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
-
-    const testDate = new Date(date);
-    testDate.setHours(0, 0, 0, 0);
-
-    const isQ1 = q1Start && q1End && testDate >= q1Start && testDate <= q1End;
-    const isQ2 = q2Start && q2End && testDate >= q2Start && testDate <= q2End;
-
-    return isQ1 || isQ2;
-}
-
-// Función para verificar si una fecha es un inicio o fin de quincena
-function isBoundaryDay(date) {
-    const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
-    const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
-    const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
-    const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
-
-    const testDate = new Date(date);
-    testDate.setHours(0, 0, 0, 0);
-
-    let isStart = false;
-    let isEnd = false;
-
-    if (q1Start && testDate.getTime() === q1Start.getTime()) isStart = true;
-    if (q1End && testDate.getTime() === q1End.getTime()) isEnd = true;
-    if (q2Start && testDate.getTime() === q2Start.getTime()) isStart = true;
-    if (q2End && testDate.getTime() === q2End.getTime()) isEnd = true;
-
-    return { isStart, isEnd };
-}
-
-// Renderizar calendario (CORREGIDA PARA TU NUEVA LÓGICA)
-function renderQuincenaCalendar(date) {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    monthTitle.textContent = `${getMonthName(month)} ${year}`;
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    while (calendarGrid.firstChild) {
-        calendarGrid.removeChild(calendarGrid.firstChild);
-    }
-
-    const dayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    dayLabels.forEach(label => {
-        const labelCell = document.createElement("div");
-        labelCell.className = "quincena-day-label";
-        labelCell.textContent = label;
-        calendarGrid.appendChild(labelCell);
-    });
-
-    // Días del mes anterior (siempre 5)
-    const prevMonthLastDay = new Date(year, month, 0);
-    const prevMonthLastDate = prevMonthLastDay.getDate();
-    for (let i = 4; i >= 0; i--) {
-        const day = prevMonthLastDate - i;
-        const prevMonthDate = new Date(prevMonthLastDay.getFullYear(), prevMonthLastDay.getMonth(), day);
-
-        const dayCell = document.createElement("div");
-        dayCell.className = "quincena-day-cell other-month-day";
-        dayCell.textContent = day;
-
-        if (isDateInQuincena(prevMonthDate)) {
-            dayCell.classList.add("quincena-selected");
-        }
-
-        const boundary = isBoundaryDay(prevMonthDate);
-        if (boundary.isStart) {
-            dayCell.classList.add("quincena-start");
-        }
-        if (boundary.isEnd) {
-            dayCell.classList.add("quincena-end");
-        }
-
-        // Agregar tooltip
-        dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(prevMonthDate.getMonth())} ${prevMonthDate.getFullYear()}`);
-        dayCell.classList.add('has-tooltip');
-
-        calendarGrid.appendChild(dayCell);
-    }
-
-    // Días del mes actual (todos los días del mes)
-    for (let day = 1; day <= lastDay.getDate(); day++) {
-        const dayCell = document.createElement("div");
-        dayCell.className = "quincena-day-cell";
-        dayCell.textContent = day;
-        const cellDate = new Date(year, month, day);
-
-        if (isDateInQuincena(cellDate)) {
-            dayCell.classList.add("quincena-selected");
-        }
-
-        const boundary = isBoundaryDay(cellDate);
-        if (boundary.isStart) {
-            dayCell.classList.add("quincena-start");
-        }
-        if (boundary.isEnd) {
-            dayCell.classList.add("quincena-end");
-        }
-
-        // Agregar tooltip
-        dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(month)} ${year}`);
-        dayCell.classList.add('has-tooltip');
-
-        calendarGrid.appendChild(dayCell);
-    }
-}
-
-// Función para guardar la configuración
-async function saveQuincenaConfig() {
-    if (!q1StartInput.value || !q1EndInput.value || !q2StartInput.value || !q2EndInput.value) {
-        showNotification('Por favor, complete todas las fechas', 'error');
-        return;
-    }
-    const q1Start = new Date(q1StartInput.value + 'T00:00:00');
-    const q1End = new Date(q1EndInput.value + 'T00:00:00');
-    const q2Start = new Date(q2StartInput.value + 'T00:00:00');
-    const q2End = new Date(q2EndInput.value + 'T00:00:00');
-
-    // Validación de coherencia de fechas
-    if (q1Start > q1End) {
-        showNotification('La fecha de inicio de la primera quincena debe ser anterior a la de fin.', 'error');
-        return;
-    }
-    if (q1End.getTime() >= q2Start.getTime()) {
-        showNotification('La primera quincena debe terminar antes de que inicie la segunda.', 'error');
-        return;
-    }
-    if (q2Start > q2End) {
-        showNotification('La fecha de inicio de la segunda quincena debe ser anterior a la de fin.', 'error');
-        return;
-    }
-
-    const configData = {
-        year: currentDate.getFullYear(),
-        month: currentDate.getMonth() + 1,
-        q1_start: q1StartInput.value,
-        q1_end: q1EndInput.value,
-        q2_start: q2StartInput.value,
-        q2_end: q2EndInput.value,
-        _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-    };
-
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-    try {
-        const response = await fetch('/recursoshumanos/loadchart/fortnightly-config', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': configData._token
-            },
-            body: JSON.stringify(configData)
-        });
-        const result = await response.json();
-
-        if (response.ok) {
-            showNotification('Configuración guardada exitosamente', 'success');
-            currentQuincenaConfig = result.data;
             originalQuincenaConfig = { ...currentQuincenaConfig };
             populateFormWithConfig(currentQuincenaConfig);
             disableEditMode();
-        } else {
-            const errorMessage = result.errors ? Object.values(result.errors).flat().join('<br>') : result.message;
-            showNotification(errorMessage || 'Error al guardar la configuración', 'error');
+        } catch (error) {
+            console.error('Error loading config:', error);
+            currentQuincenaConfig = await generateDefaultConfig(year, month);
+            originalQuincenaConfig = { ...currentQuincenaConfig };
+            populateFormWithConfig(currentQuincenaConfig);
+            disableEditMode();
         }
-    } catch (error) {
-        console.error('Error saving config:', error);
-        showNotification('Error al guardar la configuración', 'error');
-    } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
     }
-}
 
-// Función para mostrar notificaciones
-function showNotification(message, type = 'info') {
-    const notification = document.createElement("div");
-    notification.className = `notification ${type}`;
-    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-    notification.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.classList.add('show'), 100);
-    setTimeout(() => {
-        notification.classList.add("fade-out");
-        setTimeout(() => notification.remove(), 500);
-    }, 4000);
-}
-
-// Función para resetear el formulario
-function resetForm() {
-    currentQuincenaConfig = null;
-    originalQuincenaConfig = null;
-    q1StartInput.value = '';
-    q1EndInput.value = '';
-    q2StartInput.value = '';
-    q2EndInput.value = '';
-    disableEditMode();
-    renderQuincenaCalendar(currentDate);
-}
-
-function getMonthName(monthIndex) {
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    return months[monthIndex];
-}
-
-/* El resto del código existente para la tabla de empleados... */
-// Back to calendar button - navegación Laravel real
-const backToCalendarBtn = document.getElementById("back-to-calendar");
-if (backToCalendarBtn) {
-    backToCalendarBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        window.location.href = "/recursoshumanos/loadchart/calendar";
-    });
-}
-
-// Period navigation
-document.getElementById("quincena1").addEventListener("click", () => {
-    showQuincena(1);
-    setActiveButton("quincena1");
-});
-document.getElementById("quincena2").addEventListener("click", () => {
-    showQuincena(2);
-    setActiveButton("quincena2");
-});
-document.getElementById("full-month").addEventListener("click", () => {
-    showFullMonth();
-    setActiveButton("full-month");
-});
-document.getElementById("prev-period").addEventListener("click", () => {
-    alert("Navegando al período anterior");
-});
-document.getElementById("next-period").addEventListener("click", () => {
-    alert("Navegando al próximo período");
-});
-
-// Botones de aprobación
-document.querySelectorAll(".btn-approve").forEach((btn) => {
-    btn.addEventListener("click", function () {
-        const row = this.closest(".employee-row");
-        approveEmployee(row);
-    });
-});
-
-// Botones de revisión
-document.querySelectorAll(".btn-review").forEach((btn) => {
-    btn.addEventListener("click", function () {
-        const row = this.closest(".employee-row");
-        markAsReviewed(row);
-    });
-});
-
-// Botón guardar cambios
-const saveBtnElement = document.querySelector(".save-btn");
-if (saveBtnElement) {
-    saveBtnElement.addEventListener("click", guardarDatos);
-}
-
-// Mostrar por defecto la quincena 1
-showQuincena(1);
-
-function setActiveButton(buttonId) {
-    document.querySelectorAll(".period-btn").forEach((btn) => {
-        btn.classList.remove("active");
-    });
-    const targetBtn = document.getElementById(buttonId);
-    if (targetBtn) {
-        targetBtn.classList.add("active");
-    }
-}
-
-function showQuincena(quincena) {
-    const dayHeaders = document.querySelectorAll(".approval-table .day-header");
-    const allRows = document.querySelectorAll(".approval-table tbody tr");
-    const daysColumnsHeader = document.getElementById("days-columns");
-    if (!dayHeaders.length || !daysColumnsHeader) return;
-
-    let firstDay = quincena === 1 ? 1 : 16;
-    let lastDay = quincena === 1 ? 15 : 31;
-    let visibleDays = lastDay - firstDay + 1;
-
-    // Actualizar el colspan del encabezado de días
-    daysColumnsHeader.colSpan = visibleDays;
-
-    // Para cada header de día
-    dayHeaders.forEach((header, index) => {
-        const dayNumber = parseInt(header.textContent.split("\n")[0]);
-        const shouldShow = dayNumber >= firstDay && dayNumber <= lastDay;
-        // Mostrar/ocultar header
-        header.style.display = shouldShow ? "" : "none";
-    });
-
-    // Mostrar/ocultar las celdas de datos correspondientes en todas las filas
-    allRows.forEach((row) => {
-        const dataCells = row.querySelectorAll(".data-cell");
-        dayHeaders.forEach((header, index) => {
-            const dayNumber = parseInt(header.textContent.split("\n")[0]);
-            const shouldShow = dayNumber >= firstDay && dayNumber <= lastDay;
-            if (dataCells[index]) {
-                dataCells[index].style.display = shouldShow ? "" : "none";
+    async function generateDefaultConfig(year, month) {
+        try {
+            const response = await fetch('/recursoshumanos/loadchart/fortnightly-config/generate-default', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ year, month })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                return result.data;
             }
+        } catch (error) {
+            console.error('Error generating default config:', error);
+        }
+
+        const firstDay = new Date(year, month - 1, 1);
+        const lastDay = new Date(year, month, 0);
+        const fifteenthDay = new Date(year, month - 1, 15);
+        const sixteenthDay = new Date(year, month - 1, 16);
+        if (sixteenthDay.getMonth() + 1 !== month) {
+            sixteenthDay.setDate(lastDay.getDate());
+        }
+        return {
+            year: year,
+            month: month,
+            q1_start: formatDateForInput(firstDay),
+            q1_end: formatDateForInput(fifteenthDay),
+            q2_start: formatDateForInput(sixteenthDay),
+            q2_end: formatDateForInput(lastDay)
+        };
+    }
+
+    function populateFormWithConfig(config) {
+        q1StartInput.value = config.q1_start ? new Date(config.q1_start).toISOString().split('T')[0] : '';
+        q1EndInput.value = config.q1_end ? new Date(config.q1_end).toISOString().split('T')[0] : '';
+        q2StartInput.value = config.q2_start ? new Date(config.q2_start).toISOString().split('T')[0] : '';
+        q2EndInput.value = config.q2_end ? new Date(config.q2_end).toISOString().split('T')[0] : '';
+        renderQuincenaCalendar(currentDate);
+    }
+
+    function formatDateForInput(date) {
+        const d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+        return [year, month, day].join('-');
+    }
+
+    function updateCalendarFromInputs() {
+        renderQuincenaCalendar(currentDate);
+    }
+
+    function isDateInQuincena(date) {
+        const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
+        const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
+        const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
+        const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
+
+        const testDate = new Date(date);
+        testDate.setHours(0, 0, 0, 0);
+
+        const isQ1 = q1Start && q1End && testDate >= q1Start && testDate <= q1End;
+        const isQ2 = q2Start && q2End && testDate >= q2Start && testDate <= q2End;
+
+        return isQ1 || isQ2;
+    }
+
+    function isBoundaryDay(date) {
+        const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
+        const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
+        const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
+        const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
+
+        const testDate = new Date(date);
+        testDate.setHours(0, 0, 0, 0);
+
+        let isStart = false;
+        let isEnd = false;
+
+        if (q1Start && testDate.getTime() === q1Start.getTime()) isStart = true;
+        if (q1End && testDate.getTime() === q1End.getTime()) isEnd = true;
+        if (q2Start && testDate.getTime() === q2Start.getTime()) isStart = true;
+        if (q2End && testDate.getTime() === q2End.getTime()) isEnd = true;
+
+        return { isStart, isEnd };
+    }
+
+    function renderQuincenaCalendar(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        monthTitle.textContent = `${getMonthName(month)} ${year}`;
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const firstDayOfWeek = firstDay.getDay();
+
+        while (calendarGrid.firstChild) {
+            calendarGrid.removeChild(calendarGrid.firstChild);
+        }
+
+        const dayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+        dayLabels.forEach(label => {
+            const labelCell = document.createElement("div");
+            labelCell.className = "quincena-day-label";
+            labelCell.textContent = label;
+            calendarGrid.appendChild(labelCell);
         });
-    });
 
-    // Ajustar el ancho de las columnas fijas (Nombre y KPI)
-    const fixedColumns = document.querySelectorAll(".employee-info-cell, .activity-label-cell");
-    fixedColumns.forEach((col) => {
-        col.style.width = "auto";
-        col.style.minWidth = "120px";
-    });
-}
+        const prevMonthLastDay = new Date(year, month, 0);
+        const prevMonthDaysCount = 5;
+        const offset = (firstDayOfWeek - prevMonthDaysCount + 7) % 7;
 
-function showFullMonth() {
-    const dayHeaders = document.querySelectorAll(".approval-table .day-header");
-    const allRows = document.querySelectorAll(".approval-table tbody tr");
-    const daysColumnsHeader = document.getElementById("days-columns");
-    if (!dayHeaders.length || !daysColumnsHeader) return;
+        for (let i = 0; i < offset; i++) {
+            const emptyCell = document.createElement("div");
+            emptyCell.className = "quincena-day-cell empty-cell";
+            calendarGrid.appendChild(emptyCell);
+        }
 
-    // Restaurar el colspan original
-    daysColumnsHeader.colSpan = 31;
+        for (let i = prevMonthDaysCount - 1; i >= 0; i--) {
+            const day = prevMonthLastDay.getDate() - i;
+            const prevMonthDate = new Date(prevMonthLastDay.getFullYear(), prevMonthLastDay.getMonth(), day);
 
-    dayHeaders.forEach((header, index) => {
-        header.style.display = ""; // Mostrar
-        // Mostrar todas las celdas de datos
-        allRows.forEach((row) => {
-            const dataCells = row.querySelectorAll(".data-cell");
-            if (dataCells[index]) {
-                dataCells[index].style.display = "";
+            const dayCell = document.createElement("div");
+            dayCell.className = "quincena-day-cell other-month-day";
+            dayCell.textContent = day;
+
+            if (isDateInQuincena(prevMonthDate)) {
+                dayCell.classList.add("quincena-selected");
             }
-        });
-    });
 
-    // Restaurar el ancho de las columnas fijas
-    const fixedColumns = document.querySelectorAll(".employee-info-cell, .activity-label-cell");
-    fixedColumns.forEach((col) => {
-        col.style.width = "";
-        col.style.minWidth = "";
-    });
-}
+            const boundary = isBoundaryDay(prevMonthDate);
+            if (boundary.isStart) {
+                dayCell.classList.add("quincena-start");
+            }
+            if (boundary.isEnd) {
+                dayCell.classList.add("quincena-end");
+            }
 
-function approveEmployee(row) {
-    const statusIndicators = row.querySelectorAll(".status-indicator");
-    statusIndicators.forEach((indicator) => {
-        if (indicator.textContent === "N") {
-            indicator.textContent = "A";
-            indicator.classList.remove("status-n");
-            indicator.classList.add("status-a");
+            dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(prevMonthDate.getMonth())} ${prevMonthDate.getFullYear()}`);
+            dayCell.classList.add('has-tooltip');
+            calendarGrid.appendChild(dayCell);
         }
-    });
-    const approveBtn = row.querySelector(".btn-approve");
-    if (approveBtn) {
-        approveBtn.textContent = "Aprobado";
-        approveBtn.classList.add("approved");
-        approveBtn.disabled = true;
-    }
-}
 
-function markAsReviewed(row) {
-    const statusIndicators = row.querySelectorAll(".status-indicator");
-    statusIndicators.forEach((indicator) => {
-        if (indicator.textContent === "N") {
-            indicator.textContent = "R";
-            indicator.classList.remove("status-n");
-            indicator.classList.add("status-r");
+        for (let day = 1; day <= lastDay.getDate(); day++) {
+            const dayCell = document.createElement("div");
+            dayCell.className = "quincena-day-cell";
+            dayCell.textContent = day;
+            const cellDate = new Date(year, month, day);
+
+            if (isDateInQuincena(cellDate)) {
+                dayCell.classList.add("quincena-selected");
+            }
+
+            const boundary = isBoundaryDay(cellDate);
+            if (boundary.isStart) {
+                dayCell.classList.add("quincena-start");
+            }
+            if (boundary.isEnd) {
+                dayCell.classList.add("quincena-end");
+            }
+
+            dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(month)} ${year}`);
+            dayCell.classList.add('has-tooltip');
+            calendarGrid.appendChild(dayCell);
         }
-    });
-    const reviewBtn = row.querySelector(".btn-review");
-    if (reviewBtn) {
-        reviewBtn.textContent = "Revisado";
-        reviewBtn.classList.add("reviewed");
-        reviewBtn.disabled = true;
-    }
-}
 
-function guardarDatos() {
-    const saveBtn = document.querySelector(".save-btn");
-    if (!saveBtn) return;
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-    setTimeout(() => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+        const cellsUsed = offset + prevMonthDaysCount + lastDay.getDate();
+        const totalCells = Math.ceil(cellsUsed / 7) * 7;
+        const remainingCells = totalCells - cellsUsed;
+
+        for (let i = 0; i < remainingCells; i++) {
+            const emptyCell = document.createElement("div");
+            emptyCell.className = "quincena-day-cell empty-cell";
+            calendarGrid.appendChild(emptyCell);
+        }
+    }
+
+    async function saveQuincenaConfig() {
+        if (!q1StartInput.value || !q1EndInput.value || !q2StartInput.value || !q2EndInput.value) {
+            showNotification('Por favor, complete todas las fechas', 'error');
+            return;
+        }
+        const q1Start = new Date(q1StartInput.value + 'T00:00:00');
+        const q1End = new Date(q1EndInput.value + 'T00:00:00');
+        const q2Start = new Date(q2StartInput.value + 'T00:00:00');
+        const q2End = new Date(q2EndInput.value + 'T00:00:00');
+
+        if (q1Start > q1End) {
+            showNotification('La fecha de inicio de la primera quincena debe ser anterior a la de fin.', 'error');
+            return;
+        }
+        if (q1End.getTime() >= q2Start.getTime()) {
+            showNotification('La primera quincena debe terminar antes de que inicie la segunda.', 'error');
+            return;
+        }
+        if (q2Start > q2End) {
+            showNotification('La fecha de inicio de la segunda quincena debe ser anterior a la de fin.', 'error');
+            return;
+        }
+
+        const configData = {
+            year: currentDate.getFullYear(),
+            month: currentDate.getMonth() + 1,
+            q1_start: q1StartInput.value,
+            q1_end: q1EndInput.value,
+            q2_start: q2StartInput.value,
+            q2_end: q2EndInput.value,
+            _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        };
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+        try {
+            const response = await fetch('/recursoshumanos/loadchart/fortnightly-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': configData._token
+                },
+                body: JSON.stringify(configData)
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                showNotification('Configuración guardada exitosamente', 'success');
+                currentQuincenaConfig = result.data;
+                originalQuincenaConfig = { ...currentQuincenaConfig };
+                populateFormWithConfig(currentQuincenaConfig);
+                disableEditMode();
+            } else {
+                const errorMessage = result.errors ? Object.values(result.errors).flat().join('<br>') : result.message;
+                showNotification(errorMessage || 'Error al guardar la configuración', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving config:', error);
+            showNotification('Error al guardar la configuración', 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+        }
+    }
+
+    function showNotification(message, type = 'info') {
         const notification = document.createElement("div");
-        notification.className = "notification success";
-        notification.innerHTML = '<i class="fas fa-check-circle"></i> Cambios guardados correctamente';
+        notification.className = `notification ${type}`;
+        const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+        notification.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
         document.body.appendChild(notification);
+        setTimeout(() => notification.classList.add('show'), 100);
         setTimeout(() => {
             notification.classList.add("fade-out");
             setTimeout(() => notification.remove(), 500);
-        }, 3000);
-    }, 1500);
-}
-
-function toggleActivityRows(employeeRow) {
-    const activityRows = employeeRow.nextElementSibling;
-    if (activityRows && activityRows.classList.contains("activity-row")) {
-        activityRows.classList.toggle("hidden");
+        }, 4000);
     }
-}
 
-document.querySelectorAll(".employee-info-cell").forEach((cell) => {
-    cell.addEventListener("click", function () {
-        const employeeRow = this.closest(".employee-row");
-        toggleActivityRows(employeeRow);
+    function resetForm() {
+        currentQuincenaConfig = null;
+        originalQuincenaConfig = null;
+        q1StartInput.value = '';
+        q1EndInput.value = '';
+        q2StartInput.value = '';
+        q2EndInput.value = '';
+        disableEditMode();
+        renderQuincenaCalendar(currentDate);
+    }
+
+    function getMonthName(monthIndex) {
+        const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        return months[monthIndex];
+    }
+
+    // =================================================================
+    // === LÓGICA PARA TABLA DE EMPLEADOS ==============================
+    // =================================================================
+
+    const backToCalendarBtn = document.getElementById("back-to-calendar");
+    if (backToCalendarBtn) {
+        backToCalendarBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            window.location.href = "/recursoshumanos/loadchart/calendar";
+        });
+    }
+
+    document.getElementById("quincena1").addEventListener("click", () => {
+        showQuincena(1);
+        setActiveButton("quincena1");
     });
-});
+    document.getElementById("quincena2").addEventListener("click", () => {
+        showQuincena(2);
+        setActiveButton("quincena2");
+    });
+    document.getElementById("full-month").addEventListener("click", () => {
+        showFullMonth();
+        setActiveButton("full-month");
+    });
+    document.getElementById("prev-period").addEventListener("click", () => {
+        alert("Navegando al período anterior");
+    });
+    document.getElementById("next-period").addEventListener("click", () => {
+        alert("Navegando al próximo período");
+    });
+
+    document.querySelectorAll(".btn-approve").forEach((btn) => {
+        btn.addEventListener("click", function () {
+            const row = this.closest(".employee-row");
+            approveEmployee(row);
+        });
+    });
+
+    document.querySelectorAll(".btn-review").forEach((btn) => {
+        btn.addEventListener("click", function () {
+            const row = this.closest(".employee-row");
+            markAsReviewed(row);
+        });
+    });
+
+    const saveBtnElement = document.querySelector(".save-btn");
+    if (saveBtnElement) {
+        saveBtnElement.addEventListener("click", guardarDatos);
+    }
+
+    showQuincena(1);
+
+    function setActiveButton(buttonId) {
+        document.querySelectorAll(".period-btn").forEach((btn) => {
+            btn.classList.remove("active");
+        });
+        const targetBtn = document.getElementById(buttonId);
+        if (targetBtn) {
+            targetBtn.classList.add("active");
+        }
+    }
+
+    function showQuincena(quincena) {
+        const dayHeaders = document.querySelectorAll(".approval-table .day-header");
+        const allRows = document.querySelectorAll(".approval-table tbody tr");
+        const daysColumnsHeader = document.getElementById("days-columns");
+        if (!dayHeaders.length || !daysColumnsHeader) return;
+
+        let firstDay = quincena === 1 ? 1 : 16;
+        let lastDay = quincena === 1 ? 15 : 31;
+        let visibleDays = lastDay - firstDay + 1;
+
+        daysColumnsHeader.colSpan = visibleDays;
+
+        dayHeaders.forEach((header, index) => {
+            const dayNumber = parseInt(header.textContent.split("\n")[0]);
+            const shouldShow = dayNumber >= firstDay && dayNumber <= lastDay;
+            header.style.display = shouldShow ? "" : "none";
+        });
+
+        allRows.forEach((row) => {
+            const dataCells = row.querySelectorAll(".data-cell");
+            dayHeaders.forEach((header, index) => {
+                const dayNumber = parseInt(header.textContent.split("\n")[0]);
+                const shouldShow = dayNumber >= firstDay && dayNumber <= lastDay;
+                if (dataCells[index]) {
+                    dataCells[index].style.display = shouldShow ? "" : "none";
+                }
+            });
+        });
+
+        const fixedColumns = document.querySelectorAll(".employee-info-cell, .activity-label-cell");
+        fixedColumns.forEach((col) => {
+            col.style.width = "auto";
+            col.style.minWidth = "120px";
+        });
+    }
+
+    function showFullMonth() {
+        const dayHeaders = document.querySelectorAll(".approval-table .day-header");
+        const allRows = document.querySelectorAll(".approval-table tbody tr");
+        const daysColumnsHeader = document.getElementById("days-columns");
+        if (!dayHeaders.length || !daysColumnsHeader) return;
+
+        daysColumnsHeader.colSpan = 31;
+
+        dayHeaders.forEach((header, index) => {
+            header.style.display = "";
+            allRows.forEach((row) => {
+                const dataCells = row.querySelectorAll(".data-cell");
+                if (dataCells[index]) {
+                    dataCells[index].style.display = "";
+                }
+            });
+        });
+
+        const fixedColumns = document.querySelectorAll(".employee-info-cell, .activity-label-cell");
+        fixedColumns.forEach((col) => {
+            col.style.width = "";
+            col.style.minWidth = "";
+        });
+    }
+
+    function approveEmployee(row) {
+        const statusIndicators = row.querySelectorAll(".status-indicator");
+        statusIndicators.forEach((indicator) => {
+            if (indicator.textContent === "N") {
+                indicator.textContent = "A";
+                indicator.classList.remove("status-n");
+                indicator.classList.add("status-a");
+            }
+        });
+        const approveBtn = row.querySelector(".btn-approve");
+        if (approveBtn) {
+            approveBtn.textContent = "Aprobado";
+            approveBtn.classList.add("approved");
+            approveBtn.disabled = true;
+        }
+    }
+
+    function markAsReviewed(row) {
+        const statusIndicators = row.querySelectorAll(".status-indicator");
+        statusIndicators.forEach((indicator) => {
+            if (indicator.textContent === "N") {
+                indicator.textContent = "R";
+                indicator.classList.remove("status-n");
+                indicator.classList.add("status-r");
+            }
+        });
+        const reviewBtn = row.querySelector(".btn-review");
+        if (reviewBtn) {
+            reviewBtn.textContent = "Revisado";
+            reviewBtn.classList.add("reviewed");
+            reviewBtn.disabled = true;
+        }
+    }
+
+    function guardarDatos() {
+        const saveBtn = document.querySelector(".save-btn");
+        if (!saveBtn) return;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        setTimeout(() => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+            const notification = document.createElement("div");
+            notification.className = "notification success";
+            notification.innerHTML = '<i class="fas fa-check-circle"></i> Cambios guardados correctamente';
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.classList.add("fade-out");
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }, 1500);
+    }
+
+    function toggleActivityRows(employeeRow) {
+        const activityRows = employeeRow.nextElementSibling;
+        if (activityRows && activityRows.classList.contains("activity-row")) {
+            activityRows.classList.toggle("hidden");
+        }
+    }
+
+    document.querySelectorAll(".employee-info-cell").forEach((cell) => {
+        cell.addEventListener("click", function () {
+            const employeeRow = this.closest(".employee-row");
+            toggleActivityRows(employeeRow);
+        });
+    });
+
+
+
+
+
     /* ================================================================= */
     /* === LÓGICA PARA GESTIÓN DE CUADRILLAS (SQUAD CONTROL) ========= */
     /* ================================================================= */

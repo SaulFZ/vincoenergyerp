@@ -43,14 +43,14 @@
                     </div>
                 </div>
             </div>
-            <!-- Load Chart Section -->
             <div class="load-chart-container" id="loadChart">
                 <div class="chart-header">
-                    <h2><i class="fas fa-chart-bar"></i> Load Chart - Junio 2025</h2>
+                    <h2><i class="fas fa-chart-bar"></i> Load Chart - {{ $monthName }} {{ $currentYear }}</h2>
                     <div class="chart-actions">
                         <div class="month-navigation">
                             <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
-                            <span>Junio 2025</span>
+                            <span data-month="{{ $currentMonth }}" data-year="{{ $currentYear }}">{{ $monthName }}
+                                {{ $currentYear }}</span>
                             <button id="next-month"><i class="fas fa-chevron-right"></i></button>
                         </div>
                         @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_loadchart'))
@@ -60,7 +60,6 @@
                         @endif
                     </div>
                 </div>
-
                 <table class="calendar">
                     <thead>
                         <tr>
@@ -75,193 +74,46 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="other-month"><span class="day-number">26</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">27</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">28</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">29</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">30</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">31</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td><span class="day-number">1</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                                <i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>
-                            </td>
+                            @foreach ($calendarDays as $day)
+                                @php
+                                    $isCurrentMonth = $day['current_month'];
+                                    $isToday = $day['date'] == date('Y-m-d');
+                                    $isPayrollStart1 =
+                                        $payrollDates['q1_start'] &&
+                                        date('Y-m-d', strtotime($payrollDates['q1_start'])) == $day['date'];
+                                    $isPayrollEnd1 =
+                                        $payrollDates['q1_end'] &&
+                                        date('Y-m-d', strtotime($payrollDates['q1_end'])) == $day['date'];
+                                    $isPayrollStart2 =
+                                        $payrollDates['q2_start'] &&
+                                        date('Y-m-d', strtotime($payrollDates['q2_start'])) == $day['date'];
+                                    $isPayrollEnd2 =
+                                        $payrollDates['q2_end'] &&
+                                        date('Y-m-d', strtotime($payrollDates['q2_end'])) == $day['date'];
+                                @endphp
+                                <td class="{{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'current-d' : '' }}">
+                                    <span class="day-number">{{ $day['day'] }}</span>
+                                    @if ($isPayrollStart1)
+                                        <i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>
+                                    @endif
+                                    @if ($isPayrollEnd1)
+                                        <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 1"></i>
+                                    @endif
+                                    @if ($isPayrollStart2)
+                                        <i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>
+                                    @endif
+                                    @if ($isPayrollEnd2)
+                                        <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 2"></i>
+                                    @endif
+                                </td>
+                                @if ($loop->iteration % 7 == 0)
                         </tr>
                         <tr>
-                            <td><span class="day-number">2</span>
-                                <span class="activity-tag work-well">Pozo</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">3</span>
-                                <span class="activity-tag work-well">Pozo</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">4</span>
-                                <span class="activity-tag work-well">Pozo</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">5</span>
-                                <span class="activity-tag work-well">Pozo</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">6</span>
-                                <span class="activity-tag work-well">Pozo</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">7</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">8</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><span class="day-number">9</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">10</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">11</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">12</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">13</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">14</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">15</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                                <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><span class="day-number">16</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                                <i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>
-                            </td>
-                            <td><span class="day-number">17</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">18</span>
-                                <span class="activity-tag training">Entrenamiento</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td class="current-d"><span class="day-number">19</span>
-                                <span class="activity-tag training">Entrenamiento</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">20</span>
-                                <span class="activity-tag training">Entrenamiento</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">21</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">22</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><span class="day-number">23</span>
-                                <span class="activity-tag training">Entrenamiento</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">24</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">25</span>
-                                <span class="activity-tag medical">Médico</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">26</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">27</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">28</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                            <td><span class="day-number">29</span>
-                                <span class="activity-tag rest">Descanso</span>
-                                <i class="fas fa-lock status-icon"></i>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><span class="day-number">30</span>
-                                <span class="activity-tag work-base">Base</span>
-                                <i class="fas fa-lock status-icon"></i>
-                                <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">1</span>
-                                <span class="activity-tag vacation">Vacaciones</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">2</span>
-                                <span class="activity-tag vacation">Vacaciones</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">3</span>
-                                <span class="activity-tag vacation">Vacaciones</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">4</span>
-                                <span class="activity-tag vacation">Vacaciones</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">5</span>
-                                <span class="activity-tag vacation">Vacaciones</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
-                            <td class="other-month"><span class="day-number">6</span>
-                                <span class="activity-tag vacation">Vacaciones</span>
-                                <i class="fas fa-exclamation-triangle status-icon"></i>
-                            </td>
+                            @endif
+                            @endforeach
                         </tr>
                     </tbody>
                 </table>
-
-                <!-- Activity Legend -->
                 <div class="activity-legend">
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--work-base);"></div>
@@ -271,7 +123,6 @@
                         <div class="legend-color" style="background-color: var(--work-well);"></div>
                         <div>Trabajo en Pozo</div>
                     </div>
-                    <!-- Nuevos items -->
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--home-office);"></div>
                         <div>Home Office</div>
@@ -295,6 +146,14 @@
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--medical);"></div>
                         <div>Médico</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--commissioned);"></div>
+                        <div>Comisionado</div>
+                    </div>
+                    <div class="legend-item">
+                        <i class="fa-regular fa-hourglass-half legend-pending"></i>
+                        <div>Pendiente</div>
                     </div>
                     <div class="legend-item">
                         <i class="fas fa-lock legend-approved"></i>
@@ -344,8 +203,7 @@
                         <label for="activity-date">Fecha</label>
                         <div class="input-with-icon">
                             <i class="far fa-calendar-alt"></i>
-                            <input type="text" id="activity-date" class="input-custom" value="19 de Junio, 2025"
-                                readonly>
+                            <input type="text" id="activity-date" class="input-custom" value="" readonly>
                         </div>
                     </div>
 
@@ -373,6 +231,15 @@
                                     <div class="activity-code" style="background-color: var(--work-well); color: white;">P
                                     </div>
                                 </div>
+                                <div class="activity-option" data-value="C">
+                                    <div class="option-content">
+                                        <div class="color-indicator" style="background-color: var(--commissioned);"></div>
+                                        <div class="activity-label">Comisionado</div>
+                                    </div>
+                                    <div class="activity-code"
+                                        style="background-color: var(--commissioned); color: white;">C
+                                    </div>
+                                </div>
                                 <div class="activity-option" data-value="H">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--home-office);"></div>
@@ -397,6 +264,7 @@
                                     <div class="activity-code" style="background-color: var(--rest); color: white;">D
                                     </div>
                                 </div>
+
                                 <div class="activity-option" data-value="VAC">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--vacation);"></div>
@@ -423,6 +291,7 @@
                                 </div>
                             </div>
                         </div>
+
                         <select id="activity-type" style="display: none;">
                             <option value="">Seleccionar actividad...</option>
                             <option value="B">B - Trabajo en Base</option>
@@ -434,14 +303,29 @@
                         </select>
                         <div class="error-message" id="activity-type-error">Debes seleccionar un tipo de actividad</div>
                     </div>
-
+                    <div class="form-group" id="commissioned-field" style="display: none;">
+                        <label for="commissioned-select">Área Comisionada</label>
+                        <select id="commissioned-select" class="select-custom">
+                            <option value="">Seleccionar área...</option>
+                            <option value="Recursos Humanos">Recursos Humanos</option>
+                            <option value="QHSE">QHSE</option>
+                            <option value="Ventas">Ventas</option>
+                            <option value="Administracion">Administración</option>
+                            <option value="Operaciones">Operaciones</option>
+                            <option value="Suministros">Suministros</option>
+                            <option value="Geociencias">Geociencias</option>
+                        </select>
+                        <div class="error-message" id="commissioned-error">Debes seleccionar un área comisionada</div>
+                    </div>
                     <div class="form-group">
                         <label for="food-bonus">Bono de Comida</label>
                         <select id="food-bonus" class="select-custom">
                             <option value="">Seleccionar bono de comida...</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
+                            @foreach ($foodOptions as $meal)
+                                <option value="{{ $meal->meal_number }}">
+                                    {{ $meal->meal_number }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -449,21 +333,39 @@
                         <label for="field-bonus">Bono de Campo</label>
                         <select id="field-bonus" class="select-custom">
                             <option value="">Seleccionar bono de campo...</option>
-                            <option value="bono1">Bono Campo 1</option>
-                            <option value="bono2">Bono Campo 2</option>
-                            <option value="bono3">Bono Campo 3</option>
+                            @foreach ($fieldBonuses as $bonus)
+                                <option value="{{ $bonus->bonus_identifier }}">
+                                    {{ $bonus->bonus_type }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="payroll-bonus">Bono de Nómina</label>
-                        <select id="payroll-bonus" class="select-custom">
-                            <option value="">Seleccionar bono de nómina...</option>
-                            <option value="bono_nomina1">Bono Nómina 1</option>
-                            <option value="bono_nomina2">Bono Nómina 2</option>
-                            <option value="bono_nomina3">Bono Nómina 3</option>
+                        <label for="payroll-bonus-days">Días de Bono de Nómina</label>
+                        <select id="payroll-bonus-days" class="input-custom">
+                            <option value="">Seleccionar días</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
                         </select>
                     </div>
+
+
                 </div>
 
                 <!-- Pasar datos al JavaScript -->
