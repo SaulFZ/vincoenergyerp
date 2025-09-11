@@ -71,7 +71,7 @@ class ApprovalController extends Controller
         }
 
         // Verificar todos los sub-elementos
-        $itemTypes = ['food_bonuses', 'field_bonuses', 'payroll_bonuses', 'services_list'];
+        $itemTypes = ['food_bonuses', 'field_bonuses', 'services_list'];
 
         foreach ($itemTypes as $type) {
             if (isset($dailyActivity[$type]) && is_array($dailyActivity[$type])) {
@@ -167,18 +167,10 @@ class ApprovalController extends Controller
         $workLogsData = [];
         foreach ($employees as $employee) {
             $log = $employee->employeeMonthlyWorkLogs->first();
-            $hasPayrollBonuses = false;
             if ($log && $log->daily_activities) {
                 // Actualizar day_status para todas las actividades
                 $log->daily_activities = $this->updateDayStatusForAllActivities($log->daily_activities);
                 $log->save();
-
-                foreach ($log->daily_activities as $activity) {
-                    if (!empty($activity['payroll_bonuses'])) {
-                        $hasPayrollBonuses = true;
-                        break;
-                    }
-                }
             }
             if ($log) {
                 $workLogsData[] = [
@@ -186,7 +178,6 @@ class ApprovalController extends Controller
                     'daily_activities' => $log->daily_activities,
                     'reviewed_at' => $log->reviewed_at,
                     'approved_at' => $log->approved_at,
-                    'has_payroll_bonuses' => $hasPayrollBonuses,
                 ];
             }
         }
@@ -262,6 +253,47 @@ class ApprovalController extends Controller
         ]);
     }
 
+    public function checkUpdates(Request $request)
+    {
+        try {
+            $request->validate([
+                'last_update' => 'required|date',
+                'month' => 'required|integer|min:1|max:12',
+                'year' => 'required|integer|min:2020|max:2030',
+            ]);
+
+            $lastUpdate = Carbon::parse($request->last_update);
+            $month = $request->month;
+            $year = $request->year;
+
+            // Obtener los IDs de empleados asignados al usuario actual
+            $assignedEmployeeIds = $this->getAssignedEmployeeIds();
+
+            // Verificar si hay registros modificados después de last_update
+            $hasUpdates = EmployeeMonthlyWorkLog::whereIn('employee_id', $assignedEmployeeIds)
+                ->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'))
+                ->where(function($query) use ($lastUpdate) {
+                    $query->where('updated_at', '>', $lastUpdate)
+                        ->orWhere('created_at', '>', $lastUpdate);
+                })
+                ->exists();
+
+            return response()->json([
+                'success' => true,
+                'has_updates' => $hasUpdates,
+                'message' => $hasUpdates ? 'Hay actualizaciones disponibles' : 'No hay actualizaciones'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error checking updates: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Error al verificar actualizaciones',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function getApprovalData($year, $month)
     {
         try {
@@ -292,19 +324,10 @@ class ApprovalController extends Controller
             $workLogsData = [];
             foreach ($employees as $employee) {
                 $log = $employee->employeeMonthlyWorkLogs->first();
-                $hasPayrollBonuses = false;
-
                 if ($log && $log->daily_activities) {
                     // Actualizar day_status para todas las actividades
                     $log->daily_activities = $this->updateDayStatusForAllActivities($log->daily_activities);
                     $log->save();
-
-                    foreach ($log->daily_activities as $activity) {
-                        if (!empty($activity['payroll_bonuses'])) {
-                            $hasPayrollBonuses = true;
-                            break;
-                        }
-                    }
                 }
 
                 if ($log) {
@@ -313,7 +336,6 @@ class ApprovalController extends Controller
                         'daily_activities' => $log->daily_activities ?? [],
                         'reviewed_at' => $log->reviewed_at,
                         'approved_at' => $log->approved_at,
-                        'has_payroll_bonuses' => $hasPayrollBonuses,
                     ];
                 } else {
                     $workLogsData[] = [
@@ -321,7 +343,6 @@ class ApprovalController extends Controller
                         'daily_activities' => [],
                         'reviewed_at' => null,
                         'approved_at' => null,
-                        'has_payroll_bonuses' => false,
                     ];
                 }
             }
@@ -395,7 +416,7 @@ class ApprovalController extends Controller
             $employeeId = $request->employee_id;
             $month = $request->month;
             $year = $request->year;
-            $status = $request->status;
+            $newStatus = strtolower($request->status);
             $fortnight = $request->fortnight;
             $userId = auth()->id();
 
@@ -413,11 +434,11 @@ class ApprovalController extends Controller
             $isReviewer = $assignment->reviewer_id === $userId;
             $isApprover = $assignment->approver_id === $userId;
 
-            if ($status === 'reviewed' && !$isReviewer) {
+            if ($newStatus === 'reviewed' && !$isReviewer) {
                 return response()->json(['success' => false, 'message' => 'No tiene permisos para revisar este registro.'], 403);
             }
 
-            if ($status === 'approved' && !$isApprover) {
+            if ($newStatus === 'approved' && !$isApprover) {
                 return response()->json(['success' => false, 'message' => 'No tiene permisos para aprobar este registro.'], 403);
             }
 
@@ -427,7 +448,6 @@ class ApprovalController extends Controller
                 ['user_id' => $userId, 'daily_activities' => []]
             );
 
-            // Obtener la configuración de quincenas para el rango de fechas
             $fortnightlyConfig = FortnightlyConfig::where('year', $year)->where('month', $month)->first();
             if (!$fortnightlyConfig) {
                 $fortnightlyConfig = $this->createDefaultFortnightlyConfig($year, $month);
@@ -439,31 +459,26 @@ class ApprovalController extends Controller
             $dailyActivities = collect($workLog->daily_activities);
             $updated = false;
 
-            $dailyActivities = $dailyActivities->map(function ($dailyActivity) use ($startDate, $endDate, $status, &$updated) {
+            $dailyActivities = $dailyActivities->map(function ($dailyActivity) use ($startDate, $endDate, $newStatus, $isReviewer, $isApprover, &$updated) {
                 $activityDate = Carbon::parse($dailyActivity['date']);
-                // Solo procesar los días dentro de la quincena y con estado 'pending'
-                if ($activityDate->between($startDate, $endDate) && isset($dailyActivity['activity_status']) && strtolower($dailyActivity['activity_status']) === 'pending') {
-                    $dailyActivity['activity_status'] = ucfirst($status);
-                    $updated = true;
-                }
+                if ($activityDate->between($startDate, $endDate)) {
+                    // Lógica de actualización para la actividad principal
+                    $currentActivityStatus = strtolower($dailyActivity['activity_status'] ?? 'pending');
+                    $dailyActivity = $this->updateItemStatus($dailyActivity, 'activity_status', $currentActivityStatus, $newStatus, $isReviewer, $isApprover, $updated);
 
-                // Procesar los sub-ítems
-                $itemTypes = ['food_bonuses', 'field_bonuses', 'payroll_bonuses', 'services_list'];
-                foreach ($itemTypes as $type) {
-                    if (isset($dailyActivity[$type]) && is_array($dailyActivity[$type])) {
-                        $dailyActivity[$type] = array_map(function ($item) use ($status, &$updated) {
-                            if (isset($item['status']) && strtolower($item['status']) === 'pending') {
-                                $item['status'] = ucfirst($status);
-                                $updated = true;
-                            }
-                            return $item;
-                        }, $dailyActivity[$type]);
+                    // Lógica de actualización para los sub-ítems
+                    $itemTypes = ['food_bonuses', 'field_bonuses', 'services_list'];
+                    foreach ($itemTypes as $type) {
+                        if (isset($dailyActivity[$type]) && is_array($dailyActivity[$type])) {
+                            $dailyActivity[$type] = array_map(function ($item) use ($newStatus, $isReviewer, $isApprover, &$updated) {
+                                $currentItemStatus = strtolower($item['status'] ?? 'pending');
+                                return $this->updateItemStatus($item, 'status', $currentItemStatus, $newStatus, $isReviewer, $isApprover, $updated);
+                            }, $dailyActivity[$type]);
+                        }
                     }
                 }
-
-                // Actualizar day_status después de cambios
+                // Recalcular el day_status después de las modificaciones
                 $dailyActivity['day_status'] = $this->calculateDayStatus($dailyActivity);
-
                 return $dailyActivity;
             })->toArray();
 
@@ -473,42 +488,14 @@ class ApprovalController extends Controller
             }
 
             // Actualizar el estado general del log si todos los ítems están revisados/aprobados
-            $all_items_processed = true;
-            $all_items_approved = true;
-
-            foreach ($workLog->daily_activities as $dailyActivity) {
-                $dailyStatus = $this->calculateDayStatus($dailyActivity);
-                if ($dailyStatus === 'pending' || $dailyStatus === 'rejected') {
-                    $all_items_processed = false;
-                }
-                if ($dailyStatus !== 'approved') {
-                    $all_items_approved = false;
-                }
-            }
-
-            if ($status === 'reviewed' && $all_items_processed) {
-                 $workLog->reviewed_at = now();
-                 $workLog->reviewed_by = $userId;
-                 $workLog->save();
-            }
-
-            if ($status === 'approved' && $all_items_approved) {
-                $workLog->approved_at = now();
-                $workLog->approved_by = $userId;
-                // Si se aprueba, también se considera revisado
-                if (!$workLog->reviewed_at) {
-                    $workLog->reviewed_at = now();
-                    $workLog->reviewed_by = $userId;
-                }
-                $workLog->save();
-            }
+            $this->updateLogStatus($workLog, $newStatus, $userId);
 
             return response()->json([
                 'success' => true,
-                'message' => "Estado de la {$fortnight} actualizado a '{$status}' correctamente.",
+                'message' => "Estado de la {$fortnight} actualizado a '{$newStatus}' correctamente.",
                 'data' => [
                     'employee_id' => $employeeId,
-                    'status' => $status,
+                    'status' => $newStatus,
                     'fortnight' => $fortnight,
                 ],
             ]);
@@ -522,13 +509,69 @@ class ApprovalController extends Controller
         }
     }
 
+    /**
+     * Función auxiliar para actualizar el estado de un ítem individual (actividad, bono, etc.).
+     */
+    private function updateItemStatus($item, $statusKey, $currentStatus, $newStatus, $isReviewer, $isApprover, &$updated)
+    {
+        // Lógica para el revisor
+        if ($isReviewer && $newStatus === 'reviewed' && $currentStatus === 'pending') {
+            $item[$statusKey] = 'Reviewed';
+            $updated = true;
+        }
+
+        // Lógica para el aprobador
+        if ($isApprover && $newStatus === 'approved') {
+            if ($currentStatus === 'pending' || $currentStatus === 'reviewed') {
+                $item[$statusKey] = 'Approved';
+                $updated = true;
+            }
+        }
+        return $item;
+    }
+
+    /**
+     * Función auxiliar para actualizar los campos `reviewed_at` y `approved_at` del log.
+     */
+    private function updateLogStatus($workLog, $newStatus, $userId)
+    {
+        $all_items_processed = true;
+        $all_items_approved = true;
+
+        foreach ($workLog->daily_activities as $dailyActivity) {
+            $dailyStatus = $this->calculateDayStatus($dailyActivity);
+            if ($dailyStatus === 'pending' || $dailyStatus === 'rejected') {
+                $all_items_processed = false;
+            }
+            if ($dailyStatus !== 'approved') {
+                $all_items_approved = false;
+            }
+        }
+
+        if ($newStatus === 'reviewed' && $all_items_processed) {
+            $workLog->reviewed_at = now();
+            $workLog->reviewed_by = $userId;
+            $workLog->save();
+        }
+
+        if ($newStatus === 'approved' && $all_items_approved) {
+            $workLog->approved_at = now();
+            $workLog->approved_by = $userId;
+            if (!$workLog->reviewed_at) {
+                $workLog->reviewed_at = now();
+                $workLog->reviewed_by = $userId;
+            }
+            $workLog->save();
+        }
+    }
+
     public function updateDailyItemStatus(Request $request)
     {
         try {
             $request->validate([
                 'employee_id'=> 'required|integer|exists:employees,id',
                 'date' => 'required|date_format:Y-m-d',
-                'item_type'=> 'required|in:activity,food_bonuses,field_bonuses,payroll_bonuses,services_list',
+                'item_type'=> 'required|in:activity,food_bonuses,field_bonuses,services_list',
                 'item_index'=> 'nullable|integer',
                 'status'=> 'required|in:reviewed,approved,rejected',
                 'rejection_reason' => 'nullable|string|max:500',

@@ -15,9 +15,9 @@
     --approved: #64946f;
     --pending: #ffae00c5;
     --commissioned: #249399;
-    --reviewed-yellow: #ffd900;
-    --approved-green: #268815;
-    --rejected-red: #dc5400;
+    --reviewed-yellow: #ffdc13ef;
+    --approved-green: #26b30e;
+    --rejected-red: #db4500;
 }
 
 /* Status indicators para diferentes tipos de actividades */
@@ -83,15 +83,15 @@
 
 /* Ensure the main table indicators are also correctly styled */
 .status-indicator.approved-border {
-    border: 2.5px solid var(--approved-green);
+    border: 3px solid var(--approved-green);
 }
 
 .status-indicator.reviewed-border {
-    border: 2.5px solid var(--reviewed-yellow);
+    border: 3px solid var(--reviewed-yellow);
 }
 
 .status-indicator.rejected-border {
-    border: 2.5px solid var(--rejected-red);
+    border: 3PX solid var(--rejected-red);
 }
 
 /* Estilos para el cálculo de utilización */

@@ -108,15 +108,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
         }
-
-        // Verificar y mostrar rechazos en bonos de nómina
-        if (activity.payroll_bonuses && activity.payroll_bonuses.length > 0) {
-            activity.payroll_bonuses.forEach(bonus => {
-                if (bonus.status === 'Rejected' && bonus.rejection_reason) {
-                    showRejectionMessage('payroll-bonus-days', bonus.rejection_reason);
-                }
-            });
-        }
     }
 
     // Función para mostrar mensaje de rechazo específico
@@ -173,12 +164,6 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'field_bonus':
                 if (activity.field_bonuses && activity.field_bonuses[itemIndex]) {
                     return activity.field_bonuses[itemIndex].status === 'Approved';
-                }
-                return false;
-
-            case 'payroll_bonus':
-                if (activity.payroll_bonuses && activity.payroll_bonuses[itemIndex]) {
-                    return activity.payroll_bonuses[itemIndex].status === 'Approved';
                 }
                 return false;
 
@@ -265,11 +250,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Bloquear campos de bonos
         const isFoodBonusLocked = isFieldLocked(activity, 'food_bonus');
         const isFieldBonusLocked = isFieldLocked(activity, 'field_bonus');
-        const isPayrollBonusLocked = isFieldLocked(activity, 'payroll_bonus');
 
         toggleFieldLock(document.getElementById('food-bonus'), isFoodBonusLocked, 'food_bonus');
         toggleFieldLock(document.getElementById('field-bonus'), isFieldBonusLocked, 'field_bonus');
-        toggleFieldLock(document.getElementById('payroll-bonus-days'), isPayrollBonusLocked, 'payroll_bonus');
     }
 
     /**
@@ -440,13 +423,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
             }
-        }
-
-        // Bono de nómina
-        if (activity.payroll_bonuses && activity.payroll_bonuses.length > 0) {
-            const payrollBonus = activity.payroll_bonuses[0];
-            console.log('Bono de nómina encontrado:', payrollBonus); // Debug log
-            document.getElementById('payroll-bonus-days').value = payrollBonus.days;
         }
 
         // Aplicar estados de bloqueo después de rellenar los campos
@@ -631,7 +607,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function resetBonusFields() {
         document.getElementById('food-bonus').selectedIndex = 0;
         document.getElementById('field-bonus').selectedIndex = 0;
-        document.getElementById('payroll-bonus-days').selectedIndex = 0;
     }
 
     // 3. Configuración de los selectores anidados
@@ -785,8 +760,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const isActivityBlocked = isFieldLocked(currentActivity, 'activity');
             const isServiceBlocked = isFieldLocked(currentActivity, 'service');
             const isFoodBonusBlocked = isFieldLocked(currentActivity, 'food_bonus');
-            const isFieldBonusBlocked = isFieldLocked(currentActivity, 'field_bonus');
-            const isPayrollBonusBlocked = isFieldLocked(currentActivity, 'payroll_bonus');
+            const isFieldBonusLocked = isFieldLocked(currentActivity, 'field_bonus');
 
             // Si está completamente aprobado, no permitir cambios
             if (currentActivity.day_status === 'approved') {
@@ -832,15 +806,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (currentFieldBonus !== existingFieldBonus) {
                     hasApprovedChanges = true;
                     approvedFieldsMessage.push('Bono de campo');
-                }
-            }
-
-            if (isPayrollBonusBlocked) {
-                const currentPayrollBonus = document.getElementById('payroll-bonus-days').value;
-                const existingPayrollBonus = currentActivity.payroll_bonuses?.[0]?.days?.toString();
-                if (currentPayrollBonus !== existingPayrollBonus) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Bono de nómina');
                 }
             }
 
@@ -922,8 +887,7 @@ document.addEventListener('DOMContentLoaded', function () {
             activity_type: activityTypeSelect.value,
             commissioned_to: commissionedSelect.value || null,
             food_bonus_number: document.getElementById('food-bonus').value || null,
-            field_bonus_identifier: document.getElementById('field-bonus').value || null,
-            payroll_bonus_days: document.getElementById('payroll-bonus-days').value || null
+            field_bonus_identifier: document.getElementById('field-bonus').value || null
         };
 
         if (document.getElementById('service-tab').classList.contains('active')) {

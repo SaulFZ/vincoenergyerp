@@ -212,7 +212,6 @@ class CalendarController extends Controller
                 'currency' => 'nullable|string|max:3',
                 'food_bonus_number' => 'nullable|integer|min:1',
                 'field_bonus_identifier' => 'nullable|string|max:50',
-                'payroll_bonus_days' => 'nullable|integer|min:1|max:31',
             ]);
 
             if ($validator->fails()) {
@@ -268,7 +267,6 @@ class CalendarController extends Controller
                 'services_list' => [],
                 'field_bonuses' => [],
                 'food_bonuses' => [],
-                'payroll_bonuses' => [],
                 'rejection_reason' => null
             ];
 
@@ -387,36 +385,10 @@ class CalendarController extends Controller
                 }
             }
 
-            // Lógica para el bono de nómina
-            $currentPayrollBonus = null;
-            if ($request->payroll_bonus_days && $request->payroll_bonus_days > 0) {
-                $dailyRate = 800.00;
-                $totalAmount = $dailyRate * (int) $request->payroll_bonus_days;
-                $currentPayrollBonus = [
-                    'bonus_name' => 'Bono de nómina',
-                    'days' => (int) $request->payroll_bonus_days,
-                    'total_amount' => $totalAmount,
-                    'status' => 'Pending',
-                    'rejection_reason' => null
-                ];
-
-                // Preservar estado si el bono no ha cambiado
-                if ($existingActivity && isset($existingActivity['payroll_bonuses'][0])) {
-                    $oldBonus = $existingActivity['payroll_bonuses'][0];
-                    $isPayrollBonusChanged = ($oldBonus['days'] !== (int) $currentPayrollBonus['days']);
-                    if (!$isPayrollBonusChanged) {
-                        $currentPayrollBonus['status'] = $oldBonus['status'];
-                        $currentPayrollBonus['rejection_reason'] = $oldBonus['rejection_reason'];
-                    }
-                }
-                $activityData['payroll_bonuses'][] = $currentPayrollBonus;
-            }
-
             // Eliminar bonos y servicios que se hayan deseleccionado
             $activityData['services_list'] = $currentService ? [$currentService] : [];
             $activityData['field_bonuses'] = $currentFieldBonus ? [$currentFieldBonus] : [];
             $activityData['food_bonuses'] = $currentFoodBonus ? [$currentFoodBonus] : [];
-            $activityData['payroll_bonuses'] = $currentPayrollBonus ? [$currentPayrollBonus] : [];
 
 
             $monthlyLog->addDailyActivity($request->date, $activityData);

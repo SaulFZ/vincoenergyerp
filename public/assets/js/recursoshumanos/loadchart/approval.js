@@ -1,27 +1,236 @@
-// Inicializar la tabla cuando el DOM esté listo
+// Modificar el evento DOMContentLoaded para conectar las actualizaciones
 document.addEventListener('DOMContentLoaded', function () {
     initializeApprovalTable();
     setupModalEventListeners();
+
+    // Conectar al sistema de actualizaciones en tiempo real (simulado)
+    connectToRealTimeUpdates();
 });
+
+// Asegurarse de limpiar el intervalo cuando la página se cierre
+window.addEventListener('beforeunload', function() {
+    stopAutoRefresh();
+});
+
 
 // Variables globales para el modal y la vista
 let currentModalData = {
     employeeId: null,
     date: null,
     dailyActivities: null
+
 };
 
+let autoRefreshInterval = null;
+let lastUpdateTime = null;
 
+// Inicializar el sistema de actualización automática
+function initializeAutoRefresh() {
+    // Verificar cambios cada 5 segundos
+    autoRefreshInterval = setInterval(checkForUpdates, 5000);
 
+    // También verificar cuando la pestaña gana foco
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Guardar el tiempo inicial
+    lastUpdateTime = new Date();
+}
+
+// Detener el sistema de actualización automática
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+}
+
+// Manejar cambios de visibilidad de la pestaña
+function handleVisibilityChange() {
+    if (!document.hidden) {
+        // La pestaña está visible, verificar actualizaciones
+        checkForUpdates();
+    }
+}
 function initializeApprovalTable() {
     setupEventListeners();
     renderEmployeeWorkLog();
-    // Se asegura de que la tabla se renderice primero y luego se muestre la quincena 1
     showQuincena(1);
     setActiveButton("quincena1");
     updatePeriodInfo();
+
+    // Iniciar el sistema de actualización automática
+    initializeAutoRefresh();
 }
 
+// Verificar si hay actualizaciones en el servidor
+async function checkForUpdates() {
+    try {
+        const response = await fetch('/recursoshumanos/loadchart/check-updates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                last_update: lastUpdateTime.toISOString(),
+                month: currentMonth,
+                year: currentYear
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.has_updates) {
+            // Hay actualizaciones, refrescar los datos
+            await refreshData();
+            showNotification('Datos actualizados automáticamente', 'info');
+        }
+    } catch (error) {
+        console.error('Error verificando actualizaciones:', error);
+    }
+}
+
+// Refrescar los datos desde el servidor
+async function refreshData() {
+    try {
+        showLoadingState();
+
+        const response = await fetch(`/recursoshumanos/loadchart/approval-data/${currentYear}/${currentMonth}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al cargar los datos actualizados');
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Error al cargar los datos actualizados');
+        }
+
+        // Actualizar variables globales
+        workLogsData = data.workLogsData;
+        fortnightlyConfig = data.fortnightlyConfig;
+        loadChartAssignments = data.loadChartAssignments;
+
+        // Actualizar la visualización
+        renderEmployeeWorkLog();
+
+        // Actualizar el tiempo de la última actualización
+        lastUpdateTime = new Date();
+
+        hideLoadingState();
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+        hideLoadingState();
+    }
+}
+
+// Función para actualizar una celda específica con nuevos datos
+function updateSpecificCell(employeeId, date, newData) {
+    const employeeRow = document.querySelector(`.employee-row[data-employee-id="${employeeId}"]`);
+    if (!employeeRow) return;
+
+    // Encontrar la celda específica para esta fecha
+    const allDayCells = Array.from(employeeRow.querySelectorAll('.data-cell'));
+    const targetCell = allDayCells.find(cell => cell.getAttribute('data-date') === date);
+
+    if (!targetCell) return;
+
+    // Actualizar el indicador de estado
+    const statusIndicator = targetCell.querySelector('.status-indicator');
+    if (statusIndicator && newData.activity_type) {
+        statusIndicator.textContent = newData.activity_type.toUpperCase();
+        statusIndicator.className = `status-indicator status-${newData.activity_type.toLowerCase()}`;
+        statusIndicator.title = newData.activity_description || '';
+
+        // Actualizar el borde según el estado del día
+        const dayStatus = newData.day_status || 'pending';
+        statusIndicator.classList.remove('approved-border', 'reviewed-border', 'rejected-border', 'pending-border');
+        if (dayStatus === 'approved') {
+            statusIndicator.classList.add('approved-border');
+        } else if (dayStatus === 'reviewed') {
+            statusIndicator.classList.add('reviewed-border');
+        } else if (dayStatus === 'rejected') {
+            statusIndicator.classList.add('rejected-border');
+        } else {
+            statusIndicator.classList.add('pending-border');
+        }
+    }
+
+    // También actualizar las filas relacionadas (comida, bono, servicio)
+    updateRelatedDataRows(employeeRow, date, newData);
+
+    // Recalcular totales
+    calculateAndRenderTotals();
+}
+
+// Función para simular la recepción de actualizaciones desde otras vistas
+// Esta función sería llamada por el sistema de notificaciones o WebSockets
+function receiveUpdateFromOtherView(updateData) {
+    // updateData debería contener: employeeId, date, newActivityData
+    const { employeeId, date, newActivityData } = updateData;
+
+    // Actualizar los datos locales
+    const employeeIndex = workLogsData.findIndex(log => log.employee_id.toString() === employeeId);
+    if (employeeIndex !== -1) {
+        const dailyIndex = workLogsData[employeeIndex].daily_activities.findIndex(act => act.date === date);
+        if (dailyIndex !== -1) {
+            // Actualizar la actividad existente
+            workLogsData[employeeIndex].daily_activities[dailyIndex] = {
+                ...workLogsData[employeeIndex].daily_activities[dailyIndex],
+                ...newActivityData
+            };
+        } else {
+            // Agregar nueva actividad
+            workLogsData[employeeIndex].daily_activities.push({
+                date: date,
+                ...newActivityData
+            });
+        }
+
+        // Actualizar la visualización
+        updateSpecificCell(employeeId, date, newActivityData);
+        showNotification('Datos actualizados desde otra vista', 'info');
+    }
+}
+
+// Ejemplo de cómo se conectaría a un sistema de notificaciones en tiempo real
+function connectToRealTimeUpdates() {
+    // Aquí se conectaría a WebSockets, EventSource, o otro sistema de notificaciones
+    // Este es un ejemplo simulado usando setInterval
+    setInterval(() => {
+        // Simular recepción de actualizaciones aleatorias
+        if (Math.random() > 0.7) { // 30% de probabilidad de recibir una actualización
+            const randomEmployee = workLogsData[Math.floor(Math.random() * workLogsData.length)];
+            if (randomEmployee && randomEmployee.daily_activities && randomEmployee.daily_activities.length > 0) {
+                const randomActivity = randomEmployee.daily_activities[
+                    Math.floor(Math.random() * randomEmployee.daily_activities.length)
+                ];
+
+                // Simular un cambio
+                const updatedData = {
+                    employeeId: randomEmployee.employee_id,
+                    date: randomActivity.date,
+                    newActivityData: {
+                        ...randomActivity,
+                        activity_type: ['B', 'P', 'H', 'T', 'D', 'V', 'E', 'M', 'C'][Math.floor(Math.random() * 9)],
+                        day_status: ['pending', 'reviewed', 'approved', 'rejected'][Math.floor(Math.random() * 4)]
+                    }
+                };
+
+                receiveUpdateFromOtherView(updatedData);
+            }
+        }
+    }, 10000); // Verificar cada 10 segundos
+}
 function setupEventListeners() {
     // Navegación de períodos
     document.getElementById("prev-period").addEventListener("click", () => navigateToPreviousMonth());
@@ -166,14 +375,6 @@ function openApprovalModal(employeeData, dailyActivity) {
                 }
             }
             addRowToModalTable('Bono de Campo', bonus.bonus_type, bonus.bonus_identifier, 'field_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
-        });
-    }
-
-    // Bonos de Nómina
-    if (dailyActivity.payroll_bonuses && dailyActivity.payroll_bonuses.length > 0) {
-        dailyActivity.payroll_bonuses.forEach((bonus, index) => {
-            const amount = canSeeAmounts ? `${Number(bonus.total_amount).toFixed(2)} MXN` : null;
-            addRowToModalTable('Bono de Nómina', bonus.bonus_name, `${bonus.days} días`, 'payroll_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
         });
     }
 
@@ -604,29 +805,23 @@ function updateTableBody(monthlyDays, employees) {
 
     employees.forEach(employee => {
         const workLog = workLogsData.find(log => log.employee_id === employee.id);
-        const hasPayrollBonuses = workLog ? workLog.has_payroll_bonuses : false;
 
-        const mainRow = createEmployeeRow(employee, monthlyDays, 'Actividad', true, hasPayrollBonuses);
+        const mainRow = createEmployeeRow(employee, monthlyDays, 'Actividad', true);
         tableBody.appendChild(mainRow);
 
-        const foodRow = createEmployeeRow(employee, monthlyDays, 'Comida', false, hasPayrollBonuses);
+        const foodRow = createEmployeeRow(employee, monthlyDays, 'Comida', false);
         tableBody.appendChild(foodRow);
 
-        const fieldBonusRow = createEmployeeRow(employee, monthlyDays, 'Bono', false, hasPayrollBonuses);
+        const fieldBonusRow = createEmployeeRow(employee, monthlyDays, 'Bono', false);
         tableBody.appendChild(fieldBonusRow);
 
-        if (hasPayrollBonuses) {
-            const payrollBonusRow = createEmployeeRow(employee, monthlyDays, 'BonoN', false, hasPayrollBonuses);
-            tableBody.appendChild(payrollBonusRow);
-        }
-
-        const serviceRow = createEmployeeRow(employee, monthlyDays, 'Servicio', false, hasPayrollBonuses);
+        const serviceRow = createEmployeeRow(employee, monthlyDays, 'Servicio', false);
         tableBody.appendChild(serviceRow);
     });
 }
 
 // Función corregida para crear la fila del empleado con botones condicionais
-function createEmployeeRow(employee, monthlyDays, rowType, isMainRow, hasPayrollBonuses) {
+function createEmployeeRow(employee, monthlyDays, rowType, isMainRow) {
     const tr = document.createElement('tr');
     tr.className = isMainRow ? 'employee-row' : 'activity-row';
     tr.setAttribute('data-employee-id', employee.id);
@@ -634,7 +829,7 @@ function createEmployeeRow(employee, monthlyDays, rowType, isMainRow, hasPayroll
     if (isMainRow) {
         const nameCell = document.createElement('td');
         nameCell.className = 'employee-info-cell';
-        nameCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        nameCell.rowSpan = 4;
         nameCell.textContent = employee.full_name;
         tr.appendChild(nameCell);
     }
@@ -666,32 +861,32 @@ function createEmployeeRow(employee, monthlyDays, rowType, isMainRow, hasPayroll
     });
 
     const totalCell = document.createElement('td');
-    totalCell.className = `data-cell ${rowType === 'Actividad' ? 'total-activity' : (rowType === 'Comida' ? 'total-food' : (rowType === 'Bono' ? 'total-field-bonus' : (rowType === 'BonoN' ? 'total-payroll-bonus' : 'total-service')))}`;
+    totalCell.className = `data-cell ${rowType === 'Actividad' ? 'total-activity' : (rowType === 'Comida' ? 'total-food' : (rowType === 'Bono' ? 'total-field-bonus' : 'total-service'))}`;
     totalCell.innerHTML = rowType === 'Actividad' ? '<div class="status-indicator">0</div>' : '0';
     tr.appendChild(totalCell);
 
     if (isMainRow) {
         const vacCell = document.createElement('td');
         vacCell.className = 'vacations-cell';
-        vacCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        vacCell.rowSpan = 4;
         vacCell.innerHTML = '<div class="vacations-container"><div class="vacations-value">0</div></div>';
         tr.appendChild(vacCell);
 
         const breaksCell = document.createElement('td');
         breaksCell.className = 'breaks-cell';
-        breaksCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        breaksCell.rowSpan = 4;
         breaksCell.innerHTML = '<div class="breaks-container"><div class="breaks-value">0</div></div>';
         tr.appendChild(breaksCell);
 
         const utilCell = document.createElement('td');
         utilCell.className = 'utilization-cell';
-        utilCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        utilCell.rowSpan = 4;
         utilCell.innerHTML = '<div class="utilization-container"><div class="utilization-value">0%</div></div>';
         tr.appendChild(utilCell);
 
         const approvalCell = document.createElement('td');
         approvalCell.className = 'actions-cell';
-        approvalCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        approvalCell.rowSpan = 4;
 
         // CORRECCIÓN: Verificar permisos específicos para este empleado
         const employeeAssignment = loadChartAssignments.find(a => a.employee_id === employee.id);
@@ -808,7 +1003,6 @@ function calculateAndRenderTotals() {
         let totalDays = 0;
         let totalFood = 0;
         let totalFieldBonus = 0;
-        let totalPayrollBonus = 0;
         let totalService = 0;
         let totalBreaks = 0;
         let totalVacations = 0;
@@ -852,7 +1046,6 @@ function calculateAndRenderTotals() {
                 }, 0) : 0;
                 totalFieldBonus += dailyFieldBonus;
 
-                totalPayrollBonus += dailyActivity.payroll_bonuses ? dailyActivity.payroll_bonuses.reduce((sum, bonus) => sum + Number(bonus.total_amount), 0) : 0;
                 totalService += dailyActivity.services_list ? dailyActivity.services_list.reduce((sum, service) => sum + Number(service.amount), 0) : 0;
             }
         });
@@ -860,13 +1053,11 @@ function calculateAndRenderTotals() {
         const activityRow = employeeRow;
         const foodRow = activityRow.nextElementSibling;
         const fieldBonusRow = foodRow.nextElementSibling;
-        const payrollBonusRow = employeeData.has_payroll_bonuses ? fieldBonusRow.nextElementSibling : null;
-        const serviceRow = payrollBonusRow ? payrollBonusRow.nextElementSibling : fieldBonusRow.nextElementSibling;
+        const serviceRow = fieldBonusRow.nextElementSibling;
 
         const activityTotalCell = activityRow.querySelector('.total-activity');
         const foodTotalCell = foodRow.querySelector('.total-food');
         const fieldBonusTotalCell = fieldBonusRow.querySelector('.total-field-bonus');
-        const payrollBonusTotalCell = payrollBonusRow ? payrollBonusRow.querySelector('.total-payroll-bonus') : null;
         const serviceTotalCell = serviceRow.querySelector('.total-service');
 
         if (activityTotalCell) activityTotalCell.querySelector('.status-indicator').textContent = totalDays;
@@ -874,14 +1065,10 @@ function calculateAndRenderTotals() {
         if (canSeeAmounts) {
             if (foodTotalCell) foodTotalCell.textContent = totalFood.toFixed(2);
             if (fieldBonusTotalCell) fieldBonusTotalCell.textContent = totalFieldBonus.toFixed(2);
-            if (payrollBonusTotalCell) {
-                payrollBonusTotalCell.textContent = totalPayrollBonus.toFixed(2);
-            }
             if (serviceTotalCell) serviceTotalCell.textContent = totalService.toFixed(2);
         } else {
             if (foodTotalCell) foodTotalCell.textContent = '0';
             if (fieldBonusTotalCell) fieldBonusTotalCell.textContent = '0';
-            if (payrollBonusTotalCell) payrollBonusTotalCell.textContent = '0';
             if (serviceTotalCell) serviceTotalCell.textContent = '0';
         }
 
@@ -927,13 +1114,11 @@ function renderEmployeeWorkLog() {
         const activityRow = employeeRow;
         const comidaRow = employeeRow.nextElementSibling;
         const fieldBonusRow = comidaRow.nextElementSibling;
-        const payrollBonusRow = employeeData.has_payroll_bonuses ? fieldBonusRow.nextElementSibling : null;
-        const servicioRow = employeeData.has_payroll_bonuses ? payrollBonusRow.nextElementSibling : fieldBonusRow.nextElementSibling;
+        const servicioRow = fieldBonusRow.nextElementSibling;
 
         const activityCells = Array.from(activityRow.querySelectorAll('.data-cell'));
         const comidaCells = Array.from(comidaRow.querySelectorAll('.data-cell'));
         const fieldBonusCells = Array.from(fieldBonusRow.querySelectorAll('.data-cell'));
-        const payrollBonusCells = payrollBonusRow ? Array.from(payrollBonusRow.querySelectorAll('.data-cell')) : [];
         const servicioCells = Array.from(servicioRow.querySelectorAll('.data-cell'));
 
         const dailyActivitiesMap = new Map();
@@ -994,12 +1179,6 @@ function renderEmployeeWorkLog() {
                         fieldBonusCells[index].title = dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0 ? dailyActivity.field_bonuses.map(b => `${b.bonus_type} (${b.daily_amount} ${b.currency})`).join(', ') : '';
                     }
 
-                    if (payrollBonusCells[index]) {
-                        const totalPayrollBonus = dailyActivity.payroll_bonuses ? dailyActivity.payroll_bonuses.reduce((sum, bonus) => sum + Number(bonus.total_amount), 0) : 0;
-                        payrollBonusCells[index].textContent = totalPayrollBonus > 0 ? totalPayrollBonus.toFixed(2) : '0';
-                        payrollBonusCells[index].title = dailyActivity.payroll_bonuses && dailyActivity.payroll_bonuses.length > 0 ? dailyActivity.payroll_bonuses.map(b => `${b.bonus_name} (${b.days} días)`).join(', ') : '';
-                    }
-
                     if (servicioCells[index]) {
                         const totalServiceAmount = dailyActivity.services_list ? dailyActivity.services_list.reduce((sum, service) => sum + Number(service.amount), 0) : 0;
                         servicioCells[index].textContent = totalServiceAmount > 0 ? totalServiceAmount.toFixed(2) : '0';
@@ -1016,12 +1195,6 @@ function renderEmployeeWorkLog() {
                         const bonusCount = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.length : 0;
                         fieldBonusCells[index].textContent = bonusCount > 0 ? dailyActivity.field_bonuses.map(b => b.bonus_identifier).join(', ') : '0';
                         fieldBonusCells[index].title = dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0 ? dailyActivity.field_bonuses.map(b => b.bonus_type).join(', ') : '';
-                    }
-
-                    if (payrollBonusCells[index]) {
-                        const payrollCount = dailyActivity.payroll_bonuses ? dailyActivity.payroll_bonuses.length : 0;
-                        payrollBonusCells[index].textContent = payrollCount > 0 ? dailyActivity.payroll_bonuses.map(b => b.days).join(', ') : '0';
-                        payrollBonusCells[index].title = dailyActivity.payroll_bonuses && dailyActivity.payroll_bonuses.length > 0 ? dailyActivity.payroll_bonuses.map(b => b.bonus_name).join(', ') : '';
                     }
 
                     if (servicioCells[index]) {
@@ -1044,10 +1217,6 @@ function renderEmployeeWorkLog() {
                 if (fieldBonusCells[index]) {
                     fieldBonusCells[index].textContent = '0';
                     fieldBonusCells[index].title = 'No hay bonos de campo registrados';
-                }
-                if (payrollBonusCells[index]) {
-                    payrollBonusCells[index].textContent = '0';
-                    payrollBonusCells[index].title = 'No hay bonos de nómina registrados';
                 }
                 if (servicioCells[index]) {
                     servicioCells[index].textContent = '0';
@@ -1140,7 +1309,7 @@ function getDailyStatusIndicator(dailyActivity) {
     }
 
     // Check all sub-item statuses
-    const itemTypes = ['food_bonuses', 'field_bonuses', 'payroll_bonuses', 'services_list'];
+    const itemTypes = ['food_bonuses', 'field_bonuses', 'services_list'];
     itemTypes.forEach(type => {
         if (dailyActivity[type] && dailyActivity[type].length > 0) {
             dailyActivity[type].forEach(item => {
@@ -1172,22 +1341,22 @@ function getDailyStatusIndicator(dailyActivity) {
     }
 
     // Aplicar la lógica de prioridad según las reglas
-    // 1. Si cualquier elemento está RECHAZADO → day_status = 'rejected'
+    // 1. If any element is REJECTED → day_status = 'rejected'
     if (hasRejected) {
         return 'rejected';
     }
 
-    // 2. Si hay elementos PENDIENTES → day_status = 'pending'
+    // 2. If there are PENDING elements → day_status = 'pending'
     if (hasPending) {
         return 'pending';
     }
 
-    // 3. Si TODOS los elementos están APROBADOS → day_status = 'approved'
+    // 3. If ALL elements are APPROVED → day_status = 'approved'
     if (approvedItems === totalItems) {
         return 'approved';
     }
 
-    // 4. Si hay elementos REVISADOS (y posiblemente APROBADOS, sin pendientes ni rechazados) → day_status = 'reviewed'
+    // 4. If there are REVIEWED elements (and possibly APPROVED, without pending or rejected) → day_status = 'reviewed'
     if (hasReviewed || (reviewedItems + approvedItems === totalItems && reviewedItems > 0)) {
         return 'reviewed';
     }
@@ -1201,6 +1370,7 @@ function getDailyStatusIndicator(dailyActivity) {
  * @param {Array} dailyActivities - Array de actividades diarias
  * @returns {Array} - Array actualizado con day_status
  */
+
 function updateDayStatusForActivities(dailyActivities) {
     return dailyActivities.map(dailyActivity => {
         dailyActivity.day_status = getDailyStatusIndicator(dailyActivity);

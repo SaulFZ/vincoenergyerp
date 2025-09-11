@@ -22,8 +22,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Redirección de la página principal según estado de autenticación
 Route::get('/', function () {
     return session()->has('auth')
-    ? redirect()->route('home')
-    : redirect()->route('login');
+        ? redirect()->route('home')
+        : redirect()->route('login');
 });
 
 // ===================================================
@@ -153,11 +153,13 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::get('/recursoshumanos/loadchart/approval-data/{year}/{month}', [ApprovalController::class, 'getApprovalData'])
                     ->name('approval.data');
 
+                // Ruta para verificar actualizaciones
+                Route::post('check-updates', [ApprovalController::class, 'checkUpdates'])->name('loadchart.check-updates');
 
-    // Ruta para actualizar el estado de aprobación
-    Route::post('/update-approval-status', [ApprovalController::class, 'updateApprovalStatus'])->name('loadchart.update.approval.status');
+                // Ruta para actualizar el estado de aprobación
+                Route::post('/update-approval-status', [ApprovalController::class, 'updateApprovalStatus'])->name('loadchart.update.approval.status');
 
-    Route::post('/update-multiple-statuses', [ApprovalController::class, 'updateMultipleStatuses'])->name('loadchart.update.multiple.statuses');
+                Route::post('/update-multiple-statuses', [ApprovalController::class, 'updateMultipleStatuses'])->name('loadchart.update.multiple.statuses');
 
                 // Ruta para obtener la configuración de un mes y año específicos
                 Route::get('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'getConfig']);
