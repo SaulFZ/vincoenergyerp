@@ -1,557 +1,49 @@
-document.addEventListener('DOMContentLoaded', function() {
+// Inicializar la tabla cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function () {
+    initializeApprovalTable();
+    setupModalEventListeners();
+});
 
-    // =================================================================
-    // === LÓGICA PARA SERVICIOS Y BONOS ===============================
-    // =================================================================
+// Variables globales para el modal y la vista
+let currentModalData = {
+    employeeId: null,
+    date: null,
+    dailyActivities: null
+};
 
-    const servicesInfoBtn = document.getElementById('services-info');
-    const servicesModal = document.getElementById('services-modal');
-    const servicesCloseBtn = document.querySelector('.services-close-btn');
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
 
-    if (servicesInfoBtn) {
-        servicesInfoBtn.addEventListener('click', function() {
-            servicesModal.style.display = 'flex';
-            loadServicesAndBonuses();
-        });
-    }
 
-    if (servicesCloseBtn) {
-        servicesCloseBtn.addEventListener('click', function() {
-            servicesModal.style.display = 'none';
-        });
-    }
+function initializeApprovalTable() {
+    setupEventListeners();
+    renderEmployeeWorkLog();
+    // Se asegura de que la tabla se renderice primero y luego se muestre la quincena 1
+    showQuincena(1);
+    setActiveButton("quincena1");
+    updatePeriodInfo();
+}
 
-    // Cierra el modal si el usuario hace clic fuera de él
-    window.addEventListener('click', function(event) {
-        if (event.target === servicesModal) {
-            servicesModal.style.display = 'none';
-        }
+function setupEventListeners() {
+    // Navegación de períodos
+    document.getElementById("prev-period").addEventListener("click", () => navigateToPreviousMonth());
+    document.getElementById("next-period").addEventListener("click", () => navigateToNextMonth());
+
+    // Navegación de quincenas
+    document.getElementById("quincena1").addEventListener("click", () => {
+        showQuincena(1);
+        setActiveButton("quincena1");
     });
 
-    // Funcionalidad de pestañas
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
-
-            const targetTab = this.getAttribute('data-tab');
-            document.getElementById(targetTab).classList.add('active');
-            this.classList.add('active');
-        });
+    document.getElementById("quincena2").addEventListener("click", () => {
+        showQuincena(2);
+        setActiveButton("quincena2");
     });
 
-    /**
-     * Carga servicios y bonos del servidor y los muestra en el modal.
-     */
-    async function loadServicesAndBonuses() {
-        const servicesPlaceholder = document.getElementById('services-placeholder');
-        const bonusesPlaceholder = document.getElementById('bonuses-placeholder');
-
-        servicesPlaceholder.innerHTML = '<p>Cargando servicios...</p>';
-        bonusesPlaceholder.innerHTML = '<p>Cargando bonos...</p>';
-
-        try {
-            const response = await fetch('/recursoshumanos/loadchart/info-services');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-
-            renderServices(servicesPlaceholder, data.services);
-            renderBonuses(bonusesPlaceholder, data.bonuses);
-
-        } catch (error) {
-            console.error('Error fetching services and bonuses:', error);
-            servicesPlaceholder.innerHTML = '<p style="color: red;">Error al cargar los servicios.</p>';
-            bonusesPlaceholder.innerHTML = '<p style="color: red;">Error al cargar los bonos.</p>';
-        }
-    }
-
-    /**
-     * Renderiza los datos de servicios en un formato de tabla.
-     * @param {HTMLElement} placeholder - El elemento DOM donde renderizar.
-     * @param {Object} servicesData - Los datos de servicios agrupados.
-     */
-    function renderServices(placeholder, servicesData) {
-        if (Object.keys(servicesData).length === 0) {
-            placeholder.innerHTML = '<p>No hay servicios disponibles.</p>';
-            return;
-        }
-
-        const servicesTable = document.createElement('div');
-        servicesTable.className = 'services-table';
-        servicesTable.innerHTML = `
-            <div class="table-header">
-                <div class="col-1">Tipo de Operación</div>
-                <div class="col-2">Tipo de Servicio</div>
-                <div class="col-3">Servicio Realizado</div>
-                <div class="col-4">ID</div>
-                <div class="col-5">Descripción</div>
-            </div>
-        `;
-
-        for (const operationType in servicesData) {
-            const operationGroup = servicesData[operationType];
-            for (const serviceType in operationGroup) {
-                const serviceTypeGroup = operationGroup[serviceType];
-                for (const servicePerformed in serviceTypeGroup) {
-                    const servicesArray = serviceTypeGroup[servicePerformed];
-                    servicesArray.forEach(service => {
-                        const row = document.createElement('div');
-                        row.className = 'table-row';
-                        row.innerHTML = `
-                            <div class="col-1">${service.operation_type}</div>
-                            <div class="col-2">${service.service_type}</div>
-                            <div class="col-3">${service.service_performed}</div>
-                            <div class="col-4">${service.identifier}</div>
-                            <div class="col-5">${service.service_description}</div>
-                        `;
-                        servicesTable.appendChild(row);
-                    });
-                }
-            }
-        }
-        placeholder.innerHTML = '';
-        placeholder.appendChild(servicesTable);
-    }
-
-    /**
-     * Renderiza los datos de bonos en un formato de tabla.
-     * @param {HTMLElement} placeholder - El elemento DOM donde renderizar.
-     * @param {Array} bonusesData - El array de objetos de bonos.
-     */
-    function renderBonuses(placeholder, bonusesData) {
-        if (bonusesData.length === 0) {
-            placeholder.innerHTML = '<p>No hay bonos disponibles.</p>';
-            return;
-        }
-
-        const bonusesTable = document.createElement('div');
-        bonusesTable.className = 'bonuses-table';
-        bonusesTable.innerHTML = `
-            <div class="table-header">
-                <div class="col-1">Categoría de Empleado</div>
-                <div class="col-2">Tipo de Bono</div>
-                <div class="col-3">Identificador</div>
-            </div>
-        `;
-
-        bonusesData.forEach(bonus => {
-            const row = document.createElement('div');
-            row.className = 'table-row';
-            row.innerHTML = `
-                <div class="col-1">${bonus.employee_category}</div>
-                <div class="col-2">${bonus.bonus_type}</div>
-                <div class="col-3">${bonus.bonus_identifier}</div>
-            `;
-            bonusesTable.appendChild(row);
-        });
-
-        placeholder.innerHTML = '';
-        placeholder.appendChild(bonusesTable);
-    }
-
-    // =================================================================
-    // === LÓGICA PARA CALENDARIO Y QUINCENAS ==========================
-    // =================================================================
-
-    const quincenaModal = document.getElementById("quincena-modal");
-    const openBtn = document.getElementById("days-quincena");
-    const quincenaCloseBtn = quincenaModal.querySelector(".quincena-close-btn");
-    const cancelBtn = quincenaModal.querySelector(".quincena-cancel-btn");
-    const saveBtn = quincenaModal.querySelector(".quincena-save-btn");
-    const editBtn = quincenaModal.querySelector(".quincena-edit-btn");
-    const prevMonthBtn = quincenaModal.querySelector(".quincena-prev-month");
-    const nextMonthBtn = quincenaModal.querySelector(".quincena-next-month");
-    const monthTitle = quincenaModal.querySelector(".quincena-month-title");
-    const calendarGrid = quincenaModal.querySelector(".quincena-calendar-grid");
-
-    // Inputs de fechas
-    const q1StartInput = document.getElementById("q1-start");
-    const q1EndInput = document.getElementById("q1-end");
-    const q2StartInput = document.getElementById("q2-start");
-    const q2EndInput = document.getElementById("q2-end");
-
-    let currentDate = new Date();
-    let currentQuincenaConfig = null;
-    let originalQuincenaConfig = null;
-
-    if (openBtn) {
-        openBtn.addEventListener("click", function () {
-            quincenaModal.style.display = "flex";
-            loadCurrentMonthConfig();
-        });
-    }
-
-    function closeQuincenaModal() {
-        quincenaModal.style.display = "none";
-        resetForm();
-    }
-
-    if (quincenaCloseBtn) quincenaCloseBtn.addEventListener("click", closeQuincenaModal);
-
-    if (cancelBtn) {
-        cancelBtn.addEventListener("click", function() {
-            if (originalQuincenaConfig) {
-                populateFormWithConfig(originalQuincenaConfig);
-            }
-            disableEditMode();
-        });
-    }
-    if (editBtn) editBtn.addEventListener("click", enableEditMode);
-
-    if (prevMonthBtn) {
-        prevMonthBtn.addEventListener("click", function () {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            loadCurrentMonthConfig();
-        });
-    }
-    if (nextMonthBtn) {
-        nextMonthBtn.addEventListener("click", function () {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            loadCurrentMonthConfig();
-        });
-    }
-
-    if (saveBtn) {
-        saveBtn.addEventListener("click", saveQuincenaConfig);
-    }
-
-    document.querySelectorAll('.quincena-date-input').forEach(input => {
-        input.addEventListener("change", updateCalendarFromInputs);
+    document.getElementById("full-month").addEventListener("click", () => {
+        showFullMonth();
+        setActiveButton("full-month");
     });
 
-    function enableEditMode() {
-        saveBtn.disabled = false;
-        editBtn.style.display = 'none';
-        cancelBtn.style.display = 'inline-flex';
-        document.querySelectorAll('.quincena-date-input').forEach(input => {
-            input.removeAttribute('readonly');
-        });
-        showNotification('Modo de edición activado. Puedes modificar las fechas.', 'info');
-        renderQuincenaCalendar(currentDate);
-    }
-
-    function disableEditMode() {
-        saveBtn.disabled = true;
-        editBtn.style.display = 'inline-flex';
-        cancelBtn.style.display = 'none';
-        document.querySelectorAll('.quincena-date-input').forEach(input => {
-            input.setAttribute('readonly', true);
-        });
-        renderQuincenaCalendar(currentDate);
-    }
-
-    async function loadCurrentMonthConfig() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1;
-        try {
-            const response = await fetch(`/recursoshumanos/loadchart/fortnightly-config/${year}/${month}`);
-            if (response.ok) {
-                const config = await response.json();
-                if (config) {
-                    currentQuincenaConfig = config;
-                } else {
-                    currentQuincenaConfig = await generateDefaultConfig(year, month);
-                }
-            } else {
-                currentQuincenaConfig = await generateDefaultConfig(year, month);
-            }
-            originalQuincenaConfig = { ...currentQuincenaConfig };
-            populateFormWithConfig(currentQuincenaConfig);
-            disableEditMode();
-        } catch (error) {
-            console.error('Error loading config:', error);
-            currentQuincenaConfig = await generateDefaultConfig(year, month);
-            originalQuincenaConfig = { ...currentQuincenaConfig };
-            populateFormWithConfig(currentQuincenaConfig);
-            disableEditMode();
-        }
-    }
-
-    async function generateDefaultConfig(year, month) {
-        try {
-            const response = await fetch('/recursoshumanos/loadchart/fortnightly-config/generate-default', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ year, month })
-            });
-            const result = await response.json();
-            if (response.ok) {
-                return result.data;
-            }
-        } catch (error) {
-            console.error('Error generating default config:', error);
-        }
-
-        const firstDay = new Date(year, month - 1, 1);
-        const lastDay = new Date(year, month, 0);
-        const fifteenthDay = new Date(year, month - 1, 15);
-        const sixteenthDay = new Date(year, month - 1, 16);
-        if (sixteenthDay.getMonth() + 1 !== month) {
-            sixteenthDay.setDate(lastDay.getDate());
-        }
-        return {
-            year: year,
-            month: month,
-            q1_start: formatDateForInput(firstDay),
-            q1_end: formatDateForInput(fifteenthDay),
-            q2_start: formatDateForInput(sixteenthDay),
-            q2_end: formatDateForInput(lastDay)
-        };
-    }
-
-    function populateFormWithConfig(config) {
-        q1StartInput.value = config.q1_start ? new Date(config.q1_start).toISOString().split('T')[0] : '';
-        q1EndInput.value = config.q1_end ? new Date(config.q1_end).toISOString().split('T')[0] : '';
-        q2StartInput.value = config.q2_start ? new Date(config.q2_start).toISOString().split('T')[0] : '';
-        q2EndInput.value = config.q2_end ? new Date(config.q2_end).toISOString().split('T')[0] : '';
-        renderQuincenaCalendar(currentDate);
-    }
-
-    function formatDateForInput(date) {
-        const d = new Date(date);
-        let month = '' + (d.getMonth() + 1);
-        let day = '' + d.getDate();
-        const year = d.getFullYear();
-        if (month.length < 2) month = '0' + month;
-        if (day.length < 2) day = '0' + day;
-        return [year, month, day].join('-');
-    }
-
-    function updateCalendarFromInputs() {
-        renderQuincenaCalendar(currentDate);
-    }
-
-    function isDateInQuincena(date) {
-        const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
-        const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
-        const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
-        const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
-
-        const testDate = new Date(date);
-        testDate.setHours(0, 0, 0, 0);
-
-        const isQ1 = q1Start && q1End && testDate >= q1Start && testDate <= q1End;
-        const isQ2 = q2Start && q2End && testDate >= q2Start && testDate <= q2End;
-
-        return isQ1 || isQ2;
-    }
-
-    function isBoundaryDay(date) {
-        const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
-        const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
-        const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
-        const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
-
-        const testDate = new Date(date);
-        testDate.setHours(0, 0, 0, 0);
-
-        let isStart = false;
-        let isEnd = false;
-
-        if (q1Start && testDate.getTime() === q1Start.getTime()) isStart = true;
-        if (q1End && testDate.getTime() === q1End.getTime()) isEnd = true;
-        if (q2Start && testDate.getTime() === q2Start.getTime()) isStart = true;
-        if (q2End && testDate.getTime() === q2End.getTime()) isEnd = true;
-
-        return { isStart, isEnd };
-    }
-
-    function renderQuincenaCalendar(date) {
-        const year = date.getFullYear();
-        const month = date.getMonth();
-        monthTitle.textContent = `${getMonthName(month)} ${year}`;
-
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const firstDayOfWeek = firstDay.getDay();
-
-        while (calendarGrid.firstChild) {
-            calendarGrid.removeChild(calendarGrid.firstChild);
-        }
-
-        const dayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-        dayLabels.forEach(label => {
-            const labelCell = document.createElement("div");
-            labelCell.className = "quincena-day-label";
-            labelCell.textContent = label;
-            calendarGrid.appendChild(labelCell);
-        });
-
-        const prevMonthLastDay = new Date(year, month, 0);
-        const prevMonthDaysCount = 5;
-        const offset = (firstDayOfWeek - prevMonthDaysCount + 7) % 7;
-
-        for (let i = 0; i < offset; i++) {
-            const emptyCell = document.createElement("div");
-            emptyCell.className = "quincena-day-cell empty-cell";
-            calendarGrid.appendChild(emptyCell);
-        }
-
-        for (let i = prevMonthDaysCount - 1; i >= 0; i--) {
-            const day = prevMonthLastDay.getDate() - i;
-            const prevMonthDate = new Date(prevMonthLastDay.getFullYear(), prevMonthLastDay.getMonth(), day);
-
-            const dayCell = document.createElement("div");
-            dayCell.className = "quincena-day-cell other-month-day";
-            dayCell.textContent = day;
-
-            if (isDateInQuincena(prevMonthDate)) {
-                dayCell.classList.add("quincena-selected");
-            }
-
-            const boundary = isBoundaryDay(prevMonthDate);
-            if (boundary.isStart) {
-                dayCell.classList.add("quincena-start");
-            }
-            if (boundary.isEnd) {
-                dayCell.classList.add("quincena-end");
-            }
-
-            dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(prevMonthDate.getMonth())} ${prevMonthDate.getFullYear()}`);
-            dayCell.classList.add('has-tooltip');
-            calendarGrid.appendChild(dayCell);
-        }
-
-        for (let day = 1; day <= lastDay.getDate(); day++) {
-            const dayCell = document.createElement("div");
-            dayCell.className = "quincena-day-cell";
-            dayCell.textContent = day;
-            const cellDate = new Date(year, month, day);
-
-            if (isDateInQuincena(cellDate)) {
-                dayCell.classList.add("quincena-selected");
-            }
-
-            const boundary = isBoundaryDay(cellDate);
-            if (boundary.isStart) {
-                dayCell.classList.add("quincena-start");
-            }
-            if (boundary.isEnd) {
-                dayCell.classList.add("quincena-end");
-            }
-
-            dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(month)} ${year}`);
-            dayCell.classList.add('has-tooltip');
-            calendarGrid.appendChild(dayCell);
-        }
-
-        const cellsUsed = offset + prevMonthDaysCount + lastDay.getDate();
-        const totalCells = Math.ceil(cellsUsed / 7) * 7;
-        const remainingCells = totalCells - cellsUsed;
-
-        for (let i = 0; i < remainingCells; i++) {
-            const emptyCell = document.createElement("div");
-            emptyCell.className = "quincena-day-cell empty-cell";
-            calendarGrid.appendChild(emptyCell);
-        }
-    }
-
-    async function saveQuincenaConfig() {
-        if (!q1StartInput.value || !q1EndInput.value || !q2StartInput.value || !q2EndInput.value) {
-            showNotification('Por favor, complete todas las fechas', 'error');
-            return;
-        }
-        const q1Start = new Date(q1StartInput.value + 'T00:00:00');
-        const q1End = new Date(q1EndInput.value + 'T00:00:00');
-        const q2Start = new Date(q2StartInput.value + 'T00:00:00');
-        const q2End = new Date(q2EndInput.value + 'T00:00:00');
-
-        if (q1Start > q1End) {
-            showNotification('La fecha de inicio de la primera quincena debe ser anterior a la de fin.', 'error');
-            return;
-        }
-        if (q1End.getTime() >= q2Start.getTime()) {
-            showNotification('La primera quincena debe terminar antes de que inicie la segunda.', 'error');
-            return;
-        }
-        if (q2Start > q2End) {
-            showNotification('La fecha de inicio de la segunda quincena debe ser anterior a la de fin.', 'error');
-            return;
-        }
-
-        const configData = {
-            year: currentDate.getFullYear(),
-            month: currentDate.getMonth() + 1,
-            q1_start: q1StartInput.value,
-            q1_end: q1EndInput.value,
-            q2_start: q2StartInput.value,
-            q2_end: q2EndInput.value,
-            _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        };
-
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-        try {
-            const response = await fetch('/recursoshumanos/loadchart/fortnightly-config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': configData._token
-                },
-                body: JSON.stringify(configData)
-            });
-            const result = await response.json();
-
-            if (response.ok) {
-                showNotification('Configuración guardada exitosamente', 'success');
-                currentQuincenaConfig = result.data;
-                originalQuincenaConfig = { ...currentQuincenaConfig };
-                populateFormWithConfig(currentQuincenaConfig);
-                disableEditMode();
-            } else {
-                const errorMessage = result.errors ? Object.values(result.errors).flat().join('<br>') : result.message;
-                showNotification(errorMessage || 'Error al guardar la configuración', 'error');
-            }
-        } catch (error) {
-            console.error('Error saving config:', error);
-            showNotification('Error al guardar la configuración', 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
-        }
-    }
-
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement("div");
-        notification.className = `notification ${type}`;
-        const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-        notification.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.classList.add('show'), 100);
-        setTimeout(() => {
-            notification.classList.add("fade-out");
-            setTimeout(() => notification.remove(), 500);
-        }, 4000);
-    }
-
-    function resetForm() {
-        currentQuincenaConfig = null;
-        originalQuincenaConfig = null;
-        q1StartInput.value = '';
-        q1EndInput.value = '';
-        q2StartInput.value = '';
-        q2EndInput.value = '';
-        disableEditMode();
-        renderQuincenaCalendar(currentDate);
-    }
-
-    function getMonthName(monthIndex) {
-        const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        return months[monthIndex];
-    }
-
-    // =================================================================
-    // === LÓGICA PARA TABLA DE EMPLEADOS ==============================
-    // =================================================================
-
+    // Botón volver al calendario
     const backToCalendarBtn = document.getElementById("back-to-calendar");
     if (backToCalendarBtn) {
         backToCalendarBtn.addEventListener("click", function (e) {
@@ -560,776 +52,1158 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    document.getElementById("quincena1").addEventListener("click", () => {
-        showQuincena(1);
-        setActiveButton("quincena1");
-    });
-    document.getElementById("quincena2").addEventListener("click", () => {
-        showQuincena(2);
-        setActiveButton("quincena2");
-    });
-    document.getElementById("full-month").addEventListener("click", () => {
-        showFullMonth();
-        setActiveButton("full-month");
-    });
-    document.getElementById("prev-period").addEventListener("click", () => {
-        alert("Navegando al período anterior");
-    });
-    document.getElementById("next-period").addEventListener("click", () => {
-        alert("Navegando al próximo período");
-    });
+    // Agregar manejador de eventos para el modal
+    document.getElementById('approval-table-body').addEventListener('click', handleTableClick);
 
-    document.querySelectorAll(".btn-approve").forEach((btn) => {
-        btn.addEventListener("click", function () {
-            const row = this.closest(".employee-row");
-            approveEmployee(row);
+    // Manejadores para los botones de aprobación de la tabla principal (se asignarán dinámicamente)
+    setupEmployeeRowListeners();
+}
+
+function setupModalEventListeners() {
+    const modal = document.getElementById('approvalModal');
+    const closeButtons = modal.querySelectorAll('.modal-approval-close, .modal-approval-close-btn');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.style.display = 'none';
         });
     });
 
-    document.querySelectorAll(".btn-review").forEach((btn) => {
-        btn.addEventListener("click", function () {
-            const row = this.closest(".employee-row");
-            markAsReviewed(row);
-        });
-    });
+    // Manejador del botón guardar en el modal
+    document.getElementById('modal-save-btn').addEventListener('click', saveModalChanges);
+}
 
-    const saveBtnElement = document.querySelector(".save-btn");
-    if (saveBtnElement) {
-        saveBtnElement.addEventListener("click", guardarDatos);
-    }
+function handleTableClick(event) {
+    const statusIndicator = event.target.closest('.status-indicator');
+    if (statusIndicator) {
+        const cell = statusIndicator.closest('.data-cell');
+        const row = cell.closest('.employee-row');
+        const employeeId = row.getAttribute('data-employee-id');
+        const date = cell.getAttribute('data-date');
 
-    showQuincena(1);
+        const employeeData = workLogsData.find(log => log.employee_id.toString() === employeeId);
+        const dailyActivity = employeeData?.daily_activities.find(act => act.date === date);
 
-    function setActiveButton(buttonId) {
-        document.querySelectorAll(".period-btn").forEach((btn) => {
-            btn.classList.remove("active");
-        });
-        const targetBtn = document.getElementById(buttonId);
-        if (targetBtn) {
-            targetBtn.classList.add("active");
+        if (dailyActivity) {
+            openApprovalModal(employeeData, dailyActivity);
+        } else {
+            showNotification('No hay actividades registradas para este día.', 'info');
         }
-    }
-
-    function showQuincena(quincena) {
-        const dayHeaders = document.querySelectorAll(".approval-table .day-header");
-        const allRows = document.querySelectorAll(".approval-table tbody tr");
-        const daysColumnsHeader = document.getElementById("days-columns");
-        if (!dayHeaders.length || !daysColumnsHeader) return;
-
-        let firstDay = quincena === 1 ? 1 : 16;
-        let lastDay = quincena === 1 ? 15 : 31;
-        let visibleDays = lastDay - firstDay + 1;
-
-        daysColumnsHeader.colSpan = visibleDays;
-
-        dayHeaders.forEach((header, index) => {
-            const dayNumber = parseInt(header.textContent.split("\n")[0]);
-            const shouldShow = dayNumber >= firstDay && dayNumber <= lastDay;
-            header.style.display = shouldShow ? "" : "none";
-        });
-
-        allRows.forEach((row) => {
-            const dataCells = row.querySelectorAll(".data-cell");
-            dayHeaders.forEach((header, index) => {
-                const dayNumber = parseInt(header.textContent.split("\n")[0]);
-                const shouldShow = dayNumber >= firstDay && dayNumber <= lastDay;
-                if (dataCells[index]) {
-                    dataCells[index].style.display = shouldShow ? "" : "none";
-                }
-            });
-        });
-
-        const fixedColumns = document.querySelectorAll(".employee-info-cell, .activity-label-cell");
-        fixedColumns.forEach((col) => {
-            col.style.width = "auto";
-            col.style.minWidth = "120px";
-        });
-    }
-
-    function showFullMonth() {
-        const dayHeaders = document.querySelectorAll(".approval-table .day-header");
-        const allRows = document.querySelectorAll(".approval-table tbody tr");
-        const daysColumnsHeader = document.getElementById("days-columns");
-        if (!dayHeaders.length || !daysColumnsHeader) return;
-
-        daysColumnsHeader.colSpan = 31;
-
-        dayHeaders.forEach((header, index) => {
-            header.style.display = "";
-            allRows.forEach((row) => {
-                const dataCells = row.querySelectorAll(".data-cell");
-                if (dataCells[index]) {
-                    dataCells[index].style.display = "";
-                }
-            });
-        });
-
-        const fixedColumns = document.querySelectorAll(".employee-info-cell, .activity-label-cell");
-        fixedColumns.forEach((col) => {
-            col.style.width = "";
-            col.style.minWidth = "";
-        });
-    }
-
-    function approveEmployee(row) {
-        const statusIndicators = row.querySelectorAll(".status-indicator");
-        statusIndicators.forEach((indicator) => {
-            if (indicator.textContent === "N") {
-                indicator.textContent = "A";
-                indicator.classList.remove("status-n");
-                indicator.classList.add("status-a");
-            }
-        });
-        const approveBtn = row.querySelector(".btn-approve");
-        if (approveBtn) {
-            approveBtn.textContent = "Aprobado";
-            approveBtn.classList.add("approved");
-            approveBtn.disabled = true;
-        }
-    }
-
-    function markAsReviewed(row) {
-        const statusIndicators = row.querySelectorAll(".status-indicator");
-        statusIndicators.forEach((indicator) => {
-            if (indicator.textContent === "N") {
-                indicator.textContent = "R";
-                indicator.classList.remove("status-n");
-                indicator.classList.add("status-r");
-            }
-        });
-        const reviewBtn = row.querySelector(".btn-review");
-        if (reviewBtn) {
-            reviewBtn.textContent = "Revisado";
-            reviewBtn.classList.add("reviewed");
-            reviewBtn.disabled = true;
-        }
-    }
-
-    function guardarDatos() {
-        const saveBtn = document.querySelector(".save-btn");
-        if (!saveBtn) return;
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-        setTimeout(() => {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
-            const notification = document.createElement("div");
-            notification.className = "notification success";
-            notification.innerHTML = '<i class="fas fa-check-circle"></i> Cambios guardados correctamente';
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.classList.add("fade-out");
-                setTimeout(() => notification.remove(), 500);
-            }, 3000);
-        }, 1500);
-    }
-
-    function toggleActivityRows(employeeRow) {
-        const activityRows = employeeRow.nextElementSibling;
-        if (activityRows && activityRows.classList.contains("activity-row")) {
-            activityRows.classList.toggle("hidden");
-        }
-    }
-
-    document.querySelectorAll(".employee-info-cell").forEach((cell) => {
-        cell.addEventListener("click", function () {
-            const employeeRow = this.closest(".employee-row");
-            toggleActivityRows(employeeRow);
-        });
-    });
-
-
-
-
-
-    /* ================================================================= */
-    /* === LÓGICA PARA GESTIÓN DE CUADRILLAS (SQUAD CONTROL) ========= */
-    /* ================================================================= */
-
-    // Elementos del DOM
-    const squadModal = document.getElementById("squad-control-modal");
-    const squadFormModal = document.getElementById("squad-form-modal");
-    const closeSquadModalBtn = squadModal.querySelector(".squad-close-btn");
-    const closeFormModalBtns = squadFormModal.querySelectorAll(
-        ".form-close-btn, .cancel-sq-btn"
-    );
-    const addNewSquadBtn = document.getElementById("add-new-squad");
-    const saveFormBtn = document.querySelector(".save-sq-btn");
-    const formTitle = document.getElementById("form-title");
-    const squadSelect = document.getElementById("squad-select");
-    const operatorSelects = document.querySelectorAll(".operator-select");
-    const squadTableBody = document.querySelector(".squad-table tbody");
-    const searchInput = document.querySelector(".search-input");
-    const searchClearBtn = document.querySelector(".search-clear");
-
-    // Variables de estado
-    let operadoresData = [];
-    let squadsData = [];
-    let isEditMode = false;
-    let editingSquadNumber = null;
-
-    // Mostrar skeleton de carga
-    function showLoadingSkeleton() {
-        squadTableBody.innerHTML = "";
-        for (let i = 0; i < 5; i++) {
-            const row = document.createElement("tr");
-            row.className = "squad-row loading";
-            row.innerHTML = `
-                <td class="centered-cell">
-                    <div class="skeleton skeleton-badge"></div>
-                </td>
-                <td>
-                    <div class="operators-grid">
-                        ${Array(4)
-                            .fill()
-                            .map(
-                                () => `
-                            <div class="operator-card skeleton">
-                                <div class="operator-avatar skeleton"></div>
-                                <div class="operator-info">
-                                    <span class="operator-name skeleton skeleton-text"></span>
-                                    <span class="operator-id skeleton skeleton-text"></span>
-                                </div>
-                            </div>
-                        `
-                            )
-                            .join("")}
-                    </div>
-                </td>
-                <td>
-                    <div class="action-buttons">
-                        <div class="skeleton skeleton-btn"></div>
-                        <div class="skeleton skeleton-btn"></div>
-                    </div>
-                </td>
-            `;
-            squadTableBody.appendChild(row);
-        }
-    }
-
-    // Generar opciones de cuadrillas disponibles
-    // Generar opciones de cuadrillas disponibles
-function generateSquadOptions() {
-    squadSelect.innerHTML =
-        '<option value="">Seleccionar Cuadrilla...</option>';
-
-    // Obtener números de cuadrillas existentes
-    const existingSquads = squadsData.map((squad) => squad.squad_number);
-
-    for (let i = 1; i <= 20; i++) {
-        const option = document.createElement("option");
-        const squadNumber = i.toString().padStart(2, "0");
-        option.value = i;
-        option.textContent = `Cuadrilla-${squadNumber}`;
-
-        // LÓGICA MEJORADA
-        // Deshabilitar la opción si ya existe en otra cuadrilla
-        const isExisting = existingSquads.includes(i);
-        const isEditingThisSquad = (isEditMode && parseInt(editingSquadNumber) === i);
-
-        if (isExisting && !isEditingThisSquad) {
-            option.disabled = true;
-            option.textContent += " (Existente)";
-        }
-
-        // Fin de la lógica mejorada
-        squadSelect.appendChild(option);
     }
 }
 
-    // Cargar operadores con caché local
-    async function fetchAndPopulateOperators() {
-        try {
-            // Mostrar loading en selects
-            operatorSelects.forEach((select) => {
-                select.innerHTML =
-                    '<option value="">Cargando operadores...</option>';
-                select.disabled = true;
-            });
+async function saveModalChanges() {
+    const modal = document.getElementById('approvalModal');
+    const tableBody = modal.querySelector('#modal-table-body');
+    const rows = tableBody.querySelectorAll('tr');
+    const changes = [];
 
-            // Verificar si ya tenemos los datos en caché
-            if (operadoresData.length > 0) {
-                populateOperatorSelects();
+    rows.forEach(row => {
+        const itemType = row.getAttribute('data-item-type');
+        const itemIndex = row.getAttribute('data-item-index') !== 'null' ? row.getAttribute('data-item-index') : null;
+        const select = row.querySelector('.item-approval-selector');
+        const comment = row.querySelector('.modal-comment').value;
+
+        if (select && select.value !== 'pending' && !select.disabled) {
+            changes.push({
+                date: currentModalData.date,
+                item_type: itemType,
+                item_index: itemIndex,
+                status: select.value,
+                rejection_reason: comment
+            });
+        }
+    });
+
+    if (changes.length > 0) {
+        await updateDailyItemsStatus(currentModalData.employeeId, changes);
+    } else {
+        showNotification('No hay cambios para guardar.', 'info');
+    }
+    modal.style.display = 'none';
+}
+function openApprovalModal(employeeData, dailyActivity) {
+    const modal = document.getElementById('approvalModal');
+    const subtitle = modal.querySelector('.modal-approval-subtitle');
+    const tableBody = modal.querySelector('#modal-table-body');
+    const employeeName = document.querySelector(`.employee-row[data-employee-id="${employeeData.employee_id}"] .employee-info-cell`).textContent.trim();
+    const dateWithTime = dailyActivity.date + 'T12:00:00';
+
+    const formattedDate = new Date(dateWithTime).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    currentModalData.employeeId = employeeData.employee_id;
+    currentModalData.date = dailyActivity.date;
+
+    const assignment = loadChartAssignments.find(assgn => assgn.employee_id === employeeData.employee_id);
+    const isReviewer = assignment && assignment.reviewer_id === currentUserId;
+    const isApprover = assignment && assignment.approver_id === currentUserId;
+
+    subtitle.textContent = `${employeeName} - ${formattedDate}`;
+    tableBody.innerHTML = '';
+
+    // Llenar el modal con los datos del día
+    // Actividad principal
+    if (dailyActivity.activity_type) {
+        const activityStatus = dailyActivity.activity_status ?? 'pending';
+        addRowToModalTable('Actividad', dailyActivity.activity_description || '', '', 'activity', null, activityStatus, dailyActivity.rejection_reason, null, isReviewer, isApprover);
+    }
+
+    // Bonos de Comida
+    if (dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0) {
+        dailyActivity.food_bonuses.forEach((bonus, index) => {
+            const amount = canSeeAmounts ? bonus.daily_amount : null;
+            addRowToModalTable('Bono de Comida', bonus.bonus_type, `x${bonus.num_daily}`, 'food_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
+        });
+    }
+
+    // Bonos de Campo
+    if (dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0) {
+        dailyActivity.field_bonuses.forEach((bonus, index) => {
+            let amount = null;
+            if (canSeeAmounts) {
+                if (bonus.currency === 'USD') {
+                    amount = `${Number(bonus.daily_amount).toFixed(2)} USD (${(Number(bonus.daily_amount) * Number(bonus.usd_to_mxn_rate)).toFixed(2)} MXN)`;
+                } else {
+                    amount = `${Number(bonus.daily_amount).toFixed(2)} MXN`;
+                }
+            }
+            addRowToModalTable('Bono de Campo', bonus.bonus_type, bonus.bonus_identifier, 'field_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
+        });
+    }
+
+    // Bonos de Nómina
+    if (dailyActivity.payroll_bonuses && dailyActivity.payroll_bonuses.length > 0) {
+        dailyActivity.payroll_bonuses.forEach((bonus, index) => {
+            const amount = canSeeAmounts ? `${Number(bonus.total_amount).toFixed(2)} MXN` : null;
+            addRowToModalTable('Bono de Nómina', bonus.bonus_name, `${bonus.days} días`, 'payroll_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
+        });
+    }
+
+    // Servicios
+    if (dailyActivity.services_list && dailyActivity.services_list.length > 0) {
+        dailyActivity.services_list.forEach((service, index) => {
+            const amount = canSeeAmounts ? `${Number(service.amount).toFixed(2)} MXN` : null;
+            addRowToModalTable('Servicio', service.service_name, service.service_identifier, 'services_list', index, service.status, service.rejection_reason, amount, isReviewer, isApprover);
+        });
+    }
+
+    // Ocultar/mostrar columna de montos
+    const amountHeader = modal.querySelector('.amount-header');
+    if (amountHeader) {
+        amountHeader.style.display = canSeeAmounts ? '' : 'none';
+        modal.querySelectorAll('.amount-cell').forEach(cell => {
+            cell.style.display = canSeeAmounts ? '' : 'none';
+        });
+    }
+
+    modal.style.display = 'block';
+}
+
+function addRowToModalTable(concept, details, identifier, itemType, itemIndex, status, rejectionReason, amount, isReviewer, isApprover) {
+    const tableBody = document.getElementById('modal-table-body');
+    const row = document.createElement('tr');
+    row.setAttribute('data-item-type', itemType);
+    row.setAttribute('data-item-index', itemIndex);
+
+    const safeStatus = status || 'pending';
+    const statusPillClass = safeStatus.toLowerCase();
+    const approvalSelector = getModalApprovalSelectorHtml(statusPillClass, isReviewer, isApprover);
+
+    row.innerHTML = `
+        <td>${concept}</td>
+        <td>${details}</td>
+        <td>${identifier}</td>
+        <td class="amount-cell">${amount !== null ? `${amount}` : ''}</td>
+        <td>
+            ${approvalSelector}
+        </td>
+        <td>
+            <textarea class="form-control modal-comment" placeholder="Motivo de rechazo...">${rejectionReason || ''}</textarea>
+        </td>
+    `;
+    tableBody.appendChild(row);
+}
+
+function getModalApprovalSelectorHtml(currentStatus, isReviewer, isApprover) {
+    const options = [
+        { value: 'reviewed', text: 'Revisado' },
+        { value: 'approved', text: 'Aprobado' },
+        { value: 'rejected', text: 'Rechazado' }
+    ];
+
+    if (currentStatus === 'pending') {
+        options.unshift({ value: 'pending', text: 'Pendiente' });
+    }
+
+    let html = `<select class="form-control item-approval-selector">`;
+    options.forEach(option => {
+        let isSelected = option.value === currentStatus;
+        let isDisabled = false;
+
+        if (currentStatus === 'pending') {
+            if (option.value === 'pending') {
+                isDisabled = true;
+            }
+        }
+
+        if (isReviewer && !isApprover && option.value === 'approved') {
+            return;
+        }
+
+        if (!isReviewer && !isApprover) {
+            isDisabled = true;
+        }
+
+        if (currentStatus === 'approved') {
+            if (!isApprover) {
+                isDisabled = true;
+            } else if (option.value === 'pending' || option.value === 'reviewed') {
+                isDisabled = true;
+            }
+        }
+
+        if (currentStatus === 'reviewed' && option.value === 'pending') {
+            isDisabled = true;
+        }
+
+        if (currentStatus === 'rejected') {
+            isDisabled = true;
+        }
+
+        html += `<option value="${option.value}" ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}>${option.text}</option>`;
+    });
+    html += `</select>`;
+
+    if (currentStatus === 'approved' && !isApprover) {
+        return `<span class="badge badge-success">Aprobado</span>`;
+    }
+
+    if (currentStatus === 'pending') {
+        return html;
+    }
+
+    return html;
+}
+
+async function updateDailyItemsStatus(employeeId, changes) {
+    try {
+        showLoadingState();
+        const response = await fetch('/recursoshumanos/loadchart/update-multiple-statuses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                employee_id: employeeId,
+                changes: changes,
+                month: currentMonth,
+                year: currentYear
+            })
+        });
+
+        const data = await response.json();
+        hideLoadingState();
+        if (data.success) {
+            showNotification(data.message, 'success');
+            loadMonthData();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error al actualizar el estado de los ítems:', error);
+        hideLoadingState();
+        showNotification('Error al guardar los cambios: ' + error.message, 'error');
+    }
+}
+
+// === Funciones de la tabla principal (refactorizadas) ===
+
+function setupEmployeeRowListeners() {
+    document.querySelectorAll(".btn-approve").forEach((btn) => {
+        btn.removeEventListener("click", handleApprove);
+        btn.addEventListener("click", handleApprove);
+    });
+
+    document.querySelectorAll(".btn-review").forEach((btn) => {
+        btn.removeEventListener("click", handleReview);
+        btn.addEventListener("click", handleReview);
+    });
+}
+
+// Función corregida para manejar las acciones de los botones con validación de permisos
+async function handleApprove() {
+    const row = this.closest(".employee-row");
+    const employeeId = row.getAttribute('data-employee-id');
+
+    // Verificar permisos antes de proceder
+    const employeeAssignment = loadChartAssignments.find(a => a.employee_id.toString() === employeeId);
+    const isApproverForEmployee = employeeAssignment && employeeAssignment.approver_id === currentUserId;
+
+    if (!isApproverForEmployee) {
+        showNotification('No tiene permisos para aprobar este registro.', 'error');
+        return;
+    }
+
+    const fortnight = currentView;
+    await saveApprovalStatus(employeeId, 'approved', fortnight);
+}
+
+async function handleReview() {
+    const row = this.closest(".employee-row");
+    const employeeId = row.getAttribute('data-employee-id');
+
+    // Verificar permisos antes de proceder
+    const employeeAssignment = loadChartAssignments.find(a => a.employee_id.toString() === employeeId);
+    const isReviewerForEmployee = employeeAssignment && employeeAssignment.reviewer_id === currentUserId;
+
+    if (!isReviewerForEmployee) {
+        showNotification('No tiene permisos para revisar este registro.', 'error');
+        return;
+    }
+
+    const fortnight = currentView;
+    await saveApprovalStatus(employeeId, 'reviewed', fortnight);
+}
+
+
+async function saveApprovalStatus(employeeId, status, fortnight) {
+    try {
+        showLoadingState();
+        const response = await fetch('/recursoshumanos/loadchart/update-approval-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                employee_id: employeeId,
+                month: currentMonth,
+                year: currentYear,
+                status: status,
+                fortnight: fortnight
+            })
+        });
+
+        const data = await response.json();
+        hideLoadingState();
+
+        if (data.success) {
+            showNotification(data.message, 'success');
+            await loadMonthData(); // Recargar todos los datos para reflejar los cambios
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error saving approval status:', error);
+        hideLoadingState();
+        showNotification('Error al guardar el estado de aprobación', 'error');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement("div");
+    notification.className = `notification ${type}`;
+
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    notification.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.classList.add('show'), 100);
+
+    setTimeout(() => {
+        notification.classList.add("fade-out");
+        setTimeout(() => notification.remove(), 500);
+    }, 4000);
+}
+
+function toggleActivityRows(employeeRow) {
+    const allRows = Array.from(employeeRow.parentElement.children);
+    const startIndex = allRows.indexOf(employeeRow);
+    let activityRowCount = 0;
+    for (let i = startIndex + 1; i < allRows.length; i++) {
+        if (allRows[i].classList.contains('activity-row')) {
+            activityRowCount++;
+        } else {
+            break;
+        }
+    }
+
+    for (let i = 1; i <= activityRowCount; i++) {
+        const row = allRows[startIndex + i];
+        if (row) {
+            row.classList.toggle('hidden');
+        }
+    }
+}
+
+document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('employee-info-cell')) {
+        const employeeRow = e.target.closest('.employee-row');
+        if (employeeRow) {
+            toggleActivityRows(employeeRow);
+        }
+    }
+});
+
+async function navigateToPreviousMonth() {
+    if (currentMonth === 1) {
+        currentMonth = 12;
+        currentYear--;
+    } else {
+        currentMonth--;
+    }
+    await loadMonthData();
+}
+
+async function navigateToNextMonth() {
+    if (currentMonth === 12) {
+        currentMonth = 1;
+        currentYear++;
+    } else {
+        currentMonth++;
+    }
+    await loadMonthData();
+}
+
+async function loadMonthData() {
+    try {
+        showLoadingState();
+
+        const response = await fetch(`/recursoshumanos/loadchart/approval-data/${currentYear}/${currentMonth}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al cargar los datos del mes');
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Error al cargar los datos');
+        }
+
+        // Actualizar variables globales
+        workLogsData = data.workLogsData;
+        fortnightlyConfig = data.fortnightlyConfig;
+        loadChartAssignments = data.loadChartAssignments;
+        canSeeAmounts = data.canSeeAmounts;
+        userPermissions = data.userPermissions;
+
+        // Regenerar la tabla
+        updateTableStructure(data.monthlyDays, data.employees);
+
+        // Actualizar información del período
+        updatePeriodInfo();
+
+        // Renderizar datos de trabajo
+        renderEmployeeWorkLog();
+
+        // Mantener la vista actual después de cargar los datos
+        if (currentView === 'quincena1') {
+            showQuincena(1);
+        } else if (currentView === 'quincena2') {
+            showQuincena(2);
+        } else {
+            showFullMonth();
+        }
+
+        hideLoadingState();
+        showNotification(data.message || 'Datos cargados correctamente', 'success');
+    } catch (error) {
+        console.error('Error loading month data:', error);
+        showNotification('Error al cargar los datos del mes: ' + error.message, 'error');
+        hideLoadingState();
+    }
+}
+
+function showLoadingState() {
+    const table = document.getElementById('approval-table');
+    if (table) {
+        table.style.opacity = '0.5';
+        table.style.pointerEvents = 'none';
+    }
+
+    const prevBtn = document.getElementById('prev-period');
+    const nextBtn = document.getElementById('next-period');
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+}
+
+function hideLoadingState() {
+    const table = document.getElementById('approval-table');
+    if (table) {
+        table.style.opacity = '1';
+        table.style.pointerEvents = 'auto';
+    }
+
+    const prevBtn = document.getElementById('prev-period');
+    const nextBtn = document.getElementById('next-period');
+    if (prevBtn) prevBtn.disabled = false;
+    if (nextBtn) nextBtn.disabled = false;
+}
+
+function updatePeriodInfo() {
+    const monthNames = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    const periodInfo = document.getElementById('current-period');
+    if (periodInfo) {
+        periodInfo.textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
+    }
+}
+
+function updateTableStructure(monthlyDays, employees) {
+    updateDaysHeader(monthlyDays);
+    updateTableBody(monthlyDays, employees);
+    setupEmployeeRowListeners();
+}
+
+function updateDaysHeader(monthlyDays) {
+    const daysColumnsHeader = document.getElementById('days-columns');
+    const daysHeaderRow = document.getElementById('days-header-row');
+
+    if (daysColumnsHeader) {
+        daysColumnsHeader.colSpan = monthlyDays.length;
+        daysColumnsHeader.textContent = `Días del Período (${monthlyDays.length} días)`;
+    }
+
+    if (daysHeaderRow) {
+        daysHeaderRow.innerHTML = '';
+
+        monthlyDays.forEach(dayInfo => {
+            const th = document.createElement('th');
+            th.className = `day-header ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}`;
+            th.setAttribute('data-day', dayInfo.day);
+            th.setAttribute('data-date', dayInfo.date);
+            th.setAttribute('data-quincena-1', dayInfo.is_quincena_1 ? 'true' : 'false');
+            th.setAttribute('data-quincena-2', dayInfo.is_quincena_2 ? 'true' : 'false');
+            th.setAttribute('data-current-month', dayInfo.is_current_month ? 'true' : 'false');
+            th.setAttribute('data-month', dayInfo.month);
+            th.innerHTML = `${dayInfo.day}<br>${dayInfo.day_name}`;
+            th.title = `${dayInfo.date}${!dayInfo.is_current_month ? ' (Mes anterior)' : ''}`;
+            daysHeaderRow.appendChild(th);
+        });
+    }
+}
+
+function updateTableBody(monthlyDays, employees) {
+    const tableBody = document.getElementById('approval-table-body');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+
+    employees.forEach(employee => {
+        const workLog = workLogsData.find(log => log.employee_id === employee.id);
+        const hasPayrollBonuses = workLog ? workLog.has_payroll_bonuses : false;
+
+        const mainRow = createEmployeeRow(employee, monthlyDays, 'Actividad', true, hasPayrollBonuses);
+        tableBody.appendChild(mainRow);
+
+        const foodRow = createEmployeeRow(employee, monthlyDays, 'Comida', false, hasPayrollBonuses);
+        tableBody.appendChild(foodRow);
+
+        const fieldBonusRow = createEmployeeRow(employee, monthlyDays, 'Bono', false, hasPayrollBonuses);
+        tableBody.appendChild(fieldBonusRow);
+
+        if (hasPayrollBonuses) {
+            const payrollBonusRow = createEmployeeRow(employee, monthlyDays, 'BonoN', false, hasPayrollBonuses);
+            tableBody.appendChild(payrollBonusRow);
+        }
+
+        const serviceRow = createEmployeeRow(employee, monthlyDays, 'Servicio', false, hasPayrollBonuses);
+        tableBody.appendChild(serviceRow);
+    });
+}
+
+// Función corregida para crear la fila del empleado con botones condicionais
+function createEmployeeRow(employee, monthlyDays, rowType, isMainRow, hasPayrollBonuses) {
+    const tr = document.createElement('tr');
+    tr.className = isMainRow ? 'employee-row' : 'activity-row';
+    tr.setAttribute('data-employee-id', employee.id);
+
+    if (isMainRow) {
+        const nameCell = document.createElement('td');
+        nameCell.className = 'employee-info-cell';
+        nameCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        nameCell.textContent = employee.full_name;
+        tr.appendChild(nameCell);
+    }
+
+    const labelCell = document.createElement('td');
+    labelCell.className = 'activity-label-cell';
+    labelCell.textContent = rowType;
+    tr.appendChild(labelCell);
+
+    monthlyDays.forEach(dayInfo => {
+        const dayCell = document.createElement('td');
+        dayCell.className = `data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}`;
+        dayCell.setAttribute('data-day', dayInfo.day);
+        dayCell.setAttribute('data-date', dayInfo.date);
+        dayCell.setAttribute('data-quincena-1', dayInfo.is_quincena_1 ? 'true' : 'false');
+        dayCell.setAttribute('data-quincena-2', dayInfo.is_quincena_2 ? 'true' : 'false');
+        dayCell.setAttribute('data-current-month', dayInfo.is_current_month ? 'true' : 'false');
+
+        if (rowType === 'Actividad') {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status-indicator status-n';
+            statusDiv.textContent = 'N';
+            dayCell.appendChild(statusDiv);
+        } else {
+            dayCell.textContent = '0';
+        }
+
+        tr.appendChild(dayCell);
+    });
+
+    const totalCell = document.createElement('td');
+    totalCell.className = `data-cell ${rowType === 'Actividad' ? 'total-activity' : (rowType === 'Comida' ? 'total-food' : (rowType === 'Bono' ? 'total-field-bonus' : (rowType === 'BonoN' ? 'total-payroll-bonus' : 'total-service')))}`;
+    totalCell.innerHTML = rowType === 'Actividad' ? '<div class="status-indicator">0</div>' : '0';
+    tr.appendChild(totalCell);
+
+    if (isMainRow) {
+        const vacCell = document.createElement('td');
+        vacCell.className = 'vacations-cell';
+        vacCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        vacCell.innerHTML = '<div class="vacations-container"><div class="vacations-value">0</div></div>';
+        tr.appendChild(vacCell);
+
+        const breaksCell = document.createElement('td');
+        breaksCell.className = 'breaks-cell';
+        breaksCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        breaksCell.innerHTML = '<div class="breaks-container"><div class="breaks-value">0</div></div>';
+        tr.appendChild(breaksCell);
+
+        const utilCell = document.createElement('td');
+        utilCell.className = 'utilization-cell';
+        utilCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+        utilCell.innerHTML = '<div class="utilization-container"><div class="utilization-value">0%</div></div>';
+        tr.appendChild(utilCell);
+
+        const approvalCell = document.createElement('td');
+        approvalCell.className = 'actions-cell';
+        approvalCell.rowSpan = hasPayrollBonuses ? 5 : 4;
+
+        // CORRECCIÓN: Verificar permisos específicos para este empleado
+        const employeeAssignment = loadChartAssignments.find(a => a.employee_id === employee.id);
+        const isReviewerForEmployee = employeeAssignment && employeeAssignment.reviewer_id === currentUserId;
+        const isApproverForEmployee = employeeAssignment && employeeAssignment.approver_id === currentUserId;
+
+        let buttonsHtml = '';
+
+        // Solo mostrar el botón de revisar si es revisor para este empleado
+        if (isReviewerForEmployee) {
+            buttonsHtml += '<button class="btn-review">Revisado</button>';
+        }
+
+        // Solo mostrar el botón de aprobar si es aprobador para este empleado
+        if (isApproverForEmployee) {
+            buttonsHtml += '<button class="btn-approve">Aprobado</button>';
+        }
+
+        // Si no tiene permisos, no mostrar botones
+        if (!isReviewerForEmployee && !isApproverForEmployee) {
+            buttonsHtml = '<span class="no-permissions">Sin permisos</span>';
+        }
+
+        approvalCell.innerHTML = `<div class="actions-container">${buttonsHtml}</div>`;
+        tr.appendChild(approvalCell);
+    }
+
+    return tr;
+}
+
+// === FUNCIONES DE VISUALIZACIÓN DE QUINCENAS ===
+function setActiveButton(buttonId) {
+    document.querySelectorAll(".period-btn").forEach((btn) => {
+        btn.classList.remove("active");
+    });
+
+    const targetBtn = document.getElementById(buttonId);
+    if (targetBtn) {
+        targetBtn.classList.add("active");
+    }
+
+    currentView = buttonId;
+}
+
+function showQuincena(quincena) {
+    const dayHeaders = document.querySelectorAll(".approval-table .day-header");
+    const allRows = document.querySelectorAll(".approval-table tbody tr");
+    const daysColumnsHeader = document.getElementById("days-columns");
+
+    if (!dayHeaders.length || !daysColumnsHeader) return;
+
+    let visibleDays = 0;
+
+    dayHeaders.forEach((header, index) => {
+        const isQuincena1 = header.getAttribute('data-quincena-1') === 'true';
+        const isQuincena2 = header.getAttribute('data-quincena-2') === 'true';
+        const shouldShow = (quincena === 1 && isQuincena1) || (quincena === 2 && isQuincena2);
+
+        header.style.display = shouldShow ? "" : "none";
+
+        if (shouldShow) visibleDays++;
+
+        allRows.forEach((row) => {
+            const dataCells = row.querySelectorAll(".data-cell");
+            if (dataCells[index]) {
+                dataCells[index].style.display = shouldShow ? "" : "none";
+            }
+        });
+    });
+
+    daysColumnsHeader.colSpan = visibleDays;
+    calculateAndRenderTotals();
+}
+
+function showFullMonth() {
+    const dayHeaders = document.querySelectorAll(".approval-table .day-header");
+    const allRows = document.querySelectorAll(".approval-table tbody tr");
+    const daysColumnsHeader = document.getElementById("days-columns");
+
+    if (!dayHeaders.length || !daysColumnsHeader) return;
+
+    dayHeaders.forEach((header, index) => {
+        header.style.display = "";
+
+        allRows.forEach((row) => {
+            const dataCells = row.querySelectorAll(".data-cell");
+            if (dataCells[index]) {
+                dataCells[index].style.display = "";
+            }
+        });
+    });
+
+    daysColumnsHeader.colSpan = dayHeaders.length;
+    calculateAndRenderTotals();
+}
+
+// === FUNCIONES DE CÁLCULO DE TOTALES ===
+function calculateAndRenderTotals() {
+    const tableBody = document.getElementById('approval-table-body');
+    if (!tableBody || !workLogsData || workLogsData.length === 0) {
+        return;
+    }
+
+    const employeeRows = document.querySelectorAll('.employee-row');
+
+    employeeRows.forEach(employeeRow => {
+        const employeeId = employeeRow.getAttribute('data-employee-id');
+        const employeeData = workLogsData.find(log => log.employee_id.toString() === employeeId);
+
+        if (!employeeData || !employeeData.daily_activities) {
+            return;
+        }
+
+        let totalDays = 0;
+        let totalFood = 0;
+        let totalFieldBonus = 0;
+        let totalPayrollBonus = 0;
+        let totalService = 0;
+        let totalBreaks = 0;
+        let totalVacations = 0;
+
+        const dailyActivitiesMap = new Map(employeeData.daily_activities.map(activity => [activity.date, activity]));
+
+        const allDayCells = Array.from(employeeRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date'));
+        const visibleDayCells = allDayCells.filter(cell => cell.style.display !== 'none');
+
+        // Contar días laborables del MES COMPLETO (ambas quincenas)
+        const allWorkingDays = Array.from(document.querySelectorAll('.day-header'))
+            .filter(header => header.getAttribute('data-quincena-1') === 'true' ||
+                header.getAttribute('data-quincena-2') === 'true')
+            .length;
+
+        visibleDayCells.forEach(cell => {
+            const dateAttr = cell.getAttribute('data-date');
+            const dailyActivity = dailyActivitiesMap.get(dateAttr);
+
+            if (dailyActivity) {
+                // Solo contar actividades B, P, H, V, E, C para la utilización
+                if (dailyActivity.activity_type &&
+                    ['B', 'P', 'H', 'V', 'E', 'C'].includes(dailyActivity.activity_type.toUpperCase())) {
+                    totalDays++;
+                }
+
+                if (dailyActivity.activity_type && dailyActivity.activity_type.toLowerCase() === 'vac') {
+                    totalVacations++;
+                }
+                if (dailyActivity.activity_type && dailyActivity.activity_type.toLowerCase() === 'd') {
+                    totalBreaks++;
+                }
+
+                totalFood += dailyActivity.food_bonuses ? dailyActivity.food_bonuses.reduce((sum, bonus) => sum + Number(bonus.daily_amount), 0) : 0;
+
+                const dailyFieldBonus = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.reduce((sum, bonus) => {
+                    if (bonus.currency === 'USD') {
+                        return sum + (Number(bonus.daily_amount) * Number(bonus.usd_to_mxn_rate));
+                    }
+                    return sum + Number(bonus.daily_amount);
+                }, 0) : 0;
+                totalFieldBonus += dailyFieldBonus;
+
+                totalPayrollBonus += dailyActivity.payroll_bonuses ? dailyActivity.payroll_bonuses.reduce((sum, bonus) => sum + Number(bonus.total_amount), 0) : 0;
+                totalService += dailyActivity.services_list ? dailyActivity.services_list.reduce((sum, service) => sum + Number(service.amount), 0) : 0;
+            }
+        });
+
+        const activityRow = employeeRow;
+        const foodRow = activityRow.nextElementSibling;
+        const fieldBonusRow = foodRow.nextElementSibling;
+        const payrollBonusRow = employeeData.has_payroll_bonuses ? fieldBonusRow.nextElementSibling : null;
+        const serviceRow = payrollBonusRow ? payrollBonusRow.nextElementSibling : fieldBonusRow.nextElementSibling;
+
+        const activityTotalCell = activityRow.querySelector('.total-activity');
+        const foodTotalCell = foodRow.querySelector('.total-food');
+        const fieldBonusTotalCell = fieldBonusRow.querySelector('.total-field-bonus');
+        const payrollBonusTotalCell = payrollBonusRow ? payrollBonusRow.querySelector('.total-payroll-bonus') : null;
+        const serviceTotalCell = serviceRow.querySelector('.total-service');
+
+        if (activityTotalCell) activityTotalCell.querySelector('.status-indicator').textContent = totalDays;
+
+        if (canSeeAmounts) {
+            if (foodTotalCell) foodTotalCell.textContent = totalFood.toFixed(2);
+            if (fieldBonusTotalCell) fieldBonusTotalCell.textContent = totalFieldBonus.toFixed(2);
+            if (payrollBonusTotalCell) {
+                payrollBonusTotalCell.textContent = totalPayrollBonus.toFixed(2);
+            }
+            if (serviceTotalCell) serviceTotalCell.textContent = totalService.toFixed(2);
+        } else {
+            if (foodTotalCell) foodTotalCell.textContent = '0';
+            if (fieldBonusTotalCell) fieldBonusTotalCell.textContent = '0';
+            if (payrollBonusTotalCell) payrollBonusTotalCell.textContent = '0';
+            if (serviceTotalCell) serviceTotalCell.textContent = '0';
+        }
+
+        const vacCell = employeeRow.querySelector('.vacations-value');
+        if (vacCell) vacCell.textContent = totalVacations;
+
+        const breaksCell = employeeRow.querySelector('.breaks-value');
+        if (breaksCell) breaksCell.textContent = totalBreaks;
+
+        const utilCell = employeeRow.querySelector('.utilization-value');
+        if (utilCell) {
+            const utilizationRate = allWorkingDays > 0 ? (totalDays / allWorkingDays) * 100 : 0;
+            utilCell.textContent = `${utilizationRate.toFixed(2)}%`;
+
+            if (utilizationRate < 85) {
+                // Opción 1: Verde claro
+                utilCell.style.color = '#4e6952ff'; // O 'lightgreen'
+                utilCell.style.fontWeight = 'bold';
+            } else if (utilizationRate >= 85 && utilizationRate <= 90) {
+                // Opción 2: Naranja brillante
+                utilCell.style.color = '#FF4500'; // O 'darkorange'
+            } else if (utilizationRate >= 91) {
+                // Opción 3: Rojo oscuro
+                utilCell.style.color = '#B22222'; // O 'firebrick'
+            }
+        }
+    });
+}
+
+// Función corregida para actualizar el estado de los botones después de cargar datos
+// Función corregida para actualizar el estado de los botones después de cargar datos
+function renderEmployeeWorkLog() {
+    if (!workLogsData || workLogsData.length === 0) {
+        return;
+    }
+
+    workLogsData.forEach(employeeData => {
+        const employeeRow = document.querySelector(`.employee-row[data-employee-id="${employeeData.employee_id}"]`);
+        if (!employeeRow) {
+            return;
+        }
+
+        const activityRow = employeeRow;
+        const comidaRow = employeeRow.nextElementSibling;
+        const fieldBonusRow = comidaRow.nextElementSibling;
+        const payrollBonusRow = employeeData.has_payroll_bonuses ? fieldBonusRow.nextElementSibling : null;
+        const servicioRow = employeeData.has_payroll_bonuses ? payrollBonusRow.nextElementSibling : fieldBonusRow.nextElementSibling;
+
+        const activityCells = Array.from(activityRow.querySelectorAll('.data-cell'));
+        const comidaCells = Array.from(comidaRow.querySelectorAll('.data-cell'));
+        const fieldBonusCells = Array.from(fieldBonusRow.querySelectorAll('.data-cell'));
+        const payrollBonusCells = payrollBonusRow ? Array.from(payrollBonusRow.querySelectorAll('.data-cell')) : [];
+        const servicioCells = Array.from(servicioRow.querySelectorAll('.data-cell'));
+
+        const dailyActivitiesMap = new Map();
+        if (employeeData.daily_activities) {
+            employeeData.daily_activities.forEach(activity => {
+                dailyActivitiesMap.set(activity.date, activity);
+            });
+        }
+
+        activityCells.forEach((cell, index) => {
+            const dateAttr = cell.getAttribute('data-date');
+            if (!dateAttr) {
                 return;
             }
 
-            const response = await fetch(window.appRoutes.getOperadores);
-            if (!response.ok) throw new Error("Error al obtener operadores");
+            const dailyActivity = dailyActivitiesMap.get(dateAttr);
 
-            operadoresData = await response.json();
-            populateOperatorSelects();
-        } catch (error) {
-            console.error("Error:", error);
-            operatorSelects.forEach((select) => {
-                select.innerHTML = '<option value="">Error al cargar</option>';
-            });
-            showError("Error al cargar los operadores");
-        }
-    }
+            if (dailyActivity) {
+                const statusIndicator = cell.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    const activityType = dailyActivity.activity_type || 'N';
+                    statusIndicator.textContent = activityType.toUpperCase();
+                    statusIndicator.className = `status-indicator status-${activityType.toLowerCase()}`;
+                    statusIndicator.title = dailyActivity.activity_description || '';
 
-    function populateOperatorSelects() {
-        operatorSelects.forEach((select) => {
-            select.innerHTML =
-                '<option value="">Seleccionar Operador...</option>';
-            operadoresData.forEach((operador) => {
-                const option = document.createElement("option");
-                option.value = operador.employee_number;
-                option.textContent = operador.full_name;
+                    // Usar la nueva función para determinar el estado del día
+                    const dayStatus = getDailyStatusIndicator(dailyActivity);
 
-                // Deshabilitar operadores ya asignados (excepto en edición)
-                if (!isEditMode) {
-                    const isAssigned = squadsData.some((squad) =>
-                        squad.employees.some(
-                            (emp) =>
-                                emp.employee_number === operador.employee_number
-                        )
-                    );
-                    option.disabled = isAssigned;
-                    if (isAssigned) {
-                        option.textContent += " (Asignado)";
+                    // Añadir la clase de borde adecuada basada en day_status
+                    statusIndicator.classList.remove('approved-border', 'reviewed-border', 'rejected-border', 'pending-border');
+                    if (dayStatus === 'approved') {
+                        statusIndicator.classList.add('approved-border');
+                    } else if (dayStatus === 'reviewed') {
+                        statusIndicator.classList.add('reviewed-border');
+                    } else if (dayStatus === 'rejected') {
+                        statusIndicator.classList.add('rejected-border');
+                    } else {
+                        statusIndicator.classList.add('pending-border');
                     }
                 }
 
-                select.appendChild(option);
-            });
-            select.disabled = false;
-        });
-    }
-
-    // Cargar cuadrillas con skeleton
-    async function loadSquads() {
-        showLoadingSkeleton();
-
-        try {
-            const response = await fetch(window.appRoutes.getSquads);
-            if (!response.ok) throw new Error("Error al cargar cuadrillas");
-
-            squadsData = await response.json();
-            renderSquadsTable();
-        } catch (error) {
-            console.error("Error:", error);
-            squadTableBody.innerHTML = `
-                <tr>
-                    <td colspan="3" class="text-center error">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Error al cargar las cuadrillas</p>
-                        <button class="retry-btn" id="retry-load-squads">Reintentar</button>
-                    </td>
-                </tr>
-            `;
-            document
-                .getElementById("retry-load-squads")
-                ?.addEventListener("click", loadSquads);
-        }
-    }
-
-    // Renderizar tabla de cuadrillas
-    function renderSquadsTable() {
-        squadTableBody.innerHTML = "";
-
-        if (squadsData.length === 0) {
-            squadTableBody.innerHTML = `
-                <tr>
-                    <td colspan="3" class="text-center" style="padding: 2rem;">
-                        <i class="fas fa-users" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
-                        <p style="color: #666;">No hay cuadrillas registradas</p>
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        squadsData.forEach((squad) => {
-            const row = document.createElement("tr");
-            row.className = "squad-row";
-            row.dataset.squadNumber = squad.squad_number;
-
-            // Crear celdas de operadores
-            let operatorsHtml = "";
-            squad.employees.forEach((employee) => {
-                operatorsHtml += `
-                    <div class="operator-card">
-                        <div class="operator-avatar"><i class="fas fa-user"></i></div>
-                        <div class="operator-info">
-                            <span class="operator-name">${employee.full_name}</span>
-                            <span class="operator-id">ID: ${employee.employee_number}</span>
-                        </div>
-                    </div>
-                `;
-            });
-
-            // Agregar espacios vacíos si hay menos de 4 operadores
-            const remainingSlots = 4 - squad.employees.length;
-            for (let i = 0; i < remainingSlots; i++) {
-                operatorsHtml += `
-                    <div class="operator-card vacant">
-                        <div class="operator-avatar"><i class="fas fa-user-plus"></i></div>
-                        <div class="operator-info"><span class="operator-name">Vacío</span></div>
-                    </div>
-                `;
-            }
-
-            row.innerHTML = `
-                <td class="centered-cell">
-                    <span class="squad-badge">${squad.squad_name}</span>
-                </td>
-                <td>
-                    <div class="operators-grid">
-                        ${operatorsHtml}
-                    </div>
-                </td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="action-btn edit" title="Editar" data-squad="${squad.squad_number}">
-                            <i class="fas fa-pencil-alt"></i>
-                        </button>
-                        <button class="action-btn delete" title="Eliminar" data-squad="${squad.squad_number}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-
-            squadTableBody.appendChild(row);
-        });
-    }
-
-    // Editar cuadrilla con animación
-    function editSquad(squadNumber) {
-        // Busca la cuadrilla en los datos que ya tenemos
-        const squadData = squadsData.find(
-            (squad) => parseInt(squad.squad_number) === parseInt(squadNumber)
-        );
-
-        // Valida que la cuadrilla exista
-        if (!squadData) {
-            showError("Cuadrilla no encontrada en los datos locales.");
-            return;
-        }
-
-        // Configura el formulario para el modo de edición
-        isEditMode = true;
-        editingSquadNumber = squadNumber;
-        formTitle.textContent = `Editar ${squadData.squad_name}`;
-
-        // Regenera las opciones del select de cuadrillas y selecciona la actual
-        generateSquadOptions();
-        squadSelect.value = squadNumber;
-
-        // Limpia todos los selects primero
-        operatorSelects.forEach((select) => {
-            select.innerHTML =
-                '<option value="">Seleccionar Operador...</option>';
-
-            // Llenar con todos los operadores
-            operadoresData.forEach((operador) => {
-                const option = document.createElement("option");
-                option.value = operador.employee_number;
-                option.textContent = operador.full_name;
-
-                // Deshabilitar operadores ya asignados a OTRAS cuadrillas
-                const isAssignedToOtherSquad = squadsData.some(
-                    (squad) =>
-                        squad.squad_number != squadNumber &&
-                        squad.employees.some(
-                            (emp) =>
-                                emp.employee_number === operador.employee_number
-                        )
-                );
-
-                option.disabled = isAssignedToOtherSquad;
-                if (isAssignedToOtherSquad) {
-                    option.textContent += " (Asignado a otra cuadrilla)";
-                }
-
-                select.appendChild(option);
-            });
-        });
-
-        // Rellena los selects de operadores con los datos de la cuadrilla
-        squadData.employees.forEach((employee, index) => {
-            if (index < operatorSelects.length) {
-                operatorSelects[index].value = employee.employee_number;
-            }
-        });
-
-        // Muestra el modal del formulario
-        showModal(squadFormModal);
-    }
-
-    // Eliminar cuadrilla
-    async function deleteSquad(squadNumber) {
-        const result = await Swal.fire({
-            title: "¿Estás seguro?",
-            text: "Esta acción eliminará la cuadrilla. ¡No podrás revertirlo!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar",
-        });
-
-        if (result.isConfirmed) {
-            try {
-                const response = await fetch(
-                    window.appRoutes.destroySquad + squadNumber,
-                    {
-                        method: "DELETE",
-                        headers: {
-                            "X-CSRF-TOKEN": document.querySelector(
-                                'meta[name="csrf-token"]'
-                            ).content,
-                        },
+                // Resto del código para mostrar bonos y servicios (sin cambios)
+                if (canSeeAmounts) {
+                    if (comidaCells[index]) {
+                        const totalFoodBonus = dailyActivity.food_bonuses ? dailyActivity.food_bonuses.reduce((sum, bonus) => sum + Number(bonus.daily_amount), 0) : 0;
+                        comidaCells[index].textContent = totalFoodBonus > 0 ? totalFoodBonus.toFixed(2) : '0';
+                        comidaCells[index].title = dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0 ? dailyActivity.food_bonuses.map(b => `${b.num_daily} comidas`).join(', ') : '';
                     }
-                );
 
-                const data = await response.json();
+                    if (fieldBonusCells[index]) {
+                        const totalFieldBonus = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.reduce((sum, bonus) => {
+                            if (bonus.currency === 'USD') {
+                                return sum + (Number(bonus.daily_amount) * Number(bonus.usd_to_mxn_rate));
+                            }
+                            return sum + Number(bonus.daily_amount);
+                        }, 0) : 0;
+                        fieldBonusCells[index].textContent = totalFieldBonus > 0 ? totalFieldBonus.toFixed(2) : '0';
+                        fieldBonusCells[index].title = dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0 ? dailyActivity.field_bonuses.map(b => `${b.bonus_type} (${b.daily_amount} ${b.currency})`).join(', ') : '';
+                    }
 
-                if (response.ok) {
-                    await loadSquads();
-                    showSuccess(data.message);
-                } else {
-                    showError(data.message);
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                showError("Error al eliminar la cuadrilla");
-            }
-        }
-    }
+                    if (payrollBonusCells[index]) {
+                        const totalPayrollBonus = dailyActivity.payroll_bonuses ? dailyActivity.payroll_bonuses.reduce((sum, bonus) => sum + Number(bonus.total_amount), 0) : 0;
+                        payrollBonusCells[index].textContent = totalPayrollBonus > 0 ? totalPayrollBonus.toFixed(2) : '0';
+                        payrollBonusCells[index].title = dailyActivity.payroll_bonuses && dailyActivity.payroll_bonuses.length > 0 ? dailyActivity.payroll_bonuses.map(b => `${b.bonus_name} (${b.days} días)`).join(', ') : '';
+                    }
 
-    // Guardar cuadrilla con validación mejorada
-    async function saveSquad() {
-        const squadNumber = squadSelect.value;
-        const selectedOperators = Array.from(operatorSelects)
-            .map((select) => select.value)
-            .filter((op) => op);
-
-        // Validaciones
-        if (!squadNumber) {
-            showError("Selecciona un número de cuadrilla");
-            return false;
-        }
-
-        if (selectedOperators.length === 0) {
-            showError("Selecciona al menos un operador");
-            return false;
-        }
-
-        if (selectedOperators.length > 4) {
-            showError("Máximo 4 operadores por cuadrilla");
-            return false;
-        }
-
-        if (new Set(selectedOperators).size !== selectedOperators.length) {
-            showError("No puede haber operadores duplicados");
-            return false;
-        }
-
-        try {
-            saveFormBtn.innerHTML =
-                '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-            saveFormBtn.disabled = true;
-
-            const response = await fetch(window.appRoutes.storeSquad, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector(
-                        'meta[name="csrf-token"]'
-                    ).content,
-                },
-                body: JSON.stringify({
-                    squad_number: squadNumber,
-                    employee_ids: selectedOperators,
-                    is_edit: isEditMode,
-                }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Actualizar los datos locales con la respuesta del servidor
-                if (isEditMode) {
-                    // Actualizar cuadrilla existente
-                    const squadIndex = squadsData.findIndex(
-                        (s) => s.squad_number == squadNumber
-                    );
-                    if (squadIndex !== -1) {
-                        squadsData[squadIndex] = data.squad;
+                    if (servicioCells[index]) {
+                        const totalServiceAmount = dailyActivity.services_list ? dailyActivity.services_list.reduce((sum, service) => sum + Number(service.amount), 0) : 0;
+                        servicioCells[index].textContent = totalServiceAmount > 0 ? totalServiceAmount.toFixed(2) : '0';
+                        servicioCells[index].title = dailyActivity.services_list && dailyActivity.services_list.length > 0 ? dailyActivity.services_list.map(s => s.service_name).join(', ') : '';
                     }
                 } else {
-                    // Agregar nueva cuadrilla
-                    squadsData.push(data.squad);
+                    if (comidaCells[index]) {
+                        const foodCount = dailyActivity.food_bonuses ? dailyActivity.food_bonuses.length : 0;
+                        comidaCells[index].textContent = foodCount > 0 ? dailyActivity.food_bonuses.map(b => b.num_daily).join(', ') : '0';
+                        comidaCells[index].title = dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0 ? dailyActivity.food_bonuses.map(b => `${b.bonus_type} x${b.num_daily}`).join(', ') : '';
+                    }
+
+                    if (fieldBonusCells[index]) {
+                        const bonusCount = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.length : 0;
+                        fieldBonusCells[index].textContent = bonusCount > 0 ? dailyActivity.field_bonuses.map(b => b.bonus_identifier).join(', ') : '0';
+                        fieldBonusCells[index].title = dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0 ? dailyActivity.field_bonuses.map(b => b.bonus_type).join(', ') : '';
+                    }
+
+                    if (payrollBonusCells[index]) {
+                        const payrollCount = dailyActivity.payroll_bonuses ? dailyActivity.payroll_bonuses.length : 0;
+                        payrollBonusCells[index].textContent = payrollCount > 0 ? dailyActivity.payroll_bonuses.map(b => b.days).join(', ') : '0';
+                        payrollBonusCells[index].title = dailyActivity.payroll_bonuses && dailyActivity.payroll_bonuses.length > 0 ? dailyActivity.payroll_bonuses.map(b => b.bonus_name).join(', ') : '';
+                    }
+
+                    if (servicioCells[index]) {
+                        const serviceCount = dailyActivity.services_list ? dailyActivity.services_list.length : 0;
+                        servicioCells[index].textContent = serviceCount > 0 ? dailyActivity.services_list.map(s => s.service_identifier).join(', ') : '0';
+                        servicioCells[index].title = dailyActivity.services_list && dailyActivity.services_list.length > 0 ? dailyActivity.services_list.map(s => s.service_name).join(', ') : '';
+                    }
                 }
-
-                // Ordenar cuadrillas por número
-                squadsData.sort((a, b) => a.squad_number - b.squad_number);
-
-                // Animación de éxito
-                squadFormModal.classList.add("success-animation");
-                setTimeout(() => {
-                    hideModal(squadFormModal);
-                    squadFormModal.classList.remove("success-animation");
-
-                    // Renderizar tabla con datos actualizados
-                    renderSquadsTable();
-                    showSuccess(data.message);
-                    resetForm();
-                }, 1000);
             } else {
-                showError(data.message || "Error al guardar");
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            showError("Error al guardar la cuadrilla");
-        } finally {
-            saveFormBtn.innerHTML =
-                '<i class="fas fa-save"></i> Guardar Cuadrilla';
-            saveFormBtn.disabled = false;
-        }
-    }
-
-    // Reiniciar formulario
-    function resetForm() {
-        squadSelect.value = "";
-        operatorSelects.forEach((select) => (select.value = ""));
-        isEditMode = false;
-        editingSquadNumber = null;
-        formTitle.textContent = "Nueva Cuadrilla";
-    }
-
-    // Búsqueda
-    function handleSearch() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const squadRows = document.querySelectorAll(".squad-row:not(.loading)");
-
-        squadRows.forEach((row) => {
-            const squadName = row
-                .querySelector(".squad-badge")
-                .textContent.toLowerCase();
-            const operatorNames = Array.from(
-                row.querySelectorAll(".operator-name")
-            )
-                .map((el) => el.textContent.toLowerCase())
-                .join(" ");
-
-            if (
-                squadName.includes(searchTerm) ||
-                operatorNames.includes(searchTerm)
-            ) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
+                const statusIndicator = cell.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    statusIndicator.textContent = 'N';
+                    statusIndicator.className = 'status-indicator status-n pending-border';
+                    statusIndicator.title = 'No hay actividad registrada';
+                }
+                if (comidaCells[index]) {
+                    comidaCells[index].textContent = '0';
+                    comidaCells[index].title = 'No hay bonos de comida registrados';
+                }
+                if (fieldBonusCells[index]) {
+                    fieldBonusCells[index].textContent = '0';
+                    fieldBonusCells[index].title = 'No hay bonos de campo registrados';
+                }
+                if (payrollBonusCells[index]) {
+                    payrollBonusCells[index].textContent = '0';
+                    payrollBonusCells[index].title = 'No hay bonos de nómina registrados';
+                }
+                if (servicioCells[index]) {
+                    servicioCells[index].textContent = '0';
+                    servicioCells[index].title = 'No hay servicios registrados';
+                }
             }
         });
-    }
 
-    // Mostrar/ocultar modales
-    function showModal(modalElement) {
-        modalElement.classList.add("is-visible");
-        document.body.style.overflow = "hidden";
-    }
+        // CORRECCIÓN: Verificar permisos antes de actualizar el estado de los botones
+        const employeeAssignment = loadChartAssignments.find(a => a.employee_id === employeeData.employee_id);
+        const isReviewerForEmployee = employeeAssignment && employeeAssignment.reviewer_id === currentUserId;
+        const isApproverForEmployee = employeeAssignment && employeeAssignment.approver_id === currentUserId;
 
-    function hideModal(modalElement) {
-        modalElement.classList.remove("is-visible");
-        if (!document.querySelector(".is-visible")) {
-            document.body.style.overflow = "auto";
-        }
-    }
+        const reviewBtn = employeeRow.querySelector('.btn-review');
+        const approveBtn = employeeRow.querySelector('.btn-approve');
+        const employeeLog = workLogsData.find(log => log.employee_id === employeeData.employee_id);
 
-    function showError(message) {
-        Swal.fire("Error", message, "error");
-    }
-
-    function showSuccess(message) {
-        Swal.fire("¡Éxito!", message, "success");
-    }
-
-    // Event Listeners
-    document.getElementById("squad-control")?.addEventListener("click", () => {
-        showModal(squadModal);
-        loadSquads();
-    });
-
-    closeSquadModalBtn.addEventListener("click", () => hideModal(squadModal));
-
-    closeFormModalBtns.forEach((btn) =>
-        btn.addEventListener("click", () => hideModal(squadFormModal))
-    );
-
-    addNewSquadBtn.addEventListener("click", () => {
-        resetForm();
-        generateSquadOptions();
-        populateOperatorSelects();
-        showModal(squadFormModal);
-    });
-
-    squadTableBody.addEventListener("click", function (event) {
-        const editBtn = event.target.closest(".action-btn.edit");
-        const deleteBtn = event.target.closest(".action-btn.delete");
-
-        if (editBtn) {
-            editSquad(editBtn.dataset.squad);
-        }
-
-        if (deleteBtn) {
-            deleteSquad(deleteBtn.dataset.squad);
-        }
-    });
-
-    saveFormBtn.addEventListener("click", saveSquad);
-    searchInput.addEventListener("input", handleSearch);
-    searchClearBtn.addEventListener("click", () => {
-        searchInput.value = "";
-        handleSearch();
-    });
-
-    // Inicialización mejorada
-    async function initialize() {
-        try {
-            // Mostrar skeleton loading
-            showLoadingSkeleton();
-
-            // Cargar operadores y cuadrillas en paralelo para mayor velocidad
-            const [operadoresResponse, squadsResponse] = await Promise.all([
-                fetch(window.appRoutes.getOperadores),
-                fetch(window.appRoutes.getSquads),
-            ]);
-
-            if (!operadoresResponse.ok || !squadsResponse.ok) {
-                throw new Error("Error al cargar datos iniciales");
+        // Solo actualizar el botón de revisar si existe y el usuario es revisor
+        if (reviewBtn && isReviewerForEmployee) {
+            if (employeeLog && employeeLog.reviewed_at) {
+                reviewBtn.textContent = 'Revisado';
+                reviewBtn.disabled = true;
+                reviewBtn.classList.add('reviewed');
+            } else {
+                reviewBtn.textContent = 'Revisado';
+                reviewBtn.disabled = false;
+                reviewBtn.classList.remove('reviewed');
             }
+        }
 
-            // Asignar datos
-            operadoresData = await operadoresResponse.json();
-            squadsData = await squadsResponse.json();
+        // Solo actualizar el botón de aprobar si existe y el usuario es aprobador
+        if (approveBtn && isApproverForEmployee) {
+            if (employeeLog && employeeLog.approved_at) {
+                approveBtn.textContent = 'Aprobado';
+                approveBtn.disabled = true;
+                approveBtn.classList.add('approved');
+            } else {
+                approveBtn.textContent = 'Aprobado';
+                approveBtn.disabled = false;
+                approveBtn.classList.remove('approved');
+            }
+        }
+    });
 
-            // Renderizar tabla
-            renderSquadsTable();
+    calculateAndRenderTotals();
+}
 
-            // Generar opciones de cuadrillas
-            generateSquadOptions();
-        } catch (error) {
-            console.error("Error en inicialización:", error);
-            showError("Error al cargar los datos iniciales");
+/**
+ * Determines the overall status for a single day based on all its components.
+ * Rules:
+ * 1. If any element is REJECTED → day_status = 'rejected'
+ * 2. If there are PENDING elements → day_status = 'pending'
+ * 3. If ALL elements are APPROVED → day_status = 'approved'
+ * 4. If there are REVIEWED elements (and possibly APPROVED, without pending or rejected) → day_status = 'reviewed'
+ *
+ * @param {object} dailyActivity - The object containing all activities for a specific day.
+ * @returns {string} - 'approved', 'reviewed', 'rejected', or 'pending'.
+ */
+function getDailyStatusIndicator(dailyActivity) {
+    let hasRejected = false;
+    let hasPending = false;
+    let hasReviewed = false;
+    let hasApproved = false;
+    let totalItems = 0;
+    let approvedItems = 0;
+    let reviewedItems = 0;
 
-            // Mostrar opción de reintento
-            squadTableBody.innerHTML = `
-            <tr>
-                <td colspan="3" class="text-center error">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Error al cargar los datos</p>
-                    <button class="retry-btn" id="retry-load-data">Reintentar</button>
-                </td>
-            </tr>
-        `;
-            document
-                .getElementById("retry-load-data")
-                ?.addEventListener("click", initialize);
+    // Check main activity status
+    const activityStatus = dailyActivity.activity_status ? dailyActivity.activity_status.toLowerCase() : 'pending';
+
+    // Solo contar si hay actividad registrada (no 'N')
+    if (dailyActivity.activity_type && dailyActivity.activity_type !== 'N' && dailyActivity.activity_type !== 'n') {
+        totalItems++;
+        switch (activityStatus) {
+            case 'rejected':
+                hasRejected = true;
+                break;
+            case 'pending':
+                hasPending = true;
+                break;
+            case 'reviewed':
+                hasReviewed = true;
+                reviewedItems++;
+                break;
+            case 'approved':
+                hasApproved = true;
+                approvedItems++;
+                break;
         }
     }
 
-    initialize();
-});
+    // Check all sub-item statuses
+    const itemTypes = ['food_bonuses', 'field_bonuses', 'payroll_bonuses', 'services_list'];
+    itemTypes.forEach(type => {
+        if (dailyActivity[type] && dailyActivity[type].length > 0) {
+            dailyActivity[type].forEach(item => {
+                totalItems++;
+                const itemStatus = item.status ? item.status.toLowerCase() : 'pending';
+                switch (itemStatus) {
+                    case 'rejected':
+                        hasRejected = true;
+                        break;
+                    case 'pending':
+                        hasPending = true;
+                        break;
+                    case 'reviewed':
+                        hasReviewed = true;
+                        reviewedItems++;
+                        break;
+                    case 'approved':
+                        hasApproved = true;
+                        approvedItems++;
+                        break;
+                }
+            });
+        }
+    });
+
+    // Si no hay ítems registrados, el estado es 'pending' por defecto
+    if (totalItems === 0) {
+        return 'pending';
+    }
+
+    // Aplicar la lógica de prioridad según las reglas
+    // 1. Si cualquier elemento está RECHAZADO → day_status = 'rejected'
+    if (hasRejected) {
+        return 'rejected';
+    }
+
+    // 2. Si hay elementos PENDIENTES → day_status = 'pending'
+    if (hasPending) {
+        return 'pending';
+    }
+
+    // 3. Si TODOS los elementos están APROBADOS → day_status = 'approved'
+    if (approvedItems === totalItems) {
+        return 'approved';
+    }
+
+    // 4. Si hay elementos REVISADOS (y posiblemente APROBADOS, sin pendientes ni rechazados) → day_status = 'reviewed'
+    if (hasReviewed || (reviewedItems + approvedItems === totalItems && reviewedItems > 0)) {
+        return 'reviewed';
+    }
+
+    // Por defecto, si no encaja en ninguna categoría anterior
+    return 'pending';
+}
+
+/**
+ * Actualiza el day_status para cada actividad diaria después de modificaciones
+ * @param {Array} dailyActivities - Array de actividades diarias
+ * @returns {Array} - Array actualizado con day_status
+ */
+function updateDayStatusForActivities(dailyActivities) {
+    return dailyActivities.map(dailyActivity => {
+        dailyActivity.day_status = getDailyStatusIndicator(dailyActivity);
+        return dailyActivity;
+    });
+}

@@ -172,7 +172,7 @@
                         <div>Inicio Q2</div>
                     </div>
                     <div class="legend-item">
-                        <i class="fas fa-flag legend-payroll-end"></i>
+                        <i class="fas fa-flag payroll-end"></i>
                         <div>Fin Quincena</div>
                     </div>
                 </div>
@@ -209,60 +209,66 @@
 
                     <div class="form-group">
                         <label for="activity-type">Tipo de Actividad</label>
-                        <div class="custom-select">
+
+                        <!-- Select visual -->
+                        <div class="custom-select" id="activity-type-select">
                             <div class="select-header" id="activity-type-header">
                                 <span class="placeholder">Seleccionar actividad...</span>
                                 <i class="fas fa-chevron-down"></i>
                             </div>
+
                             <div class="select-options" id="activity-type-options">
                                 <div class="activity-option" data-value="B">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--work-base);"></div>
                                         <div class="activity-label">Trabajo en Base</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--work-base); color: white;">B
+                                    <div class="activity-code" style="background-color: var(--work-base); color: #fff;">B
                                     </div>
                                 </div>
+
                                 <div class="activity-option" data-value="P">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--work-well);"></div>
                                         <div class="activity-label">Trabajo en Pozo</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--work-well); color: white;">P
+                                    <div class="activity-code" style="background-color: var(--work-well); color: #fff;">P
                                     </div>
                                 </div>
+
                                 <div class="activity-option" data-value="C">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--commissioned);"></div>
                                         <div class="activity-label">Comisionado</div>
                                     </div>
                                     <div class="activity-code"
-                                        style="background-color: var(--commissioned); color: white;">C
-                                    </div>
+                                        style="background-color: var(--commissioned); color: #fff;">C</div>
                                 </div>
+
                                 <div class="activity-option" data-value="H">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--home-office);"></div>
                                         <div class="activity-label">Home Office</div>
                                     </div>
-                                    <div class="activity-code"
-                                        style="background-color: var(--home-office); color: white;">H</div>
+                                    <div class="activity-code" style="background-color: var(--home-office); color: #fff;">
+                                        H</div>
                                 </div>
+
                                 <div class="activity-option" data-value="V">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--traveling);"></div>
                                         <div class="activity-label">Viaje</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--traveling); color: white;">V
+                                    <div class="activity-code" style="background-color: var(--traveling); color: #fff;">V
                                     </div>
                                 </div>
+
                                 <div class="activity-option" data-value="D">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--rest);"></div>
                                         <div class="activity-label">Descanso</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--rest); color: white;">D
-                                    </div>
+                                    <div class="activity-code" style="background-color: var(--rest); color: #fff;">D</div>
                                 </div>
 
                                 <div class="activity-option" data-value="VAC">
@@ -270,39 +276,47 @@
                                         <div class="color-indicator" style="background-color: var(--vacation);"></div>
                                         <div class="activity-label">Vacaciones</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--vacation); color: white;">
-                                        VAC</div>
+                                    <div class="activity-code" style="background-color: var(--vacation); color: #fff;">VAC
+                                    </div>
                                 </div>
+
                                 <div class="activity-option" data-value="E">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--training);"></div>
                                         <div class="activity-label">Entrenamiento</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--training); color: white;">E
+                                    <div class="activity-code" style="background-color: var(--training); color: #fff;">E
                                     </div>
                                 </div>
+
                                 <div class="activity-option" data-value="M">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--medical);"></div>
                                         <div class="activity-label">Médico</div>
                                     </div>
-                                    <div class="activity-code" style="background-color: var(--medical); color: white;">M
+                                    <div class="activity-code" style="background-color: var(--medical); color: #fff;">M
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <select id="activity-type" style="display: none;">
+                        <!-- Select real (para formularios/POST) -->
+                        <select id="activity-type" name="activity_type" style="display:none;">
                             <option value="">Seleccionar actividad...</option>
                             <option value="B">B - Trabajo en Base</option>
                             <option value="P">P - Trabajo en Pozo</option>
+                            <option value="C">C - Comisionado</option>
+                            <option value="H">H - Home Office</option>
+                            <option value="V">V - Viaje</option>
                             <option value="D">D - Descanso</option>
-                            <option value="V">V - Vacaciones</option>
+                            <option value="VAC">VAC - Vacaciones</option>
                             <option value="E">E - Entrenamiento</option>
                             <option value="M">M - Médico</option>
                         </select>
+
                         <div class="error-message" id="activity-type-error">Debes seleccionar un tipo de actividad</div>
                     </div>
+
                     <div class="form-group" id="commissioned-field" style="display: none;">
                         <label for="commissioned-select">Área Comisionada</label>
                         <select id="commissioned-select" class="select-custom">
@@ -364,8 +378,6 @@
                             <option value="17">17</option>
                         </select>
                     </div>
-
-
                 </div>
 
                 <!-- Pasar datos al JavaScript -->
@@ -413,7 +425,7 @@
 
                     <div class="form-group">
                         <label for="service">Servicio</label>
-                        <select id="service" class="select-custom" disabled>
+                        <select id="service" class="select-custom" name="service_name" disabled>+
                             <option value="">Seleccionar servicio...</option>
                         </select>
                         <div class="error-message" id="service-error">Debes seleccionar un servicio</div>

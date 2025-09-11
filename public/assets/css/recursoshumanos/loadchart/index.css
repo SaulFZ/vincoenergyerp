@@ -43,7 +43,7 @@
     --medical: #dd840fe0;
     --approved: #64946f;
     --pending: #ffae00c5;
-    --commissioned: #087a71;
+    --commissioned: #249399;
     --not-approved: #f3e300;
     --payroll-start-1: #00a700;
     --payroll-start-2: #004bad;
@@ -51,6 +51,8 @@
     --payroll-end-1: #d61c1c;
     --payroll-end-2: #d61c1c;
 }
+
+
 
 * {
     margin: 0;
@@ -305,10 +307,7 @@ body {
 }
 
 
-
-
 /* Load Chart Section */
-
 .load-chart-container {
     background: white;
     border-radius: 10px;
@@ -428,7 +427,7 @@ body {
     height: 85px;
     vertical-align: top;
     padding: 7px;
-    position: relative;
+    position: relative; /* Clave para el posicionamiento absoluto */
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -442,10 +441,31 @@ body {
     color: #a0aec0;
 }
 
+/* Nuevo estilo para los días que están dentro de una quincena, sin atenuación */
+.calendar .in-payroll-period {
+    background-color: #ffffff; /* O el color de fondo que desees para el mes actual */
+    color: inherit; /* Hereda el color del texto de la celda, que es el color por defecto (negro o el que aplique) */
+}
+
+.calendar .current-d {
+    background-color: rgba(0, 62, 248, 0.1);
+    border: 2px solid var(--primary-blue);
+}
+
 .day-number {
     font-weight: 600;
-    margin-bottom: 5px;
     font-size: 14px;
+    display: inline-block; /* Se ajusta el display para que el texto ocupe solo su espacio */
+}
+
+/* Nuevo contenedor para el tag y el ícono */
+.day-header-info {
+    position: absolute; /* Posiciona el contenedor con respecto a su padre (el td) */
+    top: 7px;
+    right: 7px;
+    display: flex; /* Permite que el tag y el ícono se muestren uno al lado del otro */
+    align-items: center;
+    gap: 4px;
 }
 
 .activity-tag {
@@ -459,18 +479,17 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     display: inline-block;
-    min-width: 100px;
+    width: auto;
+    min-height: 16px;
+    line-height: 16px;
+    max-width: 100%;
 }
 
 .loading {
     text-align: center;
-    /* Centra horizontalmente el contenido de la celda */
     padding: 20px 0;
-    /* Añade espacio vertical para centrar mejor */
     font-size: 1.5rem;
-    /* Tamaño del icono de carga */
     color: #4a5568;
-    /* Color del icono, puedes ajustarlo */
 }
 
 .loading i {
@@ -487,14 +506,12 @@ body {
     }
 }
 
-/* Opcional: Estilo para la celda de carga para que no parezca una celda normal */
 .calendar tbody tr td.loading {
     background-color: transparent !important;
     border: none !important;
 }
 
 /* Activity tags colors */
-
 .activity-tag.work-base {
     background-color: var(--work-base);
     color: white;
@@ -505,19 +522,28 @@ body {
     color: white;
 }
 
+.activity-tag.home-office {
+    background-color: var(--home-office);
+    color: white;
+}
+
+.activity-tag.traveling {
+    background-color: var(--traveling);
+    color: white;
+}
+
 .activity-tag.rest {
     background-color: var(--rest);
-    color: #ffffff;
+    color: white;
 }
 
 .activity-tag.vacation {
     background-color: var(--vacation);
-    color: #ffffff;
+    color: white;
 }
 
 .activity-tag.training {
     background-color: var(--training);
-    color: #ffffff;
 }
 
 .activity-tag.medical {
@@ -525,31 +551,38 @@ body {
     color: white;
 }
 
-/* Status icons */
-
-.status-icon {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    font-size: 12px;
+.activity-tag.commissioned {
+    background-color: var(--commissioned);
+    color: white;
 }
 
-.fa-lock {
+/* Status icons */
+.status-icon {
+    font-size: 12px;
+    z-index: 10;
+
+}
+
+.status-icon.approved {
     color: var(--approved);
 }
 
-.fa-exclamation-triangle {
+.status-icon.pending {
+    color: var(--pending);
+}
+
+.status-icon.rejected {
     color: var(--not-approved);
-    filter: drop-shadow(0 0 2px #000000);
+    filter: drop-shadow(0 0 2px #e20000);
 }
 
 /* Payroll icons */
-
 .payroll-icon {
     position: absolute;
     bottom: 5px;
     right: 5px;
     font-size: 12px;
+    z-index: 10;
 }
 
 .payroll-start-1 {
@@ -561,15 +594,18 @@ body {
 }
 
 .payroll-end {
-    color: var(--payroll-end);
+    color: var(--payroll-end-1);
+}
+
+.payroll-end-2 {
+    color: var(--payroll-end-2);
 }
 
 /* Activity Legend */
-
 .activity-legend {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 8px;
+    gap: 1px;
     margin-top: 18px;
     background: var(--light-gray);
     padding: 12px;
@@ -589,8 +625,44 @@ body {
     border-radius: 4px;
 }
 
-/* Legend icons */
+/* Legend colors for activity types */
+.legend-color.work-base {
+    background-color: var(--work-base);
+}
 
+.legend-color.work-well {
+    background-color: var(--work-well);
+}
+
+.legend-color.home-office {
+    background-color: var(--home-office);
+}
+
+.legend-color.traveling {
+    background-color: var(--traveling);
+}
+
+.legend-color.rest {
+    background-color: var(--rest);
+}
+
+.legend-color.vacation {
+    background-color: var(--vacation);
+}
+
+.legend-color.training {
+    background-color: var(--training);
+}
+
+.legend-color.medical {
+    background-color: var(--medical);
+}
+
+.legend-color.commissioned {
+    background-color: var(--commissioned);
+}
+
+/* Legend icons */
 .legend-approved {
     color: var(--approved);
     width: 18px;
@@ -599,6 +671,14 @@ body {
 
 .legend-not-approved {
     color: var(--not-approved);
+    width: 18px;
+    text-align: center;
+        filter: drop-shadow(0 0 2px #000000);
+
+}
+
+.legend-pending {
+    color: var(--pending);
     width: 18px;
     text-align: center;
 }
@@ -613,38 +693,18 @@ body {
     color: var(--payroll-start-2);
     width: 18px;
     text-align: center;
-}
-
-.legend-payroll-end {
-    color: var(--payroll-end);
-    width: 18px;
+    text-align: center;
     text-align: center;
 }
 
-.legend-payroll-end-1 {
+.payroll-end {
     color: var(--payroll-end-1);
     width: 18px;
     text-align: center;
 }
 
-.legend-payroll-end-2 {
-    color: var(--payroll-end-2);
-    width: 18px;
-    text-align: center;
-}
 
-.payroll-end-1 {
-    color: var(--payroll-end-1);
-}
 
-.payroll-end-2 {
-    color: var(--payroll-end-2);
-}
-
-.legend-pending {
-    color: var(--pending);
-
-}
 
 /* Activity Form Modal */
 /* Modal Styles */
@@ -1093,6 +1153,19 @@ body {
     margin-top: 5px;
     display: none;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Footer */
 

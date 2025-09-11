@@ -42,7 +42,7 @@
                 <i class="fas fa-user-circle"></i> {{ Auth::user()->name }}
             </div>
             <div class="logout" onclick="window.location.href='{{ route('home') }}'">
-                <i class="fas fa-home"></i> Salir
+                <i class="fas fa-home"></i> Regresar
             </div>
         </div>
     </header>

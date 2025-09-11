@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\RecursosHumanos\LoadChart\EmployeeMonthlyWorkLog;
 
 class Employee extends Model
 {
@@ -43,6 +44,9 @@ class Employee extends Model
     return $this->hasOne(\App\Models\Auth\User::class, "employee_id", "id");
   }
 
-
+ public function employeeMonthlyWorkLogs()
+    {
+        return $this->hasMany(EmployeeMonthlyWorkLog::class);
+    }
 
 }

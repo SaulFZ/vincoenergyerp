@@ -1,7 +1,8 @@
 <?php
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
 /* CONTROLADORES DE RECURSOS HUMANOS */
+use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\CalendarController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
@@ -83,9 +84,9 @@ Route::middleware(['web', 'auth'])->group(function () {
                 ->name('qhse.auditorias');
         });
 
-    // ===================================================
-    // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
-    // ===================================================
+// ===================================================
+// MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
+// ===================================================
     Route::prefix('recursoshumanos')
         ->middleware('check.permission:recursoshumanos')
         ->group(function () {
@@ -112,8 +113,14 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // Esta ruta carga la vista HTML completa para la primera vez.
                 Route::get('/calendar', [CalendarController::class, 'index'])->name('loadchart.calendar');
 
-                // Esta es la NUEVA ruta que usará AJAX para cargar los datos del calendario.
+                // Esta es la ruta AJAX para cargar los datos del calendario.
                 Route::get('/calendar-data', [CalendarController::class, 'getCalendarData']);
+
+                // NUEVA RUTA: Guardar actividad diaria
+                Route::post('/save-activity', [CalendarController::class, 'saveActivity'])->name('loadchart.save_activity');
+
+                // NUEVA RUTA: Obtener actividades mensuales
+                Route::get('/monthly-activities', [CalendarController::class, 'getMonthlyActivities'])->name('loadchart.monthly_activities');
 
                 // Las rutas existentes para la configuración quincenal se mantienen.
                 Route::get('/fortnightly-config/{year}/{month}', [CalendarController::class, 'getFortnightlyConfig']);
@@ -131,6 +138,26 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::delete('/squads/{squadNumber}', [SquadController::class, 'destroy'])->name('squads.destroy');
                 Route::get('/squads/{squadNumber}', [SquadController::class, 'show'])->name('squads.show');
                 Route::get('/info-services', [InfoServicesController::class, 'getServicesAndBonuses'])->name('info.services.json');
+                // Ruta principal de aprobaciones
+                Route::get('/approval', [ApprovalController::class, 'index'])->name('loadchart.approval');
+
+                // Ruta AJAX para obtener datos de un mes específico
+                Route::get('/approval-data/{year}/{month}', [ApprovalController::class, 'getApprovalData'])
+                    ->name('loadchart.approval.data')
+                    ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}']);
+
+                // Ruta AJAX para actualizar estado de aprobación
+                Route::post('/approval-status', [ApprovalController::class, 'updateApprovalStatus'])
+                    ->name('loadchart.approval.status');
+                // Agrega esta ruta en tu archivo web.php
+                Route::get('/recursoshumanos/loadchart/approval-data/{year}/{month}', [ApprovalController::class, 'getApprovalData'])
+                    ->name('approval.data');
+
+
+    // Ruta para actualizar el estado de aprobación
+    Route::post('/update-approval-status', [ApprovalController::class, 'updateApprovalStatus'])->name('loadchart.update.approval.status');
+
+    Route::post('/update-multiple-statuses', [ApprovalController::class, 'updateMultipleStatuses'])->name('loadchart.update.multiple.statuses');
 
                 // Ruta para obtener la configuración de un mes y año específicos
                 Route::get('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'getConfig']);
@@ -142,6 +169,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::get('fortnightly-config/year/{year}', [FortnightlyConfigController::class, 'getYearConfigs']);
                 // Ruta para generar una configuración por defecto
                 Route::post('fortnightly-config/generate-default', [FortnightlyConfigController::class, 'generateDefault']);
+
                 Route::get('/history', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.history');
                 })->name('loadchart.history');
@@ -193,7 +221,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                     );
             });
         });
-
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS
     // ===================================================
