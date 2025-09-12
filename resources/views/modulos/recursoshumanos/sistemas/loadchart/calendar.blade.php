@@ -154,6 +154,10 @@
                     <div>Pendiente</div>
                 </div>
                 <div class="legend-item">
+                    <i class="fas fa-lock-open legend-reviewed"></i>
+                    <div>Revisado</div>
+                </div>
+                <div class="legend-item">
                     <i class="fas fa-lock legend-approved"></i>
                     <div>Aprobado</div>
                 </div>
@@ -164,10 +168,6 @@
                 <div class="legend-item">
                     <i class="fas fa-flag legend-payroll-start-1"></i>
                     <div>Inicio Q1</div>
-                </div>
-                <div class="legend-item">
-                    <i class="fas fa-flag legend-payroll-start-2"></i>
-                    <div>Inicio Q2</div>
                 </div>
                 <div class="legend-item">
                     <i class="fas fa-flag payroll-end"></i>
@@ -411,6 +411,5 @@
         </div>
     </div>
 </div>
-
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/calendar.js') }}"></script>
 @endsection

@@ -50,9 +50,8 @@
     --payroll-end: #d61c1c;
     --payroll-end-1: #d61c1c;
     --payroll-end-2: #d61c1c;
+    --reviewed: #f7a364; /* Nuevo color para el estado "Revisado" */
 }
-
-
 
 * {
     margin: 0;
@@ -74,7 +73,6 @@ body {
     position: sticky;
     top: 0;
     z-index: 1000;
-    /* Opcional, asegura que el header esté encima de todo */
     background-color: white;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.027);
     padding: 12px 20px;
@@ -131,11 +129,8 @@ body {
     border-radius: 4px;
     transition: all 0.3s ease;
     cursor: pointer;
-    /* Asegura que muestre el cursor de mano */
     display: inline-flex;
-    /* Para mejor alineación con iconos */
     align-items: center;
-    /* Alinea verticalmente icono y texto */
 }
 
 .nav-links a:hover,
@@ -168,16 +163,12 @@ body {
     color: var(--primary-blue);
 }
 
-/* Estilo minimalista manteniendo la clase original */
-
 .logout {
     display: flex;
     align-items: center;
     padding: 10px 15px;
     color: #e74c3c;
-    /* Rojo suave para el texto */
     background-color: #ecf0f1;
-    /* Gris claro */
     border: none;
     cursor: pointer;
     font-size: 14px;
@@ -188,27 +179,21 @@ body {
 .logout i {
     margin-right: 10px;
     color: inherit;
-    /* Hereda el color rojo del texto */
 }
 
 .logout:hover {
     background-color: #dfe6e9;
-    /* Gris un poco más oscuro al hover */
 }
 
 /* Main Content */
-
 .container {
     max-width: 100%;
-    margin: 10PX;
+    margin: 10px;
     padding: 0 15px;
     flex: auto;
-    /* Hace que el contenido principal ocupe todo el espacio disponible */
-
 }
 
 /* Content Layout */
-
 .content-layout {
     display: grid;
     grid-template-columns: 1fr 3fr;
@@ -221,7 +206,6 @@ body {
 }
 
 /* Employee Details */
-
 .employee-details {
     background: white;
     border-radius: 10px;
@@ -427,7 +411,7 @@ body {
     height: 85px;
     vertical-align: top;
     padding: 7px;
-    position: relative; /* Clave para el posicionamiento absoluto */
+    position: relative;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -441,10 +425,9 @@ body {
     color: #a0aec0;
 }
 
-/* Nuevo estilo para los días que están dentro de una quincena, sin atenuación */
 .calendar .in-payroll-period {
-    background-color: #ffffff; /* O el color de fondo que desees para el mes actual */
-    color: inherit; /* Hereda el color del texto de la celda, que es el color por defecto (negro o el que aplique) */
+    background-color: #ffffff;
+    color: inherit;
 }
 
 .calendar .current-d {
@@ -455,15 +438,14 @@ body {
 .day-number {
     font-weight: 600;
     font-size: 14px;
-    display: inline-block; /* Se ajusta el display para que el texto ocupe solo su espacio */
+    display: inline-block;
 }
 
-/* Nuevo contenedor para el tag y el ícono */
 .day-header-info {
-    position: absolute; /* Posiciona el contenedor con respecto a su padre (el td) */
+    position: absolute;
     top: 7px;
     right: 7px;
-    display: flex; /* Permite que el tag y el ícono se muestren uno al lado del otro */
+    display: flex;
     align-items: center;
     gap: 4px;
 }
@@ -500,7 +482,6 @@ body {
     0% {
         transform: rotate(0deg);
     }
-
     100% {
         transform: rotate(360deg);
     }
@@ -560,7 +541,6 @@ body {
 .status-icon {
     font-size: 12px;
     z-index: 10;
-
 }
 
 .status-icon.approved {
@@ -571,9 +551,13 @@ body {
     color: var(--pending);
 }
 
+.status-icon.reviewed {
+    color: var(--reviewed); /* Nuevo color para el icono de revisado */
+}
+
 .status-icon.rejected {
     color: var(--not-approved);
-    filter: drop-shadow(0 0 2px #e20000);
+    filter: drop-shadow(0 0 2px #000000);
 }
 
 /* Payroll icons */
@@ -669,12 +653,19 @@ body {
     text-align: center;
 }
 
-.legend-not-approved {
+/* Nuevo estilo para el icono de revisado en la leyenda */
+.legend-reviewed {
+    color: var(--reviewed);
+    width: 18px;
+    text-align: center;
+}
+
+.legend-not-approved,
+.fa-exclamation-triangle {
     color: var(--not-approved);
     width: 18px;
     text-align: center;
-        filter: drop-shadow(0 0 2px #000000);
-
+    filter: drop-shadow(0 0 2px #000000);
 }
 
 .legend-pending {
@@ -693,8 +684,6 @@ body {
     color: var(--payroll-start-2);
     width: 18px;
     text-align: center;
-    text-align: center;
-    text-align: center;
 }
 
 .payroll-end {
@@ -702,9 +691,6 @@ body {
     width: 18px;
     text-align: center;
 }
-
-
-
 
 /* Activity Form Modal */
 /* Modal Styles */

@@ -37,7 +37,9 @@ class CalendarController extends Controller
             'service_type',
             'service_performed',
             'identifier',
-            'service_description'
+            'service_description',
+            'amount', // Incluir el campo 'amount'
+            'currency' // Incluir el campo 'currency'
         )
             ->orderBy('operation_type')
             ->orderBy('identifier')
@@ -203,11 +205,10 @@ class CalendarController extends Controller
                 'date' => 'required|date_format:Y-m-d',
                 'displayed_month' => 'required|integer',
                 'displayed_year' => 'required|integer',
-                'activity_type' => 'required|string|max:10',
+                'activity_type' => 'required_without:service_identifier|string|max:10',
                 'commissioned_to' => 'nullable|string|max:255',
-                'service_identifier' => 'nullable|string|max:50',
+                'service_identifier' => 'nullable|required_without:activity_type|string|max:50',
                 'service_performed' => 'nullable|string|max:255',
-                'service_name' => 'nullable|string|max:255',
                 'amount' => 'nullable|numeric|min:0',
                 'currency' => 'nullable|string|max:3',
                 'food_bonus_number' => 'nullable|integer|min:1',
@@ -215,6 +216,7 @@ class CalendarController extends Controller
             ]);
 
             if ($validator->fails()) {
+                Log::error('Validation failed for saveActivity', ['errors' => $validator->errors()]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Datos inválidos',
@@ -250,17 +252,23 @@ class CalendarController extends Controller
                 ]
             );
 
-            // Obtener la actividad existente si la hay
             $existingActivity = $monthlyLog->getDailyActivity($request->date);
+            if ($existingActivity && $existingActivity['day_status'] === 'approved') {
+                DB::rollback();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden modificar actividades aprobadas.'
+                ], 403);
+            }
+
             $payrollPeriodMarker = $this->determinePayrollPeriodMarker($request->date, $displayedMonth, $displayedYear);
 
-            // Preparar datos de la actividad
             $activityData = [
                 'date' => $request->date,
-                'day_status' => null,
+                'day_status' => 'pending',
                 'activity_status' => 'Pending',
                 'payroll_period_marker' => $payrollPeriodMarker,
-                'is_locked' => !is_null($monthlyLog->approved_at),
+                'is_locked' => false,
                 'activity_type' => $request->activity_type,
                 'activity_description' => $this->getActivityDescription($request->activity_type),
                 'commissioned_to' => $request->commissioned_to,
@@ -272,13 +280,12 @@ class CalendarController extends Controller
 
             // Comparar con la actividad existente y aplicar lógica de estado
             if ($existingActivity) {
-                // Si la actividad principal ha cambiado, su estado vuelve a 'Pending'
                 $isActivityChanged = ($existingActivity['activity_type'] !== $activityData['activity_type'] || $existingActivity['commissioned_to'] !== $activityData['commissioned_to']);
+
                 if ($isActivityChanged) {
                     $activityData['activity_status'] = 'Pending';
-                    $activityData['rejection_reason'] = null; // Limpiar razón de rechazo si se modifica
+                    $activityData['rejection_reason'] = null;
                 } else {
-                    // Si no hay cambios en la actividad, preservar el estado existente
                     $activityData['activity_status'] = $existingActivity['activity_status'];
                     $activityData['rejection_reason'] = $existingActivity['rejection_reason'] ?? null;
                 }
@@ -286,24 +293,30 @@ class CalendarController extends Controller
 
             // Lógica para el servicio
             $currentService = null;
-            if ($request->filled('service_identifier') && $request->filled('service_performed') && $request->filled('amount')) {
+            if ($request->filled('service_identifier')) {
                 $service = Services::where('identifier', $request->service_identifier)->first();
+                if (!$service) {
+                    throw new \Exception("Service with identifier {$request->service_identifier} not found.");
+                }
+
                 $currentService = [
                     'service_identifier' => $request->service_identifier,
-                    'service_performed' => $request->service_performed,
-                    'service_name' => $service ? $service->service_description : $request->service_name,
-                    'amount' => (float) $request->amount,
-                    'currency' => $request->currency ?? 'MXN',
+                    'service_performed' => $service->service_performed,
+                    'service_name' => $service->service_description,
+                    'amount' => (float) $service->amount,
+                    'currency' => $service->currency,
                     'status' => 'Pending',
                     'rejection_reason' => null
                 ];
 
-                // Preservar estado si el servicio no ha cambiado
                 if ($existingActivity && isset($existingActivity['services_list'][0])) {
                     $oldService = $existingActivity['services_list'][0];
-                    $isServiceChanged = ($oldService['service_identifier'] !== $currentService['service_identifier'] || $oldService['service_performed'] !== $currentService['service_performed'] || $oldService['amount'] !== $currentService['amount']);
+                    $isServiceChanged = ($oldService['service_identifier'] !== $currentService['service_identifier']);
 
-                    if (!$isServiceChanged) {
+                    if ($isServiceChanged) {
+                        $currentService['status'] = 'Pending';
+                        $currentService['rejection_reason'] = null;
+                    } else {
                         $currentService['status'] = $oldService['status'];
                         $currentService['rejection_reason'] = $oldService['rejection_reason'];
                     }
@@ -313,7 +326,7 @@ class CalendarController extends Controller
 
             // Lógica para el bono de campo
             $currentFieldBonus = null;
-            if ($request->field_bonus_identifier) {
+            if ($request->filled('field_bonus_identifier')) {
                 $fieldBonus = FieldBonus::where('bonus_identifier', $request->field_bonus_identifier)->first();
                 if ($fieldBonus) {
                     $daily_amount_mxn = null;
@@ -343,12 +356,14 @@ class CalendarController extends Controller
                         'rejection_reason' => null
                     ];
 
-                    // Preservar estado si el bono no ha cambiado
                     if ($existingActivity && isset($existingActivity['field_bonuses'][0])) {
                         $oldBonus = $existingActivity['field_bonuses'][0];
                         $isFieldBonusChanged = ($oldBonus['bonus_identifier'] !== $currentFieldBonus['bonus_identifier']);
 
-                        if (!$isFieldBonusChanged) {
+                        if ($isFieldBonusChanged) {
+                            $currentFieldBonus['status'] = 'Pending';
+                            $currentFieldBonus['rejection_reason'] = null;
+                        } else {
                             $currentFieldBonus['status'] = $oldBonus['status'];
                             $currentFieldBonus['rejection_reason'] = $oldBonus['rejection_reason'];
                         }
@@ -359,24 +374,26 @@ class CalendarController extends Controller
 
             // Lógica para el bono de comida
             $currentFoodBonus = null;
-            if ($request->food_bonus_number) {
+            if ($request->filled('food_bonus_number')) {
                 $meal = Meal::where('meal_number', $request->food_bonus_number)->first();
                 if ($meal) {
                     $currentFoodBonus = [
                         'bonus_type' => 'Bono de Comida',
-                        'num_daily' => $request->food_bonus_number,
+                        'num_daily' => (int) $request->food_bonus_number,
                         'daily_amount' => (float) $meal->amount,
                         'currency' => 'MXN',
                         'status' => 'Pending',
                         'rejection_reason' => null
                     ];
 
-                    // Preservar estado si el bono no ha cambiado
                     if ($existingActivity && isset($existingActivity['food_bonuses'][0])) {
                         $oldBonus = $existingActivity['food_bonuses'][0];
                         $isFoodBonusChanged = ($oldBonus['num_daily'] !== (int) $currentFoodBonus['num_daily']);
 
-                        if (!$isFoodBonusChanged) {
+                        if ($isFoodBonusChanged) {
+                            $currentFoodBonus['status'] = 'Pending';
+                            $currentFoodBonus['rejection_reason'] = null;
+                        } else {
                             $currentFoodBonus['status'] = $oldBonus['status'];
                             $currentFoodBonus['rejection_reason'] = $oldBonus['rejection_reason'];
                         }
@@ -391,6 +408,27 @@ class CalendarController extends Controller
             $activityData['food_bonuses'] = $currentFoodBonus ? [$currentFoodBonus] : [];
 
 
+            // Actualizar el estado general del día
+            $dailyActivityStatus = 'pending';
+            if ($activityData['activity_status'] === 'Approved' &&
+                (empty($activityData['services_list']) || $activityData['services_list'][0]['status'] === 'Approved') &&
+                (empty($activityData['field_bonuses']) || $activityData['field_bonuses'][0]['status'] === 'Approved') &&
+                (empty($activityData['food_bonuses']) || $activityData['food_bonuses'][0]['status'] === 'Approved')) {
+                $dailyActivityStatus = 'approved';
+            } else if ($activityData['activity_status'] === 'Rejected' ||
+                (!empty($activityData['services_list']) && $activityData['services_list'][0]['status'] === 'Rejected') ||
+                (!empty($activityData['field_bonuses']) && $activityData['field_bonuses'][0]['status'] === 'Rejected') ||
+                (!empty($activityData['food_bonuses']) && $activityData['food_bonuses'][0]['status'] === 'Rejected')) {
+                $dailyActivityStatus = 'rejected';
+            } else if ($activityData['activity_status'] === 'Reviewed' ||
+                (!empty($activityData['services_list']) && $activityData['services_list'][0]['status'] === 'Reviewed') ||
+                (!empty($activityData['field_bonuses']) && $activityData['field_bonuses'][0]['status'] === 'Reviewed') ||
+                (!empty($activityData['food_bonuses']) && $activityData['food_bonuses'][0]['status'] === 'Reviewed')) {
+                $dailyActivityStatus = 'reviewed';
+            }
+
+            $activityData['day_status'] = $dailyActivityStatus;
+
             $monthlyLog->addDailyActivity($request->date, $activityData);
             $monthlyLog->save();
             DB::commit();
@@ -400,7 +438,6 @@ class CalendarController extends Controller
                 'message' => 'Actividad guardada exitosamente',
                 'data' => $activityData
             ]);
-
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Error al guardar actividad: ' . $e->getMessage(), [

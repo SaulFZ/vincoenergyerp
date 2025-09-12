@@ -47,10 +47,10 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'pending':
                 return `<i class="fa-regular fa-hourglass-half status-icon" style="color: ${getCSSVariable('--pending')};" title="Pendiente"></i>`;
             case 'approved':
-                // Ícono de candado para 'aprobado'
                 return `<i class="fas fa-lock status-icon" style="color: ${getCSSVariable('--approved')};" title="Aprobado"></i>`;
+            case 'reviewed':
+                return `<i class="fas fa-lock-open status-icon" style="color: ${getCSSVariable('--reviewed')};" title="Revisado"></i>`;
             case 'rejected':
-                // Ícono de triángulo de advertencia para 'rechazado'
                 return `<i class="fas fa-exclamation-triangle status-icon" style="color: ${getCSSVariable('--not-approved')};" title="Rechazado"></i>`;
             default:
                 return `<i class="fa-regular fa-hourglass-half status-icon" style="color: ${getCSSVariable('--pending')};" title="Pendiente"></i>`;
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Mostrar razón de rechazo general de la actividad
         if (activity.rejection_reason) {
-            showRejectionMessage('activity-type', activity.rejection_reason);
+            showRejectionMessage('activity-type-select', activity.rejection_reason);
         }
 
         // Verificar y mostrar rechazos en servicios
@@ -125,8 +125,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span>Motivo de rechazo: ${message}</span>
                     </div>
                 `;
-
-                // Insertar después del campo
                 field.parentNode.insertBefore(rejectionDiv, field.nextSibling);
             }
         }
@@ -141,29 +139,29 @@ document.addEventListener('DOMContentLoaded', function () {
     function isFieldLocked(activity, fieldType, itemIndex = 0) {
         if (!activity) return false;
 
-        // Si la actividad completa está aprobada, todo está bloqueado
+        // Si el día completo está aprobado, todo está bloqueado
         if (activity.day_status === 'approved') return true;
 
         // Verificar bloqueos específicos por tipo
         switch (fieldType) {
             case 'activity':
-                return activity.activity_status === 'Approved';
+                return activity.activity_status === 'Approved' || activity.activity_status === 'Reviewed';
 
             case 'service':
                 if (activity.services_list && activity.services_list[itemIndex]) {
-                    return activity.services_list[itemIndex].status === 'Approved';
+                    return activity.services_list[itemIndex].status === 'Approved' || activity.services_list[itemIndex].status === 'Reviewed';
                 }
                 return false;
 
             case 'food_bonus':
                 if (activity.food_bonuses && activity.food_bonuses[itemIndex]) {
-                    return activity.food_bonuses[itemIndex].status === 'Approved';
+                    return activity.food_bonuses[itemIndex].status === 'Approved' || activity.food_bonuses[itemIndex].status === 'Reviewed';
                 }
                 return false;
 
             case 'field_bonus':
                 if (activity.field_bonuses && activity.field_bonuses[itemIndex]) {
-                    return activity.field_bonuses[itemIndex].status === 'Approved';
+                    return activity.field_bonuses[itemIndex].status === 'Approved' || activity.field_bonuses[itemIndex].status === 'Reviewed';
                 }
                 return false;
 
@@ -173,30 +171,58 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Función para bloquear/desbloquear campos
-    function toggleFieldLock(element, isLocked, fieldType = '') {
+    function toggleFieldLock(element, isLocked, status) {
         if (!element) return;
 
-        if (isLocked) {
-            element.disabled = true;
-            element.style.backgroundColor = '#f5f5f5';
-            element.style.color = '#999';
-            element.style.cursor = 'not-allowed';
+        // Si el elemento es un `custom-select` o `work-type-option` se maneja de forma especial
+        const isCustomSelect = element.classList.contains('custom-select');
+        const isWorkTypeOption = element.classList.contains('work-type-option');
+        const targetElement = isCustomSelect ? element.querySelector('.select-header') : element;
 
-            // Agregar indicador visual de bloqueo
+        if (isLocked) {
+            if (isCustomSelect) {
+                element.classList.add('locked');
+            } else if (isWorkTypeOption) {
+                element.style.pointerEvents = 'none';
+                element.style.opacity = '0.6';
+            } else {
+                targetElement.disabled = true;
+                targetElement.style.backgroundColor = '#f5f5f5';
+                targetElement.style.color = '#999';
+                targetElement.style.cursor = 'not-allowed';
+            }
+
+            // Agrega el indicador de estado si no existe
             const parentGroup = element.closest('.form-group');
             if (parentGroup && !parentGroup.querySelector('.lock-indicator')) {
                 const lockIndicator = document.createElement('div');
                 lockIndicator.className = 'lock-indicator';
-                lockIndicator.innerHTML = '<i class="fas fa-lock"></i> Campo bloqueado (aprobado)';
+                let message = '';
+                let icon = '';
+                if (status === 'Approved' || status === 'approved') {
+                    message = 'Aprobado';
+                    icon = 'fas fa-lock';
+                } else if (status === 'Reviewed' || status === 'reviewed') {
+                    message = 'Revisado';
+                    icon = 'fas fa-lock-open';
+                }
+                lockIndicator.innerHTML = `<i class="${icon}"></i> ${message}`;
                 parentGroup.appendChild(lockIndicator);
             }
         } else {
-            element.disabled = false;
-            element.style.backgroundColor = '';
-            element.style.color = '';
-            element.style.cursor = '';
+            // Desbloquea y remueve el indicador
+            if (isCustomSelect) {
+                element.classList.remove('locked');
+            } else if (isWorkTypeOption) {
+                element.style.pointerEvents = '';
+                element.style.opacity = '';
+            } else {
+                targetElement.disabled = false;
+                targetElement.style.backgroundColor = '';
+                targetElement.style.color = '';
+                targetElement.style.cursor = '';
+            }
 
-            // Remover indicador de bloqueo
             const parentGroup = element.closest('.form-group');
             if (parentGroup) {
                 const lockIndicator = parentGroup.querySelector('.lock-indicator');
@@ -210,9 +236,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!activity) return;
 
         // Bloquear campos de actividad principal
+        const activityStatus = activity.activity_status || activity.day_status;
         const isActivityLocked = isFieldLocked(activity, 'activity');
         const activityTypeOptions = document.querySelectorAll('.activity-option');
         const commissionedSelect = document.getElementById('commissioned-select');
+        const activityTypeSelectContainer = document.getElementById('activity-type-select');
+
+        // Bloquear el select personalizado
+        toggleFieldLock(activityTypeSelectContainer, isActivityLocked, activityStatus);
 
         activityTypeOptions.forEach(option => {
             if (isActivityLocked) {
@@ -224,9 +255,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        toggleFieldLock(commissionedSelect, isActivityLocked, 'activity');
+        toggleFieldLock(commissionedSelect, isActivityLocked, activityStatus);
 
         // Bloquear campos de servicio
+        const service = activity.services_list && activity.services_list[0];
+        const serviceStatus = service ? service.status : null;
         const isServiceLocked = isFieldLocked(activity, 'service');
         const workTypeOptions = document.querySelectorAll('.work-type-option');
         const serviceTypeSelect = document.getElementById('service-type');
@@ -234,25 +267,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const serviceSelect = document.getElementById('service');
 
         workTypeOptions.forEach(option => {
-            if (isServiceLocked) {
-                option.style.pointerEvents = 'none';
-                option.style.opacity = '0.6';
-            } else {
-                option.style.pointerEvents = '';
-                option.style.opacity = '';
-            }
+            toggleFieldLock(option, isServiceLocked, serviceStatus);
         });
 
-        toggleFieldLock(serviceTypeSelect, isServiceLocked, 'service');
-        toggleFieldLock(servicePerformedSelect, isServiceLocked, 'service');
-        toggleFieldLock(serviceSelect, isServiceLocked, 'service');
+        toggleFieldLock(serviceTypeSelect, isServiceLocked, serviceStatus);
+        toggleFieldLock(servicePerformedSelect, isServiceLocked, serviceStatus);
+        toggleFieldLock(serviceSelect, isServiceLocked, serviceStatus);
 
         // Bloquear campos de bonos
+        const foodBonus = activity.food_bonuses && activity.food_bonuses[0];
+        const foodBonusStatus = foodBonus ? foodBonus.status : null;
         const isFoodBonusLocked = isFieldLocked(activity, 'food_bonus');
+        const fieldBonus = activity.field_bonuses && activity.field_bonuses[0];
+        const fieldBonusStatus = fieldBonus ? fieldBonus.status : null;
         const isFieldBonusLocked = isFieldLocked(activity, 'field_bonus');
 
-        toggleFieldLock(document.getElementById('food-bonus'), isFoodBonusLocked, 'food_bonus');
-        toggleFieldLock(document.getElementById('field-bonus'), isFieldBonusLocked, 'field_bonus');
+        toggleFieldLock(document.getElementById('food-bonus'), isFoodBonusLocked, foodBonusStatus);
+        toggleFieldLock(document.getElementById('field-bonus'), isFieldBonusLocked, fieldBonusStatus);
     }
 
     /**
@@ -260,21 +291,17 @@ document.addEventListener('DOMContentLoaded', function () {
      * @param {object} activity - El objeto de actividad con sus detalles.
      */
     function populateModalWithActivity(activity) {
-        console.log('Populando modal con actividad:', activity); // Debug log
-        currentActivity = activity; // Guardar referencia a la actividad actual
-
-        // Resetear el formulario antes de rellenarlo
+        currentActivity = activity;
         resetActivityOptions();
         resetServiceForm();
         resetAdditionalForms();
         resetBonusFields();
         clearRejectionMessages();
 
-        // Determinar qué pestaña activar
         const activityTabBtn = document.querySelector('.tab-btn[data-tab="activity"]');
         const serviceTabBtn = document.querySelector('.tab-btn[data-tab="service"]');
 
-        // Si es una actividad de trabajo, activa la pestaña de servicio
+        // Determinar qué pestaña activar y rellenar la actividad
         if (['B', 'P', 'C'].includes(activity.activity_type)) {
             serviceTabBtn.click();
             activityTabBtn.classList.remove('active');
@@ -283,47 +310,34 @@ document.addEventListener('DOMContentLoaded', function () {
             serviceTabBtn.classList.remove('active');
         }
 
-        // Rellenar los campos de la actividad
         const activityTypeOption = document.querySelector(`.activity-option[data-value="${activity.activity_type}"]`);
         if (activityTypeOption) {
-            activityTypeOption.click();
+            activityTypeOption.classList.add('selected');
+            activityTypeSelect.value = activity.activity_type;
+            placeholder.textContent = activityTypeOption.querySelector('.activity-label').textContent;
         }
 
-        // Manejar campo comisionado
         if (activity.activity_type === 'C' && activity.commissioned_to) {
             commissionedField.style.display = 'block';
             commissionedSelect.value = activity.commissioned_to;
         }
 
-        // Rellenar los campos de servicio si existen
         if (activity.services_list && activity.services_list.length > 0) {
             const service = activity.services_list[0];
-            console.log('Servicio encontrado:', service); // Debug log
-            console.log('Datos de servicio disponibles:', serviceData); // Debug log
-
-            // Determinar el tipo de operación basado en el service_identifier
             let operationType = null;
             let fullServiceData = null;
 
-            // Buscar en todos los tipos de operación disponibles
             for (const [opType, services] of Object.entries(serviceData)) {
-                console.log(`Buscando en tipo de operación: ${opType}`); // Debug log
-
                 if (Array.isArray(services)) {
                     fullServiceData = services.find(s => s.identifier === service.service_identifier);
                     if (fullServiceData) {
                         operationType = opType;
-                        console.log(`Servicio encontrado en tipo: ${opType}`); // Debug log
                         break;
                     }
                 }
             }
 
-            console.log('Tipo de operación determinado:', operationType); // Debug log
-            console.log('Datos completos del servicio:', fullServiceData); // Debug log
-
             if (operationType && fullServiceData) {
-                // Mapear el tipo de operación a los valores del HTML
                 let workTypeValue = operationType;
                 if (operationType === 'Tierra') {
                     workTypeValue = 'Tierra';
@@ -331,92 +345,55 @@ document.addEventListener('DOMContentLoaded', function () {
                     workTypeValue = 'Marina';
                 }
 
-                console.log('Work type value para HTML:', workTypeValue); // Debug log
-
-                // Seleccionar el tipo de trabajo
                 const workTypeOption = document.querySelector(`.work-type-option[data-value="${workTypeValue}"]`);
                 if (workTypeOption) {
                     workTypeOption.click();
-                    console.log('Tipo de trabajo seleccionado:', workTypeValue); // Debug log
-                } else {
-                    console.error('No se encontró work-type-option para:', workTypeValue); // Debug log
                 }
 
-                // Usar setTimeout para dar tiempo a que los selects se pueblen
                 setTimeout(() => {
                     const serviceTypeSelect = document.getElementById('service-type');
                     const servicePerformedSelect = document.getElementById('service-performed');
                     const serviceSelect = document.getElementById('service');
 
-                    // Seleccionar service_type
                     const serviceTypeFormatted = fullServiceData.service_type.toLowerCase().replace(/\s+/g, '_');
-                    console.log('Service type formatted:', serviceTypeFormatted); // Debug log
-
-                    // Verificar que la opción existe en el select
                     const serviceTypeOption = Array.from(serviceTypeSelect.options).find(opt => opt.value === serviceTypeFormatted);
                     if (serviceTypeOption) {
                         serviceTypeSelect.value = serviceTypeFormatted;
                         serviceTypeSelect.dispatchEvent(new Event('change'));
-                        console.log('Service type seleccionado correctamente'); // Debug log
-                    } else {
-                        console.error('Service type option no encontrada:', serviceTypeFormatted); // Debug log
                     }
 
                     setTimeout(() => {
-                        // Seleccionar service_performed
                         const servicePerformedFormatted = fullServiceData.service_performed.toLowerCase().replace(/\s+/g, '_');
-                        console.log('Service performed formatted:', servicePerformedFormatted); // Debug log
-
                         const servicePerformedOption = Array.from(servicePerformedSelect.options).find(opt => opt.value === servicePerformedFormatted);
                         if (servicePerformedOption) {
                             servicePerformedSelect.value = servicePerformedFormatted;
                             servicePerformedSelect.dispatchEvent(new Event('change'));
-                            console.log('Service performed seleccionado correctamente'); // Debug log
-                        } else {
-                            console.error('Service performed option no encontrada:', servicePerformedFormatted); // Debug log
                         }
 
                         setTimeout(() => {
-                            // Seleccionar el servicio específico
-                            console.log('Seleccionando servicio:', service.service_identifier); // Debug log
-
                             const serviceOption = Array.from(serviceSelect.options).find(opt => opt.value === service.service_identifier);
                             if (serviceOption) {
                                 serviceSelect.value = service.service_identifier;
-                                console.log('Servicio seleccionado correctamente'); // Debug log
-                            } else {
-                                console.error('Service option no encontrada:', service.service_identifier); // Debug log
                             }
                         }, 150);
                     }, 150);
                 }, 150);
-            } else {
-                console.error('No se pudo determinar el tipo de operación para el servicio:', service.service_identifier);
             }
         }
 
-        // Rellenar los campos de bonos si existen
-        // Bono de comida
         if (activity.food_bonuses && activity.food_bonuses.length > 0) {
             const foodBonus = activity.food_bonuses[0];
-            console.log('Bono de comida encontrado:', foodBonus); // Debug log
-
             if (foodBonus.num_daily) {
                 document.getElementById('food-bonus').value = foodBonus.num_daily;
             }
         }
 
-        // Bono de campo
         if (activity.field_bonuses && activity.field_bonuses.length > 0) {
             const fieldBonus = activity.field_bonuses[0];
-            console.log('Bono de campo encontrado:', fieldBonus); // Debug log
-
             const fieldBonusSelect = document.getElementById('field-bonus');
-
             if (fieldBonus.bonus_identifier) {
                 fieldBonusSelect.value = fieldBonus.bonus_identifier;
             } else if (fieldBonus.bonus_type) {
-                // Buscar en las opciones del select el que corresponde al bonus_type
                 Array.from(fieldBonusSelect.options).forEach(option => {
                     if (option.text.includes(fieldBonus.bonus_type) || option.value === fieldBonus.bonus_type) {
                         fieldBonusSelect.value = option.value;
@@ -425,7 +402,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Aplicar estados de bloqueo después de rellenar los campos
         setTimeout(() => {
             applyFieldLocks(activity);
             showRejectionMessages(activity);
@@ -439,12 +415,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const existingActivity = monthlyActivities[processedDate];
             if (existingActivity) {
-                console.log('Actividad existente encontrada para', processedDate, ':', existingActivity); // Debug log
                 populateModalWithActivity(existingActivity);
             } else {
-                console.log('No hay actividad existente para', processedDate); // Debug log
                 currentActivity = null;
-                // Si no hay actividad, resetear el formulario
                 resetActivityOptions();
                 resetServiceForm();
                 resetAdditionalForms();
@@ -466,8 +439,6 @@ document.addEventListener('DOMContentLoaded', function () {
         clearRejectionMessages();
         currentSelectedDate = null;
         currentActivity = null;
-
-        // Limpiar indicadores de bloqueo
         document.querySelectorAll('.lock-indicator').forEach(el => el.remove());
     }
 
@@ -479,12 +450,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (data.success) {
                 monthlyActivities = {};
-                // Convertir el array de actividades en un objeto indexado por fecha
                 if (data.activities && Array.isArray(data.activities)) {
                     data.activities.forEach(activity => {
                         monthlyActivities[activity.date] = activity;
                     });
-                    console.log('Actividades mensuales cargadas:', monthlyActivities); // Debug log
                 }
                 updateCalendarWithActivities();
             }
@@ -499,13 +468,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const dayNumberEl = cell.querySelector('.day-number');
             if (!dayNumberEl || !dayNumberEl.textContent.trim()) return;
 
-            // Limpiar contenido previo de actividades
             const existingHeaderInfo = cell.querySelector('.day-header-info');
             if (existingHeaderInfo) {
                 existingHeaderInfo.remove();
             }
 
-            // Construir la fecha para esta celda
             const dayNum = dayNumberEl.textContent.trim();
             const monthSpan = document.querySelector('.month-navigation span');
             let month = parseInt(monthSpan.getAttribute('data-month'));
@@ -523,12 +490,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const cellDate = `${year}-${String(month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
 
-            // Verificar si hay actividad para esta fecha
             if (monthlyActivities[cellDate]) {
                 const activity = monthlyActivities[cellDate];
                 const activityHTML = createActivityHTML(activity);
-
-                // Insertar el nuevo HTML justo después del elemento con la clase day-number
                 dayNumberEl.insertAdjacentHTML('afterend', activityHTML);
             }
         });
@@ -553,7 +517,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const commissionedSelect = document.getElementById('commissioned-select');
 
     activityTypeHeader.addEventListener('click', function () {
-        // No permitir abrir si está bloqueado
         if (currentActivity && isFieldLocked(currentActivity, 'activity')) {
             return;
         }
@@ -571,7 +534,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     activityOptions.forEach(option => {
         option.addEventListener('click', function () {
-            // No permitir selección si está bloqueado
             if (currentActivity && isFieldLocked(currentActivity, 'activity')) {
                 return;
             }
@@ -614,7 +576,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     workTypeOptions.forEach(option => {
         option.addEventListener('click', function () {
-            // No permitir selección si está bloqueado
             if (currentActivity && isFieldLocked(currentActivity, 'service')) {
                 return;
             }
@@ -632,24 +593,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function updateServiceTypes(workType) {
-        console.log('Actualizando tipos de servicio para:', workType); // Debug log
-        console.log('Service data disponible:', serviceData); // Debug log
-
         const serviceTypeSelect = document.getElementById('service-type');
         serviceTypeSelect.innerHTML = '<option value="">Seleccionar tipo de servicio...</option>';
 
         if (serviceData[workType] && Array.isArray(serviceData[workType])) {
             const uniqueTypes = [...new Set(serviceData[workType].map(item => item.service_type))];
-            console.log('Tipos únicos encontrados:', uniqueTypes); // Debug log
-
             uniqueTypes.forEach(type => {
                 const option = document.createElement('option');
                 option.value = type.toLowerCase().replace(/\s+/g, '_');
                 option.textContent = type;
                 serviceTypeSelect.appendChild(option);
             });
-        } else {
-            console.error('No se encontraron datos de servicio para el tipo:', workType); // Debug log
         }
 
         document.getElementById('service-performed').disabled = true;
@@ -659,7 +613,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.getElementById('service-type').addEventListener('change', function () {
-        // No continuar si está bloqueado
         if (currentActivity && isFieldLocked(currentActivity, 'service')) {
             return;
         }
@@ -688,7 +641,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('service-performed').addEventListener('change', function () {
-        // No continuar si está bloqueado
         if (currentActivity && isFieldLocked(currentActivity, 'service')) {
             return;
         }
@@ -710,6 +662,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .map(item => ({
                     id: item.identifier,
                     name: item.service_description,
+                    amount: item.amount,
                     performed: item.service_performed
                 }));
 
@@ -717,6 +670,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const option = document.createElement('option');
                 option.value = service.id;
                 option.textContent = service.name;
+                option.setAttribute('data-amount', service.amount);
                 option.setAttribute('data-performed', service.performed);
                 serviceSelect.appendChild(option);
             });
@@ -755,71 +709,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 5. Configuración del botón guardar con validaciones de bloqueo
     saveBtn.addEventListener('click', function () {
-        // Verificar si hay campos bloqueados que impidan guardar
-        if (currentActivity) {
-            const isActivityBlocked = isFieldLocked(currentActivity, 'activity');
-            const isServiceBlocked = isFieldLocked(currentActivity, 'service');
-            const isFoodBonusBlocked = isFieldLocked(currentActivity, 'food_bonus');
-            const isFieldBonusLocked = isFieldLocked(currentActivity, 'field_bonus');
-
-            // Si está completamente aprobado, no permitir cambios
-            if (currentActivity.day_status === 'approved') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Atención',
-                    text: 'No se pueden modificar actividades que ya han sido aprobadas.',
-                    confirmButtonText: 'Entendido'
-                });
-                return;
-            }
-
-            // Verificar si hay intentos de modificar campos aprobados específicos
-            let hasApprovedChanges = false;
-            let approvedFieldsMessage = [];
-
-            if (isActivityBlocked && activityTypeSelect.value !== currentActivity.activity_type) {
-                hasApprovedChanges = true;
-                approvedFieldsMessage.push('Tipo de actividad');
-            }
-
-            if (isServiceBlocked && document.getElementById('service-tab').classList.contains('active')) {
-                const currentServiceId = document.getElementById('service').value;
-                const existingServiceId = currentActivity.services_list?.[0]?.service_identifier;
-                if (currentServiceId !== existingServiceId) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Servicio');
-                }
-            }
-
-            if (isFoodBonusBlocked) {
-                const currentFoodBonus = document.getElementById('food-bonus').value;
-                const existingFoodBonus = currentActivity.food_bonuses?.[0]?.num_daily?.toString();
-                if (currentFoodBonus !== existingFoodBonus) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Bono de comida');
-                }
-            }
-
-            if (isFieldBonusBlocked) {
-                const currentFieldBonus = document.getElementById('field-bonus').value;
-                const existingFieldBonus = currentActivity.field_bonuses?.[0]?.bonus_identifier;
-                if (currentFieldBonus !== existingFieldBonus) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Bono de campo');
-                }
-            }
-
-            if (hasApprovedChanges) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'No se puede guardar',
-                    text: `No se pueden modificar los siguientes campos porque ya están aprobados: ${approvedFieldsMessage.join(', ')}`,
-                    confirmButtonText: 'Entendido'
-                });
-                return;
-            }
-        }
-
         let isValid = true;
         document.querySelectorAll('.error-message').forEach(el => {
             el.style.display = 'none';
@@ -835,36 +724,47 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        if (document.getElementById('activity-tab').classList.contains('active')) {
-            if (!activityTypeSelect.value) {
-                document.getElementById('activity-type-error').style.display = 'block';
-                isValid = false;
-            }
-            if (activityTypeSelect.value === 'C' && !commissionedSelect.value) {
-                document.getElementById('commissioned-error').style.display = 'block';
-                isValid = false;
-            }
-        } else { // Service tab
-            const workTypeSelected = document.querySelector('.work-type-option.selected');
-            const serviceTypeValue = document.getElementById('service-type').value;
-            const servicePerformedValue = document.getElementById('service-performed').value;
-            const serviceValue = document.getElementById('service').value;
+        const isActivityTabActive = document.getElementById('activity-tab').classList.contains('active');
+        const isServiceTabActive = document.getElementById('service-tab').classList.contains('active');
+        const activityType = activityTypeSelect.value;
+        const workTypeSelected = document.querySelector('.work-type-option.selected');
+        const serviceSelect = document.getElementById('service');
+        const serviceValue = serviceSelect.value;
 
-            if (!workTypeSelected) {
-                document.getElementById('work-type-error').style.display = 'block';
-                isValid = false;
+        // Validation logic
+        if (isActivityTabActive) {
+            // No validar si el campo está bloqueado
+            if (!isFieldLocked(currentActivity, 'activity')) {
+                if (!activityType) {
+                    document.getElementById('activity-type-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (activityType === 'C' && !commissionedSelect.value) {
+                    document.getElementById('commissioned-error').style.display = 'block';
+                    isValid = false;
+                }
             }
-            if (!serviceTypeValue) {
-                document.getElementById('service-type-error').style.display = 'block';
-                isValid = false;
-            }
-            if (!servicePerformedValue) {
-                document.getElementById('service-performed-error').style.display = 'block';
-                isValid = false;
-            }
-            if (!serviceValue) {
-                document.getElementById('service-error').style.display = 'block';
-                isValid = false;
+        } else if (isServiceTabActive) {
+            // No validar si el campo está bloqueado
+            if (!isFieldLocked(currentActivity, 'service')) {
+                const serviceTypeValue = document.getElementById('service-type').value;
+                const servicePerformedValue = document.getElementById('service-performed').value;
+                if (!workTypeSelected) {
+                    document.getElementById('work-type-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!serviceTypeValue) {
+                    document.getElementById('service-type-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!servicePerformedValue) {
+                    document.getElementById('service-performed-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!serviceValue) {
+                    document.getElementById('service-error').style.display = 'block';
+                    isValid = false;
+                }
             }
         }
 
@@ -878,29 +778,95 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // PREPARAR DATOS PARA ENVIAR AL SERVIDOR
+        // Check if there are changes to approved/reviewed fields
+        if (currentActivity) {
+            let hasApprovedChanges = false;
+            let approvedFieldsMessage = [];
+
+            // Check day status
+            if (currentActivity.day_status === 'approved') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: 'No se pueden modificar actividades que ya han sido aprobadas.',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
+            // Check activity
+            if (currentActivity.activity_status === 'Approved' || currentActivity.activity_status === 'Reviewed') {
+                if (activityType !== currentActivity.activity_type) {
+                    hasApprovedChanges = true;
+                    approvedFieldsMessage.push('Tipo de actividad');
+                }
+                if (activityType === 'C' && commissionedSelect.value !== currentActivity.commissioned_to) {
+                    hasApprovedChanges = true;
+                    approvedFieldsMessage.push('Área Comisionada');
+                }
+            }
+
+            // Check service
+            const existingService = currentActivity.services_list?.[0];
+            if (existingService && (existingService.status === 'Approved' || existingService.status === 'Reviewed')) {
+                if (serviceValue !== existingService.service_identifier) {
+                    hasApprovedChanges = true;
+                    approvedFieldsMessage.push('Servicio');
+                }
+            }
+
+            // Check food bonus
+            const existingFoodBonus = currentActivity.food_bonuses?.[0];
+            const currentFoodBonus = document.getElementById('food-bonus').value;
+            if (existingFoodBonus && (existingFoodBonus.status === 'Approved' || existingFoodBonus.status === 'Reviewed')) {
+                if (currentFoodBonus !== existingFoodBonus.num_daily?.toString()) {
+                    hasApprovedChanges = true;
+                    approvedFieldsMessage.push('Bono de comida');
+                }
+            }
+
+            // Check field bonus
+            const existingFieldBonus = currentActivity.field_bonuses?.[0];
+            const currentFieldBonus = document.getElementById('field-bonus').value;
+            if (existingFieldBonus && (existingFieldBonus.status === 'Approved' || existingFieldBonus.status === 'Reviewed')) {
+                if (currentFieldBonus !== existingFieldBonus.bonus_identifier) {
+                    hasApprovedChanges = true;
+                    approvedFieldsMessage.push('Bono de campo');
+                }
+            }
+
+            if (hasApprovedChanges) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se puede guardar',
+                    text: `No se pueden modificar los siguientes campos porque ya están aprobados o revisados: ${approvedFieldsMessage.join(', ')}`,
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+        }
+
         const monthSpan = document.querySelector('.month-navigation span');
         const formData = {
             date: currentSelectedDate,
             displayed_month: monthSpan.getAttribute('data-month'),
             displayed_year: monthSpan.getAttribute('data-year'),
-            activity_type: activityTypeSelect.value,
+            activity_type: activityType || null,
             commissioned_to: commissionedSelect.value || null,
             food_bonus_number: document.getElementById('food-bonus').value || null,
             field_bonus_identifier: document.getElementById('field-bonus').value || null
         };
 
-        if (document.getElementById('service-tab').classList.contains('active')) {
-            const serviceSelect = document.getElementById('service');
-            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-            formData.service_identifier = serviceSelect.value;
-            formData.service_performed = selectedOption.getAttribute('data-performed');
-            formData.amount = 25000.00; // Valor por defecto
-            formData.currency = 'MXN';
+        if (isServiceTabActive && serviceValue) {
+            const service = serviceData[workTypeSelected.getAttribute('data-value')]?.find(s => s.identifier === serviceValue);
+            formData.service_identifier = serviceValue;
+            formData.service_performed = service.service_performed;
+            formData.amount = service.amount;
+            formData.currency = service.currency;
         }
 
-        // New check: if both activity and service types are empty, don't save
-        if (!formData.activity_type && !formData.service_identifier) {
+
+        if (!formData.activity_type && !formData.service_identifier && !formData.food_bonus_number && !formData.field_bonus_identifier) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Selección requerida',
@@ -914,24 +880,22 @@ document.addEventListener('DOMContentLoaded', function () {
         loadingSpinner.style.display = 'block';
 
         fetch('/recursoshumanos/loadchart/save-activity', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            },
-            body: JSON.stringify(formData)
-        })
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ?.getAttribute('content') || ''
+                },
+                body: JSON.stringify(formData)
+            })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     Swal.fire({
-                        position: 'top-end',
                         icon: 'success',
                         title: '¡Guardado!',
                         text: 'El registro se ha guardado exitosamente.',
                         showConfirmButton: false,
                         timer: 1500,
-                        toast: true
                     });
                     closeModal();
                     const monthSpan = document.querySelector('.month-navigation span');
@@ -945,9 +909,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         text: data.message || 'Error desconocido. Intente de nuevo más tarde.',
                         confirmButtonText: 'Aceptar'
                     });
-                    if (data.errors) {
-                        console.error('Errores de validación:', data.errors);
-                    }
                 }
             })
             .catch(error => {
@@ -977,7 +938,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     let year = parseInt(monthSpan.getAttribute('data-year'));
                     const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-                    // Adjust month and year for "other-month" cells
                     if (day.classList.contains('other-month')) {
                         if (dayNum > 15) {
                             month = (month === 1) ? 12 : month - 1;
@@ -1026,11 +986,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const currentMonth = parseInt(monthSpan.getAttribute('data-month'));
         const currentYear = parseInt(monthSpan.getAttribute('data-year'));
 
-        // Calcular el mes anterior
         let prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
         let prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-        // Deshabilitar botón anterior si estamos en el límite mínimo
         if (!isDateWithinLimits(prevMonth, prevYear)) {
             prevMonthBtn.disabled = true;
             prevMonthBtn.style.opacity = '0.5';
@@ -1045,7 +1003,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function updateCalendar(month, year) {
-        // Verificar si la fecha solicitada está dentro de los límites
         if (!isDateWithinLimits(month, year)) {
             Swal.fire({
                 icon: 'warning',
@@ -1093,10 +1050,8 @@ document.addEventListener('DOMContentLoaded', function () {
             calendarTableBody.innerHTML = newTableHTML;
             attachDayClickEvents();
 
-            // Actualizar estado de los botones después de cargar el calendario
             updateNavigationButtons();
 
-            // Cargar actividades para el nuevo mes
             await loadMonthlyActivities(month, year);
 
         } catch (error) {
@@ -1111,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     prevMonthBtn.addEventListener('click', function () {
-        if (this.disabled) return; // No hacer nada si el botón está deshabilitado
+        if (this.disabled) return;
 
         let currentMonth = parseInt(monthSpan.getAttribute('data-month'));
         let currentYear = parseInt(monthSpan.getAttribute('data-year'));
@@ -1140,8 +1095,7 @@ document.addEventListener('DOMContentLoaded', function () {
         updateCalendar(currentMonth, currentYear);
     });
 
-    // Inicializar el estado de los botones al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         updateNavigationButtons();
     });
 

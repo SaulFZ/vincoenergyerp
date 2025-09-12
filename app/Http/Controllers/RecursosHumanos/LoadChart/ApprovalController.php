@@ -9,6 +9,8 @@ use App\Models\RecursosHumanos\LoadChart\FortnightlyConfig;
 use App\Models\RecursosHumanos\LoadChart\LoadChartAssignment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ApprovalController extends Controller
 {
@@ -179,6 +181,13 @@ class ApprovalController extends Controller
                     'reviewed_at' => $log->reviewed_at,
                     'approved_at' => $log->approved_at,
                 ];
+            } else {
+                $workLogsData[] = [
+                    'employee_id' => $employee->id,
+                    'daily_activities' => [],
+                    'reviewed_at' => null,
+                    'approved_at' => null,
+                ];
             }
         }
         $canSeeAmounts = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
@@ -272,7 +281,7 @@ class ApprovalController extends Controller
             // Verificar si hay registros modificados después de last_update
             $hasUpdates = EmployeeMonthlyWorkLog::whereIn('employee_id', $assignedEmployeeIds)
                 ->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'))
-                ->where(function($query) use ($lastUpdate) {
+                ->where(function ($query) use ($lastUpdate) {
                     $query->where('updated_at', '>', $lastUpdate)
                         ->orWhere('created_at', '>', $lastUpdate);
                 })
@@ -283,9 +292,8 @@ class ApprovalController extends Controller
                 'has_updates' => $hasUpdates,
                 'message' => $hasUpdates ? 'Hay actualizaciones disponibles' : 'No hay actualizaciones'
             ]);
-
         } catch (\Exception $e) {
-            \Log::error('Error checking updates: ' . $e->getMessage());
+            Log::error('Error checking updates: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Error al verificar actualizaciones',
@@ -367,7 +375,7 @@ class ApprovalController extends Controller
                 'message' => "Datos cargados para {$this->getMonthName($month)} {$year}",
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error loading approval data: ' . $e->getMessage());
+            Log::error('Error loading approval data: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Error al cargar los datos del mes',
@@ -410,7 +418,7 @@ class ApprovalController extends Controller
                 'month' => 'required|integer|min:1|max:12',
                 'year' => 'required|integer|min:2020|max:2030',
                 'status' => 'required|in:reviewed,approved',
-                'fortnight' => 'required|in:quincena1,quincena2',
+                'fortnight' => 'required|in:quincena1,quincena2,full-month',
             ]);
 
             $employeeId = $request->employee_id;
@@ -453,9 +461,21 @@ class ApprovalController extends Controller
                 $fortnightlyConfig = $this->createDefaultFortnightlyConfig($year, $month);
             }
 
-            $startDate = $fortnight === 'quincena1' ? Carbon::parse($fortnightlyConfig->q1_start) : Carbon::parse($fortnightlyConfig->q2_start);
-            $endDate = $fortnight === 'quincena1' ? Carbon::parse($fortnightlyConfig->q1_end) : Carbon::parse($fortnightlyConfig->q2_end);
+            $startDate = null;
+            $endDate = null;
+            if ($fortnight === 'quincena1') {
+                $startDate = Carbon::parse($fortnightlyConfig->q1_start);
+                $endDate = Carbon::parse($fortnightlyConfig->q1_end);
+            } elseif ($fortnight === 'quincena2') {
+                $startDate = Carbon::parse($fortnightlyConfig->q2_start);
+                $endDate = Carbon::parse($fortnightlyConfig->q2_end);
+            } else {
+                // Mes completo
+                $startDate = Carbon::createFromDate($year, $month, 1);
+                $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+            }
 
+            DB::beginTransaction();
             $dailyActivities = collect($workLog->daily_activities);
             $updated = false;
 
@@ -477,7 +497,6 @@ class ApprovalController extends Controller
                         }
                     }
                 }
-                // Recalcular el day_status después de las modificaciones
                 $dailyActivity['day_status'] = $this->calculateDayStatus($dailyActivity);
                 return $dailyActivity;
             })->toArray();
@@ -487,8 +506,8 @@ class ApprovalController extends Controller
                 $workLog->save();
             }
 
-            // Actualizar el estado general del log si todos los ítems están revisados/aprobados
             $this->updateLogStatus($workLog, $newStatus, $userId);
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -500,7 +519,8 @@ class ApprovalController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error updating approval status: ' . $e->getMessage());
+            DB::rollback();
+            Log::error('Error updating approval status: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Error al actualizar el estado de aprobación',
@@ -514,19 +534,31 @@ class ApprovalController extends Controller
      */
     private function updateItemStatus($item, $statusKey, $currentStatus, $newStatus, $isReviewer, $isApprover, &$updated)
     {
-        // Lógica para el revisor
+        // El revisor solo puede cambiar a 'reviewed' si el estado es 'pending'
         if ($isReviewer && $newStatus === 'reviewed' && $currentStatus === 'pending') {
             $item[$statusKey] = 'Reviewed';
             $updated = true;
         }
 
-        // Lógica para el aprobador
-        if ($isApprover && $newStatus === 'approved') {
-            if ($currentStatus === 'pending' || $currentStatus === 'reviewed') {
-                $item[$statusKey] = 'Approved';
-                $updated = true;
-            }
+        // El aprobador solo puede cambiar a 'approved' si el estado es 'pending' o 'reviewed'
+        if ($isApprover && $newStatus === 'approved' && ($currentStatus === 'pending' || $currentStatus === 'reviewed')) {
+            $item[$statusKey] = 'Approved';
+            $updated = true;
         }
+
+        // El aprobador puede cambiar el estado a 'rejected' si no está aprobado
+        if ($isApprover && $newStatus === 'rejected' && $currentStatus !== 'approved') {
+            $item[$statusKey] = 'Rejected';
+            $updated = true;
+        }
+
+        // Un aprobador puede rechazar un ítem que él mismo ya aprobó.
+        if ($isApprover && $newStatus === 'rejected' && $currentStatus === 'approved') {
+            $item[$statusKey] = 'Rejected';
+            $updated = true;
+        }
+
+
         return $item;
     }
 
@@ -535,20 +567,20 @@ class ApprovalController extends Controller
      */
     private function updateLogStatus($workLog, $newStatus, $userId)
     {
-        $all_items_processed = true;
+        $all_items_reviewed = true;
         $all_items_approved = true;
 
         foreach ($workLog->daily_activities as $dailyActivity) {
             $dailyStatus = $this->calculateDayStatus($dailyActivity);
-            if ($dailyStatus === 'pending' || $dailyStatus === 'rejected') {
-                $all_items_processed = false;
+            if ($dailyStatus !== 'reviewed' && $dailyStatus !== 'approved') {
+                $all_items_reviewed = false;
             }
             if ($dailyStatus !== 'approved') {
                 $all_items_approved = false;
             }
         }
 
-        if ($newStatus === 'reviewed' && $all_items_processed) {
+        if ($newStatus === 'reviewed' && $all_items_reviewed) {
             $workLog->reviewed_at = now();
             $workLog->reviewed_by = $userId;
             $workLog->save();
@@ -569,23 +601,21 @@ class ApprovalController extends Controller
     {
         try {
             $request->validate([
-                'employee_id'=> 'required|integer|exists:employees,id',
-                'date' => 'required|date_format:Y-m-d',
-                'item_type'=> 'required|in:activity,food_bonuses,field_bonuses,services_list',
-                'item_index'=> 'nullable|integer',
-                'status'=> 'required|in:reviewed,approved,rejected',
-                'rejection_reason' => 'nullable|string|max:500',
+                'employee_id' => 'required|integer|exists:employees,id',
+                'changes' => 'required|array',
+                'changes.*.date' => 'required|date_format:Y-m-d',
+                'changes.*.item_type' => 'required|string',
+                'changes.*.item_index' => 'nullable|integer',
+                'changes.*.status' => 'required|string|in:reviewed,approved,rejected',
+                'changes.*.rejection_reason' => 'nullable|string|max:500',
             ]);
 
-            $employeeId = $request->employee_id;
-            $date = $request->date;
-            $itemType = $request->item_type;
-            $itemIndex = $request->item_index;
-            $status = $request->status;
-            $reason = $request->rejection_reason;
+            $employeeId = $request->input('employee_id');
+            $changes = $request->input('changes');
+            $month = $request->input('month');
+            $year = $request->input('year');
             $userId = auth()->id();
 
-            // Validar permisos del usuario
             $assignment = LoadChartAssignment::where('employee_id', $employeeId)
                 ->where(function ($query) use ($userId) {
                     $query->where('reviewer_id', $userId)->orWhere('approver_id', $userId);
@@ -593,155 +623,203 @@ class ApprovalController extends Controller
                 ->first();
 
             if (!$assignment) {
-                return response()->json(['success' => false, 'error' => 'Acceso denegado'], 403);
+                return response()->json(['success' => false, 'message' => 'Acceso denegado. No tiene permisos para modificar el estado de este empleado.'], 403);
             }
-
-            $workLog = EmployeeMonthlyWorkLog::where('employee_id', $employeeId)
-                ->where('month_and_year', Carbon::parse($date)->format('Y-m'))
-                ->firstOrFail();
-
-            $dailyActivities = collect($workLog->daily_activities);
-            $activityIndex = $dailyActivities->search(function ($activity) use ($date) {
-                return $activity['date'] === $date;
-            });
-
-            if ($activityIndex === false) {
-                return response()->json(['success' => false, 'error' => 'Registro diario no encontrado.'], 404);
-            }
-
-            $dailyActivity = $dailyActivities[$activityIndex];
 
             $isReviewer = $assignment->reviewer_id === $userId;
             $isApprover = $assignment->approver_id === $userId;
 
-            // Lógica para actualizar el estado del elemento
-            if ($itemType === 'activity') {
-                if (($status === 'reviewed' && !$isReviewer) || ($status === 'approved' && !$isApprover)) {
-                    return response()->json(['success' => false, 'error' => 'Permisos insuficientes.'], 403);
-                }
-                $dailyActivity['activity_status'] = ucfirst($status);
-                $dailyActivity['rejection_reason'] = ($status === 'rejected') ? $reason : null;
-            } else {
-                // Lógica para bonos y servicios
-                if (!isset($dailyActivity[$itemType][$itemIndex])) {
-                    return response()->json(['success' => false, 'error' => 'Elemento no encontrado.'], 404);
-                }
-                if (($status === 'reviewed' && !$isReviewer) || ($status === 'approved' && !$isApprover)) {
-                    return response()->json(['success' => false, 'error' => 'Permisos insuficientes.'], 403);
-                }
-                $dailyActivity[$itemType][$itemIndex]['status'] = ucfirst($status);
-                $dailyActivity[$itemType][$itemIndex]['rejection_reason'] = ($status === 'rejected') ? $reason : null;
+            $monthAndYear = Carbon::createFromDate($year, $month, 1)->format('Y-m');
+            $log = EmployeeMonthlyWorkLog::where('employee_id', $employeeId)
+                ->where('month_and_year', $monthAndYear)
+                ->first();
+
+            if (!$log) {
+                return response()->json(['success' => false, 'message' => 'Work log not found.'], 404);
             }
 
-            // Actualizar day_status después de los cambios
-            $dailyActivity['day_status'] = $this->calculateDayStatus($dailyActivity);
+            DB::beginTransaction();
 
-            // Actualizar la actividad en la colección
-            $dailyActivities[$activityIndex] = $dailyActivity;
+            $dailyActivities = $log->daily_activities;
+            $updated = false;
 
-            $workLog->daily_activities = $dailyActivities->toArray();
-            $workLog->save();
+            foreach ($changes as $change) {
+                $date = $change['date'];
+                $itemType = $change['item_type'];
+                $itemIndex = $change['item_index'];
+                $newStatus = strtolower($change['status']);
+                $rejectionReason = $change['rejection_reason'] ?? null;
 
-            return response()->json(['success' => true, 'message' => 'Estado actualizado correctamente.']);
-        } catch (\Exception $e) {
-            \Log::error('Error updating daily item status: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => 'Error al actualizar: ' . $e->getMessage()], 500);
-        }
-    }
+                $dailyActivityIndex = array_search($date, array_column($dailyActivities, 'date'));
 
-    public function updateMultipleStatuses(Request $request)
-    {
-        // 1. Validate the incoming request data
-        $request->validate([
-            'employee_id' => 'required|exists:employee_monthly_work_logs,employee_id',
-            'changes' => 'required|array',
-            'changes.*.date' => 'required|date_format:Y-m-d',
-            'changes.*.item_type' => 'required|string',
-            'changes.*.item_index' => 'nullable|integer',
-            'changes.*.status' => 'required|string|in:reviewed,approved,rejected',
-            'changes.*.rejection_reason' => 'nullable|string',
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:2020|max:2030',
-        ]);
+                if ($dailyActivityIndex !== false) {
+                    $dailyActivity = &$dailyActivities[$dailyActivityIndex];
 
-        $employeeId = $request->input('employee_id');
-        $changes = $request->input('changes');
-        $month = $request->input('month');
-        $year = $request->input('year');
-        $userId = auth()->id();
+                    $currentItemStatus = null;
+                    if ($itemType === 'activity') {
+                        $currentItemStatus = strtolower($dailyActivity['activity_status'] ?? 'pending');
+                        if (($isReviewer && $newStatus === 'reviewed' && $currentItemStatus === 'pending') ||
+                            ($isApprover && $newStatus === 'approved' && ($currentItemStatus === 'pending' || $currentItemStatus === 'reviewed')) ||
+                            ($isApprover && $newStatus === 'rejected' && $currentItemStatus !== 'approved') ||
+                            ($isApprover && $newStatus === 'rejected' && $currentItemStatus === 'approved')) {
 
-        // 2. Check user permissions
-        $assignment = LoadChartAssignment::where('employee_id', $employeeId)
-            ->where(function ($query) use ($userId) {
-                $query->where('reviewer_id', $userId)->orWhere('approver_id', $userId);
-            })
-            ->first();
-
-        if (!$assignment) {
-            return response()->json(['success' => false, 'message' => 'Acceso denegado. No tiene permisos para modificar el estado de este empleado.'], 403);
-        }
-
-        // 3. Find the work log for the specified employee and month
-        $monthAndYear = Carbon::createFromDate($year, $month, 1)->format('Y-m');
-        $log = EmployeeMonthlyWorkLog::where('employee_id', $employeeId)
-            ->where('month_and_year', $monthAndYear)
-            ->first();
-
-        if (!$log) {
-            return response()->json(['success' => false, 'message' => 'Work log not found.'], 404);
-        }
-
-        // 4. Get the daily activities array
-        $dailyActivities = $log->daily_activities;
-
-        $updated = false;
-
-        // 5. Loop through the changes and apply them
-        foreach ($changes as $change) {
-            $date = $change['date'];
-            $itemType = $change['item_type'];
-            $itemIndex = $change['item_index'];
-            $newStatus = $change['status'];
-            $rejectionReason = $change['rejection_reason'] ?? null;
-
-            // Find the correct daily activity entry by date
-            $dailyActivityIndex = array_search($date, array_column($dailyActivities, 'date'));
-
-            if ($dailyActivityIndex !== false) {
-                // Use a reference to modify the array directly
-                $dailyActivity = &$dailyActivities[$dailyActivityIndex];
-
-                if ($itemType === 'activity') {
-                    if (!isset($dailyActivity['activity_status']) || $dailyActivity['activity_status'] !== ucfirst($newStatus)) {
-                        $dailyActivity['activity_status'] = ucfirst($newStatus);
-                        $dailyActivity['rejection_reason'] = ($newStatus === 'rejected') ? $rejectionReason : null;
-                        $updated = true;
-                    }
-                } else if (isset($dailyActivity[$itemType]) && is_array($dailyActivity[$itemType])) {
-                    if (isset($dailyActivity[$itemType][$itemIndex])) {
+                            $dailyActivity['activity_status'] = ucfirst($newStatus);
+                            $dailyActivity['rejection_reason'] = ($newStatus === 'rejected') ? $rejectionReason : null;
+                            $updated = true;
+                        }
+                    } else if (isset($dailyActivity[$itemType]) && is_array($dailyActivity[$itemType]) && isset($dailyActivity[$itemType][$itemIndex])) {
                         $item = &$dailyActivity[$itemType][$itemIndex];
-                        if ($item['status'] !== ucfirst($newStatus)) {
+                        $currentItemStatus = strtolower($item['status'] ?? 'pending');
+
+                        if (($isReviewer && $newStatus === 'reviewed' && $currentItemStatus === 'pending') ||
+                            ($isApprover && $newStatus === 'approved' && ($currentItemStatus === 'pending' || $currentItemStatus === 'reviewed')) ||
+                            ($isApprover && $newStatus === 'rejected' && $currentItemStatus !== 'approved') ||
+                            ($isApprover && $newStatus === 'rejected' && $currentItemStatus === 'approved')) {
+
                             $item['status'] = ucfirst($newStatus);
                             $item['rejection_reason'] = ($newStatus === 'rejected') ? $rejectionReason : null;
                             $updated = true;
                         }
                     }
+
+                    $dailyActivity['day_status'] = $this->calculateDayStatus($dailyActivity);
+                    unset($dailyActivity);
                 }
-
-                // Actualizar day_status después de cambios
-                $dailyActivity['day_status'] = $this->calculateDayStatus($dailyActivity);
-
-                // Unset the reference to avoid unexpected behavior
-                unset($dailyActivity);
             }
-        }
 
-        // 6. Save the updated JSON back to the database if changes were made
-        if ($updated) {
-            $log->daily_activities = $dailyActivities;
-            $log->save();
-        }
+            if ($updated) {
+                $log->daily_activities = $dailyActivities;
+                $log->save();
+            }
 
-        return response()->json(['success' => true, 'message' => 'Estados actualizados correctamente.', 'updated' => $updated]);
+            $this->updateLogStatus($log, $newStatus, $userId);
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Estados actualizados correctamente.', 'updated' => $updated]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error updating multiple item statuses: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al actualizar: ' . $e->getMessage()], 500);
+        }
     }
+/**
+     * Updates multiple daily work log items (activity, bonuses, services)
+     * based on changes from the approval modal.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateMultipleStatuses(Request $request)
+    {
+        try {
+            // 1. Validate the incoming request data
+            $request->validate([
+                'employee_id' => 'required|exists:employee_monthly_work_logs,employee_id',
+                'changes' => 'required|array',
+                'changes.*.date' => 'required|date_format:Y-m-d',
+                'changes.*.item_type' => 'required|string',
+                'changes.*.item_index' => 'nullable|integer',
+                'changes.*.status' => 'required|string|in:reviewed,approved,rejected',
+                'changes.*.rejection_reason' => 'nullable|string',
+                'month' => 'required|integer|min:1|max:12',
+                'year' => 'required|integer|min:2020|max:2030',
+            ]);
+
+            $employeeId = $request->input('employee_id');
+            $changes = $request->input('changes');
+            $month = $request->input('month');
+            $year = $request->input('year');
+            $userId = auth()->id();
+
+            // 2. Check user permissions
+            $assignment = LoadChartAssignment::where('employee_id', $employeeId)
+                ->where(function ($query) use ($userId) {
+                    $query->where('reviewer_id', $userId)->orWhere('approver_id', $userId);
+                })
+                ->first();
+
+            if (!$assignment) {
+                return response()->json(['success' => false, 'message' => 'Acceso denegado. No tiene permisos para modificar el estado de este empleado.'], 403);
+            }
+
+            $isReviewer = $assignment->reviewer_id === $userId;
+            $isApprover = $assignment->approver_id === $userId;
+
+            // 3. Find the work log for the specified employee and month
+            $monthAndYear = Carbon::createFromDate($year, $month, 1)->format('Y-m');
+            $log = EmployeeMonthlyWorkLog::where('employee_id', $employeeId)
+                ->where('month_and_year', $monthAndYear)
+                ->first();
+
+            if (!$log) {
+                return response()->json(['success' => false, 'message' => 'Work log not found.'], 404);
+            }
+
+            DB::beginTransaction();
+
+            $dailyActivities = $log->daily_activities;
+            $updated = false;
+
+            // 4. Loop through the changes and apply them
+            foreach ($changes as $change) {
+                $date = $change['date'];
+                $itemType = $change['item_type'];
+                $itemIndex = $change['item_index'];
+                $newStatus = strtolower($change['status']);
+                $rejectionReason = $change['rejection_reason'] ?? null;
+
+                $dailyActivityIndex = array_search($date, array_column($dailyActivities, 'date'));
+
+                if ($dailyActivityIndex !== false) {
+                    $dailyActivity = &$dailyActivities[$dailyActivityIndex];
+
+                    $currentItemStatus = null;
+                    if ($itemType === 'activity') {
+                        $currentItemStatus = strtolower($dailyActivity['activity_status'] ?? 'pending');
+                        if (($isReviewer && $newStatus === 'reviewed' && $currentItemStatus === 'pending') ||
+                            ($isApprover && $newStatus === 'approved' && ($currentItemStatus === 'pending' || $currentItemStatus === 'reviewed')) ||
+                            ($isApprover && $newStatus === 'rejected')) {
+
+                            $dailyActivity['activity_status'] = ucfirst($newStatus);
+                            $dailyActivity['rejection_reason'] = ($newStatus === 'rejected') ? $rejectionReason : null;
+                            $updated = true;
+                        }
+                    } else if (isset($dailyActivity[$itemType]) && is_array($dailyActivity[$itemType]) && isset($dailyActivity[$itemType][$itemIndex])) {
+                        $item = &$dailyActivity[$itemType][$itemIndex];
+                        $currentItemStatus = strtolower($item['status'] ?? 'pending');
+
+                        if (($isReviewer && $newStatus === 'reviewed' && $currentItemStatus === 'pending') ||
+                            ($isApprover && $newStatus === 'approved' && ($currentItemStatus === 'pending' || $currentItemStatus === 'reviewed')) ||
+                            ($isApprover && $newStatus === 'rejected')) {
+
+                            $item['status'] = ucfirst($newStatus);
+                            $item['rejection_reason'] = ($newStatus === 'rejected') ? $rejectionReason : null;
+                            $updated = true;
+                        }
+                    }
+
+                    // Update day_status after changes
+                    $dailyActivity['day_status'] = $this->calculateDayStatus($dailyActivity);
+                    unset($dailyActivity);
+                }
+            }
+
+            // 5. Save the updated JSON back to the database if changes were made
+            if ($updated) {
+                $log->daily_activities = $dailyActivities;
+                $log->save();
+            }
+
+            // 6. Update the overall log status
+            $this->updateLogStatus($log, $newStatus, $userId);
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Estados actualizados correctamente.', 'updated' => $updated]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error updating multiple item statuses: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al actualizar: ' . $e->getMessage()], 500);
+        }
+    }
+
 }
