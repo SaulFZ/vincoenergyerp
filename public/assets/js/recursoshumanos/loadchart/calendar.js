@@ -95,59 +95,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-function handleActivityTypeChange(activityType) {
+    function handleActivityTypeChange(activityType) {
         const wellNameField = document.getElementById('well-name-field');
         const wellNameInput = document.getElementById('well-name');
         const commissionedField = document.getElementById('commissioned-field');
         const commissionedSelect = document.getElementById('commissioned-select');
         const vacationError = document.getElementById('vacation-balance-error');
 
-        // NEW: Select all bonus/service related fields that should ONLY appear for 'P'
-        const foodBonusField = document.getElementById('food-bonus').closest('.form-group');
-        const fieldBonusField = document.getElementById('field-bonus').closest('.form-group');
-        const serviceBonusGroup = document.querySelector('.form-group .service-bonus-options').closest('.form-group');
-
-        // Mostrar/Ocultar error de Vacaciones (remains the same)
+        // Mostrar/Ocultar error de Vacaciones
         if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
             vacationError.style.display = 'block';
         } else {
             vacationError.style.display = 'none';
         }
 
-        // Reset visibility for all optional fields
-        wellNameField.style.display = 'none';
-        commissionedField.style.display = 'none';
-        foodBonusField.style.display = 'none';
-        fieldBonusField.style.display = 'none';
-        serviceBonusGroup.style.display = 'none';
-
-        // Reset values for invisible fields to prevent accidental submission
-        wellNameInput.value = '';
-        commissionedSelect.selectedIndex = 0;
-
-        // Logic to show fields based on activityType
-        if (activityType === 'P') { // Trabajo en Pozo
+        if (activityType === 'P') {
             wellNameField.style.display = 'block';
-            foodBonusField.style.display = 'block';
-            fieldBonusField.style.display = 'block';
-            serviceBonusGroup.style.display = 'block';
-
-            // Re-apply service bonus change logic to ensure the tab is correct
-            const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
-            handleServiceBonusChange(hasServiceBonus);
-
-        } else if (activityType === 'C') { // Comisionado
+            commissionedField.style.display = 'none';
+            commissionedSelect.selectedIndex = 0;
+        } else if (activityType === 'C') {
+            wellNameField.style.display = 'none';
+            wellNameInput.value = '';
             commissionedField.style.display = 'block';
-            // Explicitly hide others for 'C'
-            document.getElementById('service-tab-btn').style.display = 'none';
-            document.querySelector('.tab-btn[data-tab="activity"]').click();
-            resetServiceForm();
-
         } else {
-            // Default: Hide all optional fields and reset service tab/form
-            document.getElementById('service-tab-btn').style.display = 'none';
-            document.querySelector('.tab-btn[data-tab="activity"]').click();
-            resetServiceForm();
+            wellNameField.style.display = 'none';
+            wellNameInput.value = '';
+            commissionedField.style.display = 'none';
+            commissionedSelect.selectedIndex = 0;
         }
     }
 
