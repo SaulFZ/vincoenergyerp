@@ -4,12 +4,13 @@ use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
 /* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\CalendarController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\EmployeeVacationBalanceController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\FieldBonusController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
-use App\Http\Controllers\Sistemas\RoleController;
-
 /* CONTROLADORES DE SISTEMAS */
+use App\Http\Controllers\Sistemas\RoleController;
 use Illuminate\Support\Facades\Route;
 
 // ===================================================
@@ -84,17 +85,12 @@ Route::middleware(['web', 'auth'])->group(function () {
                 ->name('qhse.auditorias');
         });
 
-// ===================================================
-// MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
-// ===================================================
+    // ===================================================
+    // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
+    // ===================================================
     Route::prefix('recursoshumanos')
         ->middleware('check.permission:recursoshumanos')
         ->group(function () {
-            // Página principal RRHH
-            Route::get('/', function () {
-                return view('modulos.recursoshumanos.recursoshumanoshome');
-            })->name('modulo.recursoshumanos');
-
             // Subsistemas de RRHH
             Route::get('/altasempleados', function () {
                 return view('modulos.recursoshumanos.sistemas.altasempleados.index');
@@ -121,6 +117,8 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 // NUEVA RUTA: Obtener actividades mensuales
                 Route::get('/monthly-activities', [CalendarController::class, 'getMonthlyActivities'])->name('loadchart.monthly_activities');
+
+                Route::get('balances-data', [CalendarController::class, 'getEmployeeBalancesAjax'])->name('loadchart.balances.data');
 
                 // Las rutas existentes para la configuración quincenal se mantienen.
                 Route::get('/fortnightly-config/{year}/{month}', [CalendarController::class, 'getFortnightlyConfig']);
@@ -175,6 +173,30 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::get('/history', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.history');
                 })->name('loadchart.history');
+
+                Route::get('/field_bonuses', [FieldBonusController::class, 'index'])->name('field_bonuses');
+                Route::get('/field-bonuses-data', [FieldBonusController::class, 'getBonuses']); // New route for AJAX data
+                Route::get('/field-bonuses/{id}/edit', [FieldBonusController::class, 'edit']);
+                Route::post('/field-bonuses', [FieldBonusController::class, 'store']);
+                Route::put('/field-bonuses/{id}', [FieldBonusController::class, 'update']);
+                Route::delete('/field-bonuses/{id}', [FieldBonusController::class, 'destroy']);
+                Route::post('/field-bonuses/{id}/toggle-status', [FieldBonusController::class, 'toggleStatus']);
+
+                // Agrupa TODAS las acciones del recurso 'employee_vacation_balance'
+                Route::prefix('employee_vacation_balance')->group(function () {
+                    // 1. LISTAR (GET /) <-- ESTO AHORA ESTÁ ADENTRO
+                    Route::get('/', [EmployeeVacationBalanceController::class, 'index'])->name('vacation_balance.index');
+
+                    // 2. CREAR (POST /)
+                    Route::post('/', [EmployeeVacationBalanceController::class, 'store']);
+                    // ... y el resto de rutas (edit, update, destroy)
+                    Route::get('/{id}/edit', [EmployeeVacationBalanceController::class, 'edit']);
+                    Route::put('/{id}', [EmployeeVacationBalanceController::class, 'update']);
+                    Route::delete('/{id}', [EmployeeVacationBalanceController::class, 'destroy']);
+                    //ACTULÑIZAMOS AÑOS DE SERVCIOS
+                    Route::post('/force-update-years', [EmployeeVacationBalanceController::class, 'forceUpdateYears']);
+
+                });
 
                 Route::get('/stats', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.stats');

@@ -3,19 +3,21 @@
 namespace App\Http\Controllers\RecursosHumanos\LoadChart;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Employee;
-use App\Models\RecursosHumanos\LoadChart\Services;
+use App\Models\RecursosHumanos\LoadChart\EmployeeMonthlyWorkLog;
+use App\Models\RecursosHumanos\LoadChart\EmployeeVacationBalance;
+use App\Models\RecursosHumanos\LoadChart\FieldBonus;
 use App\Models\RecursosHumanos\LoadChart\FortnightlyConfig;
 use App\Models\RecursosHumanos\LoadChart\Meal;
-use App\Models\RecursosHumanos\LoadChart\FieldBonus;
-use App\Models\RecursosHumanos\LoadChart\EmployeeMonthlyWorkLog;
-use Illuminate\Http\Request;
+use App\Models\RecursosHumanos\LoadChart\Services;
+use App\Models\Employee;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Http;
+use Yasumi\Yasumi;
 
 class CalendarController extends Controller
 {
@@ -26,20 +28,33 @@ class CalendarController extends Controller
     {
         $user = Auth::user();
         $employee = Employee::with('user')->find($user->employee_id);
-        $hire_date = $employee
-            ? $this->formatDate($employee->hire_date)
-            : 'N/A';
-        $photo = $employee && $employee->photo ? asset($employee->photo) : asset('assets/img/perfil.png');
 
-        // Obtener servicios de manera simple y plana para pasar a la vista
+        if (!$employee) {
+            return redirect('/dashboard')->with('error', 'Datos de empleado no encontrados.');
+        }
+
+        // --- INICIO: OBTENER SALDOS DE VACACIONES Y DESCANSOS ---
+        $vacationBalance = EmployeeVacationBalance::firstOrNew(['employee_id' => $employee->id]);
+
+        // Si es un registro nuevo, calcular los días iniciales
+        if (!$vacationBalance->exists) {
+            $calculatedData = $this->calculateInitialVacationData($employee);
+            $vacationBalance->fill($calculatedData);
+            $vacationBalance->save();
+            $vacationBalance->refresh();
+        }
+
+        $vacationDays = $vacationBalance->vacation_days_available;
+        $restDays = $vacationBalance->rest_days_available;
+        // --- FIN: OBTENER SALDOS DE VACACIONES Y DESCANSOS ---
+
+        $hire_date = $this->formatDate($employee->hire_date);
+        $photo = $employee->photo ? asset($employee->photo) : asset('assets/img/perfil.png');
+
+        // Obtener datos de Servicios
         $services = Services::select(
-            'operation_type',
-            'service_type',
-            'service_performed',
-            'identifier',
-            'service_description',
-            'amount', // Incluir el campo 'amount'
-            'currency' // Incluir el campo 'currency'
+            'operation_type', 'service_type', 'service_performed', 'identifier',
+            'service_description', 'amount', 'currency'
         )
             ->orderBy('operation_type')
             ->orderBy('identifier')
@@ -47,7 +62,47 @@ class CalendarController extends Controller
             ->groupBy('operation_type');
 
         $foodOptions = Meal::orderBy('meal_number')->get();
-        $fieldBonuses = FieldBonus::orderBy('bonus_identifier')->get();
+
+        // Lógica de mapeo de Bonos de Campo
+        $jobTitle = $employee->job_title;
+        $bonusMappings = [
+            'Ingeniero de Campo' => 'Ingeniero de Campo',
+            'Ingeniero de Campo 1' => 'Ingeniero de Campo',
+            'Ingeniero de Campo 2' => 'Ingeniero de Campo',
+            'Ingeniero de Campo 5' => 'Ingeniero de Campo',
+            'Ingeniero de Campo Trainee' => 'Ingeniero de Campo',
+            'Ingeniero Especializado de Campo' => 'Ingeniero de Campo',
+            'Ingeniera Geocientista Senior' => 'Ingeniero Geocientista Senior',
+            'Ingeniera Geocientista' => 'Ingeniero Geocientista',
+            'Ingeniero Geocientista General' => 'Ingeniero Geocientista General',
+            'Ingeniero Geocientista' => 'Ingeniero Geocientista',
+            'Ingeniero Geocientista Junior' => 'Ingeniero Geocientista Junior',
+            'Ingeniero Electronico' => 'Ingeniero Electronico',
+            'Ingeniero Electromecanico' => 'Ingeniero Electromecanico',
+            'Ingeniero de Explosivos' => 'Ingeniero de Explosivos',
+            'Ingeniero de Logistica' => 'Ingeniero de Logistica',
+            'Ingeniero en Mantenimiento Electrónico' => 'Ingeniero Electronico',
+            'ingeniero Especialista en Disparos de Producción' => 'Ingeniero de Campo',
+            'Ingeniero Especialista en Disparos TCP' => 'Ingeniero de Campo',
+            'Ingeniero de Calidad de Servicios' => 'Ingeniero de Campo',
+            'Operador de Campo 1' => 'Operador de Campo 1',
+            'Operador de Campo 2' => 'Operador de Campo 2',
+            'Operador de Campo 3' => 'Operador de Campo 3',
+            'Operador de Campo 4' => 'Operador de Campo 4',
+            'Operador de Campo 5' => 'Operador de Campo 5',
+            'Operador de Campo 6' => 'Operador de Campo 6',
+            'Tecnico en Suministros' => 'Tecnico en Suministros',
+            'Administrador de Explosivos' => 'Administrador de Explosivos',
+            'Auxiliar de Explosivos' => 'Auxiliar de Explosivos',
+            'Coordinador de Suministros' => 'Coordinador de Suministros',
+            'Supervisor de Operaciones' => 'Supervisor de Operaciones',
+        ];
+        $employeeBonusCategory = $bonusMappings[$jobTitle] ?? $jobTitle;
+
+        $fieldBonuses = FieldBonus::where('employee_category', $employeeBonusCategory)
+            ->orderBy('bonus_identifier')
+            ->get();
+        // Fin de lógica de Bonos de Campo
 
         $currentMonth = $request->input('month', date('n'));
         $currentYear = $request->input('year', date('Y'));
@@ -88,24 +143,63 @@ class CalendarController extends Controller
             $calendarDays[] = ['day' => '', 'current_month' => false, 'date' => null];
         }
 
+        // Días del mes anterior
+        $mandatoryHolidays = $this->getMandatoryHolidays($prevYear);
         for ($i = 0; $i < $requiredPrevDays; $i++) {
             $day = $firstDayOnCalendar + $i;
             $date = date('Y-m-d', mktime(0, 0, 0, $prevMonth, $day, $prevYear));
-            $calendarDays[] = ['day' => $day, 'current_month' => false, 'date' => $date];
+            $isHoliday = isset($mandatoryHolidays[$date]);
+            $holidayName = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
+
+            $calendarDays[] = [
+                'day' => $day,
+                'current_month' => false,
+                'date' => $date,
+                'is_holiday' => $isHoliday,
+                'holiday_name' => $holidayName,
+                'holiday_icon_type' => $holidayIconType,
+            ];
         }
 
+        // Días del mes actual
+        $mandatoryHolidays = $this->getMandatoryHolidays($currentYear);
         for ($i = 1; $i <= $daysInMonth; $i++) {
             $date = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
-            $calendarDays[] = ['day' => $i, 'current_month' => true, 'date' => $date];
+            $isHoliday = isset($mandatoryHolidays[$date]);
+            $holidayName = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
+
+            $calendarDays[] = [
+                'day' => $i,
+                'current_month' => true,
+                'date' => $date,
+                'is_holiday' => $isHoliday,
+                'holiday_name' => $holidayName,
+                'holiday_icon_type' => $holidayIconType,
+            ];
         }
 
+        // Días del siguiente mes
         $nextMonth = $currentMonth == 12 ? 1 : $currentMonth + 1;
         $nextYear = $currentMonth == 12 ? $currentYear + 1 : $currentYear;
         $dayCounter = 1;
 
+        $mandatoryHolidaysNext = $this->getMandatoryHolidays($nextYear);
         while (count($calendarDays) % 7 !== 0) {
             $date = date('Y-m-d', mktime(0, 0, 0, $nextMonth, $dayCounter, $nextYear));
-            $calendarDays[] = ['day' => $dayCounter++, 'current_month' => false, 'date' => $date];
+            $isHoliday = isset($mandatoryHolidaysNext[$date]);
+            $holidayName = $isHoliday ? $mandatoryHolidaysNext[$date]['name'] : null;
+            $holidayIconType = $isHoliday ? $mandatoryHolidaysNext[$date]['icon_type'] : null;
+
+            $calendarDays[] = [
+                'day' => $dayCounter++,
+                'current_month' => false,
+                'date' => $date,
+                'is_holiday' => $isHoliday,
+                'holiday_name' => $holidayName,
+                'holiday_icon_type' => $holidayIconType,
+            ];
         }
 
         return view('modulos.recursoshumanos.sistemas.loadchart.calendar', [
@@ -120,7 +214,51 @@ class CalendarController extends Controller
             'payrollDates' => $payrollDates,
             'foodOptions' => $foodOptions,
             'fieldBonuses' => $fieldBonuses,
+            'vacationDays' => $vacationDays,
+            'restDays' => $restDays,
         ]);
+    }
+
+    /**
+     * Devuelve los datos de balance para ser usados en AJAX
+     */
+    public function getEmployeeBalancesAjax(Request $request)
+    {
+        $user = Auth::user();
+        $employee = Employee::find($user->employee_id);
+
+        if (!$employee) {
+            return response()->json(['success' => false, 'message' => 'Empleado no encontrado'], 404);
+        }
+
+        $vacationBalance = EmployeeVacationBalance::where('employee_id', $employee->id)->first();
+
+        return response()->json([
+            'success' => true,
+            'vacationDays' => $vacationBalance->vacation_days_available ?? 0,
+            'restDays' => $vacationBalance->rest_days_available ?? 0,
+        ]);
+    }
+
+    /**
+     * Función auxiliar para calcular datos iniciales de balance (para el primer index)
+     */
+    private function calculateInitialVacationData(Employee $employee): array
+    {
+        $hireDate = Carbon::parse($employee->hire_date);
+        $today = Carbon::now();
+
+        $yearsOfService = $hireDate->diffInYears($today);
+        $mandatoryVacationDays = EmployeeVacationBalance::calculateMandatoryVacationDays($yearsOfService);
+
+        return [
+            'years_of_service' => $yearsOfService,
+            'vacation_days_available' => $mandatoryVacationDays,
+            'rest_days_available' => 6,
+            'rest_mode' => '5x2',
+            'work_rest_cycle_counter' => 0,
+            'last_activity_date' => null,
+        ];
     }
 
     /**
@@ -146,29 +284,84 @@ class CalendarController extends Controller
             $calendarDays[] = ['day' => '', 'current_month' => false, 'date' => null];
         }
 
+        // Días del mes anterior
+        $mandatoryHolidaysPrev = $this->getMandatoryHolidays($prevYear);
         for ($i = 0; $i < $requiredPrevDays; $i++) {
             $day = $firstDayOnCalendar + $i;
             $date = date('Y-m-d', mktime(0, 0, 0, $prevMonth, $day, $prevYear));
-            $calendarDays[] = ['day' => $day, 'current_month' => false, 'date' => $date];
+            $isHoliday = isset($mandatoryHolidaysPrev[$date]);
+            $holidayName = $isHoliday ? $mandatoryHolidaysPrev[$date]['name'] : null;
+            $holidayIconType = $isHoliday ? $mandatoryHolidaysPrev[$date]['icon_type'] : null;
+
+            $calendarDays[] = [
+                'day' => $day,
+                'current_month' => false,
+                'date' => $date,
+                'is_holiday' => $isHoliday,
+                'holiday_name' => $holidayName,
+                'holiday_icon_type' => $holidayIconType,
+            ];
         }
 
+        // Días del mes actual
+        $mandatoryHolidays = $this->getMandatoryHolidays($currentYear);
         for ($i = 1; $i <= $daysInMonth; $i++) {
             $date = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
-            $calendarDays[] = ['day' => $i, 'current_month' => true, 'date' => $date];
+            $isHoliday = isset($mandatoryHolidays[$date]);
+            $holidayName = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
+
+            $calendarDays[] = [
+                'day' => $i,
+                'current_month' => true,
+                'date' => $date,
+                'is_holiday' => $isHoliday,
+                'holiday_name' => $holidayName,
+                'holiday_icon_type' => $holidayIconType,
+            ];
         }
 
+        // Días del siguiente mes
         $nextMonth = $currentMonth == 12 ? 1 : $currentMonth + 1;
         $nextYear = $currentMonth == 12 ? $currentYear + 1 : $currentYear;
         $dayCounter = 1;
 
+        $mandatoryHolidaysNext = $this->getMandatoryHolidays($nextYear);
         while (count($calendarDays) % 7 !== 0) {
             $date = date('Y-m-d', mktime(0, 0, 0, $nextMonth, $dayCounter, $nextYear));
-            $calendarDays[] = ['day' => $dayCounter++, 'current_month' => false, 'date' => $date];
+            $isHoliday = isset($mandatoryHolidaysNext[$date]);
+            $holidayName = $isHoliday ? $mandatoryHolidaysNext[$date]['name'] : null;
+            $holidayIconType = $isHoliday ? $mandatoryHolidaysNext[$date]['icon_type'] : null;
+
+            $calendarDays[] = [
+                'day' => $dayCounter++,
+                'current_month' => false,
+                'date' => $date,
+                'is_holiday' => $isHoliday,
+                'holiday_name' => $holidayName,
+                'holiday_icon_type' => $holidayIconType,
+            ];
         }
 
         $fortnightlyConfig = FortnightlyConfig::where('year', $currentYear)
             ->where('month', $currentMonth)
             ->first();
+
+        $payrollDates = [
+            'q1_start' => null,
+            'q1_end' => null,
+            'q2_start' => null,
+            'q2_end' => null,
+        ];
+
+        if ($fortnightlyConfig) {
+            $payrollDates = [
+                'q1_start' => $fortnightlyConfig->q1_start->format('Y-m-d'),
+                'q1_end' => $fortnightlyConfig->q1_end->format('Y-m-d'),
+                'q2_start' => $fortnightlyConfig->q2_start->format('Y-m-d'),
+                'q2_end' => $fortnightlyConfig->q2_end->format('Y-m-d'),
+            ];
+        }
 
         $processedDays = [];
         foreach ($calendarDays as $day) {
@@ -192,11 +385,12 @@ class CalendarController extends Controller
             'monthName' => $monthName,
             'currentYear' => $currentYear,
             'currentMonth' => $currentMonth,
+            'payrollDates' => $payrollDates,
         ]);
     }
 
     /**
-     * Guarda una actividad diaria.
+     * Guarda una actividad diaria con los nuevos campos.
      */
     public function saveActivity(Request $request)
     {
@@ -205,12 +399,15 @@ class CalendarController extends Controller
                 'date' => 'required|date_format:Y-m-d',
                 'displayed_month' => 'required|integer',
                 'displayed_year' => 'required|integer',
-                'activity_type' => 'required_without:service_identifier|string|max:10',
+                'activity_type' => 'nullable|string|max:10',
                 'commissioned_to' => 'nullable|string|max:255',
-                'service_identifier' => 'nullable|required_without:activity_type|string|max:50',
+                'well_name' => 'nullable|string|max:255',
+                'has_service_bonus' => 'required|string|in:si,no',
+                'service_identifier' => 'nullable|string|max:50',
                 'service_performed' => 'nullable|string|max:255',
                 'amount' => 'nullable|numeric|min:0',
                 'currency' => 'nullable|string|max:3',
+                'payroll_period_override' => 'nullable|string|max:50',
                 'food_bonus_number' => 'nullable|integer|min:1',
                 'field_bonus_identifier' => 'nullable|string|max:50',
             ]);
@@ -220,80 +417,70 @@ class CalendarController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Datos inválidos',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
             $user = Auth::user();
             $employee = Employee::find($user->employee_id);
-
             if (!$employee) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Empleado no encontrado'
-                ], 404);
+                return response()->json(['success' => false, 'message' => 'Empleado no encontrado'], 404);
             }
 
             DB::beginTransaction();
 
-            $activityDate = Carbon::parse($request->date);
             $displayedMonth = $request->input('displayed_month');
             $displayedYear = $request->input('displayed_year');
             $monthYear = Carbon::create($displayedYear, $displayedMonth, 1)->format('Y-m');
 
             $monthlyLog = EmployeeMonthlyWorkLog::firstOrCreate(
-                [
-                    'employee_id' => $employee->id,
-                    'user_id' => $user->id,
-                    'month_and_year' => $monthYear
-                ],
-                [
-                    'daily_activities' => []
-                ]
+                ['employee_id' => $employee->id, 'user_id' => $user->id, 'month_and_year' => $monthYear],
+                ['daily_activities' => []]
             );
 
             $existingActivity = $monthlyLog->getDailyActivity($request->date);
-            if ($existingActivity && $existingActivity['day_status'] === 'approved') {
+            if ($existingActivity && ($existingActivity['day_status'] ?? 'under_review') === 'approved') {
                 DB::rollback();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se pueden modificar actividades aprobadas.'
-                ], 403);
+                return response()->json(['success' => false, 'message' => 'No se pueden modificar actividades aprobadas.'], 403);
             }
 
             $payrollPeriodMarker = $this->determinePayrollPeriodMarker($request->date, $displayedMonth, $displayedYear);
-
             $activityData = [
                 'date' => $request->date,
-                'day_status' => 'pending',
-                'activity_status' => 'Pending',
+                'day_status' => 'under_review',
+                'activity_status' => 'under_review',
                 'payroll_period_marker' => $payrollPeriodMarker,
                 'is_locked' => false,
                 'activity_type' => $request->activity_type,
                 'activity_description' => $this->getActivityDescription($request->activity_type),
                 'commissioned_to' => $request->commissioned_to,
+                'well_name' => $request->well_name,
+                'has_service_bonus' => $request->has_service_bonus,
                 'services_list' => [],
                 'field_bonuses' => [],
                 'food_bonuses' => [],
-                'rejection_reason' => null
+                'rejection_reason' => null,
             ];
 
-            // Comparar con la actividad existente y aplicar lógica de estado
+            // --- Lógica para mantener el estado de Aprobación/Revisión si NO hay cambios ---
             if ($existingActivity) {
-                $isActivityChanged = ($existingActivity['activity_type'] !== $activityData['activity_type'] || $existingActivity['commissioned_to'] !== $activityData['commissioned_to']);
+                $oldActivityStatus = $existingActivity['activity_status'];
+                $activityFieldsChanged = (
+                    $existingActivity['activity_type'] !== $activityData['activity_type'] ||
+                    ($existingActivity['commissioned_to'] ?? null) !== ($activityData['commissioned_to'] ?? null) ||
+                    ($existingActivity['well_name'] ?? null) !== ($activityData['well_name'] ?? null) ||
+                    ($existingActivity['has_service_bonus'] ?? 'no') !== $activityData['has_service_bonus']
+                );
 
-                if ($isActivityChanged) {
-                    $activityData['activity_status'] = 'Pending';
-                    $activityData['rejection_reason'] = null;
-                } else {
-                    $activityData['activity_status'] = $existingActivity['activity_status'];
+                if (!$activityFieldsChanged && $oldActivityStatus !== 'Rejected') {
+                    $activityData['activity_status'] = $oldActivityStatus;
                     $activityData['rejection_reason'] = $existingActivity['rejection_reason'] ?? null;
                 }
             }
+            // Lógica para Servicios, Bonos de campo, Comida (mantiene status si no hay cambios y no estaba rejected)
 
-            // Lógica para el servicio
-            $currentService = null;
-            if ($request->filled('service_identifier')) {
+            // Servicio
+            if ($request->has_service_bonus === 'si' && $request->filled('service_identifier')) {
                 $service = Services::where('identifier', $request->service_identifier)->first();
                 if (!$service) {
                     throw new \Exception("Service with identifier {$request->service_identifier} not found.");
@@ -305,44 +492,38 @@ class CalendarController extends Controller
                     'service_name' => $service->service_description,
                     'amount' => (float) $service->amount,
                     'currency' => $service->currency,
-                    'status' => 'Pending',
-                    'rejection_reason' => null
+                    'payroll_period_override' => $request->payroll_period_override,
+                    'status' => 'under_review',
+                    'rejection_reason' => null,
                 ];
-
                 if ($existingActivity && isset($existingActivity['services_list'][0])) {
                     $oldService = $existingActivity['services_list'][0];
-                    $isServiceChanged = ($oldService['service_identifier'] !== $currentService['service_identifier']);
-
-                    if ($isServiceChanged) {
-                        $currentService['status'] = 'Pending';
-                        $currentService['rejection_reason'] = null;
-                    } else {
-                        $currentService['status'] = $oldService['status'];
+                    $isServiceChanged = ($oldService['service_identifier'] !== $currentService['service_identifier'] || ($oldService['payroll_period_override'] ?? null) !== $currentService['payroll_period_override']);
+                    $oldServiceStatus = $oldService['status'];
+                    if (!$isServiceChanged && $oldServiceStatus !== 'Rejected') {
+                        $currentService['status'] = $oldServiceStatus;
                         $currentService['rejection_reason'] = $oldService['rejection_reason'];
                     }
                 }
                 $activityData['services_list'][] = $currentService;
             }
 
-            // Lógica para el bono de campo
-            $currentFieldBonus = null;
+            // Bono de Campo
             if ($request->filled('field_bonus_identifier')) {
                 $fieldBonus = FieldBonus::where('bonus_identifier', $request->field_bonus_identifier)->first();
                 if ($fieldBonus) {
                     $daily_amount_mxn = null;
                     $usd_to_mxn_rate = null;
                     $daily_currency_mxn = null;
-
                     if (strtoupper($fieldBonus->currency) === 'USD') {
                         $usd_to_mxn_rate = $this->getUsdToMxnExchangeRate();
                         if ($usd_to_mxn_rate) {
                             $daily_amount_mxn = (float) $fieldBonus->amount * $usd_to_mxn_rate;
                             $daily_currency_mxn = 'MXN';
                         } else {
-                            Log::warning('No se pudo obtener el tipo de cambio USD a MXN. No se realizará la conversión.');
+                            Log::warning('No se pudo obtener el tipo de cambio USD a MXN.');
                         }
                     }
-
                     $currentFieldBonus = [
                         'bonus_identifier' => $fieldBonus->bonus_identifier,
                         'bonus_type' => $fieldBonus->bonus_type,
@@ -352,19 +533,15 @@ class CalendarController extends Controller
                         'daily_currency_mxn' => $daily_currency_mxn,
                         'usd_to_mxn_rate' => $usd_to_mxn_rate,
                         'days' => 1,
-                        'status' => 'Pending',
-                        'rejection_reason' => null
+                        'status' => 'under_review',
+                        'rejection_reason' => null,
                     ];
-
                     if ($existingActivity && isset($existingActivity['field_bonuses'][0])) {
                         $oldBonus = $existingActivity['field_bonuses'][0];
                         $isFieldBonusChanged = ($oldBonus['bonus_identifier'] !== $currentFieldBonus['bonus_identifier']);
-
-                        if ($isFieldBonusChanged) {
-                            $currentFieldBonus['status'] = 'Pending';
-                            $currentFieldBonus['rejection_reason'] = null;
-                        } else {
-                            $currentFieldBonus['status'] = $oldBonus['status'];
+                        $oldBonusStatus = $oldBonus['status'];
+                        if (!$isFieldBonusChanged && $oldBonusStatus !== 'Rejected') {
+                            $currentFieldBonus['status'] = $oldBonusStatus;
                             $currentFieldBonus['rejection_reason'] = $oldBonus['rejection_reason'];
                         }
                     }
@@ -372,8 +549,7 @@ class CalendarController extends Controller
                 }
             }
 
-            // Lógica para el bono de comida
-            $currentFoodBonus = null;
+            // Bono de Comida
             if ($request->filled('food_bonus_number')) {
                 $meal = Meal::where('meal_number', $request->food_bonus_number)->first();
                 if ($meal) {
@@ -382,19 +558,15 @@ class CalendarController extends Controller
                         'num_daily' => (int) $request->food_bonus_number,
                         'daily_amount' => (float) $meal->amount,
                         'currency' => 'MXN',
-                        'status' => 'Pending',
-                        'rejection_reason' => null
+                        'status' => 'under_review',
+                        'rejection_reason' => null,
                     ];
-
                     if ($existingActivity && isset($existingActivity['food_bonuses'][0])) {
                         $oldBonus = $existingActivity['food_bonuses'][0];
                         $isFoodBonusChanged = ($oldBonus['num_daily'] !== (int) $currentFoodBonus['num_daily']);
-
-                        if ($isFoodBonusChanged) {
-                            $currentFoodBonus['status'] = 'Pending';
-                            $currentFoodBonus['rejection_reason'] = null;
-                        } else {
-                            $currentFoodBonus['status'] = $oldBonus['status'];
+                        $oldBonusStatus = $oldBonus['status'];
+                        if (!$isFoodBonusChanged && $oldBonusStatus !== 'Rejected') {
+                            $currentFoodBonus['status'] = $oldBonusStatus;
                             $currentFoodBonus['rejection_reason'] = $oldBonus['rejection_reason'];
                         }
                     }
@@ -402,31 +574,8 @@ class CalendarController extends Controller
                 }
             }
 
-            // Eliminar bonos y servicios que se hayan deseleccionado
-            $activityData['services_list'] = $currentService ? [$currentService] : [];
-            $activityData['field_bonuses'] = $currentFieldBonus ? [$currentFieldBonus] : [];
-            $activityData['food_bonuses'] = $currentFoodBonus ? [$currentFoodBonus] : [];
-
-
-            // Actualizar el estado general del día
-            $dailyActivityStatus = 'pending';
-            if ($activityData['activity_status'] === 'Approved' &&
-                (empty($activityData['services_list']) || $activityData['services_list'][0]['status'] === 'Approved') &&
-                (empty($activityData['field_bonuses']) || $activityData['field_bonuses'][0]['status'] === 'Approved') &&
-                (empty($activityData['food_bonuses']) || $activityData['food_bonuses'][0]['status'] === 'Approved')) {
-                $dailyActivityStatus = 'approved';
-            } else if ($activityData['activity_status'] === 'Rejected' ||
-                (!empty($activityData['services_list']) && $activityData['services_list'][0]['status'] === 'Rejected') ||
-                (!empty($activityData['field_bonuses']) && $activityData['field_bonuses'][0]['status'] === 'Rejected') ||
-                (!empty($activityData['food_bonuses']) && $activityData['food_bonuses'][0]['status'] === 'Rejected')) {
-                $dailyActivityStatus = 'rejected';
-            } else if ($activityData['activity_status'] === 'Reviewed' ||
-                (!empty($activityData['services_list']) && $activityData['services_list'][0]['status'] === 'Reviewed') ||
-                (!empty($activityData['field_bonuses']) && $activityData['field_bonuses'][0]['status'] === 'Reviewed') ||
-                (!empty($activityData['food_bonuses']) && $activityData['food_bonuses'][0]['status'] === 'Reviewed')) {
-                $dailyActivityStatus = 'reviewed';
-            }
-
+            // 4. Recalcular el estado general del día (day_status)
+            $dailyActivityStatus = $this->recalculateDayStatus($activityData);
             $activityData['day_status'] = $dailyActivityStatus;
 
             $monthlyLog->addDailyActivity($request->date, $activityData);
@@ -436,18 +585,18 @@ class CalendarController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Actividad guardada exitosamente',
-                'data' => $activityData
+                'data' => $activityData,
             ]);
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Error al guardar actividad: ' . $e->getMessage(), [
                 'user_id' => Auth::id(),
                 'request_data' => $request->all(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error interno del servidor'
+                'message' => 'Error interno del servidor: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -493,8 +642,11 @@ class CalendarController extends Controller
             'D' => 'Descanso',
             'VAC' => 'Vacaciones',
             'E' => 'Entrenamiento',
-            'M' => 'Médico'
+            'M' => 'Médico',
+            'A' => 'Ausencia',
+            'PE' => 'Permiso',
         ];
+
         return $descriptions[$activityType] ?? 'Actividad desconocida';
     }
 
@@ -510,10 +662,7 @@ class CalendarController extends Controller
         $monthYear = sprintf('%04d-%02d', $year, $month);
 
         if (!$employee) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Empleado no encontrado'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Empleado no encontrado'], 404);
         }
 
         $monthlyLog = EmployeeMonthlyWorkLog::where('employee_id', $employee->id)
@@ -522,15 +671,28 @@ class CalendarController extends Controller
 
         return response()->json([
             'success' => true,
-            'activities' => $monthlyLog ? $monthlyLog->daily_activities : []
+            'activities' => $monthlyLog ? $monthlyLog->daily_activities : [],
         ]);
     }
 
     private function formatDate($date)
     {
-        if (!$date) return 'N/A';
+        if (!$date) {
+            return 'N/A';
+        }
         $months = [
-            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
         ];
         $day = date('j', strtotime($date));
         $month = $months[date('n', strtotime($date))];
@@ -541,15 +703,22 @@ class CalendarController extends Controller
     private function getMonthName($monthNumber)
     {
         $months = [
-            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
         ];
         return $months[$monthNumber];
     }
 
-    /**
-     * Obtiene el tipo de cambio actual de USD a MXN desde la API de Banxico.
-     * @return float|null
-     */
     private function getUsdToMxnExchangeRate()
     {
         $token = '9aa4c5d4ea07cf4a3bd54f4f38908c77ad74092d0be9d915f8fb7b7eadc6a1a3';
@@ -557,13 +726,11 @@ class CalendarController extends Controller
 
         try {
             $response = Http::get($url);
-
             if ($response->successful()) {
                 $data = $response->json();
                 $exchangeRate = $data['bmx']['series'][0]['datos'][0]['dato'];
                 return (float) $exchangeRate;
             }
-
             Log::error('Banxico API Error: ' . $response->status());
             return null;
         } catch (\Exception $e) {
@@ -571,4 +738,123 @@ class CalendarController extends Controller
             return null;
         }
     }
+
+    private function getMandatoryHolidays(int $year): array
+    {
+        try {
+            $holidays = Yasumi::create('Mexico', $year);
+            $mandatoryHolidays = [];
+            foreach ($holidays->getHolidays() as $holiday) {
+                $translatedName = null;
+                $iconType = 'default';
+                switch ($holiday->shortName) {
+                    case 'newYearsDay':
+                        $translatedName = 'Año Nuevo';
+                        break;
+                    case 'constitutionDay':
+                        $translatedName = 'Día de la Constitución Mexicana';
+                        break;
+                    case 'benitoJuarezBirthday':
+                        $translatedName = 'Natalicio de Benito Juárez';
+                        break;
+                    case 'labourDay':
+                        $translatedName = 'Día del Trabajo';
+                        break;
+                    case 'independenceDay':
+                        $translatedName = 'Día de la Independencia de México';
+                        break;
+                    case 'revolutionDay':
+                        $translatedName = 'Día de la Revolución Mexicana';
+                        break;
+                    case 'christmasDay':
+                        $translatedName = 'Navidad';
+                        $iconType = 'christmas_tree';
+                        break;
+                    case 'presidentialInaugurationDay':
+                        $translatedName = 'Transmisión del Poder Ejecutivo Federal';
+                        break;
+                    case 'electionDay':
+                        $translatedName = 'Jornada Electoral';
+                        break;
+                }
+                if ($translatedName) {
+                    $mandatoryHolidays[$holiday->format('Y-m-d')] = [
+                        'name' => $translatedName,
+                        'icon_type' => $iconType,
+                        'date' => $holiday->format('Y-m-d'),
+                    ];
+                }
+            }
+            return $mandatoryHolidays;
+        } catch (\Exception $e) {
+            Log::error('Error al obtener días festivos con Yasumi: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function recalculateDayStatus($dailyActivity)
+    {
+        $hasRejected = false;
+        $hasUnderReview = false;
+        $hasReviewed = false;
+        $totalItems = 0;
+        $approvedItems = 0;
+        $reviewedItems = 0;
+
+        if (isset($dailyActivity['activity_type']) && !empty($dailyActivity['activity_type']) && $dailyActivity['activity_type'] !== 'N') {
+            $totalItems++;
+            $activityStatus = strtolower($dailyActivity['activity_status'] ?? 'under_review');
+            if ($activityStatus == 'rejected')
+                $hasRejected = true;
+            if ($activityStatus == 'under_review')
+                $hasUnderReview = true;
+            if ($activityStatus == 'reviewed') {
+                $hasReviewed = true;
+                $reviewedItems++;
+            }
+            if ($activityStatus == 'approved') {
+                $approvedItems++;
+            }
+        }
+        $itemTypes = ['food_bonuses', 'field_bonuses', 'services_list'];
+        foreach ($itemTypes as $type) {
+            if (isset($dailyActivity[$type]) && is_array($dailyActivity[$type])) {
+                foreach ($dailyActivity[$type] as $item) {
+                    $totalItems++;
+                    $itemStatus = strtolower($item['status'] ?? 'under_review');
+                    if ($itemStatus == 'rejected')
+                        $hasRejected = true;
+                    if ($itemStatus == 'under_review')
+                        $hasUnderReview = true;
+                    if ($itemStatus == 'reviewed') {
+                        $hasReviewed = true;
+                        $reviewedItems++;
+                    }
+                    if ($itemStatus == 'approved') {
+                        $approvedItems++;
+                    }
+                }
+            }
+        }
+
+        if ($totalItems === 0) {
+            return 'under_review';
+        }
+        if ($hasRejected) {
+            return 'rejected';
+        }
+        if ($hasUnderReview) {
+            return 'under_review';
+        }
+        if ($approvedItems === $totalItems) {
+            return 'approved';
+        }
+        if ($hasReviewed || ($reviewedItems + $approvedItems === $totalItems && $reviewedItems > 0)) {
+            return 'reviewed';
+        }
+
+        return 'under_review';
+    }
 }
+
+

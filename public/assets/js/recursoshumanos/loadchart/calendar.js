@@ -1,29 +1,31 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Obtener los datos de servicios desde la base de datos
     const serviceData = JSON.parse(document.getElementById('service-data').textContent);
 
-    // Verificar la estructura de datos
     if (!serviceData || typeof serviceData !== 'object') {
         console.error('Datos de servicio no válidos:', serviceData);
         return;
     }
 
-    // 1. Configuración inicial del modal
     const modal = document.getElementById('activityModal');
     const closeModalBtn = document.querySelector('.close-modal');
     const cancelBtn = document.getElementById('cancel-activity');
     const saveBtn = document.getElementById('save-activity');
     const loadingSpinner = saveBtn.querySelector('.loading-spinner');
-    let currentSelectedDate = null;
-    let monthlyActivities = {}; // Almacenar actividades del mes actual
-    let currentActivity = null; // Para rastrear la actividad actual
+    const serviceTabBtn = document.getElementById('service-tab-btn');
+    const vacationDaysElement = document.querySelector('p[data-balance-type="vacation"]');
+    const restDaysElement = document.querySelector('p[data-balance-type="rest"]');
 
-    // Función para obtener color desde variables CSS
+    let currentSelectedDate = null;
+    let monthlyActivities = {};
+    let currentActivity = null;
+    let currentPayrollDates = {};
+    let vacationDaysAvailable = parseInt(vacationDaysElement?.textContent) || 0;
+    let restDaysAvailable = parseInt(restDaysElement?.textContent) || 0;
+
     function getCSSVariable(varName) {
         return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
     }
 
-    // Función para obtener el color del tag según el tipo de actividad usando variables CSS
     function getActivityTagColor(activityType) {
         const colorVars = {
             'B': '--work-base',
@@ -34,18 +36,18 @@ document.addEventListener('DOMContentLoaded', function () {
             'VAC': '--vacation',
             'E': '--training',
             'M': '--medical',
-            'C': '--commissioned'
+            'C': '--commissioned',
+            'A': '--absence',
+            'PE': '--permission'
         };
-
         const cssVar = colorVars[activityType];
-        return cssVar ? getCSSVariable(cssVar) : getCSSVariable('--training'); // color por defecto
+        return cssVar ? getCSSVariable(cssVar) : getCSSVariable('--training');
     }
 
-    // Función mejorada para obtener el ícono de estado basado en day_status
     function getStatusIcon(dayStatus) {
         switch (dayStatus) {
-            case 'pending':
-                return `<i class="fa-regular fa-hourglass-half status-icon" style="color: ${getCSSVariable('--pending')};" title="Pendiente"></i>`;
+            case 'under_review':
+                return `<i class="fa-regular fa-hourglass-half status-icon" style="color: ${getCSSVariable('--under-review')};" title="Bajo Revisión"></i>`;
             case 'approved':
                 return `<i class="fas fa-lock status-icon" style="color: ${getCSSVariable('--approved')};" title="Aprobado"></i>`;
             case 'reviewed':
@@ -53,156 +55,302 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'rejected':
                 return `<i class="fas fa-exclamation-triangle status-icon" style="color: ${getCSSVariable('--not-approved')};" title="Rechazado"></i>`;
             default:
-                return `<i class="fa-regular fa-hourglass-half status-icon" style="color: ${getCSSVariable('--pending')};" title="Pendiente"></i>`;
+                return `<i class="fa-regular fa-hourglass-half status-icon" style="color: ${getCSSVariable('--under-review')};" title="Bajo Revisión"></i>`;
         }
     }
 
-    // Función para crear el tag de actividad
     function createActivityHTML(activity) {
         const color = getActivityTagColor(activity.activity_type);
-        const statusIcon = getStatusIcon(activity.day_status || 'pending');
-
-        return `
-            <div class="day-header-info">
-                <div class="activity-tag" style="background-color: ${color};">
-                    ${activity.activity_description}
-                </div>
-                ${statusIcon}
-            </div>
-        `;
+        const statusIcon = getStatusIcon(activity.day_status || 'under_review');
+        return `<div class="day-header-info"><div class="activity-tag" style="background-color: ${color};">${activity.activity_description}</div>${statusIcon}</div>`;
     }
 
-    // Función para mostrar mensajes de rechazo
-    function showRejectionMessages(activity) {
-        // Limpiar mensajes previos
-        clearRejectionMessages();
+    /**
+     * Actualiza la UI con los nuevos saldos.
+     */
+    function updateBalanceUI(vacationDays, restDays) {
+        if (vacationDaysElement) {
+            vacationDaysAvailable = parseInt(vacationDays);
+            vacationDaysElement.textContent = `${vacationDaysAvailable} días`;
+        }
+        if (restDaysElement) {
+            restDaysAvailable = parseInt(restDays);
+            restDaysElement.textContent = `${restDaysAvailable} días`;
+        }
+    }
 
-        // Mostrar razón de rechazo general de la actividad
-        if (activity.rejection_reason) {
-            showRejectionMessage('activity-type-select', activity.rejection_reason);
+    /**
+     * Llama al backend para obtener y actualizar los saldos.
+     */
+    async function fetchBalances() {
+        try {
+            const response = await fetch('/recursoshumanos/loadchart/balances-data');
+            const data = await response.json();
+            if (data.success) {
+                updateBalanceUI(data.vacationDays, data.restDays);
+            }
+        } catch (error) {
+            console.error('Error fetching balances:', error);
+        }
+    }
+
+
+function handleActivityTypeChange(activityType) {
+        const wellNameField = document.getElementById('well-name-field');
+        const wellNameInput = document.getElementById('well-name');
+        const commissionedField = document.getElementById('commissioned-field');
+        const commissionedSelect = document.getElementById('commissioned-select');
+        const vacationError = document.getElementById('vacation-balance-error');
+
+        // NEW: Select all bonus/service related fields that should ONLY appear for 'P'
+        const foodBonusField = document.getElementById('food-bonus').closest('.form-group');
+        const fieldBonusField = document.getElementById('field-bonus').closest('.form-group');
+        const serviceBonusGroup = document.querySelector('.form-group .service-bonus-options').closest('.form-group');
+
+        // Mostrar/Ocultar error de Vacaciones (remains the same)
+        if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
+            vacationError.style.display = 'block';
+        } else {
+            vacationError.style.display = 'none';
         }
 
-        // Verificar y mostrar rechazos en servicios
+        // Reset visibility for all optional fields
+        wellNameField.style.display = 'none';
+        commissionedField.style.display = 'none';
+        foodBonusField.style.display = 'none';
+        fieldBonusField.style.display = 'none';
+        serviceBonusGroup.style.display = 'none';
+
+        // Reset values for invisible fields to prevent accidental submission
+        wellNameInput.value = '';
+        commissionedSelect.selectedIndex = 0;
+
+        // Logic to show fields based on activityType
+        if (activityType === 'P') { // Trabajo en Pozo
+            wellNameField.style.display = 'block';
+            foodBonusField.style.display = 'block';
+            fieldBonusField.style.display = 'block';
+            serviceBonusGroup.style.display = 'block';
+
+            // Re-apply service bonus change logic to ensure the tab is correct
+            const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
+            handleServiceBonusChange(hasServiceBonus);
+
+        } else if (activityType === 'C') { // Comisionado
+            commissionedField.style.display = 'block';
+            // Explicitly hide others for 'C'
+            document.getElementById('service-tab-btn').style.display = 'none';
+            document.querySelector('.tab-btn[data-tab="activity"]').click();
+            resetServiceForm();
+
+        } else {
+            // Default: Hide all optional fields and reset service tab/form
+            document.getElementById('service-tab-btn').style.display = 'none';
+            document.querySelector('.tab-btn[data-tab="activity"]').click();
+            resetServiceForm();
+        }
+    }
+
+    function handleServiceBonusChange(hasServiceBonus) {
+        const serviceTab = document.getElementById('service-tab');
+        const activityTabBtn = document.querySelector('.tab-btn[data-tab="activity"]');
+
+        if (hasServiceBonus === 'si') {
+            serviceTabBtn.style.display = 'block';
+            if (activityTabBtn.classList.contains('active') && currentActivity && currentActivity.services_list && currentActivity.services_list.length > 0) {
+                serviceTabBtn.click();
+            }
+        } else {
+            serviceTabBtn.style.display = 'none';
+            if (serviceTab.classList.contains('active')) {
+                activityTabBtn.click();
+            }
+            resetServiceForm();
+        }
+    }
+
+    function populatePayrollPeriodOptions() {
+        const payrollPeriodSelect = document.getElementById('payroll-period');
+        const monthSpan = document.querySelector('.month-navigation span');
+        const currentMonth = parseInt(monthSpan.getAttribute('data-month'));
+        const currentYear = parseInt(monthSpan.getAttribute('data-year'));
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+        const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+        const prevMonthName = monthNames[prevMonth - 1];
+
+        payrollPeriodSelect.innerHTML = '';
+        const defaultOption = document.createElement('option');
+        defaultOption.value = 'current';
+        defaultOption.textContent = 'Quincena Actual';
+        payrollPeriodSelect.appendChild(defaultOption);
+
+        let selectedDate = new Date(currentSelectedDate + 'T00:00:00');
+        const q1Start = currentPayrollDates.q1_start ? new Date(currentPayrollDates.q1_start + 'T00:00:00') : null;
+        const q1End = currentPayrollDates.q1_end ? new Date(currentPayrollDates.q1_end + 'T23:59:59') : null;
+        const q2Start = currentPayrollDates.q2_start ? new Date(currentPayrollDates.q2_start + 'T00:00:00') : null;
+        const q2End = currentPayrollDates.q2_end ? new Date(currentPayrollDates.q2_end + 'T23:59:59') : null;
+
+        if (q1Start && q1End && selectedDate >= q1Start && selectedDate <= q1End) {
+            const prevQ2Option = document.createElement('option');
+            prevQ2Option.value = 'previous_q2';
+            prevQ2Option.textContent = `Segunda Quincena - ${prevMonthName} ${prevYear}`;
+            payrollPeriodSelect.appendChild(prevQ2Option);
+        } else if (q2Start && q2End && selectedDate >= q2Start && selectedDate <= q2End) {
+            const currentQ1Option = document.createElement('option');
+            currentQ1Option.value = 'current_q1';
+            currentQ1Option.textContent = `Primera Quincena - ${monthNames[currentMonth - 1]} ${currentYear}`;
+            payrollPeriodSelect.appendChild(currentQ1Option);
+        }
+
+        if (currentActivity && currentActivity.services_list && currentActivity.services_list.length > 0) {
+            const service = currentActivity.services_list[0];
+            if (service.payroll_period_override) {
+                payrollPeriodSelect.value = service.payroll_period_override;
+            }
+        }
+    }
+
+    function showRejectionMessages(activity) {
+        clearRejectionMessages();
+        if (!activity) return;
+        if (activity.rejection_reason && activity.day_status === 'rejected') {
+            showRejectionMessage('activity-type-select', activity.rejection_reason);
+        }
         if (activity.services_list && activity.services_list.length > 0) {
             activity.services_list.forEach(service => {
-                if (service.status === 'Rejected' && service.rejection_reason) {
+                if (service.status === 'rejected' && service.rejection_reason) {
                     showRejectionMessage('service', service.rejection_reason);
                 }
             });
         }
-
-        // Verificar y mostrar rechazos en bonos de comida
         if (activity.food_bonuses && activity.food_bonuses.length > 0) {
             activity.food_bonuses.forEach(bonus => {
-                if (bonus.status === 'Rejected' && bonus.rejection_reason) {
+                if (bonus.status === 'rejected' && bonus.rejection_reason) {
                     showRejectionMessage('food-bonus', bonus.rejection_reason);
                 }
             });
         }
-
-        // Verificar y mostrar rechazos en bonos de campo
         if (activity.field_bonuses && activity.field_bonuses.length > 0) {
             activity.field_bonuses.forEach(bonus => {
-                if (bonus.status === 'Rejected' && bonus.rejection_reason) {
+                if (bonus.status === 'rejected' && bonus.rejection_reason) {
                     showRejectionMessage('field-bonus', bonus.rejection_reason);
                 }
             });
         }
     }
 
-    // Función para mostrar mensaje de rechazo específico
     function showRejectionMessage(fieldId, message) {
         const field = document.getElementById(fieldId);
         if (field) {
             const parentGroup = field.closest('.form-group');
             if (parentGroup) {
-                // Crear elemento de mensaje de rechazo
                 const rejectionDiv = document.createElement('div');
                 rejectionDiv.className = 'rejection-message';
-                rejectionDiv.innerHTML = `
-                    <div class="rejection-content">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span>Motivo de rechazo: ${message}</span>
-                    </div>
-                `;
+                rejectionDiv.innerHTML = `<div class="rejection-content"><i class="fas fa-exclamation-triangle"></i><span>Motivo de rechazo: ${message}</span></div>`;
                 field.parentNode.insertBefore(rejectionDiv, field.nextSibling);
             }
         }
     }
 
-    // Función para limpiar mensajes de rechazo
     function clearRejectionMessages() {
         document.querySelectorAll('.rejection-message').forEach(el => el.remove());
     }
 
-    // Función para verificar si un elemento está bloqueado
+    function clearAllBlocksAndMessages() {
+        clearRejectionMessages();
+        document.querySelectorAll('.lock-indicator').forEach(el => el.remove());
+        unlockAllFields();
+    }
+
+    function unlockAllFields() {
+        const elementsToUnlock = [
+            document.getElementById('activity-type-select'), ...document.querySelectorAll('.activity-option'),
+            document.getElementById('commissioned-select'), document.getElementById('well-name'),
+            ...document.querySelectorAll('.service-bonus-option'), ...document.querySelectorAll('.work-type-option'),
+            document.getElementById('service-type'), document.getElementById('service-performed'),
+            document.getElementById('service'), document.getElementById('payroll-period'),
+            document.getElementById('food-bonus'), document.getElementById('field-bonus')
+        ];
+
+        elementsToUnlock.forEach(element => {
+            if (element) {
+                if (element.classList.contains('custom-select')) {
+                    element.classList.remove('locked');
+                } else if (element.classList.contains('work-type-option') || element.classList.contains('activity-option') || element.classList.contains('service-bonus-option')) {
+                    element.style.pointerEvents = '';
+                    element.style.opacity = '';
+                } else {
+                    element.disabled = false;
+                    element.style.backgroundColor = '';
+                    element.style.color = '';
+                    element.style.cursor = '';
+                }
+                const parentGroup = element.closest('.form-group');
+                if (parentGroup) {
+                    const lockIndicator = parentGroup.querySelector('.lock-indicator');
+                    if (lockIndicator) lockIndicator.remove();
+                }
+            }
+        });
+    }
+
     function isFieldLocked(activity, fieldType, itemIndex = 0) {
         if (!activity) return false;
-
-        // Si el día completo está aprobado, todo está bloqueado
-        if (activity.day_status === 'approved') return true;
-
-        // Verificar bloqueos específicos por tipo
+        if (activity.day_status === 'approved') {
+            return true;
+        }
         switch (fieldType) {
             case 'activity':
-                return activity.activity_status === 'Approved' || activity.activity_status === 'Reviewed';
-
+                return activity.activity_status === 'approved' || activity.activity_status === 'reviewed';
             case 'service':
                 if (activity.services_list && activity.services_list[itemIndex]) {
-                    return activity.services_list[itemIndex].status === 'Approved' || activity.services_list[itemIndex].status === 'Reviewed';
+                    return activity.services_list[itemIndex].status === 'approved' || activity.services_list[itemIndex].status === 'reviewed';
                 }
                 return false;
-
             case 'food_bonus':
                 if (activity.food_bonuses && activity.food_bonuses[itemIndex]) {
-                    return activity.food_bonuses[itemIndex].status === 'Approved' || activity.food_bonuses[itemIndex].status === 'Reviewed';
+                    return activity.food_bonuses[itemIndex].status === 'approved' || activity.food_bonuses[itemIndex].status === 'reviewed';
                 }
                 return false;
-
             case 'field_bonus':
                 if (activity.field_bonuses && activity.field_bonuses[itemIndex]) {
-                    return activity.field_bonuses[itemIndex].status === 'Approved' || activity.field_bonuses[itemIndex].status === 'Reviewed';
+                    return activity.field_bonuses[itemIndex].status === 'approved' || activity.field_bonuses[itemIndex].status === 'reviewed';
                 }
                 return false;
-
             default:
                 return false;
         }
     }
 
-    // Función para bloquear/desbloquear campos
     function toggleFieldLock(element, isLocked, status) {
         if (!element) return;
-
-        // Si el elemento es un `custom-select` o `work-type-option` se maneja de forma especial
+        const parentGroup = element.closest('.form-group');
+        if (!parentGroup) return;
         const isCustomSelect = element.classList.contains('custom-select');
-        const isWorkTypeOption = element.classList.contains('work-type-option');
-        const targetElement = isCustomSelect ? element.querySelector('.select-header') : element;
+        const isOption = element.classList.contains('work-type-option') || element.classList.contains('activity-option') || element.classList.contains('service-bonus-option');
 
         if (isLocked) {
             if (isCustomSelect) {
                 element.classList.add('locked');
-            } else if (isWorkTypeOption) {
+            } else if (isOption) {
                 element.style.pointerEvents = 'none';
                 element.style.opacity = '0.6';
             } else {
-                targetElement.disabled = true;
-                targetElement.style.backgroundColor = '#f5f5f5';
-                targetElement.style.color = '#999';
-                targetElement.style.cursor = 'not-allowed';
+                element.disabled = true;
+                element.style.backgroundColor = '#f5f5f5';
+                element.style.color = '#999';
+                element.style.cursor = 'not-allowed';
             }
-
-            // Agrega el indicador de estado si no existe
-            const parentGroup = element.closest('.form-group');
-            if (parentGroup && !parentGroup.querySelector('.lock-indicator')) {
+            if (!parentGroup.querySelector('.lock-indicator')) {
                 const lockIndicator = document.createElement('div');
                 lockIndicator.className = 'lock-indicator';
                 let message = '';
                 let icon = '';
-                if (status === 'Approved' || status === 'approved') {
+                if (status === 'approved') {
                     message = 'Aprobado';
                     icon = 'fas fa-lock';
-                } else if (status === 'Reviewed' || status === 'reviewed') {
+                } else if (status === 'reviewed') {
                     message = 'Revisado';
                     icon = 'fas fa-lock-open';
                 }
@@ -210,210 +358,243 @@ document.addEventListener('DOMContentLoaded', function () {
                 parentGroup.appendChild(lockIndicator);
             }
         } else {
-            // Desbloquea y remueve el indicador
             if (isCustomSelect) {
                 element.classList.remove('locked');
-            } else if (isWorkTypeOption) {
+            } else if (isOption) {
                 element.style.pointerEvents = '';
                 element.style.opacity = '';
             } else {
-                targetElement.disabled = false;
-                targetElement.style.backgroundColor = '';
-                targetElement.style.color = '';
-                targetElement.style.cursor = '';
+                element.disabled = false;
+                element.style.backgroundColor = '';
+                element.style.color = '';
+                element.style.cursor = '';
             }
-
-            const parentGroup = element.closest('.form-group');
-            if (parentGroup) {
-                const lockIndicator = parentGroup.querySelector('.lock-indicator');
-                if (lockIndicator) lockIndicator.remove();
-            }
+            const lockIndicator = parentGroup.querySelector('.lock-indicator');
+            if (lockIndicator) lockIndicator.remove();
         }
     }
 
-    // Función para aplicar estados de bloqueo a todos los campos
     function applyFieldLocks(activity) {
         if (!activity) return;
+        if (activity.day_status === 'approved') {
+            const allFormElements = document.querySelectorAll('#activity-tab select, #activity-tab .custom-select, #activity-tab input, #service-tab select, #service-tab .work-type-option');
+            allFormElements.forEach(el => toggleFieldLock(el, true, 'approved'));
+            return;
+        }
 
-        // Bloquear campos de actividad principal
-        const activityStatus = activity.activity_status || activity.day_status;
         const isActivityLocked = isFieldLocked(activity, 'activity');
-        const activityTypeOptions = document.querySelectorAll('.activity-option');
-        const commissionedSelect = document.getElementById('commissioned-select');
         const activityTypeSelectContainer = document.getElementById('activity-type-select');
+        const commissionedSelect = document.getElementById('commissioned-select');
+        const wellNameInput = document.getElementById('well-name');
+        const activityTypeOptions = document.querySelectorAll('.activity-option');
+        const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
 
-        // Bloquear el select personalizado
-        toggleFieldLock(activityTypeSelectContainer, isActivityLocked, activityStatus);
+        toggleFieldLock(activityTypeSelectContainer, isActivityLocked, activity.activity_status);
+        activityTypeOptions.forEach(option => toggleFieldLock(option, isActivityLocked, activity.activity_status));
+        toggleFieldLock(commissionedSelect, isActivityLocked, activity.activity_status);
+        toggleFieldLock(wellNameInput, isActivityLocked, activity.activity_status);
+        serviceBonusOptions.forEach(option => toggleFieldLock(option, isActivityLocked, activity.activity_status));
 
-        activityTypeOptions.forEach(option => {
-            if (isActivityLocked) {
-                option.style.pointerEvents = 'none';
-                option.style.opacity = '0.6';
-            } else {
-                option.style.pointerEvents = '';
-                option.style.opacity = '';
-            }
-        });
-
-        toggleFieldLock(commissionedSelect, isActivityLocked, activityStatus);
-
-        // Bloquear campos de servicio
-        const service = activity.services_list && activity.services_list[0];
-        const serviceStatus = service ? service.status : null;
+        const service = activity.services_list?. [0];
         const isServiceLocked = isFieldLocked(activity, 'service');
         const workTypeOptions = document.querySelectorAll('.work-type-option');
         const serviceTypeSelect = document.getElementById('service-type');
         const servicePerformedSelect = document.getElementById('service-performed');
         const serviceSelect = document.getElementById('service');
+        const payrollPeriodSelect = document.getElementById('payroll-period');
+        const serviceAmountInput = document.getElementById('service-amount');
 
-        workTypeOptions.forEach(option => {
-            toggleFieldLock(option, isServiceLocked, serviceStatus);
-        });
+        workTypeOptions.forEach(option => toggleFieldLock(option, isServiceLocked, service?.status));
+        toggleFieldLock(serviceTypeSelect, isServiceLocked, service?.status);
+        toggleFieldLock(servicePerformedSelect, isServiceLocked, service?.status);
+        toggleFieldLock(serviceSelect, isServiceLocked, service?.status);
+        toggleFieldLock(payrollPeriodSelect, isServiceLocked, service?.status);
+        toggleFieldLock(serviceAmountInput, isServiceLocked, service?.status);
 
-        toggleFieldLock(serviceTypeSelect, isServiceLocked, serviceStatus);
-        toggleFieldLock(servicePerformedSelect, isServiceLocked, serviceStatus);
-        toggleFieldLock(serviceSelect, isServiceLocked, serviceStatus);
-
-        // Bloquear campos de bonos
-        const foodBonus = activity.food_bonuses && activity.food_bonuses[0];
-        const foodBonusStatus = foodBonus ? foodBonus.status : null;
+        const foodBonus = activity.food_bonuses?. [0];
         const isFoodBonusLocked = isFieldLocked(activity, 'food_bonus');
-        const fieldBonus = activity.field_bonuses && activity.field_bonuses[0];
-        const fieldBonusStatus = fieldBonus ? fieldBonus.status : null;
-        const isFieldBonusLocked = isFieldLocked(activity, 'field_bonus');
+        toggleFieldLock(document.getElementById('food-bonus'), isFoodBonusLocked, foodBonus?.status);
 
-        toggleFieldLock(document.getElementById('food-bonus'), isFoodBonusLocked, foodBonusStatus);
-        toggleFieldLock(document.getElementById('field-bonus'), isFieldBonusLocked, fieldBonusStatus);
+        const fieldBonus = activity.field_bonuses?. [0];
+        const isFieldBonusLocked = isFieldLocked(activity, 'field_bonus');
+        toggleFieldLock(document.getElementById('field-bonus'), isFieldBonusLocked, fieldBonus?.status);
+
+        const rejectedFields = getRejectedFields(activity);
+        rejectedFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                toggleFieldLock(element, false, 'rejected');
+            }
+        });
+        showRejectionMessages(activity);
     }
 
-    /**
-     * Rellena el modal con los datos de una actividad existente.
-     * @param {object} activity - El objeto de actividad con sus detalles.
-     */
+    function getRejectedFields(activity) {
+        const rejected = [];
+        if (!activity) return rejected;
+        if (activity.activity_status === 'rejected') {
+            rejected.push({
+                id: 'activity-type-select'
+            });
+        }
+        if (activity.services_list && activity.services_list.some(s => s.status === 'rejected')) {
+            rejected.push({
+                id: 'service'
+            });
+        }
+        if (activity.food_bonuses && activity.food_bonuses.some(b => b.status === 'rejected')) {
+            rejected.push({
+                id: 'food-bonus'
+            });
+        }
+        if (activity.field_bonuses && activity.field_bonuses.some(b => b.status === 'rejected')) {
+            rejected.push({
+                id: 'field-bonus'
+            });
+        }
+        return rejected;
+    }
+
     function populateModalWithActivity(activity) {
         currentActivity = activity;
         resetActivityOptions();
         resetServiceForm();
         resetAdditionalForms();
         resetBonusFields();
-        clearRejectionMessages();
+        clearAllBlocksAndMessages();
 
         const activityTabBtn = document.querySelector('.tab-btn[data-tab="activity"]');
-        const serviceTabBtn = document.querySelector('.tab-btn[data-tab="service"]');
+        const serviceTabButton = document.querySelector('.tab-btn[data-tab="service"]');
+        const vacationError = document.getElementById('vacation-balance-error');
 
-        // Determinar qué pestaña activar y rellenar la actividad
-        if (['B', 'P', 'C'].includes(activity.activity_type)) {
-            serviceTabBtn.click();
-            activityTabBtn.classList.remove('active');
+        // Mostrar/Ocultar error de Vacaciones si aplica
+        if (activity.activity_type === 'VAC' && vacationDaysAvailable <= 0) {
+            vacationError.style.display = 'block';
         } else {
+            vacationError.style.display = 'none';
+        }
+
+
+        const hasService = activity.services_list && activity.services_list.length > 0;
+        if (hasService) {
+            serviceTabBtn.style.display = 'block';
+            document.getElementById('service-bonus-yes').checked = true;
+            document.querySelector('.service-bonus-option[data-value="si"]').classList.add('selected');
+            document.querySelector('.service-bonus-option[data-value="no"]').classList.remove('selected');
+            serviceTabButton.click();
+        } else {
+            serviceTabBtn.style.display = 'none';
+            document.getElementById('service-bonus-no').checked = true;
+            document.querySelector('.service-bonus-option[data-value="no"]').classList.add('selected');
+            document.querySelector('.service-bonus-option[data-value="si"]').classList.remove('selected');
             activityTabBtn.click();
-            serviceTabBtn.classList.remove('active');
         }
 
         const activityTypeOption = document.querySelector(`.activity-option[data-value="${activity.activity_type}"]`);
         if (activityTypeOption) {
             activityTypeOption.classList.add('selected');
-            activityTypeSelect.value = activity.activity_type;
-            placeholder.textContent = activityTypeOption.querySelector('.activity-label').textContent;
+            document.getElementById('activity-type').value = activity.activity_type;
+            document.querySelector('#activity-type-header .placeholder').textContent = activityTypeOption.querySelector('.activity-label').textContent;
+            handleActivityTypeChange(activity.activity_type);
         }
 
         if (activity.activity_type === 'C' && activity.commissioned_to) {
-            commissionedField.style.display = 'block';
-            commissionedSelect.value = activity.commissioned_to;
+            document.getElementById('commissioned-field').style.display = 'block';
+            document.getElementById('commissioned-select').value = activity.commissioned_to;
         }
-
-        if (activity.services_list && activity.services_list.length > 0) {
-            const service = activity.services_list[0];
-            let operationType = null;
-            let fullServiceData = null;
-
-            for (const [opType, services] of Object.entries(serviceData)) {
-                if (Array.isArray(services)) {
-                    fullServiceData = services.find(s => s.identifier === service.service_identifier);
-                    if (fullServiceData) {
-                        operationType = opType;
-                        break;
-                    }
-                }
-            }
-
-            if (operationType && fullServiceData) {
-                let workTypeValue = operationType;
-                if (operationType === 'Tierra') {
-                    workTypeValue = 'Tierra';
-                } else if (operationType === 'Marina' || operationType === 'Marino') {
-                    workTypeValue = 'Marina';
-                }
-
-                const workTypeOption = document.querySelector(`.work-type-option[data-value="${workTypeValue}"]`);
-                if (workTypeOption) {
-                    workTypeOption.click();
-                }
-
-                setTimeout(() => {
-                    const serviceTypeSelect = document.getElementById('service-type');
-                    const servicePerformedSelect = document.getElementById('service-performed');
-                    const serviceSelect = document.getElementById('service');
-
-                    const serviceTypeFormatted = fullServiceData.service_type.toLowerCase().replace(/\s+/g, '_');
-                    const serviceTypeOption = Array.from(serviceTypeSelect.options).find(opt => opt.value === serviceTypeFormatted);
-                    if (serviceTypeOption) {
-                        serviceTypeSelect.value = serviceTypeFormatted;
-                        serviceTypeSelect.dispatchEvent(new Event('change'));
-                    }
-
-                    setTimeout(() => {
-                        const servicePerformedFormatted = fullServiceData.service_performed.toLowerCase().replace(/\s+/g, '_');
-                        const servicePerformedOption = Array.from(servicePerformedSelect.options).find(opt => opt.value === servicePerformedFormatted);
-                        if (servicePerformedOption) {
-                            servicePerformedSelect.value = servicePerformedFormatted;
-                            servicePerformedSelect.dispatchEvent(new Event('change'));
-                        }
-
-                        setTimeout(() => {
-                            const serviceOption = Array.from(serviceSelect.options).find(opt => opt.value === service.service_identifier);
-                            if (serviceOption) {
-                                serviceSelect.value = service.service_identifier;
-                            }
-                        }, 150);
-                    }, 150);
-                }, 150);
-            }
+        if (activity.well_name) {
+            document.getElementById('well-name').value = activity.well_name;
         }
-
+        if (hasService) {
+            populateServiceData(activity.services_list[0]);
+        }
         if (activity.food_bonuses && activity.food_bonuses.length > 0) {
             const foodBonus = activity.food_bonuses[0];
             if (foodBonus.num_daily) {
                 document.getElementById('food-bonus').value = foodBonus.num_daily;
             }
         }
-
         if (activity.field_bonuses && activity.field_bonuses.length > 0) {
             const fieldBonus = activity.field_bonuses[0];
             const fieldBonusSelect = document.getElementById('field-bonus');
             if (fieldBonus.bonus_identifier) {
                 fieldBonusSelect.value = fieldBonus.bonus_identifier;
-            } else if (fieldBonus.bonus_type) {
-                Array.from(fieldBonusSelect.options).forEach(option => {
-                    if (option.text.includes(fieldBonus.bonus_type) || option.value === fieldBonus.bonus_type) {
-                        fieldBonusSelect.value = option.value;
-                    }
-                });
             }
         }
 
         setTimeout(() => {
             applyFieldLocks(activity);
-            showRejectionMessages(activity);
         }, 200);
+    }
+
+    function populateServiceData(service) {
+        let operationType = null;
+        let fullServiceData = null;
+        for (const [opType, services] of Object.entries(serviceData)) {
+            if (Array.isArray(services)) {
+                fullServiceData = services.find(s => s.identifier === service.service_identifier);
+                if (fullServiceData) {
+                    operationType = opType;
+                    break;
+                }
+            }
+        }
+        if (operationType && fullServiceData) {
+            let workTypeValue = operationType === 'Tierra' ? 'Tierra' : 'Marina';
+            const workTypeOption = document.querySelector(`.work-type-option[data-value="${workTypeValue}"]`);
+            if (workTypeOption) {
+                workTypeOption.click();
+            }
+
+            setTimeout(() => {
+                const serviceTypeSelect = document.getElementById('service-type');
+                const servicePerformedSelect = document.getElementById('service-performed');
+                const serviceSelect = document.getElementById('service');
+                const serviceAmountInput = document.getElementById('service-amount');
+                const serviceAmountGroup = document.getElementById('service-amount-group');
+
+                const serviceTypeFormatted = fullServiceData.service_type.toLowerCase().replace(/\s+/g, '_');
+                const serviceTypeOption = Array.from(serviceTypeSelect.options).find(opt => opt.value === serviceTypeFormatted);
+                if (serviceTypeOption) {
+                    serviceTypeSelect.value = serviceTypeFormatted;
+                    serviceTypeSelect.dispatchEvent(new Event('change'));
+                }
+
+                setTimeout(() => {
+                    const servicePerformedFormatted = fullServiceData.service_performed.toLowerCase().replace(/\s+/g, '_');
+                    const servicePerformedOption = Array.from(servicePerformedSelect.options).find(opt => opt.value === servicePerformedFormatted);
+                    if (servicePerformedOption) {
+                        servicePerformedSelect.value = servicePerformedFormatted;
+                        servicePerformedSelect.dispatchEvent(new Event('change'));
+                    }
+
+                    setTimeout(() => {
+                        const serviceOption = Array.from(serviceSelect.options).find(opt => opt.value === service.service_identifier);
+                        if (serviceOption) {
+                            serviceSelect.value = service.service_identifier;
+                            const amount = serviceOption.getAttribute('data-amount');
+                            const currency = serviceOption.getAttribute('data-currency');
+                            if (amount && currency) {
+                                serviceAmountInput.value = `${currency} ${parseFloat(amount).toFixed(2)}`;
+                                serviceAmountGroup.style.display = 'block';
+                            }
+                        }
+                        if (service.payroll_period_override) {
+                            document.getElementById('payroll-period').value = service.payroll_period_override;
+                        }
+                    }, 150);
+                }, 150);
+            }, 150);
+        }
     }
 
     function openModal(processedDate, displayDate) {
         if (processedDate && displayDate) {
             currentSelectedDate = processedDate;
             document.getElementById('activity-date').value = displayDate;
-
             const existingActivity = monthlyActivities[processedDate];
+            populatePayrollPeriodOptions();
+
             if (existingActivity) {
                 populateModalWithActivity(existingActivity);
             } else {
@@ -422,7 +603,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 resetServiceForm();
                 resetAdditionalForms();
                 resetBonusFields();
-                clearRejectionMessages();
+                clearAllBlocksAndMessages();
+                document.getElementById('vacation-balance-error').style.display = 'none';
+                document.querySelector('.tab-btn[data-tab="activity"]').click();
+                serviceTabBtn.style.display = 'none';
+                document.getElementById('service-bonus-no').checked = true;
+                document.querySelector('.service-bonus-option[data-value="no"]').classList.add('selected');
+                document.querySelector('.service-bonus-option[data-value="si"]').classList.remove('selected');
             }
         }
         modal.style.display = 'flex';
@@ -436,18 +623,230 @@ document.addEventListener('DOMContentLoaded', function () {
         resetServiceForm();
         resetAdditionalForms();
         resetBonusFields();
-        clearRejectionMessages();
+        clearAllBlocksAndMessages();
         currentSelectedDate = null;
         currentActivity = null;
-        document.querySelectorAll('.lock-indicator').forEach(el => el.remove());
     }
 
-    // Función para cargar actividades del mes
+    function resetActivityOptions() {
+        document.querySelectorAll('.activity-option').forEach(opt => opt.classList.remove('selected'));
+        document.getElementById('activity-type').value = '';
+        document.querySelector('#activity-type-header .placeholder').textContent = 'Seleccionar actividad...';
+    }
+
+    function resetAdditionalForms() {
+        document.getElementById('commissioned-field').style.display = 'none';
+        document.getElementById('commissioned-select').selectedIndex = 0;
+        document.getElementById('well-name-field').style.display = 'none';
+        document.getElementById('well-name').value = '';
+    }
+
+    function resetBonusFields() {
+        document.getElementById('food-bonus').selectedIndex = 0;
+        document.getElementById('field-bonus').selectedIndex = 0;
+    }
+
+    function resetServiceForm() {
+        document.querySelectorAll('.work-type-option').forEach(opt => opt.classList.remove('selected'));
+        document.querySelectorAll('input[name="work-type"]').forEach(radio => {
+            radio.checked = false;
+        });
+        document.getElementById('service-type').disabled = true;
+        document.getElementById('service-type').selectedIndex = 0;
+        document.getElementById('service-performed').disabled = true;
+        document.getElementById('service-performed').innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
+        document.getElementById('service').disabled = true;
+        document.getElementById('service').innerHTML = '<option value="">Seleccionar servicio...</option>';
+        document.getElementById('payroll-period').selectedIndex = 0;
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.style.display = 'none';
+        });
+        document.getElementById('service-amount').value = '';
+        document.getElementById('service-amount-group').style.display = 'none';
+    }
+
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    const activityOptions = document.querySelectorAll('.activity-option');
+    const activityTypeHeader = document.getElementById('activity-type-header');
+    const activityTypeOptions = document.getElementById('activity-type-options');
+    const activityTypeSelect = document.getElementById('activity-type');
+
+    activityTypeHeader.addEventListener('click', function () {
+        if (currentActivity && isFieldLocked(currentActivity, 'activity')) {
+            return;
+        }
+        this.classList.toggle('open');
+        activityTypeOptions.classList.toggle('open');
+    });
+    document.addEventListener('click', function (e) {
+        if (!activityTypeHeader.contains(e.target) && !activityTypeOptions.contains(e.target)) {
+            activityTypeHeader.classList.remove('open');
+            activityTypeOptions.classList.remove('open');
+        }
+    });
+
+    activityOptions.forEach(option => {
+        option.addEventListener('click', function () {
+            if (currentActivity && isFieldLocked(currentActivity, 'activity')) {
+                return;
+            }
+            const value = this.getAttribute('data-value');
+            activityOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            activityTypeSelect.value = value;
+            document.querySelector('#activity-type-header .placeholder').textContent = this.querySelector('.activity-label').textContent;
+            activityTypeHeader.classList.remove('open');
+            activityTypeOptions.classList.remove('open');
+            handleActivityTypeChange(value);
+            if (value === 'C') {
+                document.getElementById('commissioned-field').style.display = 'block';
+            } else {
+                document.getElementById('commissioned-field').style.display = 'none';
+                document.getElementById('commissioned-select').selectedIndex = 0;
+            }
+        });
+    });
+
+    const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
+    serviceBonusOptions.forEach(option => {
+        option.addEventListener('click', function () {
+            if (currentActivity && isFieldLocked(currentActivity, 'activity')) {
+                return;
+            }
+            const value = this.getAttribute('data-value');
+            const radio = this.querySelector('input[type="radio"]');
+            serviceBonusOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            radio.checked = true;
+            handleServiceBonusChange(value);
+        });
+    });
+
+    const workTypeOptions = document.querySelectorAll('.work-type-option');
+    workTypeOptions.forEach(option => {
+        option.addEventListener('click', function () {
+            if (currentActivity && isFieldLocked(currentActivity, 'service')) {
+                return;
+            }
+            const value = this.getAttribute('data-value');
+            const radio = this.querySelector('input[type="radio"]');
+            workTypeOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            radio.checked = true;
+            document.getElementById('service-type').disabled = false;
+            updateServiceTypes(value);
+        });
+    });
+
+    function updateServiceTypes(workType) {
+        const serviceTypeSelect = document.getElementById('service-type');
+        serviceTypeSelect.innerHTML = '<option value="">Seleccionar tipo de servicio...</option>';
+        if (serviceData[workType] && Array.isArray(serviceData[workType])) {
+            const uniqueTypes = [...new Set(serviceData[workType].map(item => item.service_type))];
+            uniqueTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.toLowerCase().replace(/\s+/g, '_');
+                option.textContent = type;
+                serviceTypeSelect.appendChild(option);
+            });
+        }
+        document.getElementById('service-performed').disabled = true;
+        document.getElementById('service-performed').innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
+        document.getElementById('service').disabled = true;
+        document.getElementById('service').innerHTML = '<option value="">Seleccionar servicio...</option>';
+        document.getElementById('service-amount').value = '';
+        document.getElementById('service-amount-group').style.display = 'none';
+    }
+
+    document.getElementById('service-type').addEventListener('change', function () {
+        if (currentActivity && isFieldLocked(currentActivity, 'service')) {
+            return;
+        }
+        const workType = document.querySelector('.work-type-option.selected')?.getAttribute('data-value');
+        const serviceTypeId = this.value;
+        if (workType && serviceTypeId) {
+            const servicePerformedSelect = document.getElementById('service-performed');
+            servicePerformedSelect.disabled = false;
+            servicePerformedSelect.innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
+            const uniquePerformed = [...new Set(serviceData[workType].filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeId).map(item => item.service_performed))];
+            uniquePerformed.forEach(performed => {
+                const option = document.createElement('option');
+                option.value = performed.toLowerCase().replace(/\s+/g, '_');
+                option.textContent = performed;
+                servicePerformedSelect.appendChild(option);
+            });
+            document.getElementById('service').disabled = true;
+            document.getElementById('service-amount-group').style.display = 'none';
+        }
+    });
+
+    document.getElementById('service-performed').addEventListener('change', function () {
+        if (currentActivity && isFieldLocked(currentActivity, 'service')) {
+            return;
+        }
+        const workType = document.querySelector('.work-type-option.selected')?.getAttribute('data-value');
+        const serviceTypeId = document.getElementById('service-type').value;
+        const performedId = this.value;
+        if (workType && serviceTypeId && performedId) {
+            const serviceSelect = document.getElementById('service');
+            serviceSelect.disabled = false;
+            serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
+            const services = serviceData[workType].filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeId && item.service_performed.toLowerCase().replace(/\s+/g, '_') === performedId);
+            services.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.identifier;
+                option.textContent = service.service_description;
+                option.setAttribute('data-amount', service.amount);
+                option.setAttribute('data-currency', service.currency);
+                option.setAttribute('data-performed', service.service_performed);
+                serviceSelect.appendChild(option);
+            });
+            document.getElementById('service-amount-group').style.display = 'none';
+        }
+    });
+
+    document.getElementById('service').addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        const serviceAmountGroup = document.getElementById('service-amount-group');
+        const serviceAmountInput = document.getElementById('service-amount');
+
+        if (selectedOption.value) {
+            const amount = selectedOption.getAttribute('data-amount');
+            const currency = selectedOption.getAttribute('data-currency');
+            if (amount && currency) {
+                serviceAmountInput.value = `${currency} ${parseFloat(amount).toFixed(2)}`;
+                serviceAmountGroup.style.display = 'block';
+            } else {
+                serviceAmountInput.value = '';
+                serviceAmountGroup.style.display = 'none';
+            }
+        } else {
+            serviceAmountInput.value = '';
+            serviceAmountGroup.style.display = 'none';
+        }
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+        tab.addEventListener('click', function () {
+            document.querySelector('.form-tabs .tab-btn.active').classList.remove('active');
+            this.classList.add('active');
+            const tabId = this.getAttribute('data-tab');
+            document.querySelector('.tab-content.active').classList.remove('active');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+    });
+
     async function loadMonthlyActivities(month, year) {
         try {
             const response = await fetch(`/recursoshumanos/loadchart/monthly-activities?month=${month}&year=${year}`);
             const data = await response.json();
-
             if (data.success) {
                 monthlyActivities = {};
                 if (data.activities && Array.isArray(data.activities)) {
@@ -462,7 +861,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Función para actualizar el calendario con las actividades (ACTUALIZADA)
     function updateCalendarWithActivities() {
         document.querySelectorAll('.calendar td').forEach(cell => {
             const dayNumberEl = cell.querySelector('.day-number');
@@ -478,18 +876,21 @@ document.addEventListener('DOMContentLoaded', function () {
             let month = parseInt(monthSpan.getAttribute('data-month'));
             let year = parseInt(monthSpan.getAttribute('data-year'));
 
+            let targetMonth = month;
+            let targetYear = year;
             if (cell.classList.contains('other-month')) {
-                if (dayNum > 15) {
-                    month = (month === 1) ? 12 : month - 1;
-                    if (month === 12) year--;
+                const dayInCell = parseInt(dayNum);
+                const isPreviousMonth = dayInCell > 15;
+                if (isPreviousMonth) {
+                    targetMonth = (month === 1) ? 12 : month - 1;
+                    targetYear = (month === 1) ? year - 1 : year;
                 } else {
-                    month = (month === 12) ? 1 : month + 1;
-                    if (month === 1) year++;
+                    targetMonth = (month === 12) ? 1 : month + 1;
+                    targetYear = (month === 12) ? year + 1 : year;
                 }
             }
 
-            const cellDate = `${year}-${String(month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-
+            const cellDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
             if (monthlyActivities[cellDate]) {
                 const activity = monthlyActivities[cellDate];
                 const activityHTML = createActivityHTML(activity);
@@ -498,216 +899,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    closeModalBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-
-    // 2. Configuración de tipo de actividad
-    const activityOptions = document.querySelectorAll('.activity-option');
-    const activityTypeSelect = document.getElementById('activity-type');
-    const activityTypeHeader = document.getElementById('activity-type-header');
-    const activityTypeOptions = document.getElementById('activity-type-options');
-    const placeholder = activityTypeHeader.querySelector('.placeholder');
-    const commissionedField = document.getElementById('commissioned-field');
-    const commissionedSelect = document.getElementById('commissioned-select');
-
-    activityTypeHeader.addEventListener('click', function () {
-        if (currentActivity && isFieldLocked(currentActivity, 'activity')) {
-            return;
-        }
-
-        this.classList.toggle('open');
-        activityTypeOptions.classList.toggle('open');
-    });
-
-    document.addEventListener('click', function (e) {
-        if (!activityTypeHeader.contains(e.target) && !activityTypeOptions.contains(e.target)) {
-            activityTypeHeader.classList.remove('open');
-            activityTypeOptions.classList.remove('open');
-        }
-    });
-
-    activityOptions.forEach(option => {
-        option.addEventListener('click', function () {
-            if (currentActivity && isFieldLocked(currentActivity, 'activity')) {
-                return;
-            }
-
-            const value = this.getAttribute('data-value');
-            activityOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-            activityTypeSelect.value = value;
-            placeholder.textContent = this.querySelector('.activity-label').textContent;
-            activityTypeHeader.classList.remove('open');
-            activityTypeOptions.classList.remove('open');
-
-            if (value === 'C') {
-                commissionedField.style.display = 'block';
-            } else {
-                commissionedField.style.display = 'none';
-                commissionedSelect.selectedIndex = 0;
-            }
-        });
-    });
-
-    function resetActivityOptions() {
-        activityOptions.forEach(opt => opt.classList.remove('selected'));
-        activityTypeSelect.value = '';
-        placeholder.textContent = 'Seleccionar actividad...';
-    }
-
-    function resetAdditionalForms() {
-        commissionedField.style.display = 'none';
-        commissionedSelect.selectedIndex = 0;
-    }
-
-    function resetBonusFields() {
-        document.getElementById('food-bonus').selectedIndex = 0;
-        document.getElementById('field-bonus').selectedIndex = 0;
-    }
-
-    // 3. Configuración de los selectores anidados
-    const workTypeOptions = document.querySelectorAll('.work-type-option');
-
-    workTypeOptions.forEach(option => {
-        option.addEventListener('click', function () {
-            if (currentActivity && isFieldLocked(currentActivity, 'service')) {
-                return;
-            }
-
-            const value = this.getAttribute('data-value');
-            const radio = this.querySelector('input[type="radio"]');
-
-            workTypeOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-            radio.checked = true;
-
-            document.getElementById('service-type').disabled = false;
-            updateServiceTypes(value);
-        });
-    });
-
-    function updateServiceTypes(workType) {
-        const serviceTypeSelect = document.getElementById('service-type');
-        serviceTypeSelect.innerHTML = '<option value="">Seleccionar tipo de servicio...</option>';
-
-        if (serviceData[workType] && Array.isArray(serviceData[workType])) {
-            const uniqueTypes = [...new Set(serviceData[workType].map(item => item.service_type))];
-            uniqueTypes.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type.toLowerCase().replace(/\s+/g, '_');
-                option.textContent = type;
-                serviceTypeSelect.appendChild(option);
-            });
-        }
-
-        document.getElementById('service-performed').disabled = true;
-        document.getElementById('service-performed').innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
-        document.getElementById('service').disabled = true;
-        document.getElementById('service').innerHTML = '<option value="">Seleccionar servicio...</option>';
-    }
-
-    document.getElementById('service-type').addEventListener('change', function () {
-        if (currentActivity && isFieldLocked(currentActivity, 'service')) {
-            return;
-        }
-
-        const workType = document.querySelector('.work-type-option.selected')?.getAttribute('data-value');
-        const serviceTypeId = this.value;
-
-        if (workType && serviceTypeId) {
-            const servicePerformedSelect = document.getElementById('service-performed');
-            servicePerformedSelect.disabled = false;
-            servicePerformedSelect.innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
-
-            const uniquePerformed = [...new Set(serviceData[workType]
-                .filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeId)
-                .map(item => item.service_performed))];
-
-            uniquePerformed.forEach(performed => {
-                const option = document.createElement('option');
-                option.value = performed.toLowerCase().replace(/\s+/g, '_');
-                option.textContent = performed;
-                servicePerformedSelect.appendChild(option);
-            });
-
-            document.getElementById('service').disabled = true;
-        }
-    });
-
-    document.getElementById('service-performed').addEventListener('change', function () {
-        if (currentActivity && isFieldLocked(currentActivity, 'service')) {
-            return;
-        }
-
-        const workType = document.querySelector('.work-type-option.selected')?.getAttribute('data-value');
-        const serviceTypeId = document.getElementById('service-type').value;
-        const performedId = this.value;
-
-        if (workType && serviceTypeId && performedId) {
-            const serviceSelect = document.getElementById('service');
-            serviceSelect.disabled = false;
-            serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
-
-            const services = serviceData[workType]
-                .filter(item =>
-                    item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeId &&
-                    item.service_performed.toLowerCase().replace(/\s+/g, '_') === performedId
-                )
-                .map(item => ({
-                    id: item.identifier,
-                    name: item.service_description,
-                    amount: item.amount,
-                    performed: item.service_performed
-                }));
-
-            services.forEach(service => {
-                const option = document.createElement('option');
-                option.value = service.id;
-                option.textContent = service.name;
-                option.setAttribute('data-amount', service.amount);
-                option.setAttribute('data-performed', service.performed);
-                serviceSelect.appendChild(option);
-            });
-        }
-    });
-
-    function resetServiceForm() {
-        workTypeOptions.forEach(opt => opt.classList.remove('selected'));
-        document.querySelectorAll('input[name="work-type"]').forEach(radio => {
-            radio.checked = false;
-        });
-
-        document.getElementById('service-type').disabled = true;
-        document.getElementById('service-type').selectedIndex = 0;
-        document.getElementById('service-performed').disabled = true;
-        document.getElementById('service-performed').selectedIndex = 0;
-        document.getElementById('service').disabled = true;
-        document.getElementById('service').selectedIndex = 0;
-
-        document.querySelectorAll('.error-message').forEach(el => {
-            el.style.display = 'none';
-        });
-    }
-
-    // 4. Configuración de tabs
-    document.querySelectorAll('.tab-btn').forEach(tab => {
-        tab.addEventListener('click', function () {
-            document.querySelector('.form-tabs .tab-btn.active').classList.remove('active');
-            this.classList.add('active');
-
-            const tabId = this.getAttribute('data-tab');
-            document.querySelector('.tab-content.active').classList.remove('active');
-            document.getElementById(`${tabId}-tab`).classList.add('active');
-        });
-    });
-
-    // 5. Configuración del botón guardar con validaciones de bloqueo
     saveBtn.addEventListener('click', function () {
         let isValid = true;
         document.querySelectorAll('.error-message').forEach(el => {
@@ -725,49 +916,128 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const isActivityTabActive = document.getElementById('activity-tab').classList.contains('active');
-        const isServiceTabActive = document.getElementById('service-tab').classList.contains('active');
-        const activityType = activityTypeSelect.value;
+        const activityType = document.getElementById('activity-type').value;
         const workTypeSelected = document.querySelector('.work-type-option.selected');
         const serviceSelect = document.getElementById('service');
         const serviceValue = serviceSelect.value;
+        const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
+        const isServiceTabActive = document.getElementById('service-tab').classList.contains('active');
 
-        // Validation logic
-        if (isActivityTabActive) {
-            // No validar si el campo está bloqueado
-            if (!isFieldLocked(currentActivity, 'activity')) {
-                if (!activityType) {
-                    document.getElementById('activity-type-error').style.display = 'block';
-                    isValid = false;
-                }
-                if (activityType === 'C' && !commissionedSelect.value) {
-                    document.getElementById('commissioned-error').style.display = 'block';
-                    isValid = false;
-                }
+        // Lógica de bloqueo de campos y validación de VAC... (INTACTA)
+        if (currentActivity) {
+            let hasChangesToLockedFields = false;
+            let lockedFieldsMessage = [];
+            if (currentActivity.day_status === 'approved') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: 'No se pueden modificar actividades que ya han sido aprobadas.',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
             }
-        } else if (isServiceTabActive) {
-            // No validar si el campo está bloqueado
-            if (!isFieldLocked(currentActivity, 'service')) {
-                const serviceTypeValue = document.getElementById('service-type').value;
-                const servicePerformedValue = document.getElementById('service-performed').value;
-                if (!workTypeSelected) {
-                    document.getElementById('work-type-error').style.display = 'block';
-                    isValid = false;
-                }
-                if (!serviceTypeValue) {
-                    document.getElementById('service-type-error').style.display = 'block';
-                    isValid = false;
-                }
-                if (!servicePerformedValue) {
-                    document.getElementById('service-performed-error').style.display = 'block';
-                    isValid = false;
-                }
-                if (!serviceValue) {
-                    document.getElementById('service-error').style.display = 'block';
-                    isValid = false;
-                }
+            const isActivityLocked = isFieldLocked(currentActivity, 'activity');
+            if (isActivityLocked && activityType !== currentActivity.activity_type) {
+                hasChangesToLockedFields = true;
+                lockedFieldsMessage.push('Tipo de actividad');
+            }
+            if (isActivityLocked && activityType === 'C' && document.getElementById('commissioned-select').value !== currentActivity.commissioned_to) {
+                hasChangesToLockedFields = true;
+                lockedFieldsMessage.push('Área Comisionada');
+            }
+            if (isActivityLocked && activityType === 'P' && document.getElementById('well-name').value !== (currentActivity.well_name || '')) {
+                hasChangesToLockedFields = true;
+                lockedFieldsMessage.push('Nombre del Pozo');
+            }
+            const existingService = currentActivity.services_list?. [0];
+            const isServiceLocked = isFieldLocked(currentActivity, 'service');
+            if (isServiceLocked && serviceValue !== existingService?.service_identifier) {
+                hasChangesToLockedFields = true;
+                lockedFieldsMessage.push('Servicio');
+            }
+            const existingFoodBonus = currentActivity.food_bonuses?. [0];
+            const currentFoodBonus = document.getElementById('food-bonus').value;
+            const isFoodBonusLocked = isFieldLocked(currentActivity, 'food_bonus');
+            if (isFoodBonusLocked && currentFoodBonus !== existingFoodBonus?.num_daily?.toString()) {
+                hasChangesToLockedFields = true;
+                lockedFieldsMessage.push('Bono de comida');
+            }
+            const existingFieldBonus = currentActivity.field_bonuses?. [0];
+            const currentFieldBonus = document.getElementById('field-bonus').value;
+            const isFieldBonusLocked = isFieldLocked(currentActivity, 'field_bonus');
+            if (isFieldBonusLocked && currentFieldBonus !== existingFieldBonus?.bonus_identifier) {
+                hasChangesToLockedFields = true;
+                lockedFieldsMessage.push('Bono de campo');
+            }
+            if (hasChangesToLockedFields) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se puede guardar',
+                    text: `No se pueden modificar los siguientes campos porque ya están aprobados o revisados: ${lockedFieldsMessage.join(', ')}`,
+                    confirmButtonText: 'Entendido'
+                });
+                return;
             }
         }
 
+        if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
+            document.getElementById('vacation-balance-error').style.display = 'block';
+            Swal.fire({
+                icon: 'warning',
+                title: 'Saldo Insuficiente',
+                text: 'No tiene días de vacaciones disponibles.',
+                confirmButtonText: 'Aceptar'
+            });
+            return;
+        } else {
+            document.getElementById('vacation-balance-error').style.display = 'none';
+        }
+
+        if (isActivityTabActive && !isFieldLocked(currentActivity, 'activity')) {
+            if (!activityType) {
+                document.getElementById('activity-type-error').style.display = 'block';
+                isValid = false;
+            }
+            if (activityType === 'C' && !document.getElementById('commissioned-select').value) {
+                document.getElementById('commissioned-error').style.display = 'block';
+                isValid = false;
+            }
+            if (activityType === 'P' && !document.getElementById('well-name').value.trim()) {
+                document.getElementById('well-name-error').style.display = 'block';
+                isValid = false;
+            }
+        } else if (isServiceTabActive && hasServiceBonus === 'si' && !isFieldLocked(currentActivity, 'service')) {
+            const serviceTypeValue = document.getElementById('service-type').value;
+            const servicePerformedValue = document.getElementById('service-performed').value;
+            if (!workTypeSelected) {
+                document.getElementById('work-type-error').style.display = 'block';
+                isValid = false;
+            }
+            if (!serviceTypeValue) {
+                document.getElementById('service-type-error').style.display = 'block';
+                isValid = false;
+            }
+            if (!servicePerformedValue) {
+                document.getElementById('service-performed-error').style.display = 'block';
+                isValid = false;
+            }
+            if (!serviceValue) {
+                document.getElementById('service-error').style.display = 'block';
+                isValid = false;
+            }
+        }
+
+        const hasFoodBonus = document.getElementById('food-bonus').value !== '';
+        const hasFieldBonus = document.getElementById('field-bonus').value !== '';
+        if (!activityType && hasServiceBonus === 'no' && !hasFoodBonus && !hasFieldBonus) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selección requerida',
+                text: 'Por favor, selecciona una actividad antes de guardar.',
+                confirmButtonText: 'Aceptar'
+            });
+            return;
+        }
         if (!isValid) {
             Swal.fire({
                 icon: 'error',
@@ -778,112 +1048,66 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Check if there are changes to approved/reviewed fields
-        if (currentActivity) {
-            let hasApprovedChanges = false;
-            let approvedFieldsMessage = [];
-
-            // Check day status
-            if (currentActivity.day_status === 'approved') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Atención',
-                    text: 'No se pueden modificar actividades que ya han sido aprobadas.',
-                    confirmButtonText: 'Entendido'
-                });
-                return;
-            }
-
-            // Check activity
-            if (currentActivity.activity_status === 'Approved' || currentActivity.activity_status === 'Reviewed') {
-                if (activityType !== currentActivity.activity_type) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Tipo de actividad');
-                }
-                if (activityType === 'C' && commissionedSelect.value !== currentActivity.commissioned_to) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Área Comisionada');
-                }
-            }
-
-            // Check service
-            const existingService = currentActivity.services_list?.[0];
-            if (existingService && (existingService.status === 'Approved' || existingService.status === 'Reviewed')) {
-                if (serviceValue !== existingService.service_identifier) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Servicio');
-                }
-            }
-
-            // Check food bonus
-            const existingFoodBonus = currentActivity.food_bonuses?.[0];
-            const currentFoodBonus = document.getElementById('food-bonus').value;
-            if (existingFoodBonus && (existingFoodBonus.status === 'Approved' || existingFoodBonus.status === 'Reviewed')) {
-                if (currentFoodBonus !== existingFoodBonus.num_daily?.toString()) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Bono de comida');
-                }
-            }
-
-            // Check field bonus
-            const existingFieldBonus = currentActivity.field_bonuses?.[0];
-            const currentFieldBonus = document.getElementById('field-bonus').value;
-            if (existingFieldBonus && (existingFieldBonus.status === 'Approved' || existingFieldBonus.status === 'Reviewed')) {
-                if (currentFieldBonus !== existingFieldBonus.bonus_identifier) {
-                    hasApprovedChanges = true;
-                    approvedFieldsMessage.push('Bono de campo');
-                }
-            }
-
-            if (hasApprovedChanges) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'No se puede guardar',
-                    text: `No se pueden modificar los siguientes campos porque ya están aprobados o revisados: ${approvedFieldsMessage.join(', ')}`,
-                    confirmButtonText: 'Entendido'
-                });
-                return;
-            }
-        }
-
+        // --- PREPARACIÓN DEL FORM DATA ---
         const monthSpan = document.querySelector('.month-navigation span');
         const formData = {
             date: currentSelectedDate,
             displayed_month: monthSpan.getAttribute('data-month'),
             displayed_year: monthSpan.getAttribute('data-year'),
             activity_type: activityType || null,
-            commissioned_to: commissionedSelect.value || null,
-            food_bonus_number: document.getElementById('food-bonus').value || null,
-            field_bonus_identifier: document.getElementById('field-bonus').value || null
+            commissioned_to: document.getElementById('commissioned-select').value || null,
+            well_name: document.getElementById('well-name').value || null,
+            has_service_bonus: hasServiceBonus,
+            food_bonus_number: hasFoodBonus ? document.getElementById('food-bonus').value : null,
+            field_bonus_identifier: hasFieldBonus ? document.getElementById('field-bonus').value : null
         };
 
-        if (isServiceTabActive && serviceValue) {
-            const service = serviceData[workTypeSelected.getAttribute('data-value')]?.find(s => s.identifier === serviceValue);
-            formData.service_identifier = serviceValue;
-            formData.service_performed = service.service_performed;
-            formData.amount = service.amount;
-            formData.currency = service.currency;
+        let payrollPeriodValue = null;
+        const selectedPayrollPeriod = document.getElementById('payroll-period').value;
+        const currentMonth = parseInt(monthSpan.getAttribute('data-month'));
+        const currentYear = parseInt(monthSpan.getAttribute('data-year'));
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        if (selectedPayrollPeriod === 'current_q1') {
+            payrollPeriodValue = `Primera quincena de ${monthNames[currentMonth - 1]} ${currentYear}`;
+        } else if (selectedPayrollPeriod === 'previous_q2') {
+            const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+            const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+            payrollPeriodValue = `Segunda quincena de ${monthNames[prevMonth - 1]} ${prevYear}`;
+        } else if (selectedPayrollPeriod === 'current') {
+            payrollPeriodValue = null;
+        } else {
+            payrollPeriodValue = selectedPayrollPeriod;
         }
 
-
-        if (!formData.activity_type && !formData.service_identifier && !formData.food_bonus_number && !formData.field_bonus_identifier) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Selección requerida',
-                text: 'Por favor, selecciona una actividad o un servicio antes de guardar.',
-                confirmButtonText: 'Aceptar'
-            });
-            return;
+        if (hasServiceBonus === 'si' && serviceValue) {
+            const workTypeAttr = workTypeSelected?.getAttribute('data-value');
+            if (workTypeAttr) {
+                const service = serviceData[workTypeAttr]?.find(s => s.identifier === serviceValue);
+                if (service) {
+                    formData.service_identifier = serviceValue;
+                    formData.service_performed = service.service_performed;
+                    formData.amount = service.amount;
+                    formData.currency = service.currency;
+                    formData.payroll_period_override = payrollPeriodValue;
+                }
+            }
+        } else {
+            formData.service_identifier = null;
+            formData.service_performed = null;
+            formData.amount = null;
+            formData.currency = null;
+            formData.payroll_period_override = null;
         }
 
         saveBtn.disabled = true;
         loadingSpinner.style.display = 'block';
 
+        // --- LLAMADA FETCH ---
         fetch('/recursoshumanos/loadchart/save-activity', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ?.getAttribute('content') || ''
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                 },
                 body: JSON.stringify(formData)
             })
@@ -895,13 +1119,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         title: '¡Guardado!',
                         text: 'El registro se ha guardado exitosamente.',
                         showConfirmButton: false,
-                        timer: 1500,
+                        timer: 1500
                     });
                     closeModal();
                     const monthSpan = document.querySelector('.month-navigation span');
                     const currentMonth = parseInt(monthSpan.getAttribute('data-month'));
                     const currentYear = parseInt(monthSpan.getAttribute('data-year'));
-                    loadMonthlyActivities(currentMonth, currentYear);
+                    updateCalendar(currentMonth, currentYear);
                 } else {
                     Swal.fire({
                         icon: 'error',
@@ -926,7 +1150,26 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     });
 
-    // 6. Eventos del calendario para abrir el modal
+    function isDayInPayrollPeriod(dateStr) {
+        if (!currentPayrollDates.q1_start && !currentPayrollDates.q2_start) {
+            return false;
+        }
+        const date = new Date(dateStr + 'T00:00:00');
+        let inQ1 = false;
+        if (currentPayrollDates.q1_start && currentPayrollDates.q1_end) {
+            const q1Start = new Date(currentPayrollDates.q1_start + 'T00:00:00');
+            const q1End = new Date(currentPayrollDates.q1_end + 'T23:59:59');
+            inQ1 = date >= q1Start && date <= q1End;
+        }
+        let inQ2 = false;
+        if (currentPayrollDates.q2_start && currentPayrollDates.q2_end) {
+            const q2Start = new Date(currentPayrollDates.q2_start + 'T00:00:00');
+            const q2End = new Date(currentPayrollDates.q2_end + 'T23:59:59');
+            inQ2 = date >= q2Start && date <= q2End;
+        }
+        return inQ1 || inQ2;
+    }
+
     function attachDayClickEvents() {
         document.querySelectorAll('.calendar td').forEach(day => {
             const dayNumberEl = day.querySelector('.day-number');
@@ -937,21 +1180,34 @@ document.addEventListener('DOMContentLoaded', function () {
                     let month = parseInt(monthSpan.getAttribute('data-month'));
                     let year = parseInt(monthSpan.getAttribute('data-year'));
                     const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                    let targetMonth = month;
+                    let targetYear = year;
 
                     if (day.classList.contains('other-month')) {
-                        if (dayNum > 15) {
-                            month = (month === 1) ? 12 : month - 1;
-                            if (month === 12) year--;
+                        const dayInCell = parseInt(dayNum);
+                        const isPreviousMonth = dayInCell > 15;
+                        if (isPreviousMonth) {
+                            targetMonth = (month === 1) ? 12 : month - 1;
+                            targetYear = (month === 1) ? year - 1 : year;
                         } else {
-                            month = (month === 12) ? 1 : month + 1;
-                            if (month === 1) year++;
+                            targetMonth = (month === 12) ? 1 : month + 1;
+                            targetYear = (month === 12) ? year + 1 : year;
                         }
                     }
 
-                    const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                    const displayDate = `${dayNum} de ${monthNames[month - 1]} ${year}`;
+                    const formattedDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
 
-                    openModal(formattedDate, displayDate);
+                    if (isDayInPayrollPeriod(formattedDate)) {
+                        const displayDate = `${dayNum} de ${monthNames[targetMonth - 1]} de ${targetYear}`;
+                        openModal(formattedDate, displayDate);
+                    } else {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Día no editable',
+                            text: 'Solo se pueden registrar actividades en los días dentro de los periodos de nómina del mes actual.',
+                            confirmButtonText: 'Entendido'
+                        });
+                    }
                 });
             }
         });
@@ -959,18 +1215,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     attachDayClickEvents();
 
-    // 7. Navegación por meses del calendario (Carga AJAX) - CON LÍMITES
     const monthSpan = document.querySelector('.month-navigation span');
     const prevMonthBtn = document.getElementById('prev-month');
     const nextMonthBtn = document.getElementById('next-month');
     const calendarTableBody = document.querySelector('.calendar tbody');
     const chartHeader = document.querySelector('.chart-header h2');
-
-    // DEFINIR LÍMITES DE NAVEGACIÓN
     const MIN_YEAR = 2025;
-    const MIN_MONTH = 9; // Septiembre de 2025
+    const MIN_MONTH = 9;
 
-    // Función para verificar si una fecha está dentro del rango permitido
     function isDateWithinLimits(month, year) {
         if (year < MIN_YEAR) {
             return false;
@@ -981,14 +1233,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return true;
     }
 
-    // Función para actualizar el estado de los botones de navegación
     function updateNavigationButtons() {
         const currentMonth = parseInt(monthSpan.getAttribute('data-month'));
         const currentYear = parseInt(monthSpan.getAttribute('data-year'));
-
         let prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
         let prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-
         if (!isDateWithinLimits(prevMonth, prevYear)) {
             prevMonthBtn.disabled = true;
             prevMonthBtn.style.opacity = '0.5';
@@ -1012,7 +1261,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             return;
         }
-
         try {
             calendarTableBody.innerHTML = '<tr><td colspan="7" class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
             const response = await fetch(`/recursoshumanos/loadchart/calendar-data?month=${month}&year=${year}`);
@@ -1024,23 +1272,30 @@ document.addEventListener('DOMContentLoaded', function () {
             monthSpan.textContent = `${data.monthName} ${data.currentYear}`;
             monthSpan.setAttribute('data-month', data.currentMonth);
             monthSpan.setAttribute('data-year', data.currentYear);
-
+            currentPayrollDates = data.payrollDates;
             let newTableHTML = '';
             let currentRow = '<tr>';
             data.calendarDays.forEach((day, index) => {
                 const isCurrentMonth = day.current_month;
                 const isToday = day.is_today;
-                const cellClass = `${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'current-d' : ''}`;
-                const payrollIcons = `
-                    ${day.is_payroll_start_1 ? '<i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>' : ''}
-                    ${day.is_payroll_end_1 ? '<i class="fas fa-flag payroll-icon payroll-end-1" title="Fin Quincena 1"></i>' : ''}
-                    ${day.is_payroll_start_2 ? '<i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>' : ''}
-                    ${day.is_payroll_end_2 ? '<i class="fas fa-flag payroll-icon payroll-end-2" title="Fin Quincena 2"></i>' : ''}
-                `;
-                currentRow += `<td class="${cellClass}">
-                    <span class="day-number">${day.day}</span>
-                    ${payrollIcons}
-                </td>`;
+                const inPayrollPeriod = isDayInPayrollPeriod(day.date);
+                const isHoliday = day.is_holiday;
+                const holidayName = day.holiday_name;
+                const holidayIconType = day.holiday_icon_type;
+
+                const cellClass = `${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'current-d' : ''} ${inPayrollPeriod ? 'in-payroll-period' : ''}`;
+                let holidayIconHTML = '';
+                if (isHoliday) {
+                    if (holidayIconType === 'christmas_tree') {
+                        holidayIconHTML = `<img src="https://img.icons8.com/external-victoruler-flat-victoruler/64/external-christmas-tree-christmas-victoruler-flat-victoruler-1.png" alt="Árbol de Navidad" class="holiday-icon" title="${holidayName}">`;
+                    } else {
+                        holidayIconHTML = `<img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo" class="holiday-icon" title="${holidayName}">`;
+                    }
+                }
+
+                const payrollIcons = `${day.is_payroll_start_1 ? '<i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>' : ''} ${day.is_payroll_end_1 ? '<i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 1"></i>' : ''} ${day.is_payroll_start_2 ? '<i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>' : ''} ${day.is_payroll_end_2 ? '<i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 2"></i>' : ''} `;
+
+                currentRow += `<td class="${cellClass}" data-date="${day.date}"><span class="day-number">${day.day}</span>${holidayIconHTML}${payrollIcons}</td>`;
                 if ((index + 1) % 7 === 0) {
                     newTableHTML += currentRow + '</tr>';
                     currentRow = '<tr>';
@@ -1049,11 +1304,9 @@ document.addEventListener('DOMContentLoaded', function () {
             newTableHTML += currentRow.slice(0, -4);
             calendarTableBody.innerHTML = newTableHTML;
             attachDayClickEvents();
-
             updateNavigationButtons();
-
             await loadMonthlyActivities(month, year);
-
+            await fetchBalances();
         } catch (error) {
             console.error('Error al cargar el calendario:', error);
             Swal.fire({
@@ -1067,31 +1320,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
     prevMonthBtn.addEventListener('click', function () {
         if (this.disabled) return;
-
         let currentMonth = parseInt(monthSpan.getAttribute('data-month'));
         let currentYear = parseInt(monthSpan.getAttribute('data-year'));
-
         if (currentMonth === 1) {
             currentMonth = 12;
             currentYear--;
         } else {
             currentMonth--;
         }
-
         updateCalendar(currentMonth, currentYear);
     });
 
     nextMonthBtn.addEventListener('click', function () {
         let currentMonth = parseInt(monthSpan.getAttribute('data-month'));
         let currentYear = parseInt(monthSpan.getAttribute('data-year'));
-
         if (currentMonth === 12) {
             currentMonth = 1;
             currentYear++;
         } else {
             currentMonth++;
         }
-
         updateCalendar(currentMonth, currentYear);
     });
 
@@ -1099,7 +1347,6 @@ document.addEventListener('DOMContentLoaded', function () {
         updateNavigationButtons();
     });
 
-    // 8. Botón de aprobación
     const approveBtn = document.getElementById('approve-loadchart');
     if (approveBtn) {
         approveBtn.addEventListener('click', function (e) {
@@ -1108,8 +1355,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Cargar actividades del mes inicial
     const initialMonth = parseInt(monthSpan.getAttribute('data-month'));
     const initialYear = parseInt(monthSpan.getAttribute('data-year'));
-    loadMonthlyActivities(initialMonth, initialYear);
+    updateCalendar(initialMonth, initialYear);
 });

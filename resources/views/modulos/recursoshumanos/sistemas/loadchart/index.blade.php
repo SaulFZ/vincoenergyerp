@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vinco Energy - Load Chart</title>
+    <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
@@ -14,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-        @stack('styles')
+    @stack('styles')
 
 </head>
 
@@ -31,20 +32,33 @@
         </div>
         <div class="nav-links">
             <a data-route="calendar"><i class="fas fa-home"></i> Inicio</a>
-            <a data-route="history"><i class="fas fa-history"></i> Historial</a>
-            <a data-route="stats"><i class="fas fa-chart-bar"></i> Estadísticas</a>
-            <a data-route="review_assignments"><i class="fas fa-chart-bar"></i>Gestion de RyA</a>
 
-        </div>
-        <div class="user-info">
-            <div class="welcome">
+            {{-- Add the notification badge span here --}}
+            <a data-route="history"><i class="fas fa-history"></i> Historial <span
+                    class="notification-badge">10</span></a>
 
-                <i class="fas fa-user-circle"></i> {{ Auth::user()->name }}
-            </div>
-            <div class="logout" onclick="window.location.href='{{ route('home') }}'">
-                <i class="fas fa-home"></i> Inicio
-            </div>
+            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_estadisticas'))
+                <a data-route="stats"><i class="fas fa-chart-bar"></i> Estadísticas</a>
+            @endif
+
+            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_gestionRyA'))
+                <a data-route="review_assignments"><i class="fas fa-chart-bar"></i> Gestión de RyA</a>
+            @endif
+
+            {{-- NUEVO: Enlace para Bonos de Campo --}}
+            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_gestion_bonos'))
+                <a data-route="field_bonuses"><i class="fas fa-money-bill-wave"></i> Gestion de Bonos</a>
+            @endif
+
+            {{-- NUEVO: Enlace para Gestión de Vacaciones --}}
+            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_gestion_vacaciones'))
+                <a data-route="employee_vacation_balance"><i class="fas fa-suitcase-rolling"></i> Gestion de Vacaciones</a>
+            @endif
         </div>
+
+        @include('components.layouts._user-profile')
+
+
     </header>
 
     <!-- Main Content -->

@@ -24,6 +24,10 @@ return new class extends Migration
             $table->string('bonus_identifier', 15)->nullable(false)
                 ->comment('ID del bono (ej: "0.5", "1", "1.5")');
 
+            // --- AÑADIR ESTA LÍNEA ---
+            $table->boolean('is_active')->default(true)
+                ->comment('Indica si el bono está activo o no');
+
             $table->timestamps();
 
             $table->unique(['employee_category', 'bonus_type']);

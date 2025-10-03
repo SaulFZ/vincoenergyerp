@@ -6,7 +6,6 @@
         :root {
             --primary-dark-blue: #2c3e50;
             --primary-darker-blue: #34495e;
-            --primary-blue: #334c95;
             --primary-orange: #d67e29;
             --dark-gray: #2d3748;
             --medium-gray: #4a5568;
