@@ -9,9 +9,7 @@
         "azuyalabs/yasumi": "^2.8",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.9",
-        "rize/uri-template": "^0.4.0",
-                "yasumi/yasumi": "^2.10"
-
+        "rize/uri-template": "^0.4.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
