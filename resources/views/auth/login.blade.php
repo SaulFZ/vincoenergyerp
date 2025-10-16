@@ -28,7 +28,7 @@
             <div class="acptContainer">
                 <form id="loginForm" method="POST" action="{{ route('login') }}">
                     @csrf
-                    <h1>Bienvenido!</h1>
+                    <h1>!Bienvenido!</h1>
                     <div class="frmContainer">
                         <div class="frmDiv" style="transition-delay: 0.2s">
                             <i class="fas fa-user"></i>
