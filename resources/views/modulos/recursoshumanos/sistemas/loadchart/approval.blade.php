@@ -39,47 +39,48 @@
             <div class="activity-legend">
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: var(--work-base);"></div>
-                    <span>Base (B)</span>
+                    <span>Base(B)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: var(--work-well);"></div>
-                    <span>Pozo (P)</span>
+                    <span>Pozo(P)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: var(--home-office);"></div>
-                    <span>Home Office (H)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--traveling);"></div>
-                    <span>Viaje (V)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--rest);"></div>
-                    <span>Descanso (D)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--vacation);"></div>
-                    <span>Vacaciones (VAC)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--training);"></div>
-                    <span>Entrenamiento (E)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--medical);"></div>
-                    <span>Médico (M)</span>
+                    <span>Trabajo en Casa(TC)</span> {{-- CAMBIO: Home Office (H) a Trabajo en Casa (TC) --}}
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: var(--commissioned);"></div>
-                    <span>Comisionado (C)</span>
+                    <span>Comisionado(C)</span>
                 </div>
                 <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--traveling);"></div>
+                    <span>Viaje(V)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--training);"></div>
+                    <span>Entrenamiento(E)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--rest);"></div>
+                    <span>Descanso(D)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--vacation);"></div>
+                    <span>Vacaciones(VAC)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--medical);"></div>
+                    <span>MEdico(M)</span>
+                </div>
+
+                <div class="legend-item">
                     <div class="legend-color" style="background-color: var(--permission);"></div>
-                    <span>Permiso (PE)</span>
+                    <span>Permiso(PE)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: var(--absence);"></div>
-                    <span>Aucencuia (A)</span>
+                    <span>Ausencia(A)</span>
                 </div>
                 <div class="legend-divider"></div>
                 {{-- ➡️ Actualizado: Nuevo estado 'Bajo Revisión' --}}
@@ -110,7 +111,7 @@
                             <th colspan="{{ count($monthlyDays) }}" id="days-columns">Días del Período</th>
                             <th rowspan="2">Total</th>
                             <th rowspan="2" class="vacations-header" title="Vacaciones">Vac.</th>
-                            <th rowspan="2" class="breaks-header" title="Descansos">Desc.</th>
+                            <th rowspan="2" class="breaks-header" title="Descansos/Otros">Desc.</th>
                             <th rowspan="2" class="utilization-header" title="Utilización">Utiliz.</th>
                             <th rowspan="2" class="utilization-header" title="Aprobación">Aprob.</th>
                         </tr>
@@ -222,6 +223,7 @@
         </div>
 
         <script>
+
             // Variables globales
             let currentMonth = {{ $currentMonth }};
             let currentYear = {{ $currentYear }};
@@ -234,7 +236,6 @@
             let currentUserId = {{ auth()->id() }};
         </script>
     </div>
-
     <div class="modal-approval-custom" id="approvalModal">
         <div class="modal-approval-content">
             <div class="modal-approval-header">
@@ -250,12 +251,13 @@
                 <table class="approval-table-custom">
                     <thead>
                         <tr>
-                            <th>Concepto</th>
-                            <th>Detalles</th>
-                            <th>Identificador</th>
-                            <th class="amount-header">Monto</th>
-                            <th>Estado Actual</th>
-                            <th>Comentarios</th>
+                            <th style="width: 8%">Concepto</th>
+                            <th style="width: 20%">Detalles</th>
+                            <th style="width: 10%">ID/Tipo</th>
+                            <th style="width: 25%">Detalles Adicionales</th>
+                            <th class="amount-header" style="width: 10%">Monto</th>
+                            <th style="width: 12%">Estado Actual</th>
+                            <th style="width: 15%">Comentarios</th>
                         </tr>
                     </thead>
                     <tbody id="modal-table-body">

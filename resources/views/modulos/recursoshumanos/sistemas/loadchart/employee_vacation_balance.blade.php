@@ -49,7 +49,7 @@
                                     <select id="rest_mode" name="rest_mode" class="select-custom" required>
                                         <option value="5x2" selected>5 días trabajo x 2 días descanso</option>
                                         <option value="6x1">6 días trabajo x 1 día descanso</option>
-                                        <option value="28x7">28 días trabajo x 7 días descanso (Rotativo)</option>
+                                        <option value="24x6">24 días trabajo x 6 días descanso (Rotativo)</option>
                                         <option value="12x24hr">12 horas trabajo x 24 horas descanso (Turno)</option>
                                         <option value="UNASSIGNED">No Asignado</option>
                                     </select>

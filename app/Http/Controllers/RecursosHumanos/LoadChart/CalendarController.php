@@ -57,6 +57,7 @@ class CalendarController extends Controller
             'service_description', 'amount', 'currency'
         )
             ->orderBy('operation_type')
+            ->orderBy('service_type')
             ->orderBy('identifier')
             ->get()
             ->groupBy('operation_type');
@@ -432,6 +433,7 @@ class CalendarController extends Controller
             $displayedMonth = $request->input('displayed_month');
             $displayedYear = $request->input('displayed_year');
             $monthYear = Carbon::create($displayedYear, $displayedMonth, 1)->format('Y-m');
+            $activityType = $request->activity_type ?? 'N';
 
             $monthlyLog = EmployeeMonthlyWorkLog::firstOrCreate(
                 ['employee_id' => $employee->id, 'user_id' => $user->id, 'month_and_year' => $monthYear],
@@ -439,6 +441,11 @@ class CalendarController extends Controller
             );
 
             $existingActivity = $monthlyLog->getDailyActivity($request->date);
+            // Bloqueo estricto si el día entero está APROBADO o REVISADO (según la nueva regla)
+            // Ya que el front-end solo enviará el request si al menos un campo es editable,
+            // si el front-end permite la edición cuando el day_status es 'rejected',
+            // el backend solo debe impedir la edición si el day_status es 'approved' (para evitar re-uso de estatus)
+            // La validación de 'reviewed' se hace en el front-end.
             if ($existingActivity && ($existingActivity['day_status'] ?? 'under_review') === 'approved') {
                 DB::rollback();
                 return response()->json(['success' => false, 'message' => 'No se pueden modificar actividades aprobadas.'], 403);
@@ -451,11 +458,11 @@ class CalendarController extends Controller
                 'activity_status' => 'under_review',
                 'payroll_period_marker' => $payrollPeriodMarker,
                 'is_locked' => false,
-                'activity_type' => $request->activity_type,
-                'activity_description' => $this->getActivityDescription($request->activity_type),
-                'commissioned_to' => $request->commissioned_to,
-                'well_name' => $request->well_name,
-                'has_service_bonus' => $request->has_service_bonus,
+                'activity_type' => $activityType,
+                'activity_description' => $this->getActivityDescription($activityType),
+                'commissioned_to' => $activityType === 'C' ? $request->commissioned_to : null,
+                'well_name' => $activityType === 'P' ? $request->well_name : null,
+                'has_service_bonus' => $activityType === 'P' ? $request->has_service_bonus : 'no',
                 'services_list' => [],
                 'field_bonuses' => [],
                 'food_bonuses' => [],
@@ -463,24 +470,34 @@ class CalendarController extends Controller
             ];
 
             // --- Lógica para mantener el estado de Aprobación/Revisión si NO hay cambios ---
+            $statusesToMaintain = ['approved', 'reviewed'];
             if ($existingActivity) {
                 $oldActivityStatus = $existingActivity['activity_status'];
+                $oldCommissionedTo = $existingActivity['commissioned_to'] ?? null;
+                $oldWellName = $existingActivity['well_name'] ?? null;
+                $oldHasServiceBonus = $existingActivity['has_service_bonus'] ?? 'no';
+
+                // CAMBIO: Se usa TC en lugar de H
+                $isCommissionedToChanged = ($activityType === 'C' && ($oldCommissionedTo !== ($activityData['commissioned_to'] ?? null)));
+                $isWellNameChanged = ($activityType === 'P' && ($oldWellName !== ($activityData['well_name'] ?? null)));
+                $isHasServiceBonusChanged = ($activityType === 'P' && ($oldHasServiceBonus !== $activityData['has_service_bonus']));
+
                 $activityFieldsChanged = (
                     $existingActivity['activity_type'] !== $activityData['activity_type'] ||
-                    ($existingActivity['commissioned_to'] ?? null) !== ($activityData['commissioned_to'] ?? null) ||
-                    ($existingActivity['well_name'] ?? null) !== ($activityData['well_name'] ?? null) ||
-                    ($existingActivity['has_service_bonus'] ?? 'no') !== $activityData['has_service_bonus']
+                    $isCommissionedToChanged ||
+                    $isWellNameChanged ||
+                    $isHasServiceBonusChanged
                 );
 
-                if (!$activityFieldsChanged && $oldActivityStatus !== 'Rejected') {
+                if (!$activityFieldsChanged && in_array($oldActivityStatus, $statusesToMaintain)) {
                     $activityData['activity_status'] = $oldActivityStatus;
                     $activityData['rejection_reason'] = $existingActivity['rejection_reason'] ?? null;
                 }
             }
-            // Lógica para Servicios, Bonos de campo, Comida (mantiene status si no hay cambios y no estaba rejected)
 
-            // Servicio
-            if ($request->has_service_bonus === 'si' && $request->filled('service_identifier')) {
+            // Servicio (solo si es P y has_service_bonus es 'si')
+            $isActivityP = $activityType === 'P';
+            if ($isActivityP && $request->has_service_bonus === 'si' && $request->filled('service_identifier')) {
                 $service = Services::where('identifier', $request->service_identifier)->first();
                 if (!$service) {
                     throw new \Exception("Service with identifier {$request->service_identifier} not found.");
@@ -500,16 +517,16 @@ class CalendarController extends Controller
                     $oldService = $existingActivity['services_list'][0];
                     $isServiceChanged = ($oldService['service_identifier'] !== $currentService['service_identifier'] || ($oldService['payroll_period_override'] ?? null) !== $currentService['payroll_period_override']);
                     $oldServiceStatus = $oldService['status'];
-                    if (!$isServiceChanged && $oldServiceStatus !== 'Rejected') {
+                    if (!$isServiceChanged && in_array($oldServiceStatus, $statusesToMaintain)) {
                         $currentService['status'] = $oldServiceStatus;
-                        $currentService['rejection_reason'] = $oldService['rejection_reason'];
+                        $currentService['rejection_reason'] = $oldService['rejection_reason'] ?? null;
                     }
                 }
                 $activityData['services_list'][] = $currentService;
             }
 
-            // Bono de Campo
-            if ($request->filled('field_bonus_identifier')) {
+            // Bono de Campo (solo si es P y se seleccionó)
+            if ($isActivityP && $request->filled('field_bonus_identifier')) {
                 $fieldBonus = FieldBonus::where('bonus_identifier', $request->field_bonus_identifier)->first();
                 if ($fieldBonus) {
                     $daily_amount_mxn = null;
@@ -540,17 +557,17 @@ class CalendarController extends Controller
                         $oldBonus = $existingActivity['field_bonuses'][0];
                         $isFieldBonusChanged = ($oldBonus['bonus_identifier'] !== $currentFieldBonus['bonus_identifier']);
                         $oldBonusStatus = $oldBonus['status'];
-                        if (!$isFieldBonusChanged && $oldBonusStatus !== 'Rejected') {
+                        if (!$isFieldBonusChanged && in_array($oldBonusStatus, $statusesToMaintain)) {
                             $currentFieldBonus['status'] = $oldBonusStatus;
-                            $currentFieldBonus['rejection_reason'] = $oldBonus['rejection_reason'];
+                            $currentFieldBonus['rejection_reason'] = $oldBonus['rejection_reason'] ?? null;
                         }
                     }
                     $activityData['field_bonuses'][] = $currentFieldBonus;
                 }
             }
 
-            // Bono de Comida
-            if ($request->filled('food_bonus_number')) {
+            // Bono de Comida (solo si es P y se seleccionó)
+            if ($isActivityP && $request->filled('food_bonus_number')) {
                 $meal = Meal::where('meal_number', $request->food_bonus_number)->first();
                 if ($meal) {
                     $currentFoodBonus = [
@@ -565,13 +582,35 @@ class CalendarController extends Controller
                         $oldBonus = $existingActivity['food_bonuses'][0];
                         $isFoodBonusChanged = ($oldBonus['num_daily'] !== (int) $currentFoodBonus['num_daily']);
                         $oldBonusStatus = $oldBonus['status'];
-                        if (!$isFoodBonusChanged && $oldBonusStatus !== 'Rejected') {
+                        if (!$isFoodBonusChanged && in_array($oldBonusStatus, $statusesToMaintain)) {
                             $currentFoodBonus['status'] = $oldBonusStatus;
-                            $currentFoodBonus['rejection_reason'] = $oldBonus['rejection_reason'];
+                            $currentFoodBonus['rejection_reason'] = $oldBonus['rejection_reason'] ?? null;
                         }
                     }
                     $activityData['food_bonuses'][] = $currentFoodBonus;
                 }
+            }
+
+            // Lógica para el caso de ELIMINAR todo
+            $isActivityRegistered = ($activityType !== 'N' || count($activityData['services_list']) > 0 || count($activityData['field_bonuses']) > 0 || count($activityData['food_bonuses']) > 0);
+
+            if (!$isActivityRegistered) {
+                   if ($existingActivity) {
+                       $monthlyLog->removeDailyActivity($request->date);
+                       $monthlyLog->save();
+                       DB::commit();
+                       return response()->json([
+                           'success' => true,
+                           'message' => 'Actividad eliminada exitosamente',
+                           'data' => null,
+                       ]);
+                   }
+                   DB::commit();
+                   return response()->json([
+                       'success' => true,
+                       'message' => 'No se registró actividad, no se realizó ninguna acción.',
+                       'data' => null,
+                   ]);
             }
 
             // 4. Recalcular el estado general del día (day_status)
@@ -637,7 +676,7 @@ class CalendarController extends Controller
             'B' => 'Trabajo en Base',
             'P' => 'Trabajo en Pozo',
             'C' => 'Comisionado',
-            'H' => 'Home Office',
+            'TC' => 'Trabajo en Casa', // CAMBIO: H -> TC
             'V' => 'Viaje',
             'D' => 'Descanso',
             'VAC' => 'Vacaciones',
@@ -645,6 +684,7 @@ class CalendarController extends Controller
             'M' => 'Médico',
             'A' => 'Ausencia',
             'PE' => 'Permiso',
+            'N' => 'Ninguna'
         ];
 
         return $descriptions[$activityType] ?? 'Actividad desconocida';
@@ -721,6 +761,7 @@ class CalendarController extends Controller
 
     private function getUsdToMxnExchangeRate()
     {
+        // ... (API call to Banxico remains the same)
         $token = '9aa4c5d4ea07cf4a3bd54f4f38908c77ad74092d0be9d915f8fb7b7eadc6a1a3';
         $url = "https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/oportuno?token={$token}";
 
@@ -741,6 +782,7 @@ class CalendarController extends Controller
 
     private function getMandatoryHolidays(int $year): array
     {
+        // ... (Yasumi logic remains the same)
         try {
             $holidays = Yasumi::create('Mexico', $year);
             $mandatoryHolidays = [];
@@ -794,13 +836,15 @@ class CalendarController extends Controller
 
     private function recalculateDayStatus($dailyActivity)
     {
+        // ... (This function remains the same as it relies on internal statuses, not the activity type code itself)
         $hasRejected = false;
         $hasUnderReview = false;
+        $hasApproved = false;
         $hasReviewed = false;
         $totalItems = 0;
-        $approvedItems = 0;
-        $reviewedItems = 0;
+        $statusesToLock = ['approved', 'reviewed'];
 
+        // 1. Verificar la actividad principal (si existe y no es 'N')
         if (isset($dailyActivity['activity_type']) && !empty($dailyActivity['activity_type']) && $dailyActivity['activity_type'] !== 'N') {
             $totalItems++;
             $activityStatus = strtolower($dailyActivity['activity_status'] ?? 'under_review');
@@ -808,14 +852,13 @@ class CalendarController extends Controller
                 $hasRejected = true;
             if ($activityStatus == 'under_review')
                 $hasUnderReview = true;
-            if ($activityStatus == 'reviewed') {
+            if ($activityStatus == 'approved')
+                $hasApproved = true;
+            if ($activityStatus == 'reviewed')
                 $hasReviewed = true;
-                $reviewedItems++;
-            }
-            if ($activityStatus == 'approved') {
-                $approvedItems++;
-            }
         }
+
+        // 2. Verificar bonos y servicios
         $itemTypes = ['food_bonuses', 'field_bonuses', 'services_list'];
         foreach ($itemTypes as $type) {
             if (isset($dailyActivity[$type]) && is_array($dailyActivity[$type])) {
@@ -826,35 +869,40 @@ class CalendarController extends Controller
                         $hasRejected = true;
                     if ($itemStatus == 'under_review')
                         $hasUnderReview = true;
-                    if ($itemStatus == 'reviewed') {
+                    if ($itemStatus == 'approved')
+                        $hasApproved = true;
+                    if ($itemStatus == 'reviewed')
                         $hasReviewed = true;
-                        $reviewedItems++;
-                    }
-                    if ($itemStatus == 'approved') {
-                        $approvedItems++;
-                    }
                 }
             }
         }
 
+        // 3. Determinar el estado general
         if ($totalItems === 0) {
-            return 'under_review';
+            return 'under_review'; // Un día "vacío" se considera bajo revisión hasta que se borre.
         }
+
         if ($hasRejected) {
             return 'rejected';
         }
+
+        // Si hay items bajo revisión, el día está bajo revisión
         if ($hasUnderReview) {
             return 'under_review';
         }
-        if ($approvedItems === $totalItems) {
+
+        // Si no hay rejected ni under_review, todos los items están Approved o Reviewed.
+
+        // Si al menos uno es APROBADO, el estado del día es APROBADO.
+        if ($hasApproved) {
             return 'approved';
         }
-        if ($hasReviewed || ($reviewedItems + $approvedItems === $totalItems && $reviewedItems > 0)) {
+
+        // Si todos son REVISADOS (y no hay approved, rejected, ni under_review)
+        if ($hasReviewed && !$hasApproved && !$hasRejected && !$hasUnderReview) {
             return 'reviewed';
         }
 
-        return 'under_review';
+        return 'under_review'; // Caso catch-all si la lógica falla o si solo hay ítems vacíos (aunque totalItems > 0)
     }
 }
-
-

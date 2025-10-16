@@ -13,7 +13,10 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- Incluir SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @stack('styles')
 
@@ -52,7 +55,8 @@
 
             {{-- NUEVO: Enlace para Gestión de Vacaciones --}}
             @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_gestion_vacaciones'))
-                <a data-route="employee_vacation_balance"><i class="fas fa-suitcase-rolling"></i> Gestion de Vacaciones</a>
+                <a data-route="employee_vacation_balance"><i class="fas fa-suitcase-rolling"></i> Gestion de
+                    Vacaciones</a>
             @endif
         </div>
 

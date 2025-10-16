@@ -931,6 +931,7 @@ body {
 /* Form Elements */
 .form-group {
     margin-bottom: 20px;
+    position: relative; /* Asegura que el indicador de bloqueo se posicione correctamente */
 }
 
 .form-group label {
@@ -1006,11 +1007,6 @@ body {
 
 .select-header:hover {
     border-color: var(--primary-blue);
-}
-
-.select-header i {
-    transition: all 0.3s ease;
-    color: var(--medium-gray);
 }
 
 .select-header.open {
@@ -1290,6 +1286,8 @@ body {
     display: none;
 }
 
+
+
 /* Footer */
 
 .footer {
@@ -1310,6 +1308,13 @@ body {
     color: rgb(255, 255, 255);
     width: 100%;
 }
+
+
+
+
+
+
+
 
 /*COMPONETES USER PERFIL*/
 /* ESTILOS DEL COMPONENTE DE USUARIO */
@@ -1573,5 +1578,98 @@ body {
 @media (max-width: 576px) {
     .user-name {
         display: none !important;
+    }
+}
+
+/* ================================== */
+/* ESTILOS ADICIONALES PARA EL BLOQUEO */
+/* ================================== */
+.lock-indicator {
+    position: absolute;
+    top: -5px; /* Ajusta la posición para que no cubra la etiqueta directamente */
+    right: 0;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: var(--white);
+    /* Color de fondo será dinámico: approved o reviewed */
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    opacity: 0.95;
+    transition: background-color 0.3s ease;
+}
+
+.lock-indicator i {
+    font-size: 10px;
+}
+
+.form-group:has(.lock-indicator) label {
+    font-style: italic;
+    color: var(--medium-gray);
+}
+/* Animaciones para SweetAlert2 */
+.animate__animated {
+    animation-duration: 0.5s;
+}
+
+.animate__fadeInDown {
+    animation-name: fadeInDown;
+}
+
+.animate__fadeOutUp {
+    animation-name: fadeOutUp;
+}
+
+.animate__fadeInRight {
+    animation-name: fadeInRight;
+}
+
+.animate__fadeOutRight {
+    animation-name: fadeOutRight;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translate3d(0, -100%, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes fadeOutUp {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, -100%, 0);
+    }
+}
+
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translate3d(100%, 0, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes fadeOutRight {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(100%, 0, 0);
     }
 }

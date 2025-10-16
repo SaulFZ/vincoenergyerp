@@ -9,6 +9,7 @@ use App\Http\Controllers\RecursosHumanos\LoadChart\FieldBonusController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\HistoryController;
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
 use Illuminate\Support\Facades\Route;

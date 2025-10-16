@@ -3,6 +3,7 @@
 @section('content')
     <div id="normalView">
         <div class="content-layout">
+            {{-- DETALLES DEL EMPLEADO --}}
             <div class="employee-details" id="employeeDetails">
                 <div class="employee-header">
                     <div class="employee-photo-container">
@@ -30,7 +31,7 @@
                         <h3>Fecha de Ingreso</h3>
                         <p>{{ $hire_date }}</p>
                     </div>
-                    {{-- MODIFICADO: Añadido -balance-type --}}
+                    {{-- Saldos (MODIFICADO: Añadido data-balance-type para JS) --}}
                     <div class="info-group">
                         <h3>Vacaciones</h3>
                         <p class="vacation-days" data-balance-type="vacation">{{ $vacationDays }} días</p>
@@ -41,6 +42,8 @@
                     </div>
                 </div>
             </div>
+
+            {{-- CONTENEDOR PRINCIPAL DEL CALENDARIO (LOAD CHART) --}}
             <div class="load-chart-container" id="loadChart">
                 <div class="chart-header">
                     <h2><i class="fas fa-chart-bar"></i> Load Chart - {{ $monthName }} {{ $currentYear }}</h2>
@@ -71,11 +74,35 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {{-- La tabla se renderiza inicialmente con PHP y luego se actualiza con JS/AJAX --}}
                         <tr>
                             @foreach ($calendarDays as $day)
                                 @php
                                     $isCurrentMonth = $day['current_month'];
                                     $isToday = $day['date'] == date('Y-m-d');
+
+                                    // Lógica para determinar si el día está en un período de nómina
+                                    $dateString = $day['date'] ?? null;
+                                    $dateObj = $dateString ? new \DateTime($dateString) : null;
+                                    $inPayrollPeriod = false;
+
+                                    if ($dateObj) {
+                                        if ($payrollDates['q1_start'] && $payrollDates['q1_end']) {
+                                            $q1Start = new \DateTime($payrollDates['q1_start']);
+                                            $q1End = new \DateTime($payrollDates['q1_end'] . ' 23:59:59');
+                                            if ($dateObj >= $q1Start && $dateObj <= $q1End) {
+                                                $inPayrollPeriod = true;
+                                            }
+                                        }
+                                        if ($payrollDates['q2_start'] && $payrollDates['q2_end']) {
+                                            $q2Start = new \DateTime($payrollDates['q2_start']);
+                                            $q2End = new \DateTime($payrollDates['q2_end'] . ' 23:59:59');
+                                            if ($dateObj >= $q2Start && $dateObj <= $q2End) {
+                                                $inPayrollPeriod = true;
+                                            }
+                                        }
+                                    }
+
                                     $isPayrollStart1 =
                                         $payrollDates['q1_start'] &&
                                         date('Y-m-d', strtotime($payrollDates['q1_start'])) == $day['date'];
@@ -89,20 +116,12 @@
                                         $payrollDates['q2_end'] &&
                                         date('Y-m-d', strtotime($payrollDates['q2_end'])) == $day['date'];
                                 @endphp
-                                <td class="{{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'current-d' : '' }}">
+
+                                <td class="{{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'current-d' : '' }} {{ $inPayrollPeriod ? 'in-payroll-period' : '' }}"
+                                    data-date="{{ $day['date'] }}">
                                     <span class="day-number">{{ $day['day'] }}</span>
-                                    @if ($isPayrollStart1)
-                                        <i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>
-                                    @endif
-                                    @if ($isPayrollEnd1)
-                                        <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 1"></i>
-                                    @endif
-                                    @if ($isPayrollStart2)
-                                        <i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>
-                                    @endif
-                                    @if ($isPayrollEnd2)
-                                        <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 2"></i>
-                                    @endif
+
+                                    {{-- Íconos de Día Festivo --}}
                                     @if (isset($day['is_holiday']) && $day['is_holiday'])
                                         @if ($day['holiday_icon_type'] == 'christmas_tree')
                                             <img src="https://img.icons8.com/external-victoruler-flat-victoruler/64/external-christmas-tree-christmas-victoruler-flat-victoruler-1.png"
@@ -115,6 +134,20 @@
                                         @endif
                                     @endif
 
+                                    {{-- Íconos de Período de Nómina --}}
+                                    @if ($isPayrollStart1)
+                                        <i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>
+                                    @endif
+                                    @if ($isPayrollEnd1)
+                                        <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 1"></i>
+                                    @endif
+                                    @if ($isPayrollStart2)
+                                        <i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>
+                                    @endif
+                                    @if ($isPayrollEnd2)
+                                        <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 2"></i>
+                                    @endif
+
                                 </td>
                                 @if ($loop->iteration % 7 == 0)
                         </tr>
@@ -124,6 +157,7 @@
                         </tr>
                     </tbody>
                 </table>
+                {{-- LEYENDA DEL CALENDARIO --}}
                 <div class="activity-legend">
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--work-base);"></div>
@@ -135,7 +169,7 @@
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--home-office);"></div>
-                        <div>Home Office</div>
+                        <div>Trabajo en Casa</div> {{-- CAMBIO: Home Office -> Trabajo en Casa --}}
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--traveling);"></div>
@@ -161,12 +195,10 @@
                         <div class="legend-color" style="background-color: var(--commissioned);"></div>
                         <div>Comisionado</div>
                     </div>
-                    {{-- NEW: Ausencia legend item --}}
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--absence);"></div>
                         <div>Ausencia</div>
                     </div>
-                    {{-- NEW: Permiso legend item --}}
                     <div class="legend-item">
                         <div class="legend-color" style="background-color: var(--permission);"></div>
                         <div>Permiso</div>
@@ -189,7 +221,7 @@
                     </div>
 
                     <div class="legend-item">
-                        <i class="fas fa-flag legend-payroll-start-1"></i>
+                        <i class="fas fa-flag payroll-icon payroll-start-1"></i>
                         <div>Inicio Q1</div>
                     </div>
                     <div class="legend-item">
@@ -208,6 +240,7 @@
     </div>
 
 
+    {{-- MODAL DE REGISTRO DE ACTIVIDAD --}}
     <div class="modal" id="activityModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -234,7 +267,7 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="activity-type-group">
                         <label for="activity-type">Tipo de Actividad</label>
 
                         <div class="custom-select" id="activity-type-select">
@@ -271,13 +304,14 @@
                                         style="background-color: var(--commissioned); color: #fff;">C</div>
                                 </div>
 
-                                <div class="activity-option" data-value="H">
+                                {{-- CAMBIO: Home Office (H) a Trabajo en Casa (TC) --}}
+                                <div class="activity-option" data-value="TC">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--home-office);"></div>
-                                        <div class="activity-label">Home Office</div>
+                                        <div class="activity-label">Trabajo en Casa</div>
                                     </div>
                                     <div class="activity-code" style="background-color: var(--home-office); color: #fff;">
-                                        H</div>
+                                        TC</div>
                                 </div>
 
                                 <div class="activity-option" data-value="V">
@@ -324,7 +358,6 @@
                                     </div>
                                 </div>
 
-                                {{-- NEW: Ausencia option --}}
                                 <div class="activity-option" data-value="A">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--absence);"></div>
@@ -334,7 +367,6 @@
                                     </div>
                                 </div>
 
-                                {{-- NEW: Permiso option --}}
                                 <div class="activity-option" data-value="PE">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--permission);"></div>
@@ -344,26 +376,37 @@
                                         PE
                                     </div>
                                 </div>
+
+                                <div class="activity-option" data-value="N">
+                                    <div class="option-content">
+                                        <div class="color-indicator" style="background-color: #ccc;"></div>
+                                        <div class="activity-label">Ninguna / Solo Bonos/Servicios</div>
+                                    </div>
+                                    <div class="activity-code" style="background-color: #ccc; color: #333;">
+                                        N
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
+                        {{-- Hidden original select (for form data, required for old validation layers) --}}
                         <select id="activity-type" name="activity_type" style="display:none;">
                             <option value="">Seleccionar actividad...</option>
                             <option value="B">B - Trabajo en Base</option>
                             <option value="P">P - Trabajo en Pozo</option>
                             <option value="C">C - Comisionado</option>
-                            <option value="H">H - Home Office</option>
+                            <option value="TC">TC - Trabajo en Casa</option> {{-- CAMBIO: H -> TC --}}
                             <option value="V">V - Viaje</option>
                             <option value="D">D - Descanso</option>
                             <option value="VAC">VAC - Vacaciones</option>
                             <option value="E">E - Entrenamiento</option>
                             <option value="M">M - Médico</option>
-                            {{-- NEW: Ausencia option for select element --}}
                             <option value="A">A - Ausencia</option>
-                            {{-- NEW: Permiso option for select element --}}
                             <option value="PE">PE - Permiso</option>
+                            <option value="N">N - Ninguna</option>
                         </select>
 
+                        {{-- Error Messages --}}
                         <div class="error-message" id="activity-type-error">Debes seleccionar un tipo de actividad</div>
                         <div class="error-message" id="vacation-balance-error" style="display:none;">No tienes días de
                             vacaciones disponibles.</div>
@@ -394,60 +437,67 @@
                         <div class="error-message" id="commissioned-error">Debes seleccionar un área comisionada</div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="food-bonus">Bono de Comida</label>
-                        <select id="food-bonus" class="select-custom">
-                            <option value="">Seleccionar bono de comida...</option>
-                            @foreach ($foodOptions as $meal)
-                                <option value="{{ $meal->meal_number }}">
-                                    {{ $meal->meal_number }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    {{-- INICIO: CAMPOS CONDICIONALES A TRABAJO EN POZO (P) --}}
+                    <div id="conditional-fields" style="display: none;">
 
-                    <div class="form-group">
-                        <label for="field-bonus">Bono de Campo</label>
-                        <select id="field-bonus" class="select-custom">
-                            <option value="">Seleccionar bono de campo...</option>
-                            @foreach ($fieldBonuses as $bonus)
-                                <option value="{{ $bonus->bonus_identifier }}">
-                                    {{ $bonus->bonus_type }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                        <div class="form-group">
+                            <label for="food-bonus">Bono de Comida</label>
+                            <select id="food-bonus" class="select-custom">
+                                <option value="">Seleccionar bono de comida...</option>
+                                @foreach ($foodOptions as $meal)
+                                    <option value="{{ $meal->meal_number }}">
+                                        {{ $meal->meal_number }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="error-message" id="food-bonus-error">Debes seleccionar un bono de comida.</div>
+                        </div>
 
+                        <div class="form-group">
+                            <label for="field-bonus">Bono de Campo</label>
+                            <select id="field-bonus" class="select-custom">
+                                <option value="">Seleccionar bono de campo...</option>
+                                @foreach ($fieldBonuses as $bonus)
+                                    <option value="{{ $bonus->bonus_identifier }}">
+                                        {{ $bonus->bonus_type }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="error-message" id="field-bonus-error">Debes seleccionar un bono de campo.</div>
+                        </div>
 
-
-                    <div class="form-group">
-                        <label for="has-service-bonus">¿Bono de servicio?</label>
-                        <div class="service-bonus-options">
-                            <div class="service-bonus-option selected" data-value="no">
-                                <input type="radio" name="has_service_bonus" id="service-bonus-no" value="no"
-                                    checked>
-                                <span class="service-bonus-label">
-                                    <i class="fas fa-times-circle"></i> No
-                                </span>
-                            </div>
-                            <div class="service-bonus-option" data-value="si">
-                                <input type="radio" name="has_service_bonus" id="service-bonus-yes" value="si">
-                                <span class="service-bonus-label">
-                                    <i class="fas fa-check-circle"></i> Sí
-                                </span>
+                        <div class="form-group">
+                            <label for="has-service-bonus">¿Bono de servicio?</label>
+                            <div class="service-bonus-options">
+                                <div class="service-bonus-option selected" data-value="no">
+                                    <input type="radio" name="has_service_bonus" id="service-bonus-no" value="no"
+                                        checked>
+                                    <span class="service-bonus-label">
+                                        <i class="fas fa-times-circle"></i> No
+                                    </span>
+                                </div>
+                                <div class="service-bonus-option" data-value="si">
+                                    <input type="radio" name="has_service_bonus" id="service-bonus-yes" value="si">
+                                    <span class="service-bonus-label">
+                                        <i class="fas fa-check-circle"></i> Sí
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    {{-- FIN: CAMPOS CONDICIONALES A TRABAJO EN POZO (P) --}}
                 </div>
 
+                {{-- JSON DATA PARA JAVASCRIPT --}}
                 <script id="service-data" type="application/json">
                     @json($services->toArray())
                 </script>
 
+                {{-- PESTAÑA DE SERVICIO --}}
                 <div class="tab-content" id="service-tab">
                     <div class="form-group">
                         <label for="work-type">Tipo de Trabajo</label>
-                        <div class="work-type-options">
+                        <div class="work-type-options" id="work-type-options">
                             <div class="work-type-option" data-value="Tierra">
                                 <input type="radio" name="work-type" id="work-land" value="Tierra">
                                 <span class="work-type-label">
@@ -499,8 +549,9 @@
                     <div class="form-group">
                         <label for="payroll-period">Periodo de Quincena del Servicio</label>
                         <select id="payroll-period" class="select-custom">
+                            {{-- Opciones cargadas por JS --}}
                         </select>
-                        <small class="form-help">Seleccina en caso el servcio se relializo en la quicena anterior</small>
+                        <small class="form-help">Selecciona en caso el servicio se realizó en la quincena anterior</small>
                     </div>
                 </div>
 
@@ -516,5 +567,7 @@
             </div>
         </div>
     </div>
+
+    {{-- INCLUSIÓN DEL SCRIPT DE JAVASCRIPT --}}
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/calendar.js') }}"></script>
 @endsection
