@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/login.css') }}" />
 </head>
 
+
 <body>
     <div id="cont">
         <div id="invContainer">
