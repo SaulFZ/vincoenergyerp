@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
+
     const serviceData = JSON.parse(document.getElementById('service-data').textContent);
+
 
     if (!serviceData || typeof serviceData !== 'object') {
         console.error('Datos de servicio no válidos:', serviceData);
@@ -148,6 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- FIN Lógica de campos condicionales ---
     }
 
+
     function handleServiceBonusChange(hasServiceBonus) {
         const serviceTab = document.getElementById('service-tab');
         const activityTabBtn = document.querySelector('.tab-btn[data-tab="activity"]');
@@ -203,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Si la fecha seleccionada está en la primera o segunda quincena del mes actual (para incluir el Q2 anterior)
         if (q1Start && q1End && selectedDate >= q1Start && selectedDate <= q1End) {
-             // Lógica para añadir el Q2 anterior, buscando si existe configuración de quincena para el mes anterior
+            // Lógica para añadir el Q2 anterior, buscando si existe configuración de quincena para el mes anterior
             const prevQ2Option = document.createElement('option');
             prevQ2Option.value = 'previous_q2';
             prevQ2Option.textContent = `Segunda Quincena - ${prevMonthName} ${prevYear}`;
@@ -217,37 +220,37 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     }
-
     function showRejectionMessages(activity) {
         clearRejectionMessages();
         if (!activity) return;
 
         // Mensaje de rechazo general de actividad
-        if (activity.rejection_reason && activity.activity_status === 'rejected') {
+        if (activity.rejection_reason && activity.activity_status && activity.activity_status.toLowerCase() === 'rejected') {
             showRejectionMessage('activity-type-select', activity.rejection_reason);
         }
 
         // Mensaje de rechazo de servicio
         if (activity.services_list && activity.services_list.length > 0) {
             activity.services_list.forEach(service => {
-                if (service.status === 'rejected' && service.rejection_reason) {
-                    // Usamos work-type-options para apuntar al primer campo de la pestaña de servicio
+                if (service.status && service.status.toLowerCase() === 'rejected' && service.rejection_reason) {
                     showRejectionMessage('work-type-options', service.rejection_reason, true);
                 }
             });
         }
+
         // Mensaje de rechazo de bono de comida
         if (activity.food_bonuses && activity.food_bonuses.length > 0) {
             activity.food_bonuses.forEach(bonus => {
-                if (bonus.status === 'rejected' && bonus.rejection_reason) {
+                if (bonus.status && bonus.status.toLowerCase() === 'rejected' && bonus.rejection_reason) {
                     showRejectionMessage('food-bonus', bonus.rejection_reason);
                 }
             });
         }
+
         // Mensaje de rechazo de bono de campo
         if (activity.field_bonuses && activity.field_bonuses.length > 0) {
             activity.field_bonuses.forEach(bonus => {
-                if (bonus.status === 'rejected' && bonus.rejection_reason) {
+                if (bonus.status && bonus.status.toLowerCase() === 'rejected' && bonus.rejection_reason) {
                     showRejectionMessage('field-bonus', bonus.rejection_reason);
                 }
             });
@@ -267,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 rejectionDiv.innerHTML = `<div class="rejection-content"><i class="fas fa-exclamation-triangle"></i><span>Motivo de rechazo: ${message}</span></div>`;
 
                 // Si es un campo de la pestaña de servicio, lo inyectamos al final del form-group
-                if(isServiceTab){
+                if (isServiceTab) {
                     parentGroup.appendChild(rejectionDiv);
                 } else {
                     // Para otros campos, inyectamos después del elemento para mayor visibilidad
@@ -335,39 +338,79 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function getFieldStatus(activity, fieldType, itemIndex = 0) {
         if (!activity) return 'under_review';
+        let status = 'under_review'; // Valor por defecto
 
         switch (fieldType) {
             case 'activity':
-                return activity.activity_status || 'under_review';
+                status = activity.activity_status || 'under_review';
+                break;
             case 'service':
                 if (activity.services_list && activity.services_list[itemIndex]) {
-                    return activity.services_list[itemIndex].status || 'under_review';
+                    status = activity.services_list[itemIndex].status || 'under_review';
                 }
-                return 'under_review';
+                break;
             case 'food_bonus':
                 if (activity.food_bonuses && activity.food_bonuses[itemIndex]) {
-                    return activity.food_bonuses[itemIndex].status || 'under_review';
+                    status = activity.food_bonuses[itemIndex].status || 'under_review';
                 }
-                return 'under_review';
+                break;
             case 'field_bonus':
                 if (activity.field_bonuses && activity.field_bonuses[itemIndex]) {
-                    return activity.field_bonuses[itemIndex].status || 'under_review';
+                    status = activity.field_bonuses[itemIndex].status || 'under_review';
                 }
-                return 'under_review';
-            default:
-                return 'under_review';
+                break;
         }
+        // CAMBIO: Nos aseguramos de que SIEMPRE devuelva el estado en minúsculas.
+        return status.toLowerCase();
     }
 
     function toggleFieldLock(element, isLocked, status) {
         if (!element) return;
         const parentGroup = element.closest('.form-group');
         if (!parentGroup) return;
+
         const isCustomSelect = element.classList.contains('custom-select');
         const isOption = element.classList.contains('work-type-option') || element.classList.contains('activity-option') || element.classList.contains('service-bonus-option');
+        const lowerCaseStatus = status ? status.toLowerCase() : '';
 
+        // --- MANEJO DEL INDICADOR DE ESTADO (LA ETIQUETA) ---
+        // Primero, limpiamos cualquier etiqueta que ya exista para evitar duplicados.
+        const existingIndicator = parentGroup.querySelector('.lock-indicator');
+        if (existingIndicator) existingIndicator.remove();
+
+        // Solo creamos la etiqueta para los estados finales: aprobado, revisado o rechazado.
+        if (['approved', 'reviewed', 'rejected'].includes(lowerCaseStatus)) {
+            const lockIndicator = document.createElement('div');
+            lockIndicator.className = 'lock-indicator';
+
+            let message = '', icon = '', bgColor = '';
+
+            switch (lowerCaseStatus) {
+                case 'approved':
+                    message = 'Aprobado';
+                    icon = 'fas fa-check-circle'; // Icono mejorado
+                    bgColor = getCSSVariable('--approved');
+                    break;
+                case 'reviewed':
+                    message = 'Revisado';
+                    icon = 'fas fa-user-check'; // Icono mejorado
+                    bgColor = getCSSVariable('--reviewed');
+                    break;
+                case 'rejected':
+                    message = 'Rechazado';
+                    icon = 'fas fa-regular fa-triangle-exclamation'; // Icono para rechazado
+                    bgColor = getCSSVariable('--not-approved');
+                    break;
+            }
+
+            lockIndicator.innerHTML = `<i class="${icon}"></i> ${message}`;
+            lockIndicator.style.backgroundColor = bgColor;
+            parentGroup.appendChild(lockIndicator);
+        }
+
+        // --- MANEJO DEL BLOQUEO DEL CAMPO (Esta lógica no cambia) ---
         if (isLocked) {
-            // Aplicar estilos de bloqueo
+            // Aplica estilos de bloqueo
             if (isCustomSelect) {
                 element.classList.add('locked');
             } else if (isOption) {
@@ -379,37 +422,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 element.style.color = '#999';
                 element.style.cursor = 'not-allowed';
             }
-
-            // Crear indicador de bloqueo/revisión
-            let lockIndicator = parentGroup.querySelector('.lock-indicator');
-            if (!lockIndicator) {
-                lockIndicator = document.createElement('div');
-                lockIndicator.className = 'lock-indicator';
-                parentGroup.appendChild(lockIndicator);
-            }
-
-            let message = '';
-            let icon = '';
-            let bgColor = '';
-
-            if (status === 'approved') {
-                message = 'Aprobado';
-                icon = 'fas fa-lock';
-                bgColor = getCSSVariable('--approved');
-            } else if (status === 'reviewed') {
-                message = 'Revisado';
-                icon = 'fas fa-lock-open';
-                bgColor = getCSSVariable('--reviewed');
-            } else {
-                lockIndicator.remove(); // No debería suceder si isLocked es true
-                return;
-            }
-
-            lockIndicator.innerHTML = `<i class="${icon}"></i> ${message}`;
-            lockIndicator.style.backgroundColor = bgColor;
-
         } else {
-            // Eliminar estilos y elementos de bloqueo
+            // Elimina estilos de bloqueo
             if (isCustomSelect) {
                 element.classList.remove('locked');
             } else if (isOption) {
@@ -421,37 +435,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 element.style.color = '';
                 element.style.cursor = '';
             }
-            const lockIndicator = parentGroup.querySelector('.lock-indicator');
-            if (lockIndicator) lockIndicator.remove();
         }
     }
 
     function applyFieldLocks(activity) {
-        // 1. Limpiar estados anteriores
         clearAllBlocksAndMessages();
         saveBtn.disabled = false;
 
         if (!activity) return;
 
-        // 2. Bloqueo TOTAL si el día está APROBADO o REVISADO
-        const dayStatus = activity.day_status;
-        if (statusesToBlockAll.includes(dayStatus)) {
-            // Deshabilitar todos los campos del formulario
+        const dayStatus = activity.day_status ? activity.day_status.toLowerCase() : '';
+
+        // Determinar si el día completo está bloqueado (Aprobado o Revisado)
+        const isDayCompletelyBlocked = statusesToBlockAll.includes(dayStatus);
+
+        // Si el día está completamente bloqueado, aplicamos bloqueo a todo y salimos.
+        if (isDayCompletelyBlocked) {
             const allFormElements = document.querySelectorAll('#activity-tab select, #activity-tab .custom-select, #activity-tab input:not([type="radio"]), #service-tab select, #service-tab input');
-
             document.querySelectorAll('.work-type-option, .activity-option, .service-bonus-option').forEach(el => toggleFieldLock(el, true, dayStatus));
-
             allFormElements.forEach(el => {
                 if (el.id !== 'activity-date' && el.id !== 'service-amount') {
-                     toggleFieldLock(el, true, dayStatus);
+                    toggleFieldLock(el, true, dayStatus);
                 }
             });
             saveBtn.disabled = true;
             showRejectionMessages(activity);
             return;
         }
-
-        // 3. Bloqueo GRANULAR (Si day_status es 'rejected' o 'under_review')
 
         // --- Pestaña Actividad ---
         const activityStatus = getFieldStatus(activity, 'activity');
@@ -461,14 +471,39 @@ document.addEventListener('DOMContentLoaded', function () {
         const commissionedSelect = document.getElementById('commissioned-select');
         const wellNameInput = document.getElementById('well-name');
         const activityTypeOptions = document.querySelectorAll('.activity-option');
-        const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
 
         toggleFieldLock(activityTypeSelectContainer, isActivityLocked, activityStatus);
         activityTypeOptions.forEach(option => toggleFieldLock(option, isActivityLocked, activityStatus));
-
         toggleFieldLock(commissionedSelect, isActivityLocked, activityStatus);
         toggleFieldLock(wellNameInput, isActivityLocked, activityStatus);
-        serviceBonusOptions.forEach(option => toggleFieldLock(option, isActivityLocked, activityStatus));
+
+
+        // ----------------------------------------------------
+        // ✅ LÓGICA CLAVE: ESTADO DEL BOTÓN "¿BONO DE SERVICIO?"
+        // ----------------------------------------------------
+        const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
+        const serviceStatus = getFieldStatus(activity, 'service');
+
+        // 1. Determinar el estado base (actividad principal o servicio).
+        let statusForServiceBonus = activityStatus; // Por defecto: estado de la actividad
+
+        if (serviceStatus === 'approved' || serviceStatus === 'reviewed') {
+            // Si el servicio tiene un estado de bloqueo, el botón se bloquea con el estado del servicio.
+             statusForServiceBonus = serviceStatus;
+        } else if (serviceStatus === 'rejected') {
+            // Si el servicio fue rechazado, el botón se etiqueta como rechazado y no se bloquea la edición si la actividad no estaba bloqueada.
+            statusForServiceBonus = 'rejected';
+        }
+
+        // 2. Determinar si se bloquea
+        // Si el estado de la actividad (que incluye 'rejected') o el estado del servicio es de bloqueo.
+        const isServiceBonusLocked = statusesToBlockField.includes(statusForServiceBonus);
+
+        // Aplicamos el estado y bloqueo correctos a los botones.
+        serviceBonusOptions.forEach(option => toggleFieldLock(option, isServiceBonusLocked, statusForServiceBonus));
+        // ----------------------------------------------------
+        // ✅ FIN LÓGICA CLAVE
+        // ----------------------------------------------------
 
 
         // --- Bonos ---
@@ -483,9 +518,7 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleFieldLock(fieldBonusSelect, isFieldBonusLocked, fieldBonusStatus);
 
         // --- Pestaña Servicio ---
-        const serviceStatus = getFieldStatus(activity, 'service');
         const isServiceLocked = statusesToBlockField.includes(serviceStatus);
-
         const workTypeOptions = document.querySelectorAll('.work-type-option');
         const serviceTypeSelect = document.getElementById('service-type');
         const servicePerformedSelect = document.getElementById('service-performed');
@@ -500,7 +533,6 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleFieldLock(payrollPeriodSelect, isServiceLocked, serviceStatus);
         toggleFieldLock(serviceAmountInput, isServiceLocked, serviceStatus);
 
-        // 4. Mostrar mensajes de rechazo (si aplica)
         showRejectionMessages(activity);
     }
 
@@ -535,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelector('.service-bonus-option[data-value="si"]').classList.add('selected');
             document.querySelector('.service-bonus-option[data-value="no"]').classList.remove('selected');
             if (!document.querySelector('.tab-btn.active')) {
-                 serviceTabButton.click();
+                serviceTabButton.click();
             }
         } else {
             serviceTabBtn.style.display = 'none';
@@ -553,13 +585,13 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('activity-type').value = activity.activity_type;
             document.querySelector('#activity-type-header .placeholder').textContent = activityTypeOption.querySelector('.activity-label').textContent;
 
-            if(activity.activity_type === 'P' || activity.activity_type === 'C' || activity.activity_type === 'TC') { // CAMBIO: Añadido TC
+            if (activity.activity_type === 'P' || activity.activity_type === 'C' || activity.activity_type === 'TC') { // CAMBIO: Añadido TC
                 handleActivityTypeChange(activity.activity_type);
             }
         } else {
-             document.getElementById('activity-type').value = activity.activity_type || 'N';
-             document.querySelector('#activity-type-header .placeholder').textContent = activity.activity_type === 'N' ? 'Ninguna' : 'Seleccionar actividad...';
-             handleActivityTypeChange(activity.activity_type || 'N');
+            document.getElementById('activity-type').value = activity.activity_type || 'N';
+            document.querySelector('#activity-type-header .placeholder').textContent = activity.activity_type === 'N' ? 'Ninguna' : 'Seleccionar actividad...';
+            handleActivityTypeChange(activity.activity_type || 'N');
         }
 
         if (activity.activity_type === 'C' && activity.commissioned_to) {
@@ -571,6 +603,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (hasService) {
+            // Llama a la versión actualizada de la función
             populateServiceData(activity.services_list[0]);
         }
 
@@ -594,9 +627,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 200);
     }
 
+    // =========================================================================
+    // ✅ FUNCIÓN CORREGIDA: populateServiceData
+    // Se elimina la dependencia de disparar eventos 'change' para cargar
+    // los selects en cascada y se llama directamente a las funciones de repoblado
+    // para evitar conflictos con el estado 'disabled' impuesto por applyFieldLocks.
+    // =========================================================================
     function populateServiceData(service) {
         let operationType = null;
         let fullServiceData = null;
+        const serviceTypeSelect = document.getElementById('service-type');
+        const servicePerformedSelect = document.getElementById('service-performed');
+        const serviceSelect = document.getElementById('service');
+        const serviceAmountInput = document.getElementById('service-amount');
+        const serviceAmountGroup = document.getElementById('service-amount-group');
+
+        // Buscar la data completa del servicio
         for (const [opType, services] of Object.entries(serviceData)) {
             if (Array.isArray(services)) {
                 fullServiceData = services.find(s => s.identifier === service.service_identifier);
@@ -606,57 +652,86 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         }
+
         if (operationType && fullServiceData) {
+            // 1. Tipo de Trabajo (Radio Buttons)
             let workTypeValue = operationType === 'Tierra' ? 'Tierra' : 'Marina';
             const workTypeOption = document.querySelector(`.work-type-option[data-value="${workTypeValue}"]`);
             if (workTypeOption) {
                 workTypeOption.querySelector('input[type="radio"]').checked = true;
                 workTypeOption.classList.add('selected');
                 document.querySelectorAll(`.work-type-option:not([data-value="${workTypeValue}"])`).forEach(opt => opt.classList.remove('selected'));
-                updateServiceTypes(workTypeValue);
             }
 
-            setTimeout(() => {
-                const serviceTypeSelect = document.getElementById('service-type');
-                const servicePerformedSelect = document.getElementById('service-performed');
-                const serviceSelect = document.getElementById('service');
-                const serviceAmountInput = document.getElementById('service-amount');
-                const serviceAmountGroup = document.getElementById('service-amount-group');
+            // 2. Tipo de Servicio (Select)
+            // Se habilita temporalmente para repoblar si no está ya bloqueado
+            serviceTypeSelect.disabled = false;
+            updateServiceTypes(workTypeValue);
+            const serviceTypeFormatted = fullServiceData.service_type.toLowerCase().replace(/\s+/g, '_');
+            serviceTypeSelect.value = serviceTypeFormatted;
+            // No disparamos el evento 'change' aquí.
 
-                const serviceTypeFormatted = fullServiceData.service_type.toLowerCase().replace(/\s+/g, '_');
-                const serviceTypeOption = Array.from(serviceTypeSelect.options).find(opt => opt.value === serviceTypeFormatted);
-                if (serviceTypeOption) {
-                    serviceTypeSelect.value = serviceTypeFormatted;
-                    serviceTypeSelect.dispatchEvent(new Event('change'));
+            // 3. Servicio Realizado (Select)
+            // Se habilita temporalmente para repoblar si no está ya bloqueado
+            servicePerformedSelect.disabled = false;
+            // Lógica de repoblado manual, ya que no disparamos 'change' en service-type
+            servicePerformedSelect.innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
+            const uniquePerformed = [...new Set(serviceData[workTypeValue]
+                .filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeFormatted)
+                .map(item => item.service_performed))];
+            uniquePerformed.forEach(performed => {
+                const option = document.createElement('option');
+                option.value = performed.toLowerCase().replace(/\s+/g, '_');
+                option.textContent = performed;
+                servicePerformedSelect.appendChild(option);
+            });
+            const servicePerformedFormatted = fullServiceData.service_performed.toLowerCase().replace(/\s+/g, '_');
+            servicePerformedSelect.value = servicePerformedFormatted;
+
+
+            // 4. Servicio (Select)
+            // Se habilita temporalmente para repoblar si no está ya bloqueado
+            serviceSelect.disabled = false;
+            // Lógica de repoblado manual, ya que no disparamos 'change' en service-performed
+            serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
+            const services = serviceData[workTypeValue].filter(
+                item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeFormatted &&
+                        item.service_performed.toLowerCase().replace(/\s+/g, '_') === servicePerformedFormatted
+            );
+            services.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.identifier;
+                option.textContent = item.service_description;
+                option.setAttribute('data-amount', item.amount);
+                option.setAttribute('data-currency', item.currency);
+                option.setAttribute('data-performed', item.service_performed);
+                serviceSelect.appendChild(option);
+            });
+            const serviceOption = Array.from(serviceSelect.options).find(opt => opt.value === service.service_identifier);
+            if (serviceOption) {
+                serviceSelect.value = service.service_identifier;
+                const amount = serviceOption.getAttribute('data-amount');
+                const currency = serviceOption.getAttribute('data-currency');
+                if (amount && currency) {
+                    serviceAmountInput.value = `${currency} ${parseFloat(amount).toFixed(2)}`;
+                    serviceAmountGroup.style.display = 'block';
                 }
+            } else {
+                // Si no se encuentra, limpiar el monto
+                 serviceAmountInput.value = '';
+                 serviceAmountGroup.style.display = 'none';
+            }
 
-                setTimeout(() => {
-                    const servicePerformedFormatted = fullServiceData.service_performed.toLowerCase().replace(/\s+/g, '_');
-                    const servicePerformedOption = Array.from(servicePerformedSelect.options).find(opt => opt.value === servicePerformedFormatted);
-                    if (servicePerformedOption) {
-                        servicePerformedSelect.value = servicePerformedFormatted;
-                        servicePerformedSelect.dispatchEvent(new Event('change'));
-                    }
+            // 5. Período de Nómina
+            if (service.payroll_period_override) {
+                document.getElementById('payroll-period').value = service.payroll_period_override;
+            }
 
-                    setTimeout(() => {
-                        const serviceOption = Array.from(serviceSelect.options).find(opt => opt.value === service.service_identifier);
-                        if (serviceOption) {
-                            serviceSelect.value = service.service_identifier;
-                            const amount = serviceOption.getAttribute('data-amount');
-                            const currency = serviceOption.getAttribute('data-currency');
-                            if (amount && currency) {
-                                serviceAmountInput.value = `${currency} ${parseFloat(amount).toFixed(2)}`;
-                                serviceAmountGroup.style.display = 'block';
-                            }
-                        }
-                        if (service.payroll_period_override) {
-                            document.getElementById('payroll-period').value = service.payroll_period_override;
-                        }
-                    }, 150);
-                }, 150);
-            }, 150);
+            // NO TOCAR LOS SELECTS AQUÍ. La función `applyFieldLocks` se encargará de
+            // deshabilitar los campos si el estado del servicio lo requiere.
         }
     }
+
 
     function openModal(processedDate, displayDate) {
         if (processedDate && displayDate) {
@@ -785,8 +860,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
     serviceBonusOptions.forEach(option => {
         option.addEventListener('click', function () {
-            if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
-            if (currentActivity && statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'))) return;
+            // Se debe usar isServiceBonusLocked aquí, no statusToBlockAll/Field directamente en el listener
+            if (currentActivity) {
+                 const serviceStatus = getFieldStatus(currentActivity, 'service');
+                 const activityStatus = getFieldStatus(currentActivity, 'activity');
+                 let statusForCheck = activityStatus;
+
+                 if (serviceStatus === 'approved' || serviceStatus === 'reviewed') {
+                    statusForCheck = serviceStatus;
+                 }
+
+                 if (statusesToBlockAll.includes(statusForCheck) || statusesToBlockField.includes(statusForCheck)) return;
+            }
 
             if (document.getElementById('activity-type').value !== 'P') {
                 return;
@@ -844,7 +929,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const serviceTypeId = this.value;
         if (workType && serviceTypeId) {
             const servicePerformedSelect = document.getElementById('service-performed');
-            servicePerformedSelect.disabled = false;
+            // Ya se hace en updateServiceTypes, pero lo repetimos para habilitar si no está bloqueado
+            if (!servicePerformedSelect.disabled) {
+                servicePerformedSelect.disabled = false;
+            }
             servicePerformedSelect.innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
             const uniquePerformed = [...new Set(serviceData[workType].filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeId).map(item => item.service_performed))];
             uniquePerformed.forEach(performed => {
@@ -867,7 +955,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const performedId = this.value;
         if (workType && serviceTypeId && performedId) {
             const serviceSelect = document.getElementById('service');
-            serviceSelect.disabled = false;
+            // Ya se hace en updateServiceTypes, pero lo repetimos para habilitar si no está bloqueado
+            if (!serviceSelect.disabled) {
+                serviceSelect.disabled = false;
+            }
             serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
             const services = serviceData[workType].filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeId && item.service_performed.toLowerCase().replace(/\s+/g, '_') === performedId);
             services.forEach(service => {
@@ -956,168 +1047,78 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     saveBtn.addEventListener('click', function () {
+        // La validación inicial de 'isValid' y 'error-message' se mantiene igual...
         let isValid = true;
-        document.querySelectorAll('.error-message').forEach(el => {
-            el.style.display = 'none';
-        });
+        document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
 
-        if (!currentSelectedDate) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Fecha no válida. Por favor, intente de nuevo.',
-                confirmButtonText: 'Aceptar'
-            });
-            return;
-        }
+        // --- INICIO DE LA NUEVA LÓGICA DE GUARDADO ---
 
-        const activityType = document.getElementById('activity-type').value;
-        const workTypeSelected = document.querySelector('.work-type-option.selected');
-        const serviceSelect = document.getElementById('service');
-        const serviceValue = serviceSelect.value;
-        const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
-        const isActivityP = activityType === 'P';
+        const formData = {
+            date: currentSelectedDate,
+            displayed_month: document.querySelector('.month-navigation span').getAttribute('data-month'),
+            displayed_year: document.querySelector('.month-navigation span').getAttribute('data-year'),
+        };
 
-        // --- INICIO: VERIFICACIÓN DE BLOQUEO DE CAMPOS (Doble Check) ---
-        if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Atención',
-                text: `No se pueden modificar actividades que ya han sido ${currentActivity.day_status === 'approved' ? 'aprobadas' : 'revisadas'}.`,
-                confirmButtonText: 'Entendido'
-            });
-            return;
-        }
+        // 1. Procesar la Pestaña de Actividad
+        const activityStatus = getFieldStatus(currentActivity, 'activity');
+        if (!statusesToBlockField.includes(activityStatus)) {
+            const activityType = document.getElementById('activity-type').value;
+            formData.activity_type = activityType || 'N';
+            formData.commissioned_to = activityType === 'C' ? document.getElementById('commissioned-select').value : null;
+            formData.well_name = activityType === 'P' ? document.getElementById('well-name').value : null;
 
-        let hasChangesToLockedFields = false;
-        let lockedFieldsMessage = [];
+            const isActivityP = activityType === 'P';
+            const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
+            formData.has_service_bonus = isActivityP ? hasServiceBonus : 'no';
 
-
-        if (currentActivity) {
-            // Verificar cambios en Actividad Principal
-            const activityStatus = getFieldStatus(currentActivity, 'activity');
-            const isActLocked = statusesToBlockField.includes(activityStatus);
-
-            if (isActLocked && activityType !== currentActivity.activity_type) {
-                hasChangesToLockedFields = true;
-                lockedFieldsMessage.push('Tipo de actividad');
-            }
-            if (isActLocked && activityType === 'C' && document.getElementById('commissioned-select').value !== (currentActivity.commissioned_to || '')) {
-                hasChangesToLockedFields = true;
-                lockedFieldsMessage.push('Área Comisionada');
-            }
-            if (isActLocked && activityType === 'P' && document.getElementById('well-name').value !== (currentActivity.well_name || '')) {
-                hasChangesToLockedFields = true;
-                lockedFieldsMessage.push('Nombre del Pozo');
-            }
-            if (isActLocked && isActivityP && hasServiceBonus !== (currentActivity.has_service_bonus || 'no')) {
-                hasChangesToLockedFields = true;
-                lockedFieldsMessage.push('¿Bono de servicio?');
-            }
-
-            // Verificar cambios en Bonos/Servicios (si aplica)
-            if (isActivityP) {
-                // Food Bonus
-                const existingFoodBonus = currentActivity.food_bonuses?.[0];
-                const currentFoodBonus = document.getElementById('food-bonus').value;
-                const isFoodBonusLocked = statusesToBlockField.includes(getFieldStatus(currentActivity, 'food_bonus'));
-                if (isFoodBonusLocked && (currentFoodBonus !== (existingFoodBonus?.num_daily?.toString() || '') || (!existingFoodBonus && currentFoodBonus !== ''))) {
-                    hasChangesToLockedFields = true;
-                    lockedFieldsMessage.push('Bono de comida');
-                }
-
-                // Field Bonus
-                const existingFieldBonus = currentActivity.field_bonuses?.[0];
-                const currentFieldBonus = document.getElementById('field-bonus').value;
-                const isFieldBonusLocked = statusesToBlockField.includes(getFieldStatus(currentActivity, 'field_bonus'));
-                if (isFieldBonusLocked && (currentFieldBonus !== (existingFieldBonus?.bonus_identifier || '') || (!existingFieldBonus && currentFieldBonus !== ''))) {
-                    hasChangesToLockedFields = true;
-                    lockedFieldsMessage.push('Bono de campo');
-                }
-
-                // Service
-                if (hasServiceBonus === 'si') {
-                    const existingService = currentActivity.services_list?.[0];
-                    const isServiceLocked = statusesToBlockField.includes(getFieldStatus(currentActivity, 'service'));
-                    const payrollPeriodValue = document.getElementById('payroll-period').value;
-
-                    if (isServiceLocked && serviceValue !== (existingService?.service_identifier || '')) {
-                        hasChangesToLockedFields = true;
-                        lockedFieldsMessage.push('Servicio');
-                    }
-                    if (isServiceLocked) {
-                        const oldPayroll = existingService?.payroll_period_override || 'current';
-                        if (payrollPeriodValue !== oldPayroll) {
-                            hasChangesToLockedFields = true;
-                            lockedFieldsMessage.push('Período de Quincena del Servicio');
-                        }
-                    }
-                }
-            }
-
-            if (hasChangesToLockedFields) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'No se puede guardar',
-                    text: `No se pueden modificar los siguientes campos porque ya están revisados o aprobados: ${lockedFieldsMessage.join(', ')}. Solo los campos en estado 'Rechazado' o 'Bajo Revisión' son editables.`,
-                    confirmButtonText: 'Entendido'
-                });
-                return;
-            }
-        }
-        // --- FIN: VERIFICACIÓN DE BLOQUEO DE CAMPOS ---
-
-        // Validar saldo de vacaciones
-        if (activityType === 'VAC' && vacationDaysAvailable <= 0 && (!currentActivity || currentActivity.activity_type !== 'VAC')) {
-            document.getElementById('vacation-balance-error').style.display = 'block';
-            Swal.fire({
-                icon: 'warning',
-                title: 'Saldo Insuficiente',
-                text: 'No tiene días de vacaciones disponibles.',
-                confirmButtonText: 'Aceptar'
-            });
-            return;
-        } else {
-            document.getElementById('vacation-balance-error').style.display = 'none';
-        }
-
-        // Validación de campos obligatorios
-
-        // 1. Pestaña Actividad
-        const isActivityTypeFieldLocked = statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'));
-        if (!isActivityTypeFieldLocked) {
-             if (!activityType) {
+            // Validaciones de campos obligatorios para la actividad
+            if (!activityType) {
                 document.getElementById('activity-type-error').style.display = 'block';
                 isValid = false;
             }
-            if (activityType === 'C' && !document.getElementById('commissioned-select').value) {
+            if (activityType === 'C' && !formData.commissioned_to) {
                 document.getElementById('commissioned-error').style.display = 'block';
                 isValid = false;
             }
-            if (activityType === 'P' && !document.getElementById('well-name').value.trim()) {
+            if (activityType === 'P' && !formData.well_name.trim()) {
                 document.getElementById('well-name-error').style.display = 'block';
                 isValid = false;
             }
         }
 
+        // 2. Procesar Bonos (solo si la actividad es 'P')
+        if (document.getElementById('activity-type').value === 'P') {
+            const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
+            if (!statusesToBlockField.includes(foodBonusStatus)) {
+                formData.food_bonus_number = document.getElementById('food-bonus').value || null;
+            }
 
-        // 2. Pestaña Servicio (sólo si se marcó "Sí" y la actividad es Trabajo en Pozo)
-        const isServiceSectionNeeded = isActivityP && hasServiceBonus === 'si';
-        const isServiceFieldLocked = statusesToBlockField.includes(getFieldStatus(currentActivity, 'service'));
+            const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
+            if (!statusesToBlockField.includes(fieldBonusStatus)) {
+                formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;
+            }
+        }
 
-        if (isServiceSectionNeeded && !isServiceFieldLocked) {
-            const serviceTypeValue = document.getElementById('service-type').value;
-            const servicePerformedValue = document.getElementById('service-performed').value;
+        // 3. Procesar la Pestaña de Servicio
+        const serviceStatus = getFieldStatus(currentActivity, 'service');
+        const wantsService = document.querySelector('input[name="has_service_bonus"]:checked')?.value === 'si';
 
+        if (wantsService && !statusesToBlockField.includes(serviceStatus)) {
+            const workTypeSelected = document.querySelector('.work-type-option.selected');
+            const serviceValue = document.getElementById('service').value;
+
+            formData.service_identifier = serviceValue || null;
+
+            // Validaciones para la sección de servicio
             if (!workTypeSelected) {
                 document.getElementById('work-type-error').style.display = 'block';
                 isValid = false;
             }
-            if (!serviceTypeValue) {
+            if (!document.getElementById('service-type').value) {
                 document.getElementById('service-type-error').style.display = 'block';
                 isValid = false;
             }
-            if (!servicePerformedValue) {
+            if (!document.getElementById('service-performed').value) {
                 document.getElementById('service-performed-error').style.display = 'block';
                 isValid = false;
             }
@@ -1125,120 +1126,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('service-error').style.display = 'block';
                 isValid = false;
             }
+        } else if (wantsService && statusesToBlockField.includes(serviceStatus)) {
+            // Si el usuario quiere un servicio pero está bloqueado, no se envía nada de servicio.
+            // Esto evita el error que reportaste.
+        } else {
+            // Si no se quiere servicio, nos aseguramos de enviar 'null' si el campo es editable.
+            if (!statusesToBlockField.includes(serviceStatus)) {
+                formData.service_identifier = null;
+            }
         }
 
-        // 3. Chequeo de que al menos algo se está registrando
-        const hasFoodBonus = document.getElementById('food-bonus').value !== '';
-        const hasFieldBonus = document.getElementById('field-bonus').value !== '';
-
-        if (!activityType && (!isActivityP || (isActivityP && hasServiceBonus === 'no' && !hasFoodBonus && !hasFieldBonus))) {
-             // Esto es el caso de intentar guardar un día vacío, lo que debe ser equivalente a borrar la actividad.
-             // Sin embargo, si existen actividades anteriores (oldActivity) que no eran 'N', deben ser eliminadas.
-             // La validación en el backend se encarga de no crear un log si no hay actividad,
-             // y de eliminar el log si se envía 'N' sin bonos/servicios y existía un log.
-             // Por el lado del front, permitiremos que se envíe 'N' si no se seleccionó otra cosa,
-             // para que el backend maneje la eliminación.
-
-             if (currentActivity && currentActivity.activity_type !== 'N') {
-                // Si había una actividad y el usuario seleccionó 'Ninguna' o deseleccionó todo, lo dejaremos pasar para eliminación
-             } else if (!currentActivity && !activityType && !isServiceSectionNeeded && !hasFoodBonus && !hasFieldBonus) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Selección requerida',
-                    text: 'Por favor, selecciona al menos una actividad, bono de comida, bono de campo o un servicio antes de guardar.',
-                    confirmButtonText: 'Aceptar'
-                });
-                return;
-             }
-        }
-
+        // Si después de todas las validaciones algo es inválido, detenemos.
         if (!isValid) {
             Swal.fire({
                 icon: 'error',
                 title: 'Campos incompletos',
-                text: 'Por favor, rellene todos los campos requeridos y no bloqueados antes de guardar.',
+                text: 'Por favor, rellene todos los campos requeridos en las secciones que no están bloqueadas.',
                 confirmButtonText: 'Aceptar'
             });
             return;
         }
 
-        // --- PREPARACIÓN DEL FORM DATA ---
-        const monthSpan = document.querySelector('.month-navigation span');
-        const formData = {
-            date: currentSelectedDate,
-            displayed_month: monthSpan.getAttribute('data-month'),
-            displayed_year: monthSpan.getAttribute('data-year'),
-            activity_type: activityType || 'N',
-            commissioned_to: activityType === 'C' ? document.getElementById('commissioned-select').value : null,
-            well_name: activityType === 'P' ? document.getElementById('well-name').value : null,
-            has_service_bonus: isActivityP ? hasServiceBonus : 'no',
-            food_bonus_number: isActivityP && hasFoodBonus ? document.getElementById('food-bonus').value : null,
-            field_bonus_identifier: isActivityP && hasFieldBonus ? document.getElementById('field-bonus').value : null
-        };
-
-        let payrollPeriodValue = null;
-        const selectedPayrollPeriod = document.getElementById('payroll-period').value;
-        const currentMonth = parseInt(monthSpan.getAttribute('data-month'));
-        const currentYear = parseInt(monthSpan.getAttribute('data-year'));
-        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-
-        if (selectedPayrollPeriod === 'current_q1') {
-            payrollPeriodValue = `Primera quincena de ${monthNames[currentMonth - 1]} ${currentYear}`;
-        } else if (selectedPayrollPeriod === 'previous_q2') {
-            const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-            const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-            payrollPeriodValue = `Segunda quincena de ${monthNames[prevMonth - 1]} ${prevYear}`;
-        } else if (selectedPayrollPeriod === 'current') {
-            payrollPeriodValue = null;
-        } else {
-            payrollPeriodValue = selectedPayrollPeriod;
-        }
-
-        if (isActivityP && hasServiceBonus === 'si' && serviceValue) {
-            const workTypeAttr = workTypeSelected?.getAttribute('data-value');
-            if (workTypeAttr) {
-                const service = serviceData[workTypeAttr]?.find(s => s.identifier === serviceValue);
-                if (service) {
-                    formData.service_identifier = serviceValue;
-                    formData.service_performed = service.service_performed;
-                    formData.amount = service.amount;
-                    formData.currency = service.currency;
-                    formData.payroll_period_override = payrollPeriodValue;
-                }
-            }
-        } else {
-            formData.service_identifier = null;
-            formData.service_performed = null;
-            formData.amount = null;
-            formData.currency = null;
-            formData.payroll_period_override = null;
-        }
+        // --- FIN DE LA NUEVA LÓGICA DE GUARDADO ---
 
         saveBtn.disabled = true;
         loadingSpinner.style.display = 'block';
 
-        // --- LLAMADA FETCH ---
         fetch('/recursoshumanos/loadchart/save-activity', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => {
-                if (response.status === 403) {
-                     return response.json().then(data => {
-                        throw new Error(data.message || 'No autorizado a modificar actividades aprobadas.');
-                     });
-                }
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Error desconocido al guardar.');
-                    });
-                }
-                return response.json();
-            })
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     Swal.fire({
@@ -1257,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error al guardar',
-                        text: data.message || 'Error desconocido. Intente de nuevo más tarde.',
+                        text: data.message || 'Error desconocido.',
                         confirmButtonText: 'Aceptar'
                     });
                 }
@@ -1266,19 +1188,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error al guardar',
-                    text: error.message || 'Error al comunicarse con el servidor. Por favor, verifique su conexión.',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo comunicar con el servidor.',
                     confirmButtonText: 'Aceptar'
                 });
             })
             .finally(() => {
-                if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) {
-                    saveBtn.disabled = true;
-                    loadingSpinner.style.display = 'none';
-                } else {
-                    saveBtn.disabled = false;
-                    loadingSpinner.style.display = 'none';
-                }
+                saveBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
             });
     });
 
@@ -1311,36 +1228,43 @@ document.addEventListener('DOMContentLoaded', function () {
             const dateAttribute = day.getAttribute('data-date');
 
             if (dayNumberEl && dayNumberEl.textContent.trim() !== '' && dateAttribute) {
-                const newDay = day.cloneNode(true);
-                day.parentNode.replaceChild(newDay, day);
+                // Solo adjuntar evento a los días que no son de 'other-month'
+                if (!day.classList.contains('other-month')) {
+                    const newDay = day.cloneNode(true);
+                    day.parentNode.replaceChild(newDay, day);
 
-                newDay.addEventListener('click', function () {
-                    const dayNum = dayNumberEl.textContent.trim();
-                    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                    newDay.addEventListener('click', function () {
+                        const dayNum = dayNumberEl.textContent.trim();
+                        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-                    const dateObj = new Date(dateAttribute + 'T00:00:00');
-                    const targetMonth = dateObj.getMonth() + 1;
-                    const targetYear = dateObj.getFullYear();
+                        const dateObj = new Date(dateAttribute + 'T00:00:00');
+                        const targetMonth = dateObj.getMonth() + 1;
+                        const targetYear = dateObj.getFullYear();
 
-                    const formattedDate = dateAttribute;
-                    const displayDate = `${dayNum} de ${monthNames[targetMonth - 1]} de ${targetYear}`;
+                        const formattedDate = dateAttribute;
+                        const displayDate = `${dayNum} de ${monthNames[targetMonth - 1]} de ${targetYear}`;
 
-                    if (isDayInPayrollPeriod(formattedDate)) {
-                        openModal(formattedDate, displayDate);
-                    } else {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Día no editable',
-                            text: 'Solo se pueden registrar actividades en los días dentro de los periodos de nómina del mes actual.',
-                            confirmButtonText: 'Entendido'
-                        });
-                    }
-                });
+                        if (isDayInPayrollPeriod(formattedDate)) {
+                            openModal(formattedDate, displayDate);
+                        } else {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Día no editable',
+                                text: 'Solo se pueden registrar actividades en los días dentro de los periodos de nómina del mes actual.',
+                                confirmButtonText: 'Entendido'
+                            });
+                        }
+                    });
+                }
             }
         });
     }
 
-    attachDayClickEvents();
+    // El llamado inicial ahora solo adjuntará eventos a los días con número
+    // La lógica de calendario estándar ahora se maneja en updateCalendar
+    // La función updateCalendar es la que crea las celdas y luego llama a attachDayClickEvents
+    // No se necesita el attachDayClickEvents() aquí porque updateCalendar lo hace
+    // attachDayClickEvents(); // Comentado para evitar duplicidad si el backend ya trae data inicial.
 
     const monthSpan = document.querySelector('.month-navigation span');
     const prevMonthBtn = document.getElementById('prev-month');
@@ -1378,26 +1302,70 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Variable global para el overlay
+    const calendarLoadingOverlay = document.getElementById('calendarLoadingOverlay');
+
+    /**
+    * Muestra u oculta la capa de superposición de carga.
+    * @param {boolean} isLoading - true para mostrar, false para ocultar.
+    */
+    function toggleLoadingOverlay(isLoading) {
+        if (isLoading) {
+            // Usar setTimeout para garantizar que el overlay se muestre de inmediato
+            // Esto previene que el código bloquee el renderizado si la carga es muy rápida
+            calendarLoadingOverlay.style.display = 'flex';
+            // Un pequeño retraso para asegurar que 'display: flex' se ha aplicado antes de la transición de opacidad
+            setTimeout(() => {
+                calendarLoadingOverlay.classList.add('active');
+            }, 10);
+        } else {
+            calendarLoadingOverlay.classList.remove('active');
+            // Un retraso que coincida con la duración de la transición CSS (0.3s)
+            setTimeout(() => {
+                calendarLoadingOverlay.style.display = 'none';
+            }, 300);
+        }
+    }
+
+
     async function updateCalendar(month, year) {
         if (!isDateWithinLimits(month, year)) {
             return;
         }
+
+        // 1. Mostrar la capa de carga sobre el calendario existente
+        toggleLoadingOverlay(true);
+
         try {
-            calendarTableBody.innerHTML = '<tr><td colspan="7" class="loading"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
             const response = await fetch(`/recursoshumanos/loadchart/calendar-data?month=${month}&year=${year}`);
             if (!response.ok) {
                 throw new Error('No se pudo cargar los datos del calendario.');
             }
             const data = await response.json();
+
+            // 2. Actualizar el contenido de la cabecera del calendario
             chartHeader.innerHTML = `<i class="fas fa-chart-bar"></i> Load Chart - ${data.monthName} ${data.currentYear}`;
             monthSpan.textContent = `${data.monthName} ${data.currentYear}`;
             monthSpan.setAttribute('data-month', data.currentMonth);
             monthSpan.setAttribute('data-year', data.currentYear);
             currentPayrollDates = data.payrollDates;
+
             let newTableHTML = '';
             let currentRow = '<tr>';
             const assetPath = (path) => `{{ asset('${path}') }}`;
 
+
+            // LÓGICA DE CALENDARIO ESTÁNDAR (Días del mes actual y relleno del mes siguiente)
+
+            let firstDayOfMonthIndex = new Date(data.currentYear, data.currentMonth - 1, 1).getDay(); // 0 (Dom) a 6 (Sáb)
+            firstDayOfMonthIndex = firstDayOfMonthIndex === 0 ? 6 : firstDayOfMonthIndex - 1; // Ajustar a Lunes (0) a Domingo (6)
+
+            // Celdas vacías iniciales para alinear el día 1 con el día de la semana correcto
+            for (let i = 0; i < firstDayOfMonthIndex; i++) {
+                currentRow += `<td class="other-month" data-date=""></td>`;
+            }
+
+            // Días del mes actual y relleno del siguiente mes (solo los necesarios para completar la semana)
             data.calendarDays.forEach((day, index) => {
                 const isCurrentMonth = day.current_month;
                 const isToday = day.is_today;
@@ -1418,24 +1386,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const payrollIcons = `${day.is_payroll_start_1 ? '<i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>' : ''} ${day.is_payroll_end_1 ? '<i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 1"></i>' : ''} ${day.is_payroll_start_2 ? '<i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>' : ''} ${day.is_payroll_end_2 ? '<i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 2"></i>' : ''} `;
 
-                currentRow += `<td class="${cellClass}" data-date="${day.date}"><span class="day-number">${day.day}</span>${holidayIconHTML}${payrollIcons}</td>`;
-                if ((index + 1) % 7 === 0) {
+                // Solo renderizar la celda si tiene día (días del mes actual y días del mes siguiente)
+                if (day.day !== '') {
+                    currentRow += `<td class="${cellClass}" data-date="${day.date}"><span class="day-number">${day.day}</span>${holidayIconHTML}${payrollIcons}</td>`;
+                } else {
+                    // Celdas vacías, si el backend las envió, pero no son necesarias con la nueva lógica
+                    currentRow += `<td class="other-month" data-date=""></td>`;
+                }
+
+                if ((index + firstDayOfMonthIndex + 1) % 7 === 0) {
                     newTableHTML += currentRow + '</tr>';
                     currentRow = '<tr>';
                 }
             });
+
+            // Relleno final de celdas vacías, si el último día del mes no terminó en domingo
+            while ((data.calendarDays.length + firstDayOfMonthIndex) % 7 !== 0) {
+                currentRow += `<td class="other-month" data-date=""></td>`;
+                data.calendarDays.push({ day: '', current_month: false, date: '' }); // Añadir un día dummy para el conteo
+            }
+
             if (currentRow !== '<tr>') {
                 newTableHTML += currentRow.slice(0, -4) + '</tr>';
             }
 
+
+            // 3. Actualizar el contenido y reasignar eventos
             calendarTableBody.innerHTML = newTableHTML;
             attachDayClickEvents();
             updateNavigationButtons();
             await loadMonthlyActivities(month, year);
             await fetchBalances();
+
+            // 4. Ocultar la capa de carga al finalizar
+            toggleLoadingOverlay(false);
+
         } catch (error) {
             console.error('Error al cargar el calendario:', error);
             calendarTableBody.innerHTML = '<tr><td colspan="7" class="loading-error">Error al cargar el calendario.</td></tr>';
+
+            // 5. Ocultar la capa de carga y mostrar el error con SweetAlert
+            toggleLoadingOverlay(false);
             Swal.fire({
                 icon: 'error',
                 title: 'Error de conexión',
@@ -1444,6 +1435,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     }
+
 
     prevMonthBtn.addEventListener('click', function () {
         if (this.disabled) return;

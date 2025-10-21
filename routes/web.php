@@ -9,7 +9,6 @@ use App\Http\Controllers\RecursosHumanos\LoadChart\FieldBonusController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\HistoryController;
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +19,22 @@ use Illuminate\Support\Facades\Route;
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+// Rutas para restablecer contraseña
+// PASO 1: Obtener el correo asociado al nombre de usuario (AJAX desde Login)
+Route::post('password/get-email', [LoginController::class, 'getUserEmail'])->name('password.getUserEmail');
+
+// PASO 2: Enviar código de 6 dígitos al correo (AJAX desde Login)
+Route::post('password/send-code', [LoginController::class, 'sendResetCode'])->name('password.sendCode');
+
+// PASO 3: Verificar el código ingresado (AJAX desde Login)
+Route::post('password/verify-code', [LoginController::class, 'verifyResetCode'])->name('password.verifyCode');
+
+// NUEVA RUTA: Mostrar el formulario de restablecimiento, sin parámetros en la URL (PASO 4.a)
+// El email y el token se obtendrán de la sesión.
+Route::get('password/reset', [LoginController::class, 'showResetForm'])->name('password.resetForm');
+
+// RUTA FINAL: Actualizar la contraseña (POST desde reset.blade.php)
+Route::post('password/update', [LoginController::class, 'resetPassword'])->name('password.update');
 
 // Redirección de la página principal según estado de autenticación
 Route::get('/', function () {
@@ -86,281 +101,244 @@ Route::middleware(['web', 'auth'])->group(function () {
                 ->name('qhse.auditorias');
         });
 
-    // ===================================================
-    // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('recursoshumanos')
-        ->middleware('check.permission:recursoshumanos')
-        ->group(function () {
-            // Subsistemas de RRHH
-            Route::get('/altasempleados', function () {
-                return view('modulos.recursoshumanos.sistemas.altasempleados.index');
+// ===================================================
+// MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
+// ===================================================
+Route::prefix('recursoshumanos')
+    ->middleware('check.permission:recursoshumanos')
+    ->group(function () {
+        // Subsistemas de RRHH (Rutas que no son de LoadChart)
+        Route::get('/altasempleados', function () {
+            return view('modulos.recursoshumanos.sistemas.altasempleados.index');
+        })
+            ->middleware('check.permission:recursoshumanos,altasempleados')
+            ->name('recursoshumanos.altasempleados');
+
+        // ===================================================
+        // GRUPO LOADCHART
+        // Prefijo: /recursoshumanos/loadchart
+        // ===================================================
+        Route::prefix('loadchart')->group(function () {
+            // Redirigir la ruta principal a calendar
+            Route::get('/', function () {
+                return redirect()->route('loadchart.calendar');
             })
-                ->middleware('check.permission:recursoshumanos,altasempleados')
-                ->name('recursoshumanos.altasempleados');
+                ->name('recursoshumanos.loadchart')
+                ->middleware('check.permission:recursoshumanos,loadchart');
 
-            Route::prefix('loadchart')->group(function () {
-                // Redirigir la ruta principal a calendar
-                Route::get('/', function () {
-                    return redirect()->route('loadchart.calendar');
-                })
-                    ->name('recursoshumanos.loadchart')
-                    ->middleware('check.permission:recursoshumanos,loadchart');
+            // --- RUTAS GESTIONADAS POR CalendarController ---
+            Route::controller(CalendarController::class)->group(function () {
+                // Vista y Carga de Calendario
+                Route::get('/calendar', 'index')->name('loadchart.calendar');
+                Route::get('/calendar-data', 'getCalendarData');
+                Route::post('/save-activity', 'saveActivity')->name('loadchart.save_activity');
+                Route::get('/monthly-activities', 'getMonthlyActivities')->name('loadchart.monthly_activities');
+                Route::get('/balances-data', 'getEmployeeBalancesAjax')->name('loadchart.balances.data');
+            });
 
-                // Esta ruta carga la vista HTML completa para la primera vez.
-                Route::get('/calendar', [CalendarController::class, 'index'])->name('loadchart.calendar');
+            // --- RUTAS GESTIONADAS POR FortnightlyConfigController ---
+            Route::controller(FortnightlyConfigController::class)->group(function () {
+                Route::get('fortnightly-config/{year}/{month}', 'getConfig');
+                Route::post('fortnightly-config', 'store');
+                Route::delete('fortnightly-config/{year}/{month}', 'destroy');
+                Route::get('fortnightly-config/year/{year}', 'getYearConfigs');
+                Route::post('fortnightly-config/generate-default', 'generateDefault')->name('loadchart.fortnightly-config.generate-default');
+            });
 
-                // Esta es la ruta AJAX para cargar los datos del calendario.
-                Route::get('/calendar-data', [CalendarController::class, 'getCalendarData']);
-
-                // NUEVA RUTA: Guardar actividad diaria
-                Route::post('/save-activity', [CalendarController::class, 'saveActivity'])->name('loadchart.save_activity');
-
-                // NUEVA RUTA: Obtener actividades mensuales
-                Route::get('/monthly-activities', [CalendarController::class, 'getMonthlyActivities'])->name('loadchart.monthly_activities');
-
-                Route::get('balances-data', [CalendarController::class, 'getEmployeeBalancesAjax'])->name('loadchart.balances.data');
-
-                // Las rutas existentes para la configuración quincenal se mantienen.
-                Route::get('/fortnightly-config/{year}/{month}', [CalendarController::class, 'getFortnightlyConfig']);
-                Route::post('/fortnightly-config/generate-default', [CalendarController::class, 'generateDefaultConfig']);
-                Route::post('/fortnightly-config', [CalendarController::class, 'storeFortnightlyConfig']);
-
-                Route::get('/approval', function () {
-                    return view('modulos.recursoshumanos.sistemas.loadchart.approval');
-                })->name('loadchart.approval');
-
-                Route::get('/approval', [SquadController::class, 'index'])->name('loadchart.approval');
-                Route::get('/recursos-humanos/loadchart/get-operadores', [SquadController::class, 'getOperadores'])->name('squads.get_operadores');
-                Route::get('/recursos-humanos/loadchart/get-squads', [SquadController::class, 'getSquads'])->name('squads.get_squads');
-                Route::post('/squads/store', [SquadController::class, 'store'])->name('squads.store');
-                Route::delete('/squads/{squadNumber}', [SquadController::class, 'destroy'])->name('squads.destroy');
-                Route::get('/squads/{squadNumber}', [SquadController::class, 'show'])->name('squads.show');
-                Route::get('/info-services', [InfoServicesController::class, 'getServicesAndBonuses'])->name('info.services.json');
-                // Ruta principal de aprobaciones
-                Route::get('/approval', [ApprovalController::class, 'index'])->name('loadchart.approval');
-
-                // Ruta AJAX para obtener datos de un mes específico
-                Route::get('/approval-data/{year}/{month}', [ApprovalController::class, 'getApprovalData'])
+            // --- RUTAS DE APROBACIÓN (ApprovalController) ---
+            Route::controller(ApprovalController::class)->group(function () {
+                Route::get('/approval', 'index')->name('loadchart.approval');
+                Route::get('/approval-data/{year}/{month}', 'getApprovalData')
                     ->name('loadchart.approval.data')
                     ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}']);
+                Route::post('/approval-status', 'updateApprovalStatus')->name('loadchart.approval.status');
+                // La ruta repetida 'approval-data/{year}/{month}' se eliminó
+                Route::post('check-updates', 'checkUpdates')->name('loadchart.check-updates');
+                Route::post('/update-approval-status', 'updateApprovalStatus')->name('loadchart.update.approval.status');
+                Route::post('/update-multiple-statuses', 'updateMultipleStatuses')->name('loadchart.update.multiple.statuses');
+            });
 
-                // Ruta AJAX para actualizar estado de aprobación
-                Route::post('/approval-status', [ApprovalController::class, 'updateApprovalStatus'])
-                    ->name('loadchart.approval.status');
-                // Agrega esta ruta en tu archivo web.php
-                Route::get('/recursoshumanos/loadchart/approval-data/{year}/{month}', [ApprovalController::class, 'getApprovalData'])
-                    ->name('approval.data');
+            // --- RUTAS DE SQUADS (SquadController) ---
+            // Nota: Aquí asumimos que las rutas "get-operadores" y "get-squads" también deben simplificarse.
+            Route::controller(SquadController::class)->group(function () {
+                // La ruta a la vista approval ya fue definida en ApprovalController, esta puede ser redundante o para AJAX
+                // Route::get('/approval', 'index')->name('loadchart.approval');
 
-                // Ruta para verificar actualizaciones
-                Route::post('check-updates', [ApprovalController::class, 'checkUpdates'])->name('loadchart.check-updates');
+                // Ajustamos las rutas eliminando el prefijo redundante
+                Route::get('/get-operadores', 'getOperadores')->name('squads.get_operadores');
+                Route::get('/get-squads', 'getSquads')->name('squads.get_squads');
+                Route::post('/squads/store', 'store')->name('squads.store');
+                Route::delete('/squads/{squadNumber}', 'destroy')->name('squads.destroy');
+                Route::get('/squads/{squadNumber}', 'show')->name('squads.show');
+            });
 
-                // Ruta para actualizar el estado de aprobación
-                Route::post('/update-approval-status', [ApprovalController::class, 'updateApprovalStatus'])->name('loadchart.update.approval.status');
+            // --- RUTAS DE SERVICIOS ADICIONALES (InfoServicesController) ---
+            Route::get('/info-services', [InfoServicesController::class, 'getServicesAndBonuses'])->name('info.services.json');
 
-                Route::post('/update-multiple-statuses', [ApprovalController::class, 'updateMultipleStatuses'])->name('loadchart.update.multiple.statuses');
-
-                // Ruta para obtener la configuración de un mes y año específicos
-                Route::get('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'getConfig']);
-                // Ruta para guardar o actualizar la configuración
-                Route::post('fortnightly-config', [FortnightlyConfigController::class, 'store']);
-                // Ruta para eliminar una configuración (opcional, pero buena práctica)
-                Route::delete('fortnightly-config/{year}/{month}', [FortnightlyConfigController::class, 'destroy']);
-                // Ruta para obtener todas las configuraciones de un año
-                Route::get('fortnightly-config/year/{year}', [FortnightlyConfigController::class, 'getYearConfigs']);
-                // Ruta para generar una configuración por defecto
-                Route::post('fortnightly-config/generate-default', [FortnightlyConfigController::class, 'generateDefault']);
-
-                Route::get('/history', function () {
-                    return view('modulos.recursoshumanos.sistemas.loadchart.history');
-                })->name('loadchart.history');
-
-                Route::get('/field_bonuses', [FieldBonusController::class, 'index'])->name('field_bonuses');
-                Route::get('/field-bonuses-data', [FieldBonusController::class, 'getBonuses']); // New route for AJAX data
-                Route::get('/field-bonuses/{id}/edit', [FieldBonusController::class, 'edit']);
-                Route::post('/field-bonuses', [FieldBonusController::class, 'store']);
-                Route::put('/field-bonuses/{id}', [FieldBonusController::class, 'update']);
-                Route::delete('/field-bonuses/{id}', [FieldBonusController::class, 'destroy']);
-                Route::post('/field-bonuses/{id}/toggle-status', [FieldBonusController::class, 'toggleStatus']);
-
-                // Agrupa TODAS las acciones del recurso 'employee_vacation_balance'
-                Route::prefix('employee_vacation_balance')->group(function () {
-                    // 1. LISTAR (GET /) <-- ESTO AHORA ESTÁ ADENTRO
-                    Route::get('/', [EmployeeVacationBalanceController::class, 'index'])->name('vacation_balance.index');
-
-                    // 2. CREAR (POST /)
-                    Route::post('/', [EmployeeVacationBalanceController::class, 'store']);
-                    // ... y el resto de rutas (edit, update, destroy)
-                    Route::get('/{id}/edit', [EmployeeVacationBalanceController::class, 'edit']);
-                    Route::put('/{id}', [EmployeeVacationBalanceController::class, 'update']);
-                    Route::delete('/{id}', [EmployeeVacationBalanceController::class, 'destroy']);
-                    //ACTULÑIZAMOS AÑOS DE SERVCIOS
-                    Route::post('/force-update-years', [EmployeeVacationBalanceController::class, 'forceUpdateYears']);
-
-                });
-
-                Route::get('/stats', function () {
-                    return view('modulos.recursoshumanos.sistemas.loadchart.stats');
-                })->name('loadchart.stats');
-
-                Route::get('/review_assignments', function () {
-                    return view(
-                        'modulos.recursoshumanos.sistemas.loadchart.review_assignments'
-                    );
-                })->name('loadchart.review_assignments');
-
-                Route::get('/review_assignments', [
-                    AssignmentController::class,
-                    'index',
-                ])
+            // --- RUTAS DE ASIGNACIONES (AssignmentController) ---
+            Route::controller(AssignmentController::class)->group(function () {
+                Route::get('/review_assignments', 'index')
                     ->name('loadchart.review_assignments')
-                    ->middleware(
-                        'check.permission:recursoshumanos,loadchart,review_assignments'
-                    );
-
-                Route::get('/review_assignments/employees', [
-                    AssignmentController::class,
-                    'getEmployees',
-                ])
+                    ->middleware('check.permission:recursoshumanos,loadchart,review_assignments');
+                Route::get('/review_assignments/employees', 'getEmployees')
                     ->name('loadchart.getEmployees')
-                    ->middleware(
-                        'check.permission:recursoshumanos,loadchart,review_assignments'
-                    );
-
-                Route::post('/review_assignments/existing', [
-                    AssignmentController::class,
-                    'getExistingAssignments',
-                ])
+                    ->middleware('check.permission:recursoshumanos,loadchart,review_assignments');
+                Route::post('/review_assignments/existing', 'getExistingAssignments')
                     ->name('loadchart.getExistingAssignments')
-                    ->middleware(
-                        'check.permission:recursoshumanos,loadchart,review_assignments'
-                    );
-
-                Route::post('/review_assignments/save', [
-                    AssignmentController::class,
-                    'saveAssignment',
-                ])
+                    ->middleware('check.permission:recursoshumanos,loadchart,review_assignments');
+                Route::post('/review_assignments/save', 'saveAssignment')
                     ->name('loadchart.saveAssignment')
-                    ->middleware(
-                        'check.permission:recursoshumanos,loadchart,review_assignments'
-                    );
+                    ->middleware('check.permission:recursoshumanos,loadchart,review_assignments');
             });
+
+            // --- RUTAS DE BONOS DE CAMPO (FieldBonusController) ---
+            Route::controller(FieldBonusController::class)->group(function () {
+                Route::get('/field_bonuses', 'index')->name('field_bonuses');
+                Route::get('/field-bonuses-data', 'getBonuses');
+                Route::get('/field-bonuses/{id}/edit', 'edit');
+                Route::post('/field-bonuses', 'store');
+                Route::put('/field-bonuses/{id}', 'update');
+                Route::delete('/field-bonuses/{id}', 'destroy');
+                Route::post('/field-bonuses/{id}/toggle-status', 'toggleStatus');
+            });
+
+            // --- RUTAS DE BALANCE DE VACACIONES (EmployeeVacationBalanceController) ---
+            Route::prefix('employee_vacation_balance')->controller(EmployeeVacationBalanceController::class)->group(function () {
+                Route::get('/', 'index')->name('vacation_balance.index');
+                Route::post('/', 'store');
+                Route::get('/{id}/edit', 'edit');
+                Route::put('/{id}', 'update');
+                Route::delete('/{id}', 'destroy');
+                Route::post('/force-update-years', 'forceUpdateYears');
+            });
+
+            // --- RUTAS SIMPLES DE VISTA ---
+            Route::get('/history', function () {
+                return view('modulos.recursoshumanos.sistemas.loadchart.history');
+            })->name('loadchart.history');
+
+            Route::get('/stats', function () {
+                return view('modulos.recursoshumanos.sistemas.loadchart.stats');
+            })->name('loadchart.stats');
         });
-    // ===================================================
-    // MÓDULO: SISTEMAS Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('sistemas')
-        ->middleware('check.permission:sistemas')
-        ->group(function () {
-            // Gestión de roles
-            Route::get('/gestionderoles', function () {
-                return view('modulos.sistemas.sistemas.gestionderoles.index');
-            });
+    });
+// El cierre del paréntesis final (}); ya no es necesario aquí si se incluye en el archivo principal.
 
-            // CRUD de roles (RoleController)
-            Route::resource('roles', RoleController::class)
-                ->except(['show'])
-                ->names([
-                    'index'   => 'sistemas.roles.index',
-                    'create'  => 'sistemas.roles.create',
-                    'store'   => 'sistemas.roles.store',
-                    'edit'    => 'sistemas.roles.edit',
-                    'update'  => 'sistemas.roles.update',
-                    'destroy' => 'sistemas.roles.destroy',
-                ]);
+// ===================================================
+// MÓDULO: SISTEMAS Y SUBSISTEMAS
+// ===================================================
+Route::prefix('sistemas')
+    ->middleware('check.permission:sistemas')
+    ->group(function () {
+        // Gestión de roles
+        Route::get('/gestionderoles', function () {
+            return view('modulos.sistemas.sistemas.gestionderoles.index');
+        });
 
-            // Ruta para obtener permisos
-            Route::get('get-permissions', [RoleController::class, 'getPermissions']);
-
-            // Ruta para obtener roles
-            Route::get('get-roles', [RoleController::class, 'getRoles']);
-
-            Route::get('search-employees', [
-                RoleController::class,
-                'searchEmployees',
+        // CRUD de roles (RoleController)
+        Route::resource('roles', RoleController::class)
+            ->except(['show'])
+            ->names([
+                'index'   => 'sistemas.roles.index',
+                'create'  => 'sistemas.roles.create',
+                'store'   => 'sistemas.roles.store',
+                'edit'    => 'sistemas.roles.edit',
+                'update'  => 'sistemas.roles.update',
+                'destroy' => 'sistemas.roles.destroy',
             ]);
-        });
 
-    // ===================================================
-    // MÓDULO: VENTAS Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('ventas')
-        ->middleware('check.permission:ventas')
-        ->group(function () {
-            // Página principal Ventas
-            Route::get('/', function () {
-                return view('modulos.ventas.ventashome');
-            })->name('modulo.ventas');
+        // Ruta para obtener permisos
+        Route::get('get-permissions', [RoleController::class, 'getPermissions']);
 
-            // Subsistemas de Ventas
-            Route::get('/clientes', function () {
-                return view('modulos.ventas.sistemas.clientes.index');
-            })
-                ->middleware('check.permission:ventas,clientes')
-                ->name('ventas.clientes');
+        // Ruta para obtener roles
+        Route::get('get-roles', [RoleController::class, 'getRoles']);
 
-            Route::get('/cotizaciones', function () {
-                return view('modulos.ventas.sistemas.cotizaciones.index');
-            })
-                ->middleware('check.permission:ventas,cotizaciones')
-                ->name('ventas.cotizaciones');
+        Route::get('search-employees', [
+            RoleController::class,
+            'searchEmployees',
+        ]);
+    });
 
-            Route::get('/oportunidades', function () {
-                return view('modulos.ventas.sistemas.oportunidades.index');
-            })
-                ->middleware('check.permission:ventas,oportunidades')
-                ->name('ventas.oportunidades');
-        });
+// ===================================================
+// MÓDULO: VENTAS Y SUBSISTEMAS
+// ===================================================
+Route::prefix('ventas')
+    ->middleware('check.permission:ventas')
+    ->group(function () {
+        // Página principal Ventas
+        Route::get('/', function () {
+            return view('modulos.ventas.ventashome');
+        })->name('modulo.ventas');
 
-    // ===================================================
-    // MÓDULO: SUMINISTRO
-    // ===================================================
-    Route::get('/suministro', function () {
-        return view('modulos.suministros.suministroshome');
-    })
-        ->middleware('check.permission:suministro')
-        ->name('modulo.suministro');
+        // Subsistemas de Ventas
+        Route::get('/clientes', function () {
+            return view('modulos.ventas.sistemas.clientes.index');
+        })
+            ->middleware('check.permission:ventas,clientes')
+            ->name('ventas.clientes');
 
-    // ===================================================
-    // MÓDULO: OPERACIONES
-    // ===================================================
-    Route::get('/operaciones', function () {
-        return view('modulos.operaciones.operacioneshome');
-    })
-        ->middleware('check.permission:operaciones')
-        ->name('modulo.operaciones');
+        Route::get('/cotizaciones', function () {
+            return view('modulos.ventas.sistemas.cotizaciones.index');
+        })
+            ->middleware('check.permission:ventas,cotizaciones')
+            ->name('ventas.cotizaciones');
 
-    // ===================================================
-    // MÓDULO: ALMACÉN
-    // ===================================================
-    Route::get('/almacen', function () {
-        return view('modulos.almacen.index');
-    })
-        ->middleware('check.permission:almacen')
-        ->name('modulo.almacen');
+        Route::get('/oportunidades', function () {
+            return view('modulos.ventas.sistemas.oportunidades.index');
+        })
+            ->middleware('check.permission:ventas,oportunidades')
+            ->name('ventas.oportunidades');
+    });
 
-    // ===================================================
-    // MÓDULO: GEOCIENCIAS Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('geociencias')
-        ->middleware('check.permission:geociencias')
-        ->group(function () {
-            // Página principal Geociencias
-            Route::get('/', function () {
-                return view('modulos.geociencias.geocienciashome');
-            })->name('modulo.geociencias');
+// ===================================================
+// MÓDULO: SUMINISTRO
+// ===================================================
+Route::get('/suministro', function () {
+    return view('modulos.suministros.suministroshome');
+})
+    ->middleware('check.permission:suministro')
+    ->name('modulo.suministro');
 
-            // Subsistemas de Geociencias
-            Route::get('/exploraciones', function () {
-                return view('modulos.geociencias.sistemas.exploraciones.index');
-            })
-                ->middleware('check.permission:geociencias,exploraciones')
-                ->name('geociencias.exploraciones');
+// ===================================================
+// MÓDULO: OPERACIONES
+// ===================================================
+Route::get('/operaciones', function () {
+    return view('modulos.operaciones.operacioneshome');
+})
+    ->middleware('check.permission:operaciones')
+    ->name('modulo.operaciones');
 
-            Route::get('/analisis', function () {
-                return view('modulos.geociencias.sistemas.analisis.index');
-            })
-                ->middleware('check.permission:geociencias,analisis')
-                ->name('geociencias.analisis');
-        });
+// ===================================================
+// MÓDULO: ALMACÉN
+// ===================================================
+Route::get('/almacen', function () {
+    return view('modulos.almacen.index');
+})
+    ->middleware('check.permission:almacen')
+    ->name('modulo.almacen');
+
+// ===================================================
+// MÓDULO: GEOCIENCIAS Y SUBSISTEMAS
+// ===================================================
+Route::prefix('geociencias')
+    ->middleware('check.permission:geociencias')
+    ->group(function () {
+        // Página principal Geociencias
+        Route::get('/', function () {
+            return view('modulos.geociencias.geocienciashome');
+        })->name('modulo.geociencias');
+
+        // Subsistemas de Geociencias
+        Route::get('/exploraciones', function () {
+            return view('modulos.geociencias.sistemas.exploraciones.index');
+        })
+            ->middleware('check.permission:geociencias,exploraciones')
+            ->name('geociencias.exploraciones');
+
+        Route::get('/analisis', function () {
+            return view('modulos.geociencias.sistemas.analisis.index');
+        })
+            ->middleware('check.permission:geociencias,analisis')
+            ->name('geociencias.analisis');
+    });
 });

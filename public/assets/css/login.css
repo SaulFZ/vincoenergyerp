@@ -67,7 +67,7 @@ form h1 {
     margin: 0 0 15px 0;
     font-family: "Work Sans", sans-serif !important;
     font-weight: 700;
-    font-size: 20px;
+    font-size: 24px; /* Un poco más grande para reset */
     color: #fff;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -117,7 +117,8 @@ form h1.loadIn {
 }
 
 .frmContainer input[type="password"],
-.frmContainer input[type="text"] {
+.frmContainer input[type="text"],
+.frmContainer input[type="email"] { /* Se añade email para reset */
     background: transparent;
     border: none;
     box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.15);
@@ -147,26 +148,22 @@ form h1.loadIn {
     position: relative;
 }
 
-.frmContainer .frmDiv p i {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.frmContainer input[type="password"],
-.frmContainer input[type="text"] {
-    padding-left: 40px;
-}
-
+/* Iconos en inputs */
 .frmContainer .fa-user,
-.frmContainer .fa-lock {
+.frmContainer .fa-lock,
+.frmContainer .fa-envelope { /* Se añade envelope */
     position: absolute;
     top: 25px;
     left: 10px;
     color: #ffffff;
     font-size: 18px;
 }
+.frmContainer input[type="password"],
+.frmContainer input[type="text"],
+.frmContainer input[type="email"] { /* Se ajusta el padding para todos */
+    padding-left: 40px;
+}
+
 
 .logoCont {
     padding: 45px 35px;
@@ -218,7 +215,7 @@ form h1.loadIn {
     opacity: 0.8;
     text-decoration: none;
     font-weight: 700;
-    font-size: 10px;
+    font-size: 15px;
     margin-top: 15px;
     display: block;
     transition: 0.2s ease;
@@ -330,9 +327,99 @@ form h1.loadIn {
     }
 }
 
+/* Mensaje de error de validación */
 .error-message {
     color: #ff5252;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+    font-weight: 500;
+}
+
+
+/* Resaltar palabras clave en SweetAlert2 (usando una clase específica) */
+.swal-highlight {
+    color: #ff7b00ef;
+    font-weight: 700;
+}
+
+/* Estilo para el email enmascarado en el modal */
+.masked-email {
+    color: #ff7b00ef;
+    font-weight: 700;
+    font-size: 16px;
+    display: block;
+    margin-top: 5px;
+    word-break: break-all;
+}
+
+/* Estilo del input de correo en el formulario Reset (para diferenciarlo) */
+.frmContainer input.email-readonly {
+    background-color: rgba(255, 255, 255, 0.1); /* Fondo sutilmente más claro */
+    cursor: default;
+    color: #ff7b00ef; /* Color de la marca para el email */
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 #ff7b0050; /* Línea de color de marca */
+}
+
+.frmDiv .email-note {
+    color: #dfdbdb;
     font-size: 11px;
     margin-top: 5px;
     display: block;
+}
+
+/* Estilos de SweetAlert2 mejorados */
+.swal2-popup {
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+}
+.swal2-title {
+    font-size: 1.6em !important;
+    font-weight: 700 !important;
+    color: #1a1a1a !important;
+}
+.swal2-html-container {
+    margin: 0.5em 0 1.5em 0 !important;
+    font-size: 15px !important;
+}
+.swal2-icon.swal2-info, .swal2-icon.swal2-question {
+    border-color: #ff7b00ef !important;
+    color: #ff7b00ef !important;
+}
+
+.swal2-confirm, .swal2-cancel {
+    font-weight: 500 !important;
+    padding: 10px 25px !important;
+    border-radius: 6px !important;
+}
+.swal2-validation-message {
+    background-color: #fcebeb !important;
+    color: #ff5252 !important;
+    border-radius: 6px !important;
+    padding: 8px !important;
+    margin-top: 10px !important;
+}
+
+/* Estilos para el input de código */
+.code-input-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+.code-input {
+    width: 40px;
+    height: 50px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+.code-input:focus {
+    border-color: #ff7b00ef;
+    box-shadow: 0 0 5px rgba(255, 123, 0, 0.3);
 }

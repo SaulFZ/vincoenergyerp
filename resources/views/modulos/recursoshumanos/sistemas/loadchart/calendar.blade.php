@@ -157,6 +157,11 @@
                         </tr>
                     </tbody>
                 </table>
+                {{-- NUEVO OVERLAY DE CARGA --}}
+                <div class="loading-overlay" id="calendarLoadingOverlay">
+                    <div class="loading-spinner-lg"></div>
+                    <div class="loading-message">Cargando datos del calendario...</div>
+                </div>
                 {{-- LEYENDA DEL CALENDARIO --}}
                 <div class="activity-legend">
                     <div class="legend-item">
@@ -221,7 +226,7 @@
                     </div>
 
                     <div class="legend-item">
-                        <i class="fas fa-flag payroll-icon payroll-start-1"></i>
+                        <i class="fas fa-flag  payroll-start-1"></i>
                         <div>Inicio Q1</div>
                     </div>
                     <div class="legend-item">
@@ -412,6 +417,7 @@
                             vacaciones disponibles.</div>
 
                     </div>
+
                     <div class="form-group" id="well-name-field" style="display: none;">
                         <label for="well-name">Nombre del Pozo</label>
                         <div class="input-with-icon">
@@ -477,7 +483,8 @@
                                     </span>
                                 </div>
                                 <div class="service-bonus-option" data-value="si">
-                                    <input type="radio" name="has_service_bonus" id="service-bonus-yes" value="si">
+                                    <input type="radio" name="has_service_bonus" id="service-bonus-yes"
+                                        value="si">
                                     <span class="service-bonus-label">
                                         <i class="fas fa-check-circle"></i> Sí
                                     </span>

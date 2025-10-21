@@ -71,7 +71,7 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: var(--medical);"></div>
-                    <span>MEdico(M)</span>
+                    <span>Medico(M)</span>
                 </div>
 
                 <div class="legend-item">
