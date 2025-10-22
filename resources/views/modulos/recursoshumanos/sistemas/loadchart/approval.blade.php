@@ -21,15 +21,26 @@
                 </div>
 
                 <div class="approval-actions">
-                    <button class="squad-btn" id="squad-control">
-                        <i class="fas fa-users-cog"></i> Control de Cuadrillas
-                    </button>
+                    {{-- Control de Cuadrillas --}}
+                    @if (\App\Helpers\PermissionHelper::hasDirectPermission('control_cuadrillas'))
+                        <button class="squad-btn" id="squad-control">
+                            <i class="fas fa-users-cog"></i> Control de Cuadrillas
+                        </button>
+                    @endif
+
+                    {{-- Info de Servicios (Sin permiso explícito en tu solicitud, se mantiene visible) --}}
                     <button class="services-info-btn" id="services-info">
-                        <i class="fas fa-tasks"></i> info de Servicios
+                        <i class="fas fa-tasks"></i> Info de Servicios
                     </button>
-                    <button class="back-btn" id="days-quincena">
-                        <i class="fas fa-calendar-day"></i> Días de Quincena
-                    </button>
+
+                    {{-- Días de Quincena --}}
+                    @if (\App\Helpers\PermissionHelper::hasDirectPermission('gestionar_quincenas'))
+                        <button class="back-btn" id="days-quincena">
+                            <i class="fas fa-calendar-day"></i> Días de Quincena
+                        </button>
+                    @endif
+
+                    {{-- Volver al Calendario (Se asume visible para todos) --}}
                     <button class="back-btn" id="back-to-calendar" data-route="/calendar">
                         <i class="fas fa-arrow-left"></i> Volver al Calendario
                     </button>
@@ -38,52 +49,51 @@
 
             <div class="activity-legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--work-base);"></div>
-                    <span>Base(B)</span>
+                    <div class="legend-color" style="background-color: var(--work-base);">B</div>
+                    <span>Base</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--work-well);"></div>
-                    <span>Pozo(P)</span>
+                    <div class="legend-color" style="background-color: var(--work-well);">P</div>
+                    <span>Pozo</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--home-office);"></div>
-                    <span>Trabajo en Casa(TC)</span> {{-- CAMBIO: Home Office (H) a Trabajo en Casa (TC) --}}
+                    <div class="legend-color" style="background-color: var(--home-office);">TC</div>
+                    <span>Trabajo en Casa</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--commissioned);"></div>
-                    <span>Comisionado(C)</span>
+                    <div class="legend-color" style="background-color: var(--commissioned);">C</div>
+                    <span>Comisionado</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--traveling);"></div>
-                    <span>Viaje(V)</span>
+                    <div class="legend-color" style="background-color: var(--traveling);">V</div>
+                    <span>Viaje</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--training);"></div>
-                    <span>Entrenamiento(E)</span>
+                    <div class="legend-color" style="background-color: var(--training);">E</div>
+                    <span>Entrenamiento</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--rest);"></div>
-                    <span>Descanso(D)</span>
+                    <div class="legend-color" style="background-color: var(--rest);">D</div>
+                    <span>Descanso</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--vacation);"></div>
-                    <span>Vacaciones(VAC)</span>
+                    <div class="legend-color" style="background-color: var(--vacation);">VAC</div>
+                    <span>Vacaciones</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--medical);"></div>
-                    <span>Medico(M)</span>
-                </div>
-
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--permission);"></div>
-                    <span>Permiso(PE)</span>
+                    <div class="legend-color" style="background-color: var(--medical);">M</div>
+                    <span>Médico</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--absence);"></div>
-                    <span>Ausencia(A)</span>
+                    <div class="legend-color" style="background-color: var(--permission);">PE</div>
+                    <span>Permiso</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--absence);">A</div>
+                    <span>Ausencia</span>
                 </div>
                 <div class="legend-divider"></div>
-                {{-- ➡️ Actualizado: Nuevo estado 'Bajo Revisión' --}}
+                {{-- ➡️ Indicadores de Aprobación --}}
                 <div class="legend-item">
                     <div class="legend-color under-review-border"></div>
                     <span>Bajo Revisión</span>
@@ -132,8 +142,7 @@
                     <tbody id="approval-table-body">
                         @foreach ($employees as $employee)
                             <tr class="employee-row" data-employee-id="{{ $employee->id }}">
-                                <td rowspan="4" class="employee-info-cell">{{ $employee->full_name }}
-                                </td>
+                                  <td rowspan="4" class="employee-info-cell">{{ $employee->full_name }}</td>
                                 <td class="activity-label-cell">Actividad</td>
                                 @foreach ($monthlyDays as $dayInfo)
                                     <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
@@ -223,7 +232,6 @@
         </div>
 
         <script>
-
             // Variables globales
             let currentMonth = {{ $currentMonth }};
             let currentYear = {{ $currentYear }};

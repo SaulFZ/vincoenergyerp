@@ -205,8 +205,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Si la fecha seleccionada está en la primera o segunda quincena del mes actual (para incluir el Q2 anterior)
-        if (q1Start && q1End && selectedDate >= q1Start && selectedDate <= q1End) {
-            // Lógica para añadir el Q2 anterior, buscando si existe configuración de quincena para el mes anterior
+        // Se asume que solo se puede seleccionar el Q2 anterior si estamos en el Q1 del mes actual o después.
+        if (currentMonth !== 1) { // Lógica simple para evitar ir al año anterior en el primer mes
+             // No necesitamos la lógica compleja de Q1Start/Q1End aquí, solo si la fecha actual está en el mes actual y es Q1 o Q2.
+             // Simplificamos: si el mes actual tiene una configuración de nómina (asumimos que sí) y NO es enero,
+             // o si es enero y el año es posterior a MIN_YEAR, incluimos la opción del Q2 anterior.
             const prevQ2Option = document.createElement('option');
             prevQ2Option.value = 'previous_q2';
             prevQ2Option.textContent = `Segunda Quincena - ${prevMonthName} ${prevYear}`;
@@ -492,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function () {
              statusForServiceBonus = serviceStatus;
         } else if (serviceStatus === 'rejected') {
             // Si el servicio fue rechazado, el botón se etiqueta como rechazado y no se bloquea la edición si la actividad no estaba bloqueada.
-            statusForServiceBonus = 'rejected';
+             statusForServiceBonus = 'rejected';
         }
 
         // 2. Determinar si se bloquea
@@ -628,76 +631,75 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // =========================================================================
-    // ✅ FUNCIÓN CORREGIDA: populateServiceData
-    // Se elimina la dependencia de disparar eventos 'change' para cargar
-    // los selects en cascada y se llama directamente a las funciones de repoblado
-    // para evitar conflictos con el estado 'disabled' impuesto por applyFieldLocks.
+    // ✅ FUNCIONES AUXILIARES REQUERIDAS PARA EL REPOBLADO EN CASCADA
+    // Se extrae la lógica de repoblado de 'change' y 'populateServiceData' en
+    // funciones dedicadas sin efectos secundarios (como disparar eventos)
     // =========================================================================
-    function populateServiceData(service) {
-        let operationType = null;
-        let fullServiceData = null;
-        const serviceTypeSelect = document.getElementById('service-type');
+
+    /**
+     * Rellena las opciones del selector de 'Servicio Realizado' (Nivel 2)
+     * @param {string} workType - 'Tierra' o 'Marina'
+     * @param {string} serviceTypeFormatted - El valor (value) del tipo de servicio.
+     * @param {string} [selectedPerformedId=null] - El ID a seleccionar.
+     */
+    function updateServicePerformedOptions(workType, serviceTypeFormatted, selectedPerformedId = null) {
         const servicePerformedSelect = document.getElementById('service-performed');
         const serviceSelect = document.getElementById('service');
-        const serviceAmountInput = document.getElementById('service-amount');
-        const serviceAmountGroup = document.getElementById('service-amount-group');
 
-        // Buscar la data completa del servicio
-        for (const [opType, services] of Object.entries(serviceData)) {
-            if (Array.isArray(services)) {
-                fullServiceData = services.find(s => s.identifier === service.service_identifier);
-                if (fullServiceData) {
-                    operationType = opType;
-                    break;
-                }
-            }
-        }
+        // Limpiar niveles inferiores
+        servicePerformedSelect.innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
+        serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
+        document.getElementById('service').disabled = true;
+        document.getElementById('service-amount-group').style.display = 'none';
 
-        if (operationType && fullServiceData) {
-            // 1. Tipo de Trabajo (Radio Buttons)
-            let workTypeValue = operationType === 'Tierra' ? 'Tierra' : 'Marina';
-            const workTypeOption = document.querySelector(`.work-type-option[data-value="${workTypeValue}"]`);
-            if (workTypeOption) {
-                workTypeOption.querySelector('input[type="radio"]').checked = true;
-                workTypeOption.classList.add('selected');
-                document.querySelectorAll(`.work-type-option:not([data-value="${workTypeValue}"])`).forEach(opt => opt.classList.remove('selected'));
-            }
-
-            // 2. Tipo de Servicio (Select)
-            // Se habilita temporalmente para repoblar si no está ya bloqueado
-            serviceTypeSelect.disabled = false;
-            updateServiceTypes(workTypeValue);
-            const serviceTypeFormatted = fullServiceData.service_type.toLowerCase().replace(/\s+/g, '_');
-            serviceTypeSelect.value = serviceTypeFormatted;
-            // No disparamos el evento 'change' aquí.
-
-            // 3. Servicio Realizado (Select)
-            // Se habilita temporalmente para repoblar si no está ya bloqueado
+        if (workType && serviceTypeFormatted) {
+            // Habilitar temporalmente para poder añadir las options
             servicePerformedSelect.disabled = false;
-            // Lógica de repoblado manual, ya que no disparamos 'change' en service-type
-            servicePerformedSelect.innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
-            const uniquePerformed = [...new Set(serviceData[workTypeValue]
+
+            const uniquePerformed = [...new Set(serviceData[workType]
                 .filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeFormatted)
                 .map(item => item.service_performed))];
+
             uniquePerformed.forEach(performed => {
                 const option = document.createElement('option');
                 option.value = performed.toLowerCase().replace(/\s+/g, '_');
                 option.textContent = performed;
                 servicePerformedSelect.appendChild(option);
             });
-            const servicePerformedFormatted = fullServiceData.service_performed.toLowerCase().replace(/\s+/g, '_');
-            servicePerformedSelect.value = servicePerformedFormatted;
+
+            if (selectedPerformedId) {
+                servicePerformedSelect.value = selectedPerformedId;
+                // Si hay un ID seleccionado, pasa al siguiente nivel
+                updateServiceOptions(workType, serviceTypeFormatted, selectedPerformedId);
+            }
+        }
+    }
+
+    /**
+     * Rellena las opciones del selector de 'Servicio' (Nivel 3)
+     * @param {string} workType - 'Tierra' o 'Marina'
+     * @param {string} serviceTypeFormatted - El valor (value) del tipo de servicio.
+     * @param {string} servicePerformedFormatted - El valor (value) del servicio realizado.
+     * @param {string} [selectedServiceId=null] - El ID del servicio a seleccionar.
+     */
+    function updateServiceOptions(workType, serviceTypeFormatted, servicePerformedFormatted, selectedServiceId = null) {
+        const serviceSelect = document.getElementById('service');
+        serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
+        const serviceAmountGroup = document.getElementById('service-amount-group');
+        const serviceAmountInput = document.getElementById('service-amount');
+        serviceAmountGroup.style.display = 'none';
+        serviceAmountInput.value = '';
 
 
-            // 4. Servicio (Select)
-            // Se habilita temporalmente para repoblar si no está ya bloqueado
+        if (workType && serviceTypeFormatted && servicePerformedFormatted) {
+            // Habilitar temporalmente para poder añadir las options
             serviceSelect.disabled = false;
-            // Lógica de repoblado manual, ya que no disparamos 'change' en service-performed
-            serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
-            const services = serviceData[workTypeValue].filter(
+
+            const services = serviceData[workType].filter(
                 item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeFormatted &&
                         item.service_performed.toLowerCase().replace(/\s+/g, '_') === servicePerformedFormatted
             );
+
             services.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.identifier;
@@ -707,20 +709,81 @@ document.addEventListener('DOMContentLoaded', function () {
                 option.setAttribute('data-performed', item.service_performed);
                 serviceSelect.appendChild(option);
             });
-            const serviceOption = Array.from(serviceSelect.options).find(opt => opt.value === service.service_identifier);
-            if (serviceOption) {
-                serviceSelect.value = service.service_identifier;
-                const amount = serviceOption.getAttribute('data-amount');
-                const currency = serviceOption.getAttribute('data-currency');
-                if (amount && currency) {
-                    serviceAmountInput.value = `${currency} ${parseFloat(amount).toFixed(2)}`;
-                    serviceAmountGroup.style.display = 'block';
+
+            if (selectedServiceId) {
+                serviceSelect.value = selectedServiceId;
+                // Al seleccionar el servicio, actualiza el monto.
+                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    const amount = selectedOption.getAttribute('data-amount');
+                    const currency = selectedOption.getAttribute('data-currency');
+                    if (amount && currency) {
+                        serviceAmountInput.value = `${currency} ${parseFloat(amount).toFixed(2)}`;
+                        serviceAmountGroup.style.display = 'block';
+                    }
                 }
-            } else {
-                // Si no se encuentra, limpiar el monto
-                 serviceAmountInput.value = '';
-                 serviceAmountGroup.style.display = 'none';
             }
+        }
+    }
+
+
+    // =========================================================================
+    // ✅ FUNCIÓN CORREGIDA: populateServiceData (Usa las nuevas auxiliares)
+    // =========================================================================
+    function populateServiceData(service) {
+        let operationType = null;
+        let fullServiceData = null;
+        const serviceTypeSelect = document.getElementById('service-type');
+        const servicePerformedSelect = document.getElementById('service-performed');
+        const serviceSelect = document.getElementById('service');
+        const serviceAmountGroup = document.getElementById('service-amount-group');
+
+        // Limpiar el monto antes de cualquier procesamiento
+        document.getElementById('service-amount').value = '';
+        serviceAmountGroup.style.display = 'none';
+
+        // Buscar la data completa del servicio
+        for (const [opType, services] of Object.entries(serviceData)) {
+            if (Array.isArray(services)) {
+                fullServiceData = services.find(s => s.identifier === service.service_identifier);
+                if (fullServiceData) {
+                    // CAMBIO: La clave de 'operation_type' puede venir como 'Tierra' o 'Marino'
+                    // Pero los data-value de los radios son 'Tierra' y 'Marina'. Usamos la clave de los radios.
+                    operationType = opType === 'Marino' ? 'Marina' : opType;
+                    break;
+                }
+            }
+        }
+
+        if (operationType && fullServiceData) {
+            // 1. Tipo de Trabajo (Radio Buttons)
+            let workTypeValue = operationType;
+            const workTypeOption = document.querySelector(`.work-type-option[data-value="${workTypeValue}"]`);
+            if (workTypeOption) {
+                workTypeOption.querySelector('input[type="radio"]').checked = true;
+                workTypeOption.classList.add('selected');
+                document.querySelectorAll(`.work-type-option:not([data-value="${workTypeValue}"])`).forEach(opt => opt.classList.remove('selected'));
+            }
+
+            const serviceTypeFormatted = fullServiceData.service_type.toLowerCase().replace(/\s+/g, '_');
+            const servicePerformedFormatted = fullServiceData.service_performed.toLowerCase().replace(/\s+/g, '_');
+            const serviceIdentifier = service.service_identifier;
+
+            // 2. Tipo de Servicio (Select) - Llama a la función existente y luego selecciona el valor.
+            serviceTypeSelect.disabled = false; // Habilitar antes de poblar
+            updateServiceTypes(workTypeValue); // Llama a la función que popula el tipo de servicio (Nivel 1)
+            serviceTypeSelect.value = serviceTypeFormatted;
+
+            // 3. Servicio Realizado (Select) - Llama a la nueva función auxiliar y luego selecciona el valor.
+            servicePerformedSelect.disabled = false;
+            // Llama a la función para poblar el Nivel 2. La función se encarga de seleccionar el valor y llamar a Nivel 3.
+            updateServicePerformedOptions(workTypeValue, serviceTypeFormatted, servicePerformedFormatted);
+
+            // 4. Servicio (Select) - Llama a la nueva función auxiliar y luego selecciona el valor, lo que también actualiza el monto.
+            serviceSelect.disabled = false;
+            // Se puede llamar a Nivel 3 directamente o dejar que la llamada anterior lo haga.
+            // Para asegurar la cascada completa y la selección final:
+            updateServiceOptions(workTypeValue, serviceTypeFormatted, servicePerformedFormatted, serviceIdentifier);
 
             // 5. Período de Nómina
             if (service.payroll_period_override) {
@@ -927,21 +990,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const workType = document.querySelector('.work-type-option.selected')?.getAttribute('data-value');
         const serviceTypeId = this.value;
+
+        // Uso de la nueva función auxiliar para poblar Nivel 2 (Servicio Realizado)
         if (workType && serviceTypeId) {
-            const servicePerformedSelect = document.getElementById('service-performed');
-            // Ya se hace en updateServiceTypes, pero lo repetimos para habilitar si no está bloqueado
-            if (!servicePerformedSelect.disabled) {
-                servicePerformedSelect.disabled = false;
-            }
-            servicePerformedSelect.innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
-            const uniquePerformed = [...new Set(serviceData[workType].filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeId).map(item => item.service_performed))];
-            uniquePerformed.forEach(performed => {
-                const option = document.createElement('option');
-                option.value = performed.toLowerCase().replace(/\s+/g, '_');
-                option.textContent = performed;
-                servicePerformedSelect.appendChild(option);
-            });
+            updateServicePerformedOptions(workType, serviceTypeId);
+        } else {
+            // Reseteo si la selección es vacía
+            document.getElementById('service-performed').disabled = true;
+            document.getElementById('service-performed').innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
             document.getElementById('service').disabled = true;
+            document.getElementById('service').innerHTML = '<option value="">Seleccionar servicio...</option>';
             document.getElementById('service-amount-group').style.display = 'none';
         }
     });
@@ -953,23 +1011,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const workType = document.querySelector('.work-type-option.selected')?.getAttribute('data-value');
         const serviceTypeId = document.getElementById('service-type').value;
         const performedId = this.value;
+
+        // Uso de la nueva función auxiliar para poblar Nivel 3 (Servicio)
         if (workType && serviceTypeId && performedId) {
-            const serviceSelect = document.getElementById('service');
-            // Ya se hace en updateServiceTypes, pero lo repetimos para habilitar si no está bloqueado
-            if (!serviceSelect.disabled) {
-                serviceSelect.disabled = false;
-            }
-            serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
-            const services = serviceData[workType].filter(item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeId && item.service_performed.toLowerCase().replace(/\s+/g, '_') === performedId);
-            services.forEach(service => {
-                const option = document.createElement('option');
-                option.value = service.identifier;
-                option.textContent = service.service_description;
-                option.setAttribute('data-amount', service.amount);
-                option.setAttribute('data-currency', service.currency);
-                option.setAttribute('data-performed', service.service_performed);
-                serviceSelect.appendChild(option);
-            });
+            updateServiceOptions(workType, serviceTypeId, performedId);
+        } else {
+            // Reseteo si la selección es vacía
+            document.getElementById('service').disabled = true;
+            document.getElementById('service').innerHTML = '<option value="">Seleccionar servicio...</option>';
             document.getElementById('service-amount-group').style.display = 'none';
         }
     });
@@ -1086,55 +1135,74 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // 2. Procesar Bonos (solo si la actividad es 'P')
-        if (document.getElementById('activity-type').value === 'P') {
+        // 2. Procesar Bonos (solo si la actividad es 'P' o 'N' con bonos)
+        const currentActivityType = document.getElementById('activity-type').value;
+
+        // Bonos se procesan si estamos en Trabajo en Pozo (P), o si la actividad es 'Ninguna (N)' o está vacía,
+        // ya que el backend espera que se envíen si el front los permite ver (solo si el día lo permite).
+        if (currentActivityType === 'P' || currentActivityType === 'N' || !currentActivityType) {
+
+            // Bono de Comida
             const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
             if (!statusesToBlockField.includes(foodBonusStatus)) {
                 formData.food_bonus_number = document.getElementById('food-bonus').value || null;
             }
 
+            // Bono de Campo
             const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
             if (!statusesToBlockField.includes(fieldBonusStatus)) {
                 formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;
             }
         }
 
+
         // 3. Procesar la Pestaña de Servicio
         const serviceStatus = getFieldStatus(currentActivity, 'service');
         const wantsService = document.querySelector('input[name="has_service_bonus"]:checked')?.value === 'si';
+        const isActivityP = document.getElementById('activity-type').value === 'P';
 
-        if (wantsService && !statusesToBlockField.includes(serviceStatus)) {
+
+        if (wantsService && isActivityP && !statusesToBlockField.includes(serviceStatus)) {
             const workTypeSelected = document.querySelector('.work-type-option.selected');
             const serviceValue = document.getElementById('service').value;
 
             formData.service_identifier = serviceValue || null;
+            formData.payroll_period_override = document.getElementById('payroll-period').value;
 
             // Validaciones para la sección de servicio
             if (!workTypeSelected) {
                 document.getElementById('work-type-error').style.display = 'block';
                 isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
             }
             if (!document.getElementById('service-type').value) {
                 document.getElementById('service-type-error').style.display = 'block';
                 isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
             }
             if (!document.getElementById('service-performed').value) {
                 document.getElementById('service-performed-error').style.display = 'block';
                 isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
             }
             if (!serviceValue) {
                 document.getElementById('service-error').style.display = 'block';
                 isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
             }
-        } else if (wantsService && statusesToBlockField.includes(serviceStatus)) {
-            // Si el usuario quiere un servicio pero está bloqueado, no se envía nada de servicio.
-            // Esto evita el error que reportaste.
+        } else if (wantsService && isActivityP && statusesToBlockField.includes(serviceStatus)) {
+            // Si el usuario quiere un servicio pero está bloqueado, no se envían los campos de servicio para evitar el error.
+            // Los valores se mantendrán en el backend.
+            formData.service_identifier = currentActivity?.services_list[0]?.service_identifier;
+            formData.payroll_period_override = currentActivity?.services_list[0]?.payroll_period_override;
         } else {
-            // Si no se quiere servicio, nos aseguramos de enviar 'null' si el campo es editable.
+            // Si no se quiere servicio o no es actividad 'P' y la sección no está bloqueada
             if (!statusesToBlockField.includes(serviceStatus)) {
                 formData.service_identifier = null;
+                formData.payroll_period_override = null;
             }
         }
+
 
         // Si después de todas las validaciones algo es inválido, detenemos.
         if (!isValid) {
@@ -1219,6 +1287,9 @@ document.addEventListener('DOMContentLoaded', function () {
             inQ2 = date >= q2Start && date <= q2End;
         }
 
+        // Revisar si la fecha está en la quincena anterior si aplica
+        // Para simplificar esta función, solo revisamos el mes actual, ya que el backend solo envía los períodos del mes visible.
+
         return inQ1 || inQ2;
     }
 
@@ -1230,6 +1301,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (dayNumberEl && dayNumberEl.textContent.trim() !== '' && dateAttribute) {
                 // Solo adjuntar evento a los días que no son de 'other-month'
                 if (!day.classList.contains('other-month')) {
+                    // Clonar y reemplazar para eliminar listeners anteriores
                     const newDay = day.cloneNode(true);
                     day.parentNode.replaceChild(newDay, day);
 
@@ -1263,7 +1335,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // El llamado inicial ahora solo adjuntará eventos a los días con número
     // La lógica de calendario estándar ahora se maneja en updateCalendar
     // La función updateCalendar es la que crea las celdas y luego llama a attachDayClickEvents
-    // No se necesita el attachDayClickEvents() aquí porque updateCalendar lo hace
     // attachDayClickEvents(); // Comentado para evitar duplicidad si el backend ya trae data inicial.
 
     const monthSpan = document.querySelector('.month-navigation span');
@@ -1306,9 +1377,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const calendarLoadingOverlay = document.getElementById('calendarLoadingOverlay');
 
     /**
-    * Muestra u oculta la capa de superposición de carga.
-    * @param {boolean} isLoading - true para mostrar, false para ocultar.
-    */
+     * Muestra u oculta la capa de superposición de carga.
+     * @param {boolean} isLoading - true para mostrar, false para ocultar.
+     */
     function toggleLoadingOverlay(isLoading) {
         if (isLoading) {
             // Usar setTimeout para garantizar que el overlay se muestre de inmediato
@@ -1352,8 +1423,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             let newTableHTML = '';
             let currentRow = '<tr>';
-            const assetPath = (path) => `{{ asset('${path}') }}`;
-
+            // Se elimina la función `assetPath` ya que no se usa en JS
 
             // LÓGICA DE CALENDARIO ESTÁNDAR (Días del mes actual y relleno del mes siguiente)
 
@@ -1391,7 +1461,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     currentRow += `<td class="${cellClass}" data-date="${day.date}"><span class="day-number">${day.day}</span>${holidayIconHTML}${payrollIcons}</td>`;
                 } else {
                     // Celdas vacías, si el backend las envió, pero no son necesarias con la nueva lógica
-                    currentRow += `<td class="other-month" data-date=""></td>`;
+                    // Se asume que el backend solo envía los días del mes actual, por lo que day.day siempre tiene valor aquí.
                 }
 
                 if ((index + firstDayOfMonthIndex + 1) % 7 === 0) {
@@ -1401,13 +1471,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             // Relleno final de celdas vacías, si el último día del mes no terminó en domingo
-            while ((data.calendarDays.length + firstDayOfMonthIndex) % 7 !== 0) {
-                currentRow += `<td class="other-month" data-date=""></td>`;
-                data.calendarDays.push({ day: '', current_month: false, date: '' }); // Añadir un día dummy para el conteo
-            }
-
-            if (currentRow !== '<tr>') {
-                newTableHTML += currentRow.slice(0, -4) + '</tr>';
+            let cellCount = data.calendarDays.length + firstDayOfMonthIndex;
+            let daysToAdd = 7 - (cellCount % 7);
+            if (daysToAdd !== 7) {
+                 for (let i = 0; i < daysToAdd; i++) {
+                    currentRow += `<td class="other-month" data-date=""></td>`;
+                 }
+                 newTableHTML += currentRow + '</tr>';
             }
 
 

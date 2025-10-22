@@ -21,17 +21,7 @@
     --rejected-red: #f55134e5;
 }
 
-/* Status indicators para diferentes tipos de actividades */
-.status-indicator {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: white;
-    font-weight: bold;
-    font-size: 12px;
-    text-align: center;
-    min-width: 20px;
-}
+
 
 .activity-legend {
     display: flex;
@@ -53,12 +43,20 @@
 }
 
 .legend-color {
-    width: 16px;
-    height: 16px;
+    /* Mantenemos el tamaño base, pero centramos el contenido */
+    width: 27px; /* Ajuste para que quepa el texto (e.g., VAC) */
+    height: 22px; /* Altura ligeramente ajustada */
     margin-right: 6px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border-radius: 4px; /* Hacemos el borde menos redondo que el 50% para que parezca una etiqueta */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white; /* Color de texto blanco (se supone que el fondo es oscuro) */
+    font-size: 13px; /* Tamaño de fuente pequeño */
+    font-weight: 700;
+    line-height: 1; /* Para un mejor centrado vertical */
 }
-
 .legend-divider {
     height: 20px;
     width: 1px;
