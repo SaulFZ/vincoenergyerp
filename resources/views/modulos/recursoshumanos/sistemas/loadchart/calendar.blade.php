@@ -443,6 +443,29 @@
                         <div class="error-message" id="commissioned-error">Debes seleccionar un área comisionada</div>
                     </div>
 
+                    {{-- INICIO: NUEVOS CAMPOS PARA VIAJE (V) --}}
+                    <div class="form-group" id="travel-destination-field" style="display: none;">
+                        <label for="travel-destination">Destino del Viaje</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" id="travel-destination" class="input-custom"
+                                placeholder="Ingrese el destino">
+                        </div>
+                        <div class="error-message" id="travel-destination-error">Debes ingresar el destino del viaje</div>
+                    </div>
+
+                    <div class="form-group" id="travel-reason-field" style="display: none;">
+                        <label for="travel-reason">Motivo del Viaje</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-route"></i>
+                            <input type="text" id="travel-reason" class="input-custom"
+                                placeholder="Ingrese el motivo">
+                        </div>
+                        <div class="error-message" id="travel-reason-error">Debes ingresar el motivo del viaje</div>
+                    </div>
+                    {{-- FIN: NUEVOS CAMPOS PARA VIAJE (V) --}}
+
+
                     {{-- INICIO: CAMPOS CONDICIONALES A TRABAJO EN POZO (P) --}}
                     <div id="conditional-fields" style="display: none;">
 

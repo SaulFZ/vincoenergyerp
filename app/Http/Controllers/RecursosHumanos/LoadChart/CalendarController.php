@@ -65,7 +65,7 @@ class CalendarController extends Controller
         // Lógica de mapeo de Bonos de Campo
         $jobTitle      = $employee->job_title;
         $bonusMappings = [
-            'Ingeniero de Campo'                               => 'Ingeniero de Campo',
+            'Ingeniero de Campo'                             => 'Ingeniero de Campo',
             'Ingeniero de Campo 1'                             => 'Ingeniero de Campo',
             'Ingeniero de Campo 2'                             => 'Ingeniero de Campo',
             'Ingeniero de Campo 5'                             => 'Ingeniero de Campo',
@@ -133,23 +133,23 @@ class CalendarController extends Controller
         // --- INICIO DE MODIFICACIÓN: Días del mes actual ---
         $mandatoryHolidays = $this->getMandatoryHolidays($currentYear);
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $date            = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
-            $isHoliday       = isset($mandatoryHolidays[$date]);
-            $holidayName     = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $date              = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
+            $isHoliday         = isset($mandatoryHolidays[$date]);
+            $holidayName       = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
             $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
 
             $calendarDays[] = [
-                'day'                => $i,
-                'current_month'      => true,
-                'date'               => $date,
-                'is_holiday'         => $isHoliday,
-                'holiday_name'       => $holidayName,
-                'holiday_icon_type'  => $holidayIconType,
+                'day'               => $i,
+                'current_month'     => true,
+                'date'              => $date,
+                'is_holiday'        => $isHoliday,
+                'holiday_name'      => $holidayName,
+                'holiday_icon_type' => $holidayIconType,
                 'is_payroll_start_1' => ($fortnightlyConfig && $fortnightlyConfig->q1_start->format('Y-m-d') == $date),
                 'is_payroll_end_1'   => ($fortnightlyConfig && $fortnightlyConfig->q1_end->format('Y-m-d') == $date),
                 'is_payroll_start_2' => ($fortnightlyConfig && $fortnightlyConfig->q2_start->format('Y-m-d') == $date),
                 'is_payroll_end_2'   => ($fortnightlyConfig && $fortnightlyConfig->q2_end->format('Y-m-d') == $date),
-                'is_today'           => $date == date('Y-m-d'),
+                'is_today'          => $date == date('Y-m-d'),
             ];
         }
 
@@ -209,19 +209,19 @@ class CalendarController extends Controller
         // --- INICIO DE MODIFICACIÓN: Solo días del mes actual ---
         $mandatoryHolidays = $this->getMandatoryHolidays($currentYear);
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $date            = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
-            $isHoliday       = isset($mandatoryHolidays[$date]);
-            $holidayName     = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $date              = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
+            $isHoliday         = isset($mandatoryHolidays[$date]);
+            $holidayName       = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
             $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
 
             $dayData = [
-                'day'                => $i,
-                'current_month'      => true,
-                'date'               => $date,
-                'is_holiday'         => $isHoliday,
-                'holiday_name'       => $holidayName,
-                'holiday_icon_type'  => $holidayIconType,
-                'is_today'           => $date == date('Y-m-d'),
+                'day'               => $i,
+                'current_month'     => true,
+                'date'              => $date,
+                'is_holiday'        => $isHoliday,
+                'holiday_name'      => $holidayName,
+                'holiday_icon_type' => $holidayIconType,
+                'is_today'          => $date == date('Y-m-d'),
                 'is_payroll_start_1' => false,
                 'is_payroll_end_1'   => false,
                 'is_payroll_start_2' => false,
@@ -319,16 +319,22 @@ class CalendarController extends Controller
             // Obtenemos la actividad existente o un array vacío si no existe
             $activityData = $monthlyLog->getDailyActivity($request->date) ?? [];
 
-            // --- INICIO DE LA NUEVA LÓGICA DE MERGE ---
+            // --- INICIO DE LA NUEVA LÓGICA DE MERGE (ACTUALIZADA) ---
 
             // Si el frontend envía 'activity_type', significa que esa sección es editable.
             if ($request->has('activity_type')) {
-                $activityType                         = $request->activity_type ?? 'N';
+                $activityType                   = $request->activity_type ?? 'N';
                 $activityData['activity_type']        = $activityType;
                 $activityData['activity_description'] = $this->getActivityDescription($activityType);
                 $activityData['commissioned_to']      = $request->commissioned_to;
                 $activityData['well_name']            = $request->well_name;
                 $activityData['has_service_bonus']    = $request->has_service_bonus;
+
+                // --- NUEVOS CAMPOS DE VIAJE ---
+                $activityData['travel_destination']   = $request->travel_destination;
+                $activityData['travel_reason']        = $request->travel_reason;
+                // -----------------------------
+
                 $activityData['activity_status']      = 'under_review'; // Se reinicia el estado porque se editó
                 $activityData['rejection_reason']     = null;
             }
@@ -406,15 +412,15 @@ class CalendarController extends Controller
             }
 
             // Rellenar datos básicos si es una actividad nueva
-            if (empty($existingActivity)) {
-                $activityData['date']                  = $request->date;
+            if (empty($monthlyLog->getDailyActivity($request->date))) {
+                $activityData['date']                      = $request->date;
                 $activityData['payroll_period_marker'] = $this->determinePayrollPeriodMarker($request->date, $request->displayed_month, $request->displayed_year);
             }
 
             // Recalcular el estado general del día
             $activityData['day_status'] = $this->recalculateDayStatus($activityData);
 
-            // --- FIN DE LA NUEVA LÓGICA DE MERGE ---
+            // --- FIN DE LA NUEVA LÓGICA DE MERGE (ACTUALIZADA) ---
 
             $monthlyLog->addDailyActivity($request->date, $activityData);
             $monthlyLog->save();
@@ -503,7 +509,7 @@ class CalendarController extends Controller
             ->first();
 
         return response()->json([
-            'success'    => true,
+            'success'      => true,
             'activities' => $monthlyLog ? $monthlyLog->daily_activities : [],
         ]);
     }
@@ -630,7 +636,7 @@ class CalendarController extends Controller
     private function recalculateDayStatus($dailyActivity)
     {
         // ... (This function remains the same as it relies on internal statuses, not the activity type code itself)
-        $hasRejected    = false;
+        $hasRejected      = false;
         $hasUnderReview = false;
         $hasApproved    = false;
         $hasReviewed    = false;

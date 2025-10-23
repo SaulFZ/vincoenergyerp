@@ -302,7 +302,18 @@ function openApprovalModal(employeeData, dailyActivity) {
             additionalDetails = `<strong>Pozo:</strong> ${dailyActivity.well_name}`;
         } else if (dailyActivity.activity_type === 'C' && dailyActivity.commissioned_to) {
             additionalDetails = `<strong>Área Comisionada:</strong> ${dailyActivity.commissioned_to}`;
-        } else if (dailyActivity.activity_description) {
+        }
+        // 👇 INICIO DE MODIFICACIÓN: Mostrar Destino y Motivo para Viaje (V)
+        else if (dailyActivity.activity_type === 'V') {
+            const destination = dailyActivity.travel_destination || 'N/A';
+            const reason = dailyActivity.travel_reason || 'N/A';
+            additionalDetails = `
+                <div><strong>Destino:</strong> ${destination}</div>
+                <div><strong>Motivo:</strong> ${reason}</div>
+            `;
+        }
+        // 👆 FIN DE MODIFICACIÓN
+        else if (dailyActivity.activity_description) {
             additionalDetails = `Descripción: ${dailyActivity.activity_description}`;
         }
 
@@ -322,6 +333,7 @@ function openApprovalModal(employeeData, dailyActivity) {
     }
 
     // 2. Bonos de Comida
+// ... (Lógica de Bonos y Servicios sigue aquí, sin cambios)
     if (dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0) {
         dailyActivity.food_bonuses.forEach((bonus, index) => {
             const amount = canSeeAmounts ? `\$${Number(bonus.daily_amount).toFixed(2)} MXN` : null;

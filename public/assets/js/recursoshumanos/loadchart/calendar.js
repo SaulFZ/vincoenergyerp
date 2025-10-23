@@ -18,6 +18,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const restDaysElement = document.querySelector('p[data-balance-type="rest"]');
     const conditionalFields = document.getElementById('conditional-fields');
 
+    // --- NUEVOS ELEMENTOS PARA VIAJE ---
+    const travelDestinationField = document.getElementById('travel-destination-field');
+    const travelDestinationInput = document.getElementById('travel-destination');
+    const travelReasonField = document.getElementById('travel-reason-field');
+    const travelReasonInput = document.getElementById('travel-reason');
+    // -----------------------------------
+
+
     let currentSelectedDate = null;
     let monthlyActivities = {};
     let currentActivity = null;
@@ -119,6 +127,12 @@ document.addEventListener('DOMContentLoaded', function () {
             vacationError.style.display = 'none';
         }
 
+        // Resetear campos de viaje antes de re-evaluar
+        travelDestinationField.style.display = 'none';
+        travelDestinationInput.value = '';
+        travelReasonField.style.display = 'none';
+        travelReasonInput.value = '';
+
         // --- Lógica de campos condicionales por Tipo de Actividad ---
         if (activityType === 'P') { // Trabajo en Pozo
             wellNameField.style.display = 'block';
@@ -139,7 +153,16 @@ document.addEventListener('DOMContentLoaded', function () {
             commissionedSelect.selectedIndex = 0;
             conditionalFields.style.display = 'none'; // Ocultar bonos/servicio
             handleServiceBonusChange('no'); // Ocultar pestaña de servicio
-        } else { // Otros (B, V, D, VAC, E, M, A, PE, N)
+        } else if (activityType === 'V') { // Viaje (NUEVO)
+            wellNameField.style.display = 'none';
+            wellNameInput.value = '';
+            commissionedField.style.display = 'none';
+            commissionedSelect.selectedIndex = 0;
+            conditionalFields.style.display = 'none'; // Ocultar bonos/servicio
+            handleServiceBonusChange('no'); // Ocultar pestaña de servicio
+            travelDestinationField.style.display = 'block'; // MOSTRAR DESTINO
+            travelReasonField.style.display = 'block'; // MOSTRAR MOTIVO
+        } else { // Otros (B, D, VAC, E, M, A, PE, N)
             wellNameField.style.display = 'none';
             wellNameInput.value = '';
             commissionedField.style.display = 'none';
@@ -191,8 +214,6 @@ document.addEventListener('DOMContentLoaded', function () {
         payrollPeriodSelect.appendChild(defaultOption);
 
         let selectedDate = new Date(currentSelectedDate + 'T00:00:00');
-        const q1Start = currentPayrollDates.q1_start ? new Date(currentPayrollDates.q1_start + 'T00:00:00') : null;
-        const q1End = currentPayrollDates.q1_end ? new Date(currentPayrollDates.q1_end + 'T23:59:59') : null;
         const q2Start = currentPayrollDates.q2_start ? new Date(currentPayrollDates.q2_start + 'T00:00:00') : null;
         const q2End = currentPayrollDates.q2_end ? new Date(currentPayrollDates.q2_end + 'T23:59:59') : null;
 
@@ -298,6 +319,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const activityElements = [
             document.getElementById('activity-type-select'), ...document.querySelectorAll('.activity-option'),
             document.getElementById('commissioned-select'), document.getElementById('well-name'),
+            // --- NUEVOS CAMPOS DE VIAJE ---
+            document.getElementById('travel-destination'), document.getElementById('travel-reason'),
+            // -----------------------------
             ...document.querySelectorAll('.service-bonus-option'),
             document.getElementById('food-bonus'), document.getElementById('field-bonus')
         ];
@@ -473,12 +497,20 @@ document.addEventListener('DOMContentLoaded', function () {
         const activityTypeSelectContainer = document.getElementById('activity-type-select');
         const commissionedSelect = document.getElementById('commissioned-select');
         const wellNameInput = document.getElementById('well-name');
+        // --- NUEVOS CAMPOS DE VIAJE ---
+        const travelDestinationInput = document.getElementById('travel-destination');
+        const travelReasonInput = document.getElementById('travel-reason');
+        // -----------------------------
         const activityTypeOptions = document.querySelectorAll('.activity-option');
 
         toggleFieldLock(activityTypeSelectContainer, isActivityLocked, activityStatus);
         activityTypeOptions.forEach(option => toggleFieldLock(option, isActivityLocked, activityStatus));
         toggleFieldLock(commissionedSelect, isActivityLocked, activityStatus);
         toggleFieldLock(wellNameInput, isActivityLocked, activityStatus);
+        // --- Bloqueo de nuevos campos de Viaje ---
+        toggleFieldLock(travelDestinationInput, isActivityLocked, activityStatus);
+        toggleFieldLock(travelReasonInput, isActivityLocked, activityStatus);
+        // -----------------------------------------
 
 
         // ----------------------------------------------------
@@ -588,9 +620,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('activity-type').value = activity.activity_type;
             document.querySelector('#activity-type-header .placeholder').textContent = activityTypeOption.querySelector('.activity-label').textContent;
 
-            if (activity.activity_type === 'P' || activity.activity_type === 'C' || activity.activity_type === 'TC') { // CAMBIO: Añadido TC
-                handleActivityTypeChange(activity.activity_type);
-            }
+            // Llama a la lógica de campos condicionales
+            handleActivityTypeChange(activity.activity_type);
         } else {
             document.getElementById('activity-type').value = activity.activity_type || 'N';
             document.querySelector('#activity-type-header .placeholder').textContent = activity.activity_type === 'N' ? 'Ninguna' : 'Seleccionar actividad...';
@@ -604,6 +635,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (activity.well_name) {
             document.getElementById('well-name').value = activity.well_name;
         }
+
+        // --- RELLENAR NUEVOS CAMPOS DE VIAJE ---
+        if (activity.activity_type === 'V') {
+            travelDestinationField.style.display = 'block';
+            travelReasonField.style.display = 'block';
+            document.getElementById('travel-destination').value = activity.travel_destination || '';
+            document.getElementById('travel-reason').value = activity.travel_reason || '';
+        }
+        // ---------------------------------------
 
         if (hasService) {
             // Llama a la versión actualizada de la función
@@ -697,7 +737,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const services = serviceData[workType].filter(
                 item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeFormatted &&
-                        item.service_performed.toLowerCase().replace(/\s+/g, '_') === servicePerformedFormatted
+                         item.service_performed.toLowerCase().replace(/\s+/g, '_') === servicePerformedFormatted
             );
 
             services.forEach(item => {
@@ -850,6 +890,13 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('well-name-field').style.display = 'none';
         document.getElementById('well-name').value = '';
         conditionalFields.style.display = 'none';
+
+        // --- NUEVO RESET DE CAMPOS DE VIAJE ---
+        travelDestinationField.style.display = 'none';
+        travelDestinationInput.value = '';
+        travelReasonField.style.display = 'none';
+        travelReasonInput.value = '';
+        // --------------------------------------
     }
 
     function resetBonusFields() {
@@ -930,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function () {
                  let statusForCheck = activityStatus;
 
                  if (serviceStatus === 'approved' || serviceStatus === 'reviewed') {
-                    statusForCheck = serviceStatus;
+                     statusForCheck = serviceStatus;
                  }
 
                  if (statusesToBlockAll.includes(statusForCheck) || statusesToBlockField.includes(statusForCheck)) return;
@@ -1116,6 +1163,11 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.commissioned_to = activityType === 'C' ? document.getElementById('commissioned-select').value : null;
             formData.well_name = activityType === 'P' ? document.getElementById('well-name').value : null;
 
+            // --- NUEVOS CAMPOS DE VIAJE ---
+            formData.travel_destination = activityType === 'V' ? document.getElementById('travel-destination').value.trim() : null;
+            formData.travel_reason = activityType === 'V' ? document.getElementById('travel-reason').value.trim() : null;
+            // -----------------------------
+
             const isActivityP = activityType === 'P';
             const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
             formData.has_service_bonus = isActivityP ? hasServiceBonus : 'no';
@@ -1133,6 +1185,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('well-name-error').style.display = 'block';
                 isValid = false;
             }
+
+            // --- NUEVA VALIDACIÓN PARA VIAJE ---
+            if (activityType === 'V' && !formData.travel_destination) {
+                document.getElementById('travel-destination-error').style.display = 'block';
+                isValid = false;
+            }
+            if (activityType === 'V' && !formData.travel_reason) {
+                document.getElementById('travel-reason-error').style.display = 'block';
+                isValid = false;
+            }
+            // -----------------------------------
         }
 
         // 2. Procesar Bonos (solo si la actividad es 'P' o 'N' con bonos)
@@ -1475,7 +1538,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let daysToAdd = 7 - (cellCount % 7);
             if (daysToAdd !== 7) {
                  for (let i = 0; i < daysToAdd; i++) {
-                    currentRow += `<td class="other-month" data-date=""></td>`;
+                     currentRow += `<td class="other-month" data-date=""></td>`;
                  }
                  newTableHTML += currentRow + '</tr>';
             }
