@@ -134,15 +134,7 @@ Route::prefix('recursoshumanos')
                 Route::post('/save-activity', 'saveActivity')->name('loadchart.save_activity');
                 Route::get('/monthly-activities', 'getMonthlyActivities')->name('loadchart.monthly_activities');
                 Route::get('/balances-data', 'getEmployeeBalancesAjax')->name('loadchart.balances.data');
-            });
 
-            // --- RUTAS GESTIONADAS POR FortnightlyConfigController ---
-            Route::controller(FortnightlyConfigController::class)->group(function () {
-                Route::get('fortnightly-config/{year}/{month}', 'getConfig');
-                Route::post('fortnightly-config', 'store');
-                Route::delete('fortnightly-config/{year}/{month}', 'destroy');
-                Route::get('fortnightly-config/year/{year}', 'getYearConfigs');
-                Route::post('fortnightly-config/generate-default', 'generateDefault')->name('loadchart.fortnightly-config.generate-default');
             });
 
             // --- RUTAS DE APROBACIÓN (ApprovalController) ---
@@ -157,6 +149,17 @@ Route::prefix('recursoshumanos')
                 Route::post('/update-approval-status', 'updateApprovalStatus')->name('loadchart.update.approval.status');
                 Route::post('/update-multiple-statuses', 'updateMultipleStatuses')->name('loadchart.update.multiple.statuses');
             });
+
+
+              // --- RUTAS GESTIONADAS POR FortnightlyConfigController ---
+            Route::controller(FortnightlyConfigController::class)->group(function () {
+                Route::get('fortnightly-config/{year}/{month}', 'getConfig');
+                Route::post('fortnightly-config', 'store');
+                Route::delete('fortnightly-config/{year}/{month}', 'destroy');
+                Route::get('fortnightly-config/year/{year}', 'getYearConfigs');
+                Route::post('fortnightly-config/generate-default', 'generateDefault')->name('loadchart.fortnightly-config.generate-default');
+            });
+
 
             // --- RUTAS DE SQUADS (SquadController) ---
             // Nota: Aquí asumimos que las rutas "get-operadores" y "get-squads" también deben simplificarse.
