@@ -1,252 +1,237 @@
 @extends('modulos.recursoshumanos.sistemas.loadchart.index')
 
 @section('content')
-    <div id="normalView">
+    {{-- <div id="normalView">
         <div class="content-layout">
-            {{-- DETALLES DEL EMPLEADO --}}
-            <div class="employee-details" id="employeeDetails">
-                <div class="employee-header">
-                    <div class="employee-photo-container">
-                        <img src="{{ $employee_photo }}" alt="Foto de perfil" class="employee-photo">
-                    </div>
-                    <div>
-                        <h2>Nombre</h2>
-                        <p class="employee-name-header">{{ $employee->full_name ?? 'N/A' }}</p>
-                    </div>
-                </div>
-                <div class="employee-info">
-                    <div class="info-group">
-                        <h3>Número de empleado</h3>
-                        <p>{{ $employee->employee_number ?? 'N/A' }}</p>
-                    </div>
-                    <div class="info-group">
-                        <h3>Departamento</h3>
-                        <p>{{ $employee->department ?? 'N/A' }}</p>
-                    </div>
-                    <div class="info-group">
-                        <h3>Puesto</h3>
-                        <p>{{ $employee->job_title ?? 'N/A' }}</p>
-                    </div>
-                    <div class="info-group">
-                        <h3>Fecha de Ingreso</h3>
-                        <p>{{ $hire_date }}</p>
-                    </div>
-                    {{-- Saldos (MODIFICADO: Añadido data-balance-type para JS) --}}
-                    <div class="info-group">
-                        <h3>Vacaciones</h3>
-                        <p class="vacation-days" data-balance-type="vacation">{{ $vacationDays }} días</p>
-                    </div>
-                    <div class="info-group">
-                        <h3>Días de Descanso</h3>
-                        <p data-balance-type="rest">{{ $restDays }} días</p>
-                    </div>
-                </div>
+    <div class="employee-details" id="employeeDetails">
+        <div class="employee-header">
+            <div class="employee-photo-container">
+                <img src="{{ $employee_photo }}" alt="Foto de perfil" class="employee-photo">
             </div>
-
-            {{-- CONTENEDOR PRINCIPAL DEL CALENDARIO (LOAD CHART) --}}
-            <div class="load-chart-container" id="loadChart">
-                <div class="chart-header">
-                    <h2><i class="fas fa-chart-bar"></i> Load Chart - {{ $monthName }} {{ $currentYear }}</h2>
-                    <div class="chart-actions">
-                        <div class="month-navigation">
-                            <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
-                            <span data-month="{{ $currentMonth }}" data-year="{{ $currentYear }}">{{ $monthName }}
-                                {{ $currentYear }}</span>
-                            <button id="next-month"><i class="fas fa-chevron-right"></i></button>
-                        </div>
-                        @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_loadchart'))
-                            <button class="btn btn-orange" id="approve-loadchart" data-route="/approval">
-                                <i class="fas fa-check-circle"></i> Aprobar Loadchart
-                            </button>
-                        @endif
-                    </div>
-                </div>
-                <table class="calendar">
-                    <thead>
-                        <tr>
-                            <th>Lunes</th>
-                            <th>Martes</th>
-                            <th>Miércoles</th>
-                            <th>Jueves</th>
-                            <th>Viernes</th>
-                            <th>Sábado</th>
-                            <th>Domingo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{-- La tabla se renderiza inicialmente con PHP y luego se actualiza con JS/AJAX --}}
-                        <tr>
-                            @foreach ($calendarDays as $day)
-                                @php
-                                    $isCurrentMonth = $day['current_month'];
-                                    $isToday = $day['date'] == date('Y-m-d');
-
-                                    // Lógica para determinar si el día está en un período de nómina
-                                    $dateString = $day['date'] ?? null;
-                                    $dateObj = $dateString ? new \DateTime($dateString) : null;
-                                    $inPayrollPeriod = false;
-
-                                    if ($dateObj) {
-                                        if ($payrollDates['q1_start'] && $payrollDates['q1_end']) {
-                                            $q1Start = new \DateTime($payrollDates['q1_start']);
-                                            $q1End = new \DateTime($payrollDates['q1_end'] . ' 23:59:59');
-                                            if ($dateObj >= $q1Start && $dateObj <= $q1End) {
-                                                $inPayrollPeriod = true;
-                                            }
-                                        }
-                                        if ($payrollDates['q2_start'] && $payrollDates['q2_end']) {
-                                            $q2Start = new \DateTime($payrollDates['q2_start']);
-                                            $q2End = new \DateTime($payrollDates['q2_end'] . ' 23:59:59');
-                                            if ($dateObj >= $q2Start && $dateObj <= $q2End) {
-                                                $inPayrollPeriod = true;
-                                            }
-                                        }
-                                    }
-
-                                    $isPayrollStart1 =
-                                        $payrollDates['q1_start'] &&
-                                        date('Y-m-d', strtotime($payrollDates['q1_start'])) == $day['date'];
-                                    $isPayrollEnd1 =
-                                        $payrollDates['q1_end'] &&
-                                        date('Y-m-d', strtotime($payrollDates['q1_end'])) == $day['date'];
-                                    $isPayrollStart2 =
-                                        $payrollDates['q2_start'] &&
-                                        date('Y-m-d', strtotime($payrollDates['q2_start'])) == $day['date'];
-                                    $isPayrollEnd2 =
-                                        $payrollDates['q2_end'] &&
-                                        date('Y-m-d', strtotime($payrollDates['q2_end'])) == $day['date'];
-                                @endphp
-
-                                <td class="{{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'current-d' : '' }} {{ $inPayrollPeriod ? 'in-payroll-period' : '' }}"
-                                    data-date="{{ $day['date'] }}">
-                                    <span class="day-number">{{ $day['day'] }}</span>
-
-                                    {{-- Íconos de Día Festivo --}}
-                                    @if (isset($day['is_holiday']) && $day['is_holiday'])
-                                        @if ($day['holiday_icon_type'] == 'christmas_tree')
-                                            <img src="https://img.icons8.com/external-victoruler-flat-victoruler/64/external-christmas-tree-christmas-victoruler-flat-victoruler-1.png"
-                                                alt="Árbol de Navidad" class="holiday-icon"
-                                                title="{{ $day['holiday_name'] }}">
-                                        @else
-                                            {{-- Ícono por defecto para otros días festivos --}}
-                                            <img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo"
-                                                class="holiday-icon" title="{{ $day['holiday_name'] }}">
-                                        @endif
-                                    @endif
-
-                                    {{-- Íconos de Período de Nómina --}}
-                                    @if ($isPayrollStart1)
-                                        <i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>
-                                    @endif
-                                    @if ($isPayrollEnd1)
-                                        <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 1"></i>
-                                    @endif
-                                    @if ($isPayrollStart2)
-                                        <i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>
-                                    @endif
-                                    @if ($isPayrollEnd2)
-                                        <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 2"></i>
-                                    @endif
-
-                                </td>
-                                @if ($loop->iteration % 7 == 0)
-                        </tr>
-                        <tr>
-                            @endif
-                            @endforeach
-                        </tr>
-                    </tbody>
-                </table>
-                {{-- NUEVO OVERLAY DE CARGA --}}
-                <div class="loading-overlay" id="calendarLoadingOverlay">
-                    <div class="loading-spinner-lg"></div>
-                    <div class="loading-message">Cargando datos del calendario...</div>
-                </div>
-                {{-- LEYENDA DEL CALENDARIO --}}
-                <div class="activity-legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--work-base);"></div>
-                        <div>Trabajo en Base</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--work-well);"></div>
-                        <div>Trabajo en Pozo</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--home-office);"></div>
-                        <div>Trabajo en Casa</div> {{-- CAMBIO: Home Office -> Trabajo en Casa --}}
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--traveling);"></div>
-                        <div>Viaje</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--rest);"></div>
-                        <div>Descanso</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--vacation);"></div>
-                        <div>Vacaciones</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--training);"></div>
-                        <div>Entrenamiento</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--medical);"></div>
-                        <div>Médico</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--commissioned);"></div>
-                        <div>Comisionado</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--absence);"></div>
-                        <div>Ausencia</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: var(--permission);"></div>
-                        <div>Permiso</div>
-                    </div>
-                    <div class="legend-item">
-                        <i class="fa-regular fa-hourglass-half legend-under-review"></i>
-                        <div>Bajo Revisión</div>
-                    </div>
-                    <div class="legend-item">
-                        <i class="fas fa-lock-open legend-reviewed"></i>
-                        <div>Revisado</div>
-                    </div>
-                    <div class="legend-item">
-                        <i class="fas fa-lock legend-approved"></i>
-                        <div>Aprobado</div>
-                    </div>
-                    <div class="legend-item">
-                        <i class="fas fa-exclamation-triangle legend-rejected"></i>
-                        <div>Rechazado</div>
-                    </div>
-
-                    <div class="legend-item">
-                        <i class="fas fa-flag  payroll-start-1"></i>
-                        <div>Inicio Q1</div>
-                    </div>
-                    <div class="legend-item">
-                        <i class="fas fa-flag payroll-end"></i>
-                        <div>Fin Quincena</div>
-                    </div>
-                    <div class="legend-item">
-                        <img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo"
-                            class="legend-holiday-icon">
-                        <div>Dia Festivo</div>
-                    </div>
-
-                </div>
+            <div>
+                <h2>Nombre</h2>
+                <p class="employee-name-header">{{ $employee->full_name ?? 'N/A' }}</p>
+            </div>
+        </div>
+        <div class="employee-info">
+            <div class="info-group">
+                <h3>Número de empleado</h3>
+                <p>{{ $employee->employee_number ?? 'N/A' }}</p>
+            </div>
+            <div class="info-group">
+                <h3>Departamento</h3>
+                <p>{{ $employee->department ?? 'N/A' }}</p>
+            </div>
+            <div class="info-group">
+                <h3>Puesto</h3>
+                <p>{{ $employee->job_title ?? 'N/A' }}</p>
+            </div>
+            <div class="info-group">
+                <h3>Fecha de Ingreso</h3>
+                <p>{{ $hire_date }}</p>
+            </div>
+            <div class="info-group">
+                <h3>Vacaciones</h3>
+                <p class="vacation-days" data-balance-type="vacation">{{ $vacationDays }} días</p>
+            </div>
+            <div class="info-group">
+                <h3>Días de Descanso</h3>
+                <p data-balance-type="rest">{{ $restDays }} días</p>
             </div>
         </div>
     </div>
 
+    <div class="load-chart-container" id="loadChart">
+        <div class="chart-header">
+            <h2><i class="fas fa-chart-bar"></i> Load Chart - {{ $monthName }} {{ $currentYear }}</h2>
+            <div class="chart-actions">
+                <div class="month-navigation">
+                    <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                    <span data-month="{{ $currentMonth }}" data-year="{{ $currentYear }}">{{ $monthName }}
+                        {{ $currentYear }}</span>
+                    <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_loadchart'))
+                    <button class="btn btn-orange" id="approve-loadchart" data-route="/approval">
+                        <i class="fas fa-check-circle"></i> Aprobar Loadchart
+                    </button>
+                @endif
+            </div>
+        </div>
+        <table class="calendar">
+            <thead>
+                <tr>
+                    <th>Lunes</th>
+                    <th>Martes</th>
+                    <th>Miércoles</th>
+                    <th>Jueves</th>
+                    <th>Viernes</th>
+                    <th>Sábado</th>
+                    <th>Domingo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    @foreach ($calendarDays as $day)
+                        @php
+                            $isCurrentMonth = $day['current_month'];
+                            $isToday = $day['date'] == date('Y-m-d');
 
-    {{-- MODAL DE REGISTRO DE ACTIVIDAD --}}
-    <div class="modal" id="activityModal">
+                            // Lógica para determinar si el día está en un período de nómina
+                            $dateString = $day['date'] ?? null;
+                            $dateObj = $dateString ? new \DateTime($dateString) : null;
+                            $inPayrollPeriod = false;
+
+                            if ($dateObj) {
+                                if ($payrollDates['q1_start'] && $payrollDates['q1_end']) {
+                                    $q1Start = new \DateTime($payrollDates['q1_start']);
+                                    $q1End = new \DateTime($payrollDates['q1_end'] . ' 23:59:59');
+                                    if ($dateObj >= $q1Start && $dateObj <= $q1End) {
+                                        $inPayrollPeriod = true;
+                                    }
+                                }
+                                if ($payrollDates['q2_start'] && $payrollDates['q2_end']) {
+                                    $q2Start = new \DateTime($payrollDates['q2_start']);
+                                    $q2End = new \DateTime($payrollDates['q2_end'] . ' 23:59:59');
+                                    if ($dateObj >= $q2Start && $dateObj <= $q2End) {
+                                        $inPayrollPeriod = true;
+                                    }
+                                }
+                            }
+
+                            $isPayrollStart1 =
+                                $payrollDates['q1_start'] &&
+                                date('Y-m-d', strtotime($payrollDates['q1_start'])) == $day['date'];
+                            $isPayrollEnd1 =
+                                $payrollDates['q1_end'] &&
+                                date('Y-m-d', strtotime($payrollDates['q1_end'])) == $day['date'];
+                            $isPayrollStart2 =
+                                $payrollDates['q2_start'] &&
+                                date('Y-m-d', strtotime($payrollDates['q2_start'])) == $day['date'];
+                            $isPayrollEnd2 =
+                                $payrollDates['q2_end'] &&
+                                date('Y-m-d', strtotime($payrollDates['q2_end'])) == $day['date'];
+                        @endphp
+
+                        <td class="{{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'current-d' : '' }} {{ $inPayrollPeriod ? 'in-payroll-period' : '' }}"
+                            data-date="{{ $day['date'] }}">
+                            <span class="day-number">{{ $day['day'] }}</span>
+
+                            @if (isset($day['is_holiday']) && $day['is_holiday'])
+                                @if ($day['holiday_icon_type'] == 'christmas_tree')
+                                    <img src="https://img.icons8.com/external-victoruler-flat-victoruler/64/external-christmas-tree-christmas-victoruler-flat-victoruler-1.png"
+                                        alt="Árbol de Navidad" class="holiday-icon" title="{{ $day['holiday_name'] }}">
+                                @else
+                                    <img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo"
+                                        class="holiday-icon" title="{{ $day['holiday_name'] }}">
+                                @endif
+                            @endif
+
+                            @if ($isPayrollStart1)
+                                <i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>
+                            @endif
+                            @if ($isPayrollEnd1)
+                                <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 1"></i>
+                            @endif
+                            @if ($isPayrollStart2)
+                                <i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>
+                            @endif
+                            @if ($isPayrollEnd2)
+                                <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 2"></i>
+                            @endif
+
+                        </td>
+                        @if ($loop->iteration % 7 == 0)
+                </tr>
+                <tr>
+                    @endif
+                    @endforeach
+                </tr>
+            </tbody>
+        </table>
+        <div class="loading-overlay" id="calendarLoadingOverlay">
+            <div class="loading-spinner-lg"></div>
+            <div class="loading-message">Cargando datos del calendario...</div>
+        </div>
+        <div class="activity-legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--work-base);"></div>
+                <div>Trabajo en Base</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--work-well);"></div>
+                <div>Trabajo en Pozo</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--home-office);"></div>
+                <div>Trabajo en Casa</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--traveling);"></div>
+                <div>Viaje</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--rest);"></div>
+                <div>Descanso</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--vacation);"></div>
+                <div>Vacaciones</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--training);"></div>
+                <div>Entrenamiento</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--medical);"></div>
+                <div>Médico</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--commissioned);"></div>
+                <div>Comisionado</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--absence);"></div>
+                <div>Ausencia</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--permission);"></div>
+                <div>Permiso</div>
+            </div>
+            <div class="legend-item">
+                <i class="fa-regular fa-hourglass-half legend-under-review"></i>
+                <div>Bajo Revisión</div>
+            </div>
+            <div class="legend-item">
+                <i class="fas fa-lock-open legend-reviewed"></i>
+                <div>Revisado</div>
+            </div>
+            <div class="legend-item">
+                <i class="fas fa-lock legend-approved"></i>
+                <div>Aprobado</div>
+            </div>
+            <div class="legend-item">
+                <i class="fas fa-exclamation-triangle legend-rejected"></i>
+                <div>Rechazado</div>
+            </div>
+
+            <div class="legend-item">
+                <i class="fas fa-flag  payroll-start-1"></i>
+                <div>Inicio Q1</div>
+            </div>
+            <div class="legend-item">
+                <i class="fas fa-flag payroll-end"></i>
+                <div>Fin Quincena</div>
+            </div>
+            <div class="legend-item">
+                <img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo"
+                    class="legend-holiday-icon">
+                <div>Dia Festivo</div>
+            </div>
+
+        </div></div></div></div> --}}
+
+    {{-- <div class="modal" id="activityModal">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="header-icon">
@@ -309,7 +294,6 @@
                                         style="background-color: var(--commissioned); color: #fff;">C</div>
                                 </div>
 
-                                {{-- CAMBIO: Home Office (H) a Trabajo en Casa (TC) --}}
                                 <div class="activity-option" data-value="TC">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: var(--home-office);"></div>
@@ -394,13 +378,12 @@
                             </div>
                         </div>
 
-                        {{-- Hidden original select (for form data, required for old validation layers) --}}
                         <select id="activity-type" name="activity_type" style="display:none;">
                             <option value="">Seleccionar actividad...</option>
                             <option value="B">B - Trabajo en Base</option>
                             <option value="P">P - Trabajo en Pozo</option>
                             <option value="C">C - Comisionado</option>
-                            <option value="TC">TC - Trabajo en Casa</option> {{-- CAMBIO: H -> TC --}}
+                            <option value="TC">TC - Trabajo en Casa</option>
                             <option value="V">V - Viaje</option>
                             <option value="D">D - Descanso</option>
                             <option value="VAC">VAC - Vacaciones</option>
@@ -411,7 +394,6 @@
                             <option value="N">N - Ninguna</option>
                         </select>
 
-                        {{-- Error Messages --}}
                         <div class="error-message" id="activity-type-error">Debes seleccionar un tipo de actividad</div>
                         <div class="error-message" id="vacation-balance-error" style="display:none;">No tienes días de
                             vacaciones disponibles.</div>
@@ -443,7 +425,6 @@
                         <div class="error-message" id="commissioned-error">Debes seleccionar un área comisionada</div>
                     </div>
 
-                    {{-- INICIO: NUEVOS CAMPOS PARA VIAJE (V) --}}
                     <div class="form-group" id="travel-destination-field" style="display: none;">
                         <label for="travel-destination">Destino del Viaje</label>
                         <div class="input-with-icon">
@@ -463,10 +444,8 @@
                         </div>
                         <div class="error-message" id="travel-reason-error">Debes ingresar el motivo del viaje</div>
                     </div>
-                    {{-- FIN: NUEVOS CAMPOS PARA VIAJE (V) --}}
 
 
-                    {{-- INICIO: CAMPOS CONDICIONALES A TRABAJO EN POZO (P) --}}
                     <div id="conditional-fields" style="display: none;">
 
                         <div class="form-group">
@@ -515,15 +494,12 @@
                             </div>
                         </div>
                     </div>
-                    {{-- FIN: CAMPOS CONDICIONALES A TRABAJO EN POZO (P) --}}
                 </div>
 
-                {{-- JSON DATA PARA JAVASCRIPT --}}
                 <script id="service-data" type="application/json">
                     @json($services->toArray())
                 </script>
 
-                {{-- PESTAÑA DE SERVICIO --}}
                 <div class="tab-content" id="service-tab">
                     <div class="form-group">
                         <label for="work-type">Tipo de Trabajo</label>
@@ -579,7 +555,6 @@
                     <div class="form-group">
                         <label for="payroll-period">Periodo de Quincena del Servicio</label>
                         <select id="payroll-period" class="select-custom">
-                            {{-- Opciones cargadas por JS --}}
                         </select>
                         <small class="form-help">Selecciona en caso el servicio se realizó en la quincena anterior</small>
                     </div>
@@ -596,8 +571,9 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
-    {{-- INCLUSIÓN DEL SCRIPT DE JAVASCRIPT --}}
-    <script src="{{ asset('assets/js/recursoshumanos/loadchart/calendar.js') }}"></script>
+    {{-- <script src="{{ asset('assets/js/recursoshumanos/loadchart/calendar.js') }}"></script> --}}
+
+    @include('modulos.recursoshumanos.sistemas.loadchart.calendar_partial')
 @endsection
