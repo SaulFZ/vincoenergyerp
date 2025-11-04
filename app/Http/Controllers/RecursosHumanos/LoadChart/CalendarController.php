@@ -21,21 +21,31 @@ use Yasumi\Yasumi;
 class CalendarController extends Controller
 {
     /**
-     * Muestra la vista inicial del calendario.
+     * Muestra la vista del calendario - funciona para ambos casos:
+     * 1. Calendario personal (sin employee_id)
+     * 2. Calendario de empleado específico (con employee_id para modal)
      */
     public function index(Request $request)
     {
-        $user     = Auth::user();
-        $employee = Employee::with('user')->find($user->employee_id);
+        // Determinar si es para el modal o para el usuario actual
+        $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
+        $isForModal = $request->has('employee_id') || $request->ajax();
+
+        $employee = Employee::with('user')->find($employeeId);
 
         if (! $employee) {
+            if ($isForModal) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Empleado no encontrado',
+                ], 404);
+            }
             return redirect('/dashboard')->with('error', 'Datos de empleado no encontrados.');
         }
 
-        // --- INICIO: OBTENER SALDOS DE VACACIONES Y DESCANSOS ---
+        // --- OBTENER SALDOS DE VACACIONES Y DESCANSOS ---
         $vacationBalance = EmployeeVacationBalance::firstOrNew(['employee_id' => $employee->id]);
 
-        // Si es un registro nuevo, calcular los días iniciales
         if (! $vacationBalance->exists) {
             $calculatedData = $this->calculateInitialVacationData($employee);
             $vacationBalance->fill($calculatedData);
@@ -45,7 +55,6 @@ class CalendarController extends Controller
 
         $vacationDays = $vacationBalance->vacation_days_available;
         $restDays     = $vacationBalance->rest_days_available;
-        // --- FIN: OBTENER SALDOS DE VACACIONES Y DESCANSOS ---
 
         $hire_date = $this->formatDate($employee->hire_date);
         $photo     = $employee->photo ? asset($employee->photo) : asset('assets/img/perfil.png');
@@ -66,7 +75,7 @@ class CalendarController extends Controller
         // Lógica de mapeo de Bonos de Campo
         $jobTitle      = $employee->job_title;
         $bonusMappings = [
-            'Ingeniero de Campo'                             => 'Ingeniero de Campo',
+            'Ingeniero de Campo'                               => 'Ingeniero de Campo',
             'Ingeniero de Campo 1'                             => 'Ingeniero de Campo',
             'Ingeniero de Campo 2'                             => 'Ingeniero de Campo',
             'Ingeniero de Campo 5'                             => 'Ingeniero de Campo',
@@ -102,7 +111,6 @@ class CalendarController extends Controller
         $fieldBonuses = FieldBonus::where('employee_category', $employeeBonusCategory)
             ->orderBy('bonus_identifier')
             ->get();
-        // Fin de lógica de Bonos de Campo
 
         $currentMonth = $request->input('month', date('n'));
         $currentYear  = $request->input('year', date('Y'));
@@ -131,48 +139,78 @@ class CalendarController extends Controller
         $monthName    = $this->getMonthName($currentMonth);
         $calendarDays = [];
 
-        // --- INICIO DE MODIFICACIÓN: Días del mes actual ---
+        // Generar días del calendario
         $mandatoryHolidays = $this->getMandatoryHolidays($currentYear);
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $date              = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
-            $isHoliday         = isset($mandatoryHolidays[$date]);
-            $holidayName       = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $date            = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
+            $isHoliday       = isset($mandatoryHolidays[$date]);
+            $holidayName     = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
             $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
 
             $calendarDays[] = [
-                'day'               => $i,
-                'current_month'     => true,
-                'date'              => $date,
-                'is_holiday'        => $isHoliday,
-                'holiday_name'      => $holidayName,
-                'holiday_icon_type' => $holidayIconType,
+                'day'                => $i,
+                'current_month'      => true,
+                'date'               => $date,
+                'is_holiday'         => $isHoliday,
+                'holiday_name'       => $holidayName,
+                'holiday_icon_type'  => $holidayIconType,
                 'is_payroll_start_1' => ($fortnightlyConfig && $fortnightlyConfig->q1_start->format('Y-m-d') == $date),
                 'is_payroll_end_1'   => ($fortnightlyConfig && $fortnightlyConfig->q1_end->format('Y-m-d') == $date),
                 'is_payroll_start_2' => ($fortnightlyConfig && $fortnightlyConfig->q2_start->format('Y-m-d') == $date),
                 'is_payroll_end_2'   => ($fortnightlyConfig && $fortnightlyConfig->q2_end->format('Y-m-d') == $date),
-                'is_today'          => $date == date('Y-m-d'),
+                'is_today'           => $date == date('Y-m-d'),
             ];
         }
 
-        // --- FIN DE MODIFICACIÓN: Ya no se generan días del mes anterior ni del siguiente ---
-        // La vista (JavaScript) se encargará de calcular y mostrar las celdas vacías y los días del siguiente mes
-        // para completar la última semana.
+        // Obtener actividades del empleado para el mes actual
+        $monthYear  = sprintf('%04d-%02d', $currentYear, $currentMonth);
+        $monthlyLog = EmployeeMonthlyWorkLog::where('employee_id', $employee->id)
+            ->where('month_and_year', $monthYear)
+            ->first();
 
-        return view('modulos.recursoshumanos.sistemas.loadchart.calendar', [
-            'employee'       => $employee,
-            'hire_date'      => $hire_date,
-            'employee_photo' => $photo,
-            'services'       => $services,
-            'calendarDays'   => $calendarDays, // Solo contiene días del mes actual
-            'monthName'      => $monthName,
-            'currentYear'    => $currentYear,
-            'currentMonth'   => $currentMonth,
-            'payrollDates'   => $payrollDates,
-            'foodOptions'    => $foodOptions,
-            'fieldBonuses'   => $fieldBonuses,
-            'vacationDays'   => $vacationDays,
-            'restDays'       => $restDays,
-        ]);
+        $employeeActivities = $monthlyLog ? $monthlyLog->daily_activities : [];
+
+        // Datos comunes para ambas vistas
+        $viewData = [
+            'employee'           => $employee,
+            'hire_date'          => $hire_date,
+            'employee_photo'     => $photo,
+            'services'           => $services,
+            'calendarDays'       => $calendarDays,
+            'monthName'          => $monthName,
+            'currentYear'        => $currentYear,
+            'currentMonth'       => $currentMonth,
+            'payrollDates'       => $payrollDates,
+            'foodOptions'        => $foodOptions,
+            'fieldBonuses'       => $fieldBonuses,
+            'vacationDays'       => $vacationDays,
+            'restDays'           => $restDays,
+            'employeeActivities' => $employeeActivities,
+            'isForModal'         => $isForModal,
+            'isForModal'         => $isForModal, // 👈 Esta variable es la clave
+        ];
+
+        // Determinar qué vista retornar
+        if ($isForModal) {
+            // Para el modal - retornar JSON con el HTML
+            try {
+                $html = View::make('modulos.recursoshumanos.sistemas.loadchart.calendar_partial', $viewData)->render();
+
+                return response()->json([
+                    'success' => true,
+                    'html'    => $html,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error loading employee calendar: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al cargar el calendario del empleado: ' . $e->getMessage(),
+                ], 500);
+            }
+        } else {
+            // Vista normal del calendario
+            return view('modulos.recursoshumanos.sistemas.loadchart.calendar', $viewData);
+        }
     }
 
     /**
@@ -210,19 +248,19 @@ class CalendarController extends Controller
         // --- INICIO DE MODIFICACIÓN: Solo días del mes actual ---
         $mandatoryHolidays = $this->getMandatoryHolidays($currentYear);
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $date              = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
-            $isHoliday         = isset($mandatoryHolidays[$date]);
-            $holidayName       = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $date            = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
+            $isHoliday       = isset($mandatoryHolidays[$date]);
+            $holidayName     = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
             $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
 
             $dayData = [
-                'day'               => $i,
-                'current_month'     => true,
-                'date'              => $date,
-                'is_holiday'        => $isHoliday,
-                'holiday_name'      => $holidayName,
-                'holiday_icon_type' => $holidayIconType,
-                'is_today'          => $date == date('Y-m-d'),
+                'day'                => $i,
+                'current_month'      => true,
+                'date'               => $date,
+                'is_holiday'         => $isHoliday,
+                'holiday_name'       => $holidayName,
+                'holiday_icon_type'  => $holidayIconType,
+                'is_today'           => $date == date('Y-m-d'),
                 'is_payroll_start_1' => false,
                 'is_payroll_end_1'   => false,
                 'is_payroll_start_2' => false,
@@ -264,8 +302,10 @@ class CalendarController extends Controller
      */
     public function getEmployeeBalancesAjax(Request $request)
     {
-        $user     = Auth::user();
-        $employee = Employee::find($user->employee_id);
+        // ⚠️ CORRECCIÓN: Priorizar employee_id del request
+        $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
+
+        $employee = Employee::find($employeeId);
 
         if (! $employee) {
             return response()->json(['success' => false, 'message' => 'Empleado no encontrado'], 404);
@@ -275,6 +315,7 @@ class CalendarController extends Controller
 
         return response()->json([
             'success'      => true,
+            // ⚠️ Nota: Asegúrate de devolver los datos del empleado buscado, no del logeado
             'vacationDays' => $vacationBalance->vacation_days_available ?? 0,
             'restDays'     => $vacationBalance->rest_days_available ?? 0,
         ]);
@@ -324,7 +365,7 @@ class CalendarController extends Controller
 
             // Si el frontend envía 'activity_type', significa que esa sección es editable.
             if ($request->has('activity_type')) {
-                $activityType                   = $request->activity_type ?? 'N';
+                $activityType                         = $request->activity_type ?? 'N';
                 $activityData['activity_type']        = $activityType;
                 $activityData['activity_description'] = $this->getActivityDescription($activityType);
                 $activityData['commissioned_to']      = $request->commissioned_to;
@@ -332,12 +373,12 @@ class CalendarController extends Controller
                 $activityData['has_service_bonus']    = $request->has_service_bonus;
 
                 // --- NUEVOS CAMPOS DE VIAJE ---
-                $activityData['travel_destination']   = $request->travel_destination;
-                $activityData['travel_reason']        = $request->travel_reason;
+                $activityData['travel_destination'] = $request->travel_destination;
+                $activityData['travel_reason']      = $request->travel_reason;
                 // -----------------------------
 
-                $activityData['activity_status']      = 'under_review'; // Se reinicia el estado porque se editó
-                $activityData['rejection_reason']     = null;
+                $activityData['activity_status']  = 'under_review'; // Se reinicia el estado porque se editó
+                $activityData['rejection_reason'] = null;
             }
 
             // Si el frontend envía 'food_bonus_number', se actualiza.
@@ -414,7 +455,7 @@ class CalendarController extends Controller
 
             // Rellenar datos básicos si es una actividad nueva
             if (empty($monthlyLog->getDailyActivity($request->date))) {
-                $activityData['date']                      = $request->date;
+                $activityData['date']                  = $request->date;
                 $activityData['payroll_period_marker'] = $this->determinePayrollPeriodMarker($request->date, $request->displayed_month, $request->displayed_year);
             }
 
@@ -490,13 +531,15 @@ class CalendarController extends Controller
         return $descriptions[$activityType] ?? 'Actividad desconocida';
     }
 
-    /**
-     * Obtiene las actividades de un empleado para un mes específico
-     */
+/**
+ * Obtiene las actividades de un empleado para un mes específico
+ */
     public function getMonthlyActivities(Request $request)
     {
-        $user      = Auth::user();
-        $employee  = Employee::find($user->employee_id);
+        // ⚠️ CORRECCIÓN: Priorizar employee_id del request
+        $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
+
+        $employee  = Employee::find($employeeId);
         $month     = $request->input('month', date('n'));
         $year      = $request->input('year', date('Y'));
         $monthYear = sprintf('%04d-%02d', $year, $month);
@@ -510,7 +553,7 @@ class CalendarController extends Controller
             ->first();
 
         return response()->json([
-            'success'      => true,
+            'success'    => true,
             'activities' => $monthlyLog ? $monthlyLog->daily_activities : [],
         ]);
     }
@@ -637,7 +680,7 @@ class CalendarController extends Controller
     private function recalculateDayStatus($dailyActivity)
     {
         // ... (This function remains the same as it relies on internal statuses, not the activity type code itself)
-        $hasRejected      = false;
+        $hasRejected    = false;
         $hasUnderReview = false;
         $hasApproved    = false;
         $hasReviewed    = false;

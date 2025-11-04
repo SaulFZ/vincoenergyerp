@@ -1,18 +1,37 @@
-document.addEventListener('DOMContentLoaded', function () {
+// calendar.js
 
-    const serviceData = JSON.parse(document.getElementById('service-data').textContent);
+/**
+ * ⚠️ FUNCIÓN CLAVE: Inicializa todos los scripts y eventos del calendario
+ * después de que el HTML parcial ha sido cargado en el modal.
+ * @param {string | null} employeeId - El ID del empleado actual (null si es vista principal).
+ */
+function initializeModalCalendarScripts(employeeId) {
 
+    // --- MANEJO DE LA CARGA DE DATOS SEGURO (CORRECCIÓN) ---
+    // Aseguramos que el elemento exista antes de intentar leer su textContent.
+    const serviceDataScript = document.getElementById('service-data');
+    if (!serviceDataScript) {
+        console.error('Error: Elemento #service-data no encontrado. La carga de datos de servicio falló.');
+        return; // Salir si el elemento crítico no está presente.
+    }
+
+    const serviceData = JSON.parse(serviceDataScript.textContent);
 
     if (!serviceData || typeof serviceData !== 'object') {
         console.error('Datos de servicio no válidos:', serviceData);
         return;
     }
+    // --------------------------------------------------------
+
+    // --- DEFINICIÓN DE CONSTANTES (COMIENZO) ---
+    // Nota: Si alguno de estos selectores falla (e.g., calendarLoadingOverlay),
+    // la variable será 'null', lo que es manejable más adelante.
 
     const modal = document.getElementById('activityModal');
     const closeModalBtn = document.querySelector('.close-modal');
     const cancelBtn = document.getElementById('cancel-activity');
     const saveBtn = document.getElementById('save-activity');
-    const loadingSpinner = saveBtn.querySelector('.loading-spinner');
+    const loadingSpinner = saveBtn?.querySelector('.loading-spinner'); // Uso de Optional Chaining
     const serviceTabBtn = document.getElementById('service-tab-btn');
     const vacationDaysElement = document.querySelector('p[data-balance-type="vacation"]');
     const restDaysElement = document.querySelector('p[data-balance-type="rest"]');
@@ -32,6 +51,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPayrollDates = {};
     let vacationDaysAvailable = parseInt(vacationDaysElement?.textContent) || 0;
     let restDaysAvailable = parseInt(restDaysElement?.textContent) || 0;
+
+    let currentEmployeeId = employeeId; // 👈 Guarda el ID aquí
 
     // Estados que bloquean la edición (Aprobado o Revisado)
     const statusesToBlockField = ['approved', 'reviewed'];
@@ -99,18 +120,19 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * Llama al backend para obtener y actualizar los saldos.
      */
-    async function fetchBalances() {
-        try {
-            const response = await fetch('/recursoshumanos/loadchart/balances-data');
-            const data = await response.json();
-            if (data.success) {
-                updateBalanceUI(data.vacationDays, data.restDays);
-            }
-        } catch (error) {
-            console.error('Error fetching balances:', error);
+async function fetchBalances() {
+    try {
+        // ⚠️ CORRECCIÓN: Agregar employee_id a la URL
+        const employeeParam = currentEmployeeId ? `?employee_id=${currentEmployeeId}` : '';
+        const response = await fetch(`/recursoshumanos/loadchart/balances-data${employeeParam}`);
+        const data = await response.json();
+        if (data.success) {
+            updateBalanceUI(data.vacationDays, data.restDays);
         }
+    } catch (error) {
+        console.error('Error fetching balances:', error);
     }
-
+}
 
     function handleActivityTypeChange(activityType) {
         const wellNameField = document.getElementById('well-name-field');
@@ -228,9 +250,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Si la fecha seleccionada está en la primera o segunda quincena del mes actual (para incluir el Q2 anterior)
         // Se asume que solo se puede seleccionar el Q2 anterior si estamos en el Q1 del mes actual o después.
         if (currentMonth !== 1) { // Lógica simple para evitar ir al año anterior en el primer mes
-             // No necesitamos la lógica compleja de Q1Start/Q1End aquí, solo si la fecha actual está en el mes actual y es Q1 o Q2.
-             // Simplificamos: si el mes actual tiene una configuración de nómina (asumimos que sí) y NO es enero,
-             // o si es enero y el año es posterior a MIN_YEAR, incluimos la opción del Q2 anterior.
+            // No necesitamos la lógica compleja de Q1Start/Q1End aquí, solo si la fecha actual está en el mes actual y es Q1 o Q2.
+            // Simplificamos: si el mes actual tiene una configuración de nómina (asumimos que sí) y NO es enero,
+            // o si es enero y el año es posterior a MIN_YEAR, incluimos la opción del Q2 anterior.
             const prevQ2Option = document.createElement('option');
             prevQ2Option.value = 'previous_q2';
             prevQ2Option.textContent = `Segunda Quincena - ${prevMonthName} ${prevYear}`;
@@ -524,10 +546,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (serviceStatus === 'approved' || serviceStatus === 'reviewed') {
             // Si el servicio tiene un estado de bloqueo, el botón se bloquea con el estado del servicio.
-             statusForServiceBonus = serviceStatus;
+            statusForServiceBonus = serviceStatus;
         } else if (serviceStatus === 'rejected') {
             // Si el servicio fue rechazado, el botón se etiqueta como rechazado y no se bloquea la edición si la actividad no estaba bloqueada.
-             statusForServiceBonus = 'rejected';
+            statusForServiceBonus = 'rejected';
         }
 
         // 2. Determinar si se bloquea
@@ -737,7 +759,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const services = serviceData[workType].filter(
                 item => item.service_type.toLowerCase().replace(/\s+/g, '_') === serviceTypeFormatted &&
-                         item.service_performed.toLowerCase().replace(/\s+/g, '_') === servicePerformedFormatted
+                    item.service_performed.toLowerCase().replace(/\s+/g, '_') === servicePerformedFormatted
             );
 
             services.forEach(item => {
@@ -972,15 +994,15 @@ document.addEventListener('DOMContentLoaded', function () {
         option.addEventListener('click', function () {
             // Se debe usar isServiceBonusLocked aquí, no statusToBlockAll/Field directamente en el listener
             if (currentActivity) {
-                 const serviceStatus = getFieldStatus(currentActivity, 'service');
-                 const activityStatus = getFieldStatus(currentActivity, 'activity');
-                 let statusForCheck = activityStatus;
+                const serviceStatus = getFieldStatus(currentActivity, 'service');
+                const activityStatus = getFieldStatus(currentActivity, 'activity');
+                let statusForCheck = activityStatus;
 
-                 if (serviceStatus === 'approved' || serviceStatus === 'reviewed') {
-                     statusForCheck = serviceStatus;
-                 }
+                if (serviceStatus === 'approved' || serviceStatus === 'reviewed') {
+                    statusForCheck = serviceStatus;
+                }
 
-                 if (statusesToBlockAll.includes(statusForCheck) || statusesToBlockField.includes(statusForCheck)) return;
+                if (statusesToBlockAll.includes(statusForCheck) || statusesToBlockField.includes(statusForCheck)) return;
             }
 
             if (document.getElementById('activity-type').value !== 'P') {
@@ -1106,7 +1128,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function loadMonthlyActivities(month, year) {
         try {
-            const response = await fetch(`/recursoshumanos/loadchart/monthly-activities?month=${month}&year=${year}`);
+            // ⚠️ CORRECCIÓN: Agregar employee_id a la URL
+            const employeeParam = currentEmployeeId ? `&employee_id=${currentEmployeeId}` : '';
+            const response = await fetch(`/recursoshumanos/loadchart/monthly-activities?month=${month}&year=${year}${employeeParam}`);
             const data = await response.json();
             if (data.success) {
                 monthlyActivities = {};
@@ -1444,6 +1468,9 @@ document.addEventListener('DOMContentLoaded', function () {
      * @param {boolean} isLoading - true para mostrar, false para ocultar.
      */
     function toggleLoadingOverlay(isLoading) {
+        // CORRECCIÓN: Usar Optional Chaining para evitar error si el elemento no existe (en el modal de empleado, por ejemplo)
+        if (!calendarLoadingOverlay) return;
+
         if (isLoading) {
             // Usar setTimeout para garantizar que el overlay se muestre de inmediato
             // Esto previene que el código bloquee el renderizado si la carga es muy rápida
@@ -1537,10 +1564,10 @@ document.addEventListener('DOMContentLoaded', function () {
             let cellCount = data.calendarDays.length + firstDayOfMonthIndex;
             let daysToAdd = 7 - (cellCount % 7);
             if (daysToAdd !== 7) {
-                 for (let i = 0; i < daysToAdd; i++) {
-                     currentRow += `<td class="other-month" data-date=""></td>`;
-                 }
-                 newTableHTML += currentRow + '</tr>';
+                for (let i = 0; i < daysToAdd; i++) {
+                    currentRow += `<td class="other-month" data-date=""></td>`;
+                }
+                newTableHTML += currentRow + '</tr>';
             }
 
 
@@ -1608,5 +1635,41 @@ document.addEventListener('DOMContentLoaded', function () {
     const initialMonth = parseInt(monthSpan.getAttribute('data-month'));
     const initialYear = parseInt(monthSpan.getAttribute('data-year'));
 
+    // Llama a updateCalendar para cargar la data inicial al abrir el modal
     updateCalendar(initialMonth, initialYear);
+
+    // Fin del contenido que estaba originalmente dentro de document.addEventListener('DOMContentLoaded', function () {
+}
+
+// =========================================================================
+// INICIALIZACIÓN AUTOMÁTICA (MANTIENE LA FUNCIÓN EN EL MISMO ARCHIVO)
+// =========================================================================
+// calendar.js (FINAL DEL ARCHIVO)
+
+// ... (Aquí termina la función initializeModalCalendarScripts) ...
+// }
+
+// =========================================================================
+// INICIALIZACIÓN AUTOMÁTICA (MANTIENE LA FUNCIÓN EN EL MISMO ARCHIVO)
+// =========================================================================
+document.addEventListener('DOMContentLoaded', function () {
+    // ⚠️ NUEVO ENFOQUE: Solo iniciar si encontramos el contenedor principal del calendario.
+    const calendarContainer = document.getElementById('loadChart');
+    const serviceDataElement = document.getElementById('service-data');
+
+    // Si NO estamos en el modal (que se inicializa manualmente por AJAX)
+    // Y SÍ estamos en la vista principal (donde el contenido ya está en el DOM),
+    // debemos iniciar la función.
+
+    // Usamos el elemento #loadChart y #service-data como indicadores seguros
+    if (calendarContainer && serviceDataElement) {
+        if (typeof initializeModalCalendarScripts === 'function') {
+            // Llamamos a la función para la vista estática, pasamos null.
+            initializeModalCalendarScripts(null);
+        } else {
+            console.error("Error: La función initializeModalCalendarScripts no se encontró para inicializar la vista principal.");
+        }
+    }
+    // Nota: Si es el modal, esta sección no se ejecuta, ya que la función se llama
+    // manualmente en el then(data => ...) de tu archivo 'approval.js'.
 });

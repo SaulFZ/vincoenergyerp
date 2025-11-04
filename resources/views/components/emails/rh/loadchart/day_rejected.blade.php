@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Elementos Rechazados - Sistema de Carga</title>
+    <title>Elementos Rechazados - Sistema LoadChart</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -68,16 +68,19 @@
             color: #495057;
             border-bottom: 2px solid #dc3545;
             padding-bottom: 10px;
+            margin-bottom: 20px;
         }
         .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            /* Usamos flexbox para asegurar el layout en clientes de correo */
+            display: flex;
+            flex-wrap: wrap;
             margin-bottom: 20px;
         }
         .info-item {
-            display: flex;
-            flex-direction: column;
+            width: 50%; /* 2 columnas */
+            box-sizing: border-box;
+            padding-right: 15px;
+            margin-bottom: 15px;
         }
         .info-label {
             font-weight: bold;
@@ -96,57 +99,54 @@
             font-weight: bold;
             color: #495057;
             margin-bottom: 10px;
-            font-size: 16px;
+            font-size: 17px;
         }
         .item-list {
             list-style: none;
             padding: 0;
             margin: 0;
-            background: white;
-            border-radius: 5px;
-            border: 1px solid #dee2e6;
         }
+        /* Ajuste: Reducimos espaciado en los elementos de la lista */
         .item-list li {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .item-list li:before {
-            content: "•";
+        .item-type {
+            font-weight: 700;
             color: #dc3545;
-            font-weight: bold;
-            margin-right: 10px;
-            font-size: 18px;
-        }
-        .item-list li:last-child {
-            border-bottom: none;
+            font-size: 15px; /* Ligeramente más pequeño */
+            display: block;
+            margin-bottom: 5px;
         }
         .activity-detail {
-            font-size: 13px;
-            color: #6c757d;
+            font-size: 14px;
+            color: #495057;
             margin-top: 4px;
-            font-style: italic;
         }
+        /* Ajuste: Reducimos espaciado en el motivo de rechazo */
         .reason-box {
             background-color: #fff3cd;
             border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-            border-left: 5px solid #ffc107;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 8px;
+            border-left: 4px solid #ffc107;
         }
         .reason-title {
             font-weight: bold;
             color: #856404;
-            margin-bottom: 10px;
-            font-size: 16px;
+            margin-bottom: 5px;
+            font-size: 14px;
         }
         .reason-text {
             color: #856404;
-            font-style: italic;
             margin: 0;
-            line-height: 1.5;
+            line-height: 1.4;
+            font-style: italic;
         }
         .actions-box {
             background-color: #e9ecef;
@@ -160,6 +160,7 @@
             font-size: 18px;
         }
         .actions-list {
+            padding-left: 20px;
             margin-bottom: 0;
         }
         .actions-list li {
@@ -172,9 +173,12 @@
             padding-top: 20px;
             border-top: 1px solid #dee2e6;
             color: #6c757d;
-            font-size: 14px;
+            font-size: 13px;
         }
-        .badge {
+        .label-highlight {
+            font-weight: bold; /* Uso de font-weight en lugar de <strong> */
+        }
+        .badge-info {
             display: inline-block;
             padding: 4px 8px;
             background-color: #dc3545;
@@ -183,14 +187,12 @@
             font-size: 12px;
             font-weight: bold;
             margin-left: 10px;
-        }
-        .item-type {
-            font-weight: 600;
-            color: #dc3545;
+            white-space: nowrap;
         }
         @media (max-width: 600px) {
-            .info-grid {
-                grid-template-columns: 1fr;
+            .info-item {
+                width: 100%; /* 1 columna en móviles */
+                padding-right: 0;
             }
             .content {
                 padding: 20px;
@@ -204,17 +206,17 @@
             <div class="logo-container">
                 <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Logo Vinco" class="logo" width="160">
             </div>
-            <h1>Elementos Rechazados - Sistema de Carga</h1>
+            <h1>Elementos Rechazados - Sistema LoadChart</h1>
         </div>
 
         <div class="content">
             <div class="alert-box">
                 <h3>Atención: Elementos Requieren Corrección</h3>
-                <p style="margin: 0; color: #721c24;">Uno o más elementos de tu registro del día han sido rechazados y requieren tu atención inmediata.</p>
+                <p style="margin: 0; color: #721c24;">Uno o más elementos de tu registro del día han sido rechazados y requieren tu atención inmediata en el <span class="label-highlight">Sistema LoadChart</span>.</p>
             </div>
 
             <div class="details-box">
-                <h3>Información del Rechazo</h3>
+                <h3>Información General</h3>
 
                 <div class="info-grid">
                     <div class="info-item">
@@ -226,13 +228,15 @@
                         <span class="info-value">{{ $date }}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Revisado por:</span>
+                        <span class="info-label">Rechazado por:</span>
                         <span class="info-value">{{ $rejectedBy }}</span>
                     </div>
+                    {{-- INICIO: CAMBIO SOLICITADO (Añadir "Por corregir" después del número) --}}
                     <div class="info-item">
-                        <span class="info-label">Elementos Rechazados:</span>
-                        <span class="info-value">{{ count($rejectedItems) }} <span class="badge">Por Corregir</span></span>
+                        <span class="info-label">Total Rechazado:</span>
+                        <span class="info-value">{{ count($rejectedItems) }} <span class="badge-info">Por corregir</span></span>
                     </div>
+                    {{-- FIN: CAMBIO SOLICITADO --}}
                 </div>
 
                 @if(!empty($rejectedItems))
@@ -242,24 +246,25 @@
                         @foreach($rejectedItems as $item)
                         <li>
                             <div>
-                                <span class="item-type">{{ $item['type'] ?? 'Elemento' }}</span>
-                                @if(isset($item['description']) && $item['description'])
-                                <div class="activity-detail">{{ $item['description'] }}</div>
-                                @endif
+                                {{-- Tipo de Ítem (Ej: Bono: Desayuno, Actividad: Trabajo en Base) --}}
+                                <span class="item-type">{{ $item['type'] ?? 'Elemento Desconocido' }}</span>
+
+                                {{-- Detalles Adicionales (Ej: Nombre del proyecto, Notas) --}}
                                 @if(isset($item['details']) && $item['details'])
-                                <div class="activity-detail">{{ $item['details'] }}</div>
+                                <div class="activity-detail" style="font-style: italic; margin-top: 2px;">{{ $item['details'] }}</div>
                                 @endif
                             </div>
+
+                            {{-- Motivo de Rechazo Individual (Recuadro Amarillo) --}}
+                            @if(isset($item['rejection_reason']) && $item['rejection_reason'])
+                            <div class="reason-box">
+                                <div class="reason-title">Motivo del Rechazo:</div>
+                                <p class="reason-text">"{{ $item['rejection_reason'] }}"</p>
+                            </div>
+                            @endif
                         </li>
                         @endforeach
                     </ul>
-                </div>
-                @endif
-
-                @if($rejectionReason && $rejectionReason !== 'Sin motivo especificado')
-                <div class="reason-box">
-                    <div class="reason-title">Motivo del Rechazo:</div>
-                    <p class="reason-text">"{{ $rejectionReason }}"</p>
                 </div>
                 @endif
             </div>
@@ -267,17 +272,16 @@
             <div class="actions-box">
                 <h4 class="actions-title">Acciones Requeridas</h4>
                 <ol class="actions-list">
-                    <li><strong>Revisa detenidamente</strong> todos los elementos rechazados listados arriba</li>
-                    <li><strong>Corrige la información</strong> según el motivo de rechazo indicado</li>
-                    <li><strong>Verifica que todos los datos</strong> cumplan con los requisitos establecidos</li>
-                    <li><strong>Vuelve a enviar el registro</strong> para una nueva revisión y aprobación</li>
-                    <li><strong>Contacta al supervisor</strong> si necesitas clarificaciones adicionales</li>
+                    <li><span class="label-highlight">Revisa detenidamente</span> cada ítem rechazado y su motivo específico.</li>
+                    <li><span class="label-highlight">Corrige la información</span> según las indicaciones.</li>
+                    <li><span class="label-highlight">Vuelve a enviar el registro</span> para una nueva revisión y aprobación en el sistema.</li>
+                    <li><span class="label-highlight">Contacta al supervisor</span> si necesitas clarificaciones adicionales.</li>
                 </ol>
             </div>
         </div>
 
         <div class="footer">
-            <p>Este es un mensaje automático del Sistema de Carga de Actividades - Vinco</p>
+            <p>Este es un mensaje automático del <span class="label-highlight">Sistema LoadChart</span> - Vinco</p>
             <p>Fecha de envío: {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}</p>
             <p>© {{ date('Y') }} Vinco - Todos los derechos reservados</p>
         </div>
