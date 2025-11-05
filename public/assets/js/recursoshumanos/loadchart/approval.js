@@ -770,7 +770,17 @@ function getModalApprovalSelectorHtml(currentStatus, isReviewer, isApprover, ite
  */
 async function updateDailyItemsStatus(employeeId, changes) {
     try {
+        // Mostrar estado de carga principal
         showLoadingState();
+
+        // Determinar si hay algún rechazo en los cambios para el mensaje de carga
+        const hasRejections = changes.some(change => change.status === 'rejected');
+        const savingMessage = hasRejections
+            ? 'Guardando cambios y notificando al empleado...'
+            : 'Guardando cambios...';
+
+        showModalSavingState(savingMessage);
+
         const response = await fetch('/recursoshumanos/loadchart/update-multiple-statuses', {
             method: 'POST',
             headers: {
@@ -787,10 +797,22 @@ async function updateDailyItemsStatus(employeeId, changes) {
         });
 
         const data = await response.json();
+
+        // Ocultar estados de carga (principal y modal)
         hideLoadingState();
+        hideModalSavingState();
 
         if (data.success) {
-            showSwalNotification('Éxito', data.message, 'success');
+            let message = data.message;
+
+            // Mensaje de éxito condicional
+            if (data.rejections_sent) {
+                message = "Estados actualizados correctamente. Se ha notificado el rechazo al empleado vía correo.";
+            } else {
+                message = "Estados actualizados correctamente.";
+            }
+
+            showSwalNotification('Éxito', message, 'success');
             document.getElementById('approvalModal').style.display = 'none'; // Cerrar modal al éxito
             await loadMonthData(true); // Recargar datos para actualizar la tabla
         } else {
@@ -800,9 +822,53 @@ async function updateDailyItemsStatus(employeeId, changes) {
     } catch (error) {
         console.error('Error al actualizar el estado de los ítems:', error);
         hideLoadingState();
+        hideModalSavingState();
         showSwalNotification('Error Crítico', 'Error al guardar los cambios: ' + error.message, 'error');
         // No cerrar el modal
     }
+}
+
+/**
+ * Muestra el estado de guardado/notificación en el modal.
+ */
+function showModalSavingState(message) {
+    const modalContent = document.querySelector('#approvalModal .modal-approval-content');
+    if (modalContent) {
+        modalContent.style.position = 'relative';
+
+        // Crear overlay/spinner
+        let overlay = document.getElementById('modal-save-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'modal-save-overlay';
+            overlay.className = 'modal-save-overlay';
+            overlay.innerHTML = `
+                <div class="loading-spinner-lg modal-spinner"></div>
+                <div class="loading-message modal-saving-message">${message}</div>
+            `;
+            modalContent.appendChild(overlay);
+        } else {
+            overlay.querySelector('.modal-saving-message').textContent = message;
+        }
+        overlay.style.display = 'flex';
+
+        // Deshabilitar botones de guardado
+        document.getElementById('modal-save-btn').disabled = true;
+        document.querySelectorAll('.modal-approval-close, .modal-approval-close-btn').forEach(btn => btn.disabled = true);
+    }
+}
+
+/**
+ * Oculta el estado de guardado/notificación en el modal.
+ */
+function hideModalSavingState() {
+    const overlay = document.getElementById('modal-save-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+    // Re-habilitar botones
+    document.getElementById('modal-save-btn').disabled = false;
+    document.querySelectorAll('.modal-approval-close, .modal-approval-close-btn').forEach(btn => btn.disabled = false);
 }
 
 function setupEmployeeRowListeners() {
@@ -1522,7 +1588,6 @@ function calculateAndRenderTotals() {
         }
     });
 }
-// ... (código posterior)
 
 /**
  * Renderiza los datos de workLog en la tabla.

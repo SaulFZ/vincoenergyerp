@@ -151,6 +151,12 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/update-multiple-statuses', 'updateMultipleStatuses')->name('loadchart.update.multiple.statuses');
                 });
 
+
+                // --- RUTAS DE History (HistoryController) ---
+                Route::get('/history', function () {
+                    return view('modulos.recursoshumanos.sistemas.loadchart.history');
+                })->name('loadchart.history');
+
                 // --- RUTAS GESTIONADAS POR FortnightlyConfigController ---
                 Route::controller(FortnightlyConfigController::class)->group(function () {
                     Route::get('fortnightly-config/{year}/{month}', 'getConfig');
@@ -214,10 +220,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/force-update-years', 'forceUpdateYears');
                 });
 
-                // --- RUTAS SIMPLES DE VISTA ---
-                Route::get('/history', function () {
-                    return view('modulos.recursoshumanos.sistemas.loadchart.history');
-                })->name('loadchart.history');
 
                 Route::get('/stats', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.stats');

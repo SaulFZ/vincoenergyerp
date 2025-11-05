@@ -37,7 +37,7 @@ class DayRejectedMail extends Mailable
     public function envelope()
     {
         return new Envelope(
-            subject: 'Elementos Rechazados - ' . $this->date . ' - Sistema de Carga',
+            subject: 'Elementos Rechazados - ' . $this->date . ' - Sistema LoadChart',
         );
     }
 

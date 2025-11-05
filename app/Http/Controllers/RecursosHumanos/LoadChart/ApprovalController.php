@@ -140,9 +140,9 @@ class ApprovalController extends Controller
                 $workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => [], 'reviewed_at' => null, 'approved_at' => null];
             }
         }
-        $canSeeAmounts         = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
+        $canSeeAmounts        = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
         $loadChartAssignments = LoadChartAssignment::whereIn('employee_id', $assignedEmployeeIds)->get();
-        $userPermissions       = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
+        $userPermissions      = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
         return view('modulos.recursoshumanos.sistemas.loadchart.approval', compact(
             'employees', 'workLogsData', 'fortnightlyConfig', 'monthlyDays', 'currentMonth', 'currentYear',
@@ -160,13 +160,13 @@ class ApprovalController extends Controller
         $endDate     = $q2End->copy();
         $monthlyDays = [];
         for ($date = $startDate->copy(); $date <= $endDate; $date->addDay()) {
-            $isQuincena1     = $date >= $q1Start && $date <= $q1End;
-            $isQuincena2     = $date >= $q2Start && $date <= $q2End;
-            $isCurrentMonth  = $date->month == $month;
-            $monthlyDays[]   = [
-                'day'               => $date->day, 'date'              => $date->copy()->format('Y-m-d'), 'day_name' => $date->locale('es')->shortDayName,
-                'is_quincena_1'     => $isQuincena1, 'is_quincena_2' => $isQuincena2, 'is_working_day'          => $isQuincena1 || $isQuincena2,
-                'is_current_month' => $isCurrentMonth, 'month'         => $date->month,
+            $isQuincena1    = $date >= $q1Start && $date <= $q1End;
+            $isQuincena2    = $date >= $q2Start && $date <= $q2End;
+            $isCurrentMonth = $date->month == $month;
+            $monthlyDays[]  = [
+                'day'              => $date->day, 'date'            => $date->copy()->format('Y-m-d'), 'day_name' => $date->locale('es')->shortDayName,
+                'is_quincena_1'    => $isQuincena1, 'is_quincena_2' => $isQuincena2, 'is_working_day'             => $isQuincena1 || $isQuincena2,
+                'is_current_month' => $isCurrentMonth, 'month'      => $date->month,
             ];
         }
         return $monthlyDays;
@@ -181,7 +181,7 @@ class ApprovalController extends Controller
         if ($sixteenthDay->month !== $month) {$sixteenthDay = $lastDay->copy();}
 
         return FortnightlyConfig::create([
-            'year'     => $year, 'month'         => $month, 'q1_start' => $firstDay, 'q1_end' => $fifteenthDay,
+            'year'     => $year, 'month'          => $month, 'q1_start' => $firstDay, 'q1_end' => $fifteenthDay,
             'q2_start' => $sixteenthDay, 'q2_end' => $lastDay,
         ]);
     }
@@ -230,14 +230,14 @@ class ApprovalController extends Controller
                 }
                 if ($log) {$workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => $log->daily_activities ?? [], 'reviewed_at' => $log->reviewed_at, 'approved_at' => $log->approved_at];} else { $workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => [], 'reviewed_at' => null, 'approved_at' => null];}
             }
-            $canSeeAmounts         = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
+            $canSeeAmounts        = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
             $loadChartAssignments = LoadChartAssignment::whereIn('employee_id', $assignedEmployeeIds)->get();
-            $userPermissions       = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
+            $userPermissions      = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
             return response()->json([
-                'success'              => true, 'employees'                  => $employees, 'workLogsData' => $workLogsData,
+                'success'              => true, 'employees'                        => $employees, 'workLogsData' => $workLogsData,
                 'fortnightlyConfig'    => $fortnightlyConfig, 'monthlyDays'        => $monthlyDays,
-                'currentMonth'         => $month, 'currentYear'            => $year, 'canSeeAmounts'    => $canSeeAmounts,
+                'currentMonth'         => $month, 'currentYear'                    => $year, 'canSeeAmounts'     => $canSeeAmounts,
                 'loadChartAssignments' => $loadChartAssignments, 'userPermissions' => $userPermissions,
                 'message'              => 'Datos cargados para ' . $this->getMonthName($month) . ' ' . $year,
             ]);
@@ -256,11 +256,11 @@ class ApprovalController extends Controller
     private function updateItemStatus($item, $statusKey, $currentStatus, $newStatus, $isReviewer, $isApprover, &$updated)
     {
         if ($isReviewer && $newStatus === 'reviewed' && $currentStatus === 'under_review') {$item[$statusKey] = 'Reviewed';
-            $updated           = true;}
+            $updated                                     = true;}
         if ($isApprover && $newStatus === 'approved' && ($currentStatus === 'under_review' || $currentStatus === 'reviewed')) {$item[$statusKey] = 'Approved';
-            $updated           = true;}
+            $updated                                     = true;}
         if ($isApprover && $newStatus === 'rejected' && $currentStatus !== 'rejected') {$item[$statusKey] = 'Rejected';
-            $updated           = true;}
+            $updated                                     = true;}
         return $item;
     }
 
@@ -278,12 +278,12 @@ class ApprovalController extends Controller
         }
 
         if ($newStatus === 'reviewed' && $all_items_reviewed) {$workLog->reviewed_at = now();
-            $workLog->reviewed_by           = $userId;
+            $workLog->reviewed_by                            = $userId;
             $workLog->save();}
         if ($newStatus === 'approved' && $all_items_approved) {$workLog->approved_at = now();
-            $workLog->approved_by           = $userId;
+            $workLog->approved_by                            = $userId;
             if (! $workLog->reviewed_at) {$workLog->reviewed_at = now();
-                $workLog->reviewed_by           = $userId;}
+                $workLog->reviewed_by                            = $userId;}
             $workLog->save();}
     }
 
@@ -330,9 +330,9 @@ class ApprovalController extends Controller
             $startDate = null;
             $endDate   = null;
             if ($fortnight === 'quincena1') {$startDate = Carbon::parse($fortnightlyConfig->q1_start);
-                $endDate         = Carbon::parse($fortnightlyConfig->q1_end);} elseif ($fortnight === 'quincena2') {$startDate = Carbon::parse($fortnightlyConfig->q2_start);
-                $endDate         = Carbon::parse($fortnightlyConfig->q2_end);} else { $startDate = Carbon::createFromDate($year, $month, 1);
-                $endDate           = Carbon::createFromDate($year, $month, 1)->endOfMonth();}
+                $endDate                              = Carbon::parse($fortnightlyConfig->q1_end);} elseif ($fortnight === 'quincena2') {$startDate = Carbon::parse($fortnightlyConfig->q2_start);
+                $endDate                              = Carbon::parse($fortnightlyConfig->q2_end);} else { $startDate = Carbon::createFromDate($year, $month, 1);
+                $endDate                               = Carbon::createFromDate($year, $month, 1)->endOfMonth();}
 
             DB::beginTransaction();
             $dailyActivities = collect($workLog->daily_activities);
@@ -448,22 +448,22 @@ class ApprovalController extends Controller
         }
     }
 
-    /**
-     * Updates multiple daily work log items (individual modal save)
-     */
+/**
+ * Updates multiple daily work log items (individual modal save)
+ */
     public function updateMultipleStatuses(Request $request)
     {
         try {
             $request->validate([
-                'employee_id'                  => 'required|exists:employees,id',
-                'changes'                      => 'required|array',
-                'changes.*.date'               => 'required|date_format:Y-m-d',
-                'changes.*.item_type'          => 'required|string',
-                'changes.*.item_index'         => 'nullable|integer',
-                'changes.*.status'             => 'required|string|in:reviewed,approved,rejected,under_review',
+                'employee_id'                => 'required|exists:employees,id',
+                'changes'                    => 'required|array',
+                'changes.*.date'             => 'required|date_format:Y-m-d',
+                'changes.*.item_type'        => 'required|string',
+                'changes.*.item_index'       => 'nullable|integer',
+                'changes.*.status'           => 'required|string|in:reviewed,approved,rejected,under_review',
                 'changes.*.rejection_reason' => 'nullable|string',
-                'month'                        => 'required|integer|min:1|max:12',
-                'year'                         => 'required|integer|min:2020|max:2030',
+                'month'                      => 'required|integer|min:1|max:12',
+                'year'                       => 'required|integer|min:2020|max:2030',
             ]);
 
             $employeeId = $request->input('employee_id');
@@ -496,17 +496,16 @@ class ApprovalController extends Controller
             $updated         = false;
             $balance         = EmployeeVacationBalance::firstOrNew(['employee_id' => $employeeId]);
 
-            // 👇 ESTRUCTURA MEJORADA PARA EL CORREO: Agrupar todos los rechazos por fecha
-            $rejectionDates = [];
-            $rejectionData  = []; // Contendrá ['date' => [item_type, item_label, reason, item_index]]
+            // 👇 ESTRUCTURA PARA EL CORREO: Agrupar todos los rechazos por fecha
+            $rejectionData = [];
             // 👆
 
             foreach ($changes as $change) {
-                $date                = $change['date'];
-                $itemType            = $change['item_type'];
-                $itemIndex           = $change['item_index'];
-                $newStatus           = strtolower($change['status']);
-                $rejectionReason     = ($newStatus === 'rejected') ? ($change['rejection_reason'] ?? 'Sin especificar') : null;
+                $date               = $change['date'];
+                $itemType           = $change['item_type'];
+                $itemIndex          = $change['item_index'];
+                $newStatus          = strtolower($change['status']);
+                $rejectionReason    = ($newStatus === 'rejected') ? ($change['rejection_reason'] ?? 'Sin especificar') : null;
                 $dailyActivityIndex = array_search($date, array_column($dailyActivities, 'date'));
 
                 if ($dailyActivityIndex !== false) {
@@ -540,22 +539,20 @@ class ApprovalController extends Controller
                         if ($canUpdate && $oldStatus !== $newStatus) {
                             $dailyActivity['activity_status']  = ucfirst($newStatus);
                             $dailyActivity['rejection_reason'] = $rejectionReason;
-                            $tempUpdated                      = true;
+                            $tempUpdated                       = true;
 
                             // 👇 REGISTRAR RECHAZO PARA CORREO (Activity)
                             if ($newStatus === 'rejected') {
-                                $rejectionDates[$date] = $date;
                                 $itemTypeLabel = 'Actividad Principal (' . ($activityType ?: 'N') . ')';
 
                                 $rejectionData[$date][] = [
-                                    'item_type' => $itemType,
+                                    'item_type'  => $itemType,
                                     'item_index' => null,
-                                    'label' => $itemTypeLabel,
-                                    'reason' => $rejectionReason
+                                    'label'      => $itemTypeLabel,
+                                    'reason'     => $rejectionReason,
                                 ];
                             }
                             // 👆
-
                         }
 
                     } else if (isset($dailyActivity[$itemType]) && is_array($dailyActivity[$itemType]) && isset($dailyActivity[$itemType][$itemIndex])) {
@@ -564,14 +561,12 @@ class ApprovalController extends Controller
                         if ($oldStatus === 'approved' && ($newStatus === 'reviewed' || $newStatus === 'under_review')) {$canUpdate = false;}
 
                         if ($canUpdate && $oldStatus !== $newStatus) {
-                            $item['status']             = ucfirst($newStatus);
+                            $item['status']           = ucfirst($newStatus);
                             $item['rejection_reason'] = $rejectionReason;
                             $tempUpdated              = true;
 
-                            // 👇 REGISTRAR RECHAZO PARA CORREO (Sub-item) - MEJORADO
+                            // 👇 REGISTRAR RECHAZO PARA CORREO (Sub-item)
                             if ($newStatus === 'rejected') {
-                                $rejectionDates[$date] = $date;
-
                                 $itemTypeLabel = $this->getItemTypeLabel($itemType);
 
                                 // Para servicios, mostrar el nombre del servicio si está disponible
@@ -580,22 +575,18 @@ class ApprovalController extends Controller
                                 }
                                 // Para bonos, mostrar el tipo si está disponible
                                 elseif (($itemType === 'food_bonuses' || $itemType === 'field_bonuses') && isset($item['bonus_type'])) {
-                                    // Si el 'bonus_type' es la etiqueta genérica (e.g., 'Bono de Comida'), no la repetimos.
                                     $baseLabel = $this->getItemTypeLabel($itemType);
                                     $bonusType = $item['bonus_type'] ?? 'Genérico';
-
-                                    if ($bonusType === $baseLabel) {
-                                        $itemTypeLabel = $baseLabel; // Usamos solo la etiqueta base sin sufijo
-                                    } else {
-                                        $itemTypeLabel .= ' - ' . $bonusType; // Usamos la etiqueta enriquecida
+                                    if ($bonusType !== $baseLabel) {
+                                        $itemTypeLabel .= ' - ' . $bonusType;
                                     }
                                 }
 
                                 $rejectionData[$date][] = [
-                                    'item_type' => $itemType,
+                                    'item_type'  => $itemType,
                                     'item_index' => $itemIndex,
-                                    'label' => $itemTypeLabel,
-                                    'reason' => $rejectionReason
+                                    'label'      => $itemTypeLabel,
+                                    'reason'     => $rejectionReason,
                                 ];
                             }
                             // 👆
@@ -628,22 +619,25 @@ class ApprovalController extends Controller
                 $log->save();
             }
 
-            // 👇 ENVIAR CORREOS DE NOTIFICACIÓN POR RECHAZOS - FUNCIONA PARA TODOS LOS ELEMENTOS
-            if (! empty($rejectionData)) {
+            // 👇 ENVIAR CORREOS DE NOTIFICACIÓN POR RECHAZOS - CAMBIO CLAVE
+            $rejectionOccurred = ! empty($rejectionData);
+            if ($rejectionOccurred) {
                 $this->sendRejectionEmails($employeeId, $rejectionData, $userId);
             }
             // 👆
 
+            // Actualizar status del log (reviewed_at, approved_at)
             $this->updateLogStatus($log, 'approved', $userId);
             $this->updateLogStatus($log, 'reviewed', $userId);
 
             DB::commit();
 
             return response()->json([
-                'success'      => true,
-                'message'      => 'Estados actualizados correctamente.',
-                'updated'      => $updated,
-                'new_balances' => $this->getEmployeeBalances($employeeId),
+                'success'         => true,
+                'message'         => 'Estados actualizados correctamente.',
+                'updated'         => $updated,
+                'new_balances'    => $this->getEmployeeBalances($employeeId),
+                'rejections_sent' => $rejectionOccurred, // <-- Bandera enviada al frontend
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -722,9 +716,9 @@ class ApprovalController extends Controller
     }
 
     /**
-    * Obtiene información detallada de los elementos rechazados
-    * * @param array $rejectedItemsByDay Contiene ['item_type', 'item_index', 'label', 'reason']
-    */
+     * Obtiene información detallada de los elementos rechazados
+     * * @param array $rejectedItemsByDay Contiene ['item_type', 'item_index', 'label', 'reason']
+     */
     private function getRejectedItemsWithDetails(array $rejectedItemsByDay, int $employeeId, string $date)
     {
         $detailedItems = [];
@@ -739,9 +733,9 @@ class ApprovalController extends Controller
         if (! $workLog) {
             return collect($rejectedItemsByDay)->map(function ($item) {
                 return [
-                    'type'               => $item['label'] ?? 'Ítem desconocido',
-                    'description'        => 'Log mensual no encontrado',
-                    'details'            => null,
+                    'type'             => $item['label'] ?? 'Ítem desconocido',
+                    'description'      => 'Log mensual no encontrado',
+                    'details'          => null,
                     'rejection_reason' => $item['reason'] ?? 'Sin motivo especificado',
                 ];
             })->toArray();
@@ -754,9 +748,9 @@ class ApprovalController extends Controller
         if (! $dailyActivity) {
             return collect($rejectedItemsByDay)->map(function ($item) {
                 return [
-                    'type'               => $item['label'] ?? 'Ítem desconocido',
-                    'description'        => 'Actividad diaria no encontrada',
-                    'details'            => null,
+                    'type'             => $item['label'] ?? 'Ítem desconocido',
+                    'description'      => 'Actividad diaria no encontrada',
+                    'details'          => null,
                     'rejection_reason' => $item['reason'] ?? 'Sin motivo especificado',
                 ];
             })->toArray();
@@ -770,9 +764,9 @@ class ApprovalController extends Controller
             $reason    = $rejectedItemInfo['reason'];
 
             $detailedItem = [
-                'type'               => $itemLabel, // Ej: Actividad Principal (B) o Bono de Comida - Desayuno
-                'description'        => null,
-                'details'            => null,
+                'type'             => $itemLabel, // Ej: Actividad Principal (B) o Bono de Comida - Desayuno
+                'description'      => null,
+                'details'          => null,
                 'rejection_reason' => $reason,
             ];
 
@@ -781,19 +775,19 @@ class ApprovalController extends Controller
                 $activityType = $dailyActivity['activity_type'] ?? 'N';
 
                 // AJUSTE 1: Unimos la descripción a la etiqueta principal para mayor cohesión.
-                $activityDesc = $this->getActivityTypeDescription($activityType);
-                $detailedItem['type'] = 'Actividad: ' . $activityDesc;
+                $activityDesc                = $this->getActivityTypeDescription($activityType);
+                $detailedItem['type']        = 'Actividad: ' . $activityDesc;
                 $detailedItem['description'] = null; // Eliminamos la descripción separada
 
                 // Los detalles adicionales (proyecto, work_description) van en 'details'
                 $simpleActivities = ['D', 'VAC', 'M', 'PE', 'A', 'N'];
-                if (!in_array($activityType, $simpleActivities)) {
-                     if (isset($dailyActivity['activity_details'])) {
-                         $detailedItem['details'] = 'Detalles: ' . $dailyActivity['activity_details'];
+                if (! in_array($activityType, $simpleActivities)) {
+                    if (isset($dailyActivity['activity_details'])) {
+                        $detailedItem['details'] = 'Detalles: ' . $dailyActivity['activity_details'];
                     } elseif (isset($dailyActivity['project_name'])) {
-                         $detailedItem['details'] = 'Proyecto: ' . $dailyActivity['project_name'];
+                        $detailedItem['details'] = 'Proyecto: ' . $dailyActivity['project_name'];
                     } elseif (isset($dailyActivity['work_description'])) {
-                         $detailedItem['details'] = 'Descripción: ' . $dailyActivity['work_description'];
+                        $detailedItem['details'] = 'Descripción: ' . $dailyActivity['work_description'];
                     }
                 }
             }
@@ -803,7 +797,7 @@ class ApprovalController extends Controller
                 // CORRECCIÓN CLAVE: Extraer solo el detalle del bono y usar solo 'Bono: ' como prefijo.
                 if (isset($rejectedItemInfo['label'])) {
                     $itemLabel = $rejectedItemInfo['label'];
-                    $baseFood = $this->getItemTypeLabel('food_bonuses'); // 'Bono de Comida'
+                    $baseFood  = $this->getItemTypeLabel('food_bonuses');  // 'Bono de Comida'
                     $baseField = $this->getItemTypeLabel('field_bonuses'); // 'Bono de Campo'
 
                     $detalle = $itemLabel;
@@ -821,7 +815,7 @@ class ApprovalController extends Controller
                     $detailedItem['type'] = 'Bono: ' . $detalle;
                 }
                 $detailedItem['description'] = null;
-                $detailedItem['details'] = null;
+                $detailedItem['details']     = null;
             }
 
             // Para servicios (se mantiene el formato Servicio: [Nombre])
@@ -831,9 +825,8 @@ class ApprovalController extends Controller
                     $detailedItem['type'] = str_replace('Servicio - ', 'Servicio: ', $rejectedItemInfo['label']);
                 }
                 $detailedItem['description'] = null;
-                $detailedItem['details'] = null;
+                $detailedItem['details']     = null;
             }
-
 
             $detailedItems[] = $detailedItem;
         }
@@ -842,8 +835,8 @@ class ApprovalController extends Controller
     }
 
     /**
-    * Obtiene la descripción completa del tipo de actividad
-    */
+     * Obtiene la descripción completa del tipo de actividad
+     */
     private function getActivityTypeDescription($activityType)
     {
         $descriptions = [
