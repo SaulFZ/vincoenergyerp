@@ -164,7 +164,7 @@ body {
 }
 
 /* ================================== */
-/* NOTIFICATION BADGE          */
+/* NOTIFICATION BADGE           */
 /* ================================== */
 .notification-badge {
     background-color: var(--primary-blue);
@@ -192,7 +192,7 @@ body {
 }
 
 /* ================================== */
-/* ANIMATION KEYFRAMES            */
+/* ANIMATION KEYFRAMES            */
 /* ================================== */
 @keyframes pulse-and-pop {
     0% {
@@ -471,6 +471,8 @@ body {
     overflow: hidden;
     font-size: 13px;
     /* Ajuste: Fuente base del calendario */
+    /* Añadir un borde principal para contener el calendario */
+    border: 1px solid #ddd;
 }
 
 .calendar th {
@@ -493,6 +495,9 @@ body {
     position: relative;
     cursor: pointer;
     transition: all 0.2s ease;
+    /* AÑADIDO: Líneas divisorias grises muy bajas */
+    border: 1px solid #00000034; /* Borde muy claro */
+    box-sizing: border-box; /* Asegurar que el padding y el borde no aumenten el tamaño de la celda */
 }
 
 .calendar td:hover {
@@ -513,9 +518,50 @@ body {
 .calendar .current-d {
     background-color: rgba(0, 62, 248, 0.08);
     /* Opacidad reducida */
-    border: 1px solid var(--primary-blue);
+    border: 2px solid var(--primary-blue);
     /* Ajuste: Borde más fino */
 }
+
+/* ================================== */
+/* NUEVOS ESTILOS: TOOLTIP DE FECHA   */
+/* ================================== */
+.calendar-tooltip {
+    /* El contenedor de la celda debe ser relative para que el tooltip sea absoluto */
+    position: absolute;
+    top: -30px; /* Ajustar para que aparezca por encima */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--primary-blue);
+    color: var(--white);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 100; /* Asegurar que esté por encima de otros elementos */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none; /* Asegurar que no interfiera con los clics */
+}
+
+/* Triángulo del tooltip */
+.calendar-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%; /* Posiciona el triángulo en la parte inferior del tooltip */
+    left: 50%;
+    margin-left: -5px; /* Centra el triángulo */
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--primary-blue) transparent transparent transparent;
+}
+
+.calendar td:hover .calendar-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+/* ================================== */
+
 
 .day-number {
     font-weight: 600;
