@@ -1672,62 +1672,62 @@
 
 
         /* Estilos para el contenedor de foto */
-.employee-photo-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
+        .employee-photo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
 
-.photo-preview {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 3px solid #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f5f5f5;
-    transition: all 0.3s ease;
-}
+        .photo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+            transition: all 0.3s ease;
+        }
 
-.photo-preview.has-photo {
-    border-color: #4361ee;
-}
+        .photo-preview.has-photo {
+            border-color: #4361ee;
+        }
 
-.photo-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-.photo-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-}
+        .photo-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
 
-/* Estilos para los botones de foto */
-.photo-actions .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-}
+        /* Estilos para los botones de foto */
+        .photo-actions .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
 
-/* Estilos para la vista modal de usuario */
-.uvm-user-avatar {
-    font-size: 3rem;
-    color: #4361ee;
-    margin-right: 1rem;
-}
+        /* Estilos para la vista modal de usuario */
+        .uvm-user-avatar {
+            font-size: 3rem;
+            color: #4361ee;
+            margin-right: 1rem;
+        }
 
-.uvm-user-avatar img {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #4361ee;
-}
+        .uvm-user-avatar img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #4361ee;
+        }
     </style>
 </head>
 
@@ -1740,7 +1740,10 @@
                 <i class="fas fa-users-cog"></i>
                 <h1>Gestión de Usuarios y Permisos</h1>
             </div>
+
         </div>
+        @include('components.layouts._user-profile')
+
     </header>
 
     <!-- Main Container -->
@@ -2681,9 +2684,9 @@
                 <div class="uvm-module-permissions">
                     ${shuffleArray(permissions).map(permission =>
                         `<span class="uvm-permission-item">
-                                                                                <i class="fas fa-check-circle"></i>
-                                                                                ${permission}
-                                                                            </span>`
+                                                                                    <i class="fas fa-check-circle"></i>
+                                                                                    ${permission}
+                                                                                </span>`
                     ).join('')}
                 </div>
             </div>
@@ -2934,7 +2937,7 @@
             loadUsers();
             loadRoles();
             loadPermissions(); // <-- Agrega esta línea
-                setupPhotoUpload();
+            setupPhotoUpload();
 
 
 

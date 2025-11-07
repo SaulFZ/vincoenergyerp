@@ -2434,6 +2434,23 @@ select option[disabled]:hover {
 }
 
 
+    /* 1. DEFINICIÓN DE VARIABLES GLOBALES */
+    :root {
+        --azul: #007bff;
+        --azul-oscuro: #0056b3;
+        --naranja: #ff5722;
+        --naranja-claro: #ff7043;
+        --blanco: #ffffff;
+        --negro: #333333;
+        --gris-claro: #f8f9fa;
+        --gris-medio: #dee2e6;
+        --gris-oscuro: #6c757d;
+
+        --transicion: all 0.3s ease;
+        --border-radius: 12px;
+        --sombra: 0 4px 15px rgba(0, 0, 0, 0.1);
+        --sombra-intensa: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
 /*
 ===================================================================
 # Estilos para el Overlay de Guardado/Notificación en el Modal

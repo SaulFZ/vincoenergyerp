@@ -54,33 +54,8 @@
                     </li>
                 </ul>
             </nav>
-            <div class="user-profile">
-                <div id="userAvatarContainer" class="user-avatar-container">
-                    <div class="user-avatar">
-                        <span>SF</span>
-                    </div>
-                    <div class="user-info">
-                        <h1>Saul Falcon Perez</h1>
-                    </div>
-                    <i class="fas fa-chevron-down chevron-down"></i>
-                </div>
-                <div id="userDropdown" class="user-dropdown">
-                    <div class="dropdown-header">
-                        <div class="user-avatar">
-                            <span>SF</span>
-                        </div>
-                        <div class="dropdown-header-info">
-                            <p>Saul Falcon</p>
-                            <p>saul.falcon@empresa.com</p>
-                        </div>
-                    </div>
-                    <button class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Cerrar Sesión
-                    </button>
-                </div>
-                <div id="dropdownOverlay" class="dropdown-overlay"></div>
-            </div>
+                        @include('components.layouts._user-profile')
+
         </div>
     </header>
 

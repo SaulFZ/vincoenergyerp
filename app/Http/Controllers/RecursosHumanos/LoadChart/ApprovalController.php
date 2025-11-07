@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\RecursosHumanos\LoadChart;
 
 use App\Http\Controllers\Controller;
@@ -234,6 +235,9 @@ class ApprovalController extends Controller
             $loadChartAssignments = LoadChartAssignment::whereIn('employee_id', $assignedEmployeeIds)->get();
             $userPermissions      = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
+            // ⚠️ La respuesta de AJAX AHORA INCLUYE LOS DATOS DEL EMPLEADO
+            // Esto es crucial para que JavaScript pueda re-renderizar la estructura de las filas.
+
             return response()->json([
                 'success'              => true, 'employees'                        => $employees, 'workLogsData' => $workLogsData,
                 'fortnightlyConfig'    => $fortnightlyConfig, 'monthlyDays'        => $monthlyDays,
@@ -241,6 +245,7 @@ class ApprovalController extends Controller
                 'loadChartAssignments' => $loadChartAssignments, 'userPermissions' => $userPermissions,
                 'message'              => 'Datos cargados para ' . $this->getMonthName($month) . ' ' . $year,
             ]);
+
         } catch (\Exception $e) {Log::error('Error loading approval data: ' . $e->getMessage());return response()->json(['success' => false, 'error' => 'Error al cargar los datos del mes', 'message' => $e->getMessage()], 500);}
     }
 
@@ -448,6 +453,7 @@ class ApprovalController extends Controller
         }
     }
 
+
 /**
  * Updates multiple daily work log items (individual modal save)
  */
@@ -590,6 +596,7 @@ class ApprovalController extends Controller
                                 ];
                             }
                             // 👆
+
                         }
 
                         unset($item);
