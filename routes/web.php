@@ -7,8 +7,10 @@ use App\Http\Controllers\RecursosHumanos\LoadChart\CalendarController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\EmployeeVacationBalanceController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\FieldBonusController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\HistoryController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
+
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
 use Illuminate\Support\Facades\Route;
@@ -151,11 +153,15 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/update-multiple-statuses', 'updateMultipleStatuses')->name('loadchart.update.multiple.statuses');
                 });
 
-
                 // --- RUTAS DE History (HistoryController) ---
-                Route::get('/history', function () {
-                    return view('modulos.recursoshumanos.sistemas.loadchart.history');
-                })->name('loadchart.history');
+                Route::controller(HistoryController::class)->group(function () {
+                    // Ruta para cargar la vista inicial (GET)
+                    Route::get('/history', 'index')->name('loadchart.history');
+
+                    // Ruta para cargar los datos del historial con filtros y paginación (GET, para AJAX)
+                    // Nota: El prefijo de URL debe coincidir con la configuración de tu grupo de rutas.
+                    Route::get('/history/data', 'getHistoryData')->name('loadchart.history.data');
+                });
 
                 // --- RUTAS GESTIONADAS POR FortnightlyConfigController ---
                 Route::controller(FortnightlyConfigController::class)->group(function () {
@@ -219,7 +225,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::delete('/{id}', 'destroy');
                     Route::post('/force-update-years', 'forceUpdateYears');
                 });
-
 
                 Route::get('/stats', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.stats');

@@ -15,455 +15,45 @@
     $employee = Auth::check() && Auth::user()->employee ? Auth::user()->employee : null;
 
     // Formatear fechas con día/mes/año (necesario aquí para el modal)
-    $hireDateFormatted = $employee && $employee->hire_date ? \Carbon\Carbon::parse($employee->hire_date)->format('d/m/Y') : 'No disponible';
-    $birthDateFormatted = $employee && $employee->birth_date ? \Carbon\Carbon::parse($employee->birth_date)->format('d/m/Y') : 'No disponible';
+    $hireDateFormatted =
+        $employee && $employee->hire_date
+            ? \Carbon\Carbon::parse($employee->hire_date)->format('d/m/Y')
+            : 'No disponible';
+    $birthDateFormatted =
+        $employee && $employee->birth_date
+            ? \Carbon\Carbon::parse($employee->birth_date)->format('d/m/Y')
+            : 'No disponible';
 
     // Placeholder para el logo de la empresa
-    $companyLogoPath = 'assets/img/logovinco2.png'; // RUTA DE EJEMPLO
+    $companyLogoPath = 'assets/img/logo.png'; // RUTA DE EJEMPLO
     $companyName = 'Vinco Energy';
+
+    // ✅ MODIFICACIÓN: Mapeo del estado laboral "Active" a "Activo"
+    $employmentStatus = $employee->employment_status ?? 'No disponible';
+    if (strtolower($employmentStatus) === 'active') {
+        $employmentStatusFormatted = 'Activo';
+    } else {
+        $employmentStatusFormatted = $employmentStatus;
+    }
 @endphp
-
-<div class="user-actions" data-gender="{{ $userGender }}">
-    <div class="notification-icon">
-        <i class="fas fa-bell"></i>
-        @if ($notificationCount > 0)
-            <span class="notification-count">{{ $notificationCount }}</span>
-        @endif
-    </div>
-
-    <div class="user-profile" id="userDropdownBtn">
-        @auth
-            @if ($employee && $employee->photo)
-                <img src="{{ asset($employee->photo) }}"
-                    alt="Foto de perfil"
-                    class="user-photo"
-                    onload="this.style.opacity='1'" />
-            @else
-                <div class="user-icon">
-                    <i class="fas fa-user"></i>
-                </div>
-            @endif
-            <div class="user-name">{{ Auth::user()->name }}</div>
-        @else
-            <div class="user-icon">
-                <i class="fas fa-user"></i>
-            </div>
-            <div class="user-name">Usuario</div>
-        @endauth
-    </div>
-
-    <div class="user-dropdown" id="userDropdown">
-        <div class="dropdown-header">
-            @auth
-                @if ($employee && $employee->photo)
-                    <img src="{{ asset($employee->photo) }}"
-                        alt="Foto de perfil"
-                        class="dropdown-photo"
-                        onload="this.style.opacity='1'" />
-                @else
-                    <div class="dropdown-icon">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                @endif
-                <div class="dropdown-user-info">
-                    <div class="dropdown-username">{{ $employee->full_name ?? Auth::user()->name }}</div>
-                    <div class="dropdown-email">{{ Auth::user()->email }}</div>
-                </div>
-            @else
-                <div class="dropdown-icon">
-                    <i class="fas fa-user-circle"></i>
-                </div>
-                <div class="dropdown-user-info">
-                    <div class="dropdown-username">Usuario</div>
-                    <div class="dropdown-email">No autenticado</div>
-                </div>
-            @endauth
-        </div>
-
-        <div class="dropdown-divider"></div>
-
-        <a class="dropdown-item" id="profileBtn">
-            <i class="fas fa-user-circle"></i>
-            Mi perfil
-        </a>
-        <a class="dropdown-item" href="{{ route('home') }}">
-            <i class="fas fa-home"></i>
-            Inicio
-        </a>
-
-        <form action="{{ route('logout') }}" method="POST" class="logout-form">
-            @csrf
-            <button type="submit" class="dropdown-item logout">
-                <i class="fas fa-sign-out-alt"></i>
-                Cerrar sesión
-            </button>
-        </form>
-    </div>
-</div>
-
-<div class="profile-modal" id="profileModal">
-    <div class="profile-modal-backdrop"></div>
-    <div class="profile-modal-container">
-        <div class="profile-modal-content">
-            <button class="profile-modal-close" id="profileModalClose">
-                <i class="fas fa-times"></i>
-            </button>
-
-            @auth
-                @if ($employee)
-                    <div class="profile-sidebar">
-                        <div class="company-header">
-                            <img src="{{ asset($companyLogoPath) }}" alt="Logo de {{ $companyName }}" class="company-logo">
-                            <div class="company-name">{{ $companyName }}</div>
-                        </div>
-                        <h2 class="sidebar-title">Información del Empleado</h2>
-
-                        <div class="profile-photo-container" id="profilePhotoContainer">
-                            @if ($employee->photo)
-                                <img src="{{ asset($employee->photo) }}"
-                                    alt="Foto de perfil"
-                                    class="profile-photo-large"
-                                    id="profilePhoto"
-                                    onload="this.style.opacity='1'" />
-                            @else
-                                <div class="profile-photo-large profile-photo-placeholder">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                            @endif
-                            <div class="profile-photo-zoom">
-                                <i class="fas fa-search-plus"></i>
-                            </div>
-                        </div>
-
-                        <div class="profile-name-large">{{ $employee->full_name ?? Auth::user()->name }}</div>
-
-                        @if ($employee->job_title)
-                            <div class="profile-position">{{ $employee->job_title }}</div>
-                        @endif
-
-                        @if ($employee->department)
-                            <div class="profile-department">{{ $employee->department }}</div>
-                        @endif
-
-                        <div class="profile-stats">
-                            <div class="profile-stat">
-                                <div class="profile-stat-value">
-                                    {{ $employee->employee_number ?? '-' }}
-                                </div>
-                                <div class="profile-stat-label">ID Empleado</div>
-                            </div>
-                            <div class="profile-stat">
-                                <div class="profile-stat-value">
-                                    {{ $employee->hire_date ? \Carbon\Carbon::parse($employee->hire_date)->format('Y') : '-' }}
-                                </div>
-                                <div class="profile-stat-label">Año Ingreso</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-main">
-                        <h2 class="profile-modal-title">
-                            <i class="fas fa-user-tie"></i>
-                            Detalles Laborales
-                        </h2>
-
-                        <div class="profile-info-grid">
-                            <div class="profile-info-item">
-                                <div class="profile-info-label">
-                                    <i class="fas fa-envelope"></i>
-                                    Correo electrónico
-                                </div>
-                                <div class="profile-info-value">
-                                    {{ Auth::user()->email }}
-                                </div>
-                            </div>
-
-                            <div class="profile-info-item">
-                                <div class="profile-info-label">
-                                    <i class="fas fa-phone"></i>
-                                    Teléfono
-                                </div>
-                                <div class="profile-info-value {{ !$employee->phone ? 'empty' : '' }}">
-                                    {{ $employee->phone ?? 'No disponible' }}
-                                </div>
-                            </div>
-
-                            <div class="profile-info-item">
-                                <div class="profile-info-label">
-                                    <i class="fas fa-id-badge"></i>
-                                    Número de empleado
-                                </div>
-                                <div class="profile-info-value {{ !$employee->employee_number ? 'empty' : '' }}">
-                                    {{ $employee->employee_number ?? 'No disponible' }}
-                                </div>
-                            </div>
-
-                            <div class="profile-info-item">
-                                <div class="profile-info-label">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    Fecha de contratación
-                                </div>
-                                <div class="profile-info-value {{ !$employee->hire_date ? 'empty' : '' }}">
-                                    {{ $hireDateFormatted }}
-                                </div>
-                            </div>
-
-                            <div class="profile-info-item full-width">
-                                <div class="profile-info-label">
-                                    <i class="fas fa-briefcase"></i>
-                                    Estado laboral
-                                </div>
-                                <div class="profile-info-value {{ !$employee->employment_status ? 'empty' : '' }}">
-                                    {{ $employee->employment_status ?? 'No disponible' }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <h2 class="profile-modal-title">
-                            <i class="fas fa-info-circle"></i>
-                            Información Personal
-                        </h2>
-
-                        <div class="profile-info-grid">
-                            <div class="profile-info-item">
-                                <div class="profile-info-label">
-                                    <i class="fas fa-venus-mars"></i>
-                                    Género
-                                </div>
-                                <div class="profile-info-value {{ !$employee->gender ? 'empty' : '' }}">
-                                    {{ $employee->gender ?? 'No disponible' }}
-                                </div>
-                            </div>
-
-                            <div class="profile-info-item">
-                                <div class="profile-info-label">
-                                    <i class="fas fa-birthday-cake"></i>
-                                    Fecha de nacimiento
-                                </div>
-                                <div class="profile-info-value {{ !$employee->birth_date ? 'empty' : '' }}">
-                                    {{ $birthDateFormatted }}
-                                </div>
-                            </div>
-
-                            <div class="profile-info-item full-width">
-                                <div class="profile-info-label">
-                                    <i class="fas fa-globe-americas"></i>
-                                    Nacionalidad
-                                </div>
-                                <div class="profile-info-value {{ !$employee->nationality ? 'empty' : '' }}">
-                                    {{ $employee->nationality ?? 'No disponible' }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <div class="profile-sidebar profile-sidebar-placeholder">
-                        <div class="company-header">
-                            <img src="{{ asset($companyLogoPath) }}" alt="Logo de {{ $companyName }}" class="company-logo">
-                            <div class="company-name">{{ $companyName }}</div>
-                        </div>
-                        <h2 class="sidebar-title">Información del Empleado</h2>
-                        <div class="profile-photo-large profile-photo-placeholder">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="profile-name-large">{{ Auth::user()->name }}</div>
-                        <div class="profile-position">Usuario</div>
-                    </div>
-                    <div class="profile-main profile-main-placeholder">
-                        <div class="info-placeholder">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <p>No hay información detallada de empleado disponible.</p>
-                        </div>
-                    </div>
-                @endif
-            @else
-                <div class="profile-sidebar profile-sidebar-placeholder">
-                    <div class="company-header">
-                        <img src="{{ asset($companyLogoPath) }}" alt="Logo de {{ $companyName }}" class="company-logo">
-                        <div class="company-name">{{ $companyName }}</div>
-                    </div>
-                    <h2 class="sidebar-title">Información del Empleado</h2>
-                    <div class="profile-photo-large profile-photo-placeholder">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="profile-name-large">Usuario</div>
-                    <div class="profile-position">No autenticado</div>
-                </div>
-                <div class="profile-main profile-main-placeholder">
-                    <div class="info-placeholder">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Debe iniciar sesión para ver los detalles del perfil.</p>
-                    </div>
-                </div>
-            @endauth
-        </div>
-    </div>
-</div>
-
-<div class="photo-modal" id="photoModal">
-    <div class="photo-modal-backdrop"></div>
-    <div class="photo-modal-container">
-        <div class="photo-modal-content">
-            <button class="photo-modal-close" id="photoModalClose">
-                <i class="fas fa-times"></i>
-            </button>
-            @auth
-                @if ($employee && $employee->photo)
-                    <img src="{{ asset($employee->photo) }}"
-                        alt="Foto de perfil ampliada"
-                        class="photo-modal-img"
-                        onload="this.style.opacity='1'" />
-                @endif
-            @endauth
-        </div>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const userDropdownBtn = document.getElementById('userDropdownBtn');
-        const userDropdown = document.getElementById('userDropdown');
-        const profileBtn = document.getElementById('profileBtn');
-        const profileModal = document.getElementById('profileModal');
-        const profileModalClose = document.getElementById('profileModalClose');
-        const profilePhotoContainer = document.getElementById('profilePhotoContainer');
-        const photoModal = document.getElementById('photoModal');
-        const photoModalClose = document.getElementById('photoModalClose');
-
-        // 🚨 LÓGICA DE GÉNERO DINÁMICO PARA EL MODAL (Aplicación del tema)
-        const userActions = document.querySelector('.user-actions');
-        const gender = userActions ? userActions.getAttribute('data-gender') : null;
-
-        // Se aplica la clase para el tema de color más intenso
-        if (gender === 'female') {
-            profileModal.classList.add('theme-female');
-        }
-
-        // 🚨 DROPDOWN SOLO CON CLICK (Lógica mantenida)
-        if (userDropdownBtn && userDropdown) {
-            userDropdownBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                userDropdown.classList.toggle('active');
-            });
-
-            // Cerrar al hacer clic fuera
-            document.addEventListener('click', function(e) {
-                if (!userDropdown.contains(e.target) && !userDropdownBtn.contains(e.target)) {
-                    userDropdown.classList.remove('active');
-                }
-            });
-
-            // Cerrar con Escape
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && userDropdown.classList.contains('active')) {
-                    userDropdown.classList.remove('active');
-                }
-            });
-        }
-
-        // Abrir modal de perfil
-        function openProfileModal() {
-            userDropdown.classList.remove('active');
-            if (profileModal) {
-                 profileModal.classList.add('active');
-                 document.body.style.overflow = 'hidden';
-            }
-        }
-
-        if (profileBtn) {
-            profileBtn.addEventListener('click', openProfileModal);
-        }
-
-        // Cerrar modal de perfil (Lógica mantenida)
-        function closeProfileModal() {
-            if (profileModal) {
-                profileModal.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        }
-
-        if (profileModalClose) {
-            profileModalClose.addEventListener('click', closeProfileModal);
-        }
-
-        const profileModalBackdrop = profileModal ? profileModal.querySelector('.profile-modal-backdrop') : null;
-        if (profileModalBackdrop) {
-            profileModalBackdrop.addEventListener('click', closeProfileModal);
-        }
-
-        // Cerrar con tecla Escape (para modal de perfil)
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && profileModal && profileModal.classList.contains('active')) {
-                closeProfileModal();
-            }
-        });
-
-        // Modal de foto ampliada (Lógica mantenida)
-        if (profilePhotoContainer) {
-             // Solo si existe la foto para evitar errores en placeholder
-            const profilePhoto = document.getElementById('profilePhoto');
-            if (profilePhoto) {
-                profilePhotoContainer.addEventListener('click', function() {
-                    if (profilePhoto.src) {
-                        photoModal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                });
-            }
-        }
-
-        function closePhotoModal() {
-            photoModal.classList.remove('active');
-            // Solo restablecer el scroll si *ningún* modal está activo
-            if (profileModal && !profileModal.classList.contains('active')) {
-                 document.body.style.overflow = '';
-            } else if (!profileModal) {
-                 document.body.style.overflow = '';
-            }
-        }
-
-        if (photoModalClose) {
-            photoModalClose.addEventListener('click', closePhotoModal);
-        }
-
-        const photoModalBackdrop = photoModal ? photoModal.querySelector('.photo-modal-backdrop') : null;
-        if (photoModalBackdrop) {
-            photoModalBackdrop.addEventListener('click', closePhotoModal);
-        }
-
-        // Prevenir parpadeo de imágenes (Lógica mantenida)
-        const images = document.querySelectorAll('img');
-        images.forEach(img => {
-            if (img.complete) {
-                img.style.opacity = '1';
-            }
-        });
-    });
-
-    // Función global para cerrar modales (Mantenida)
-    window.closeModals = function() {
-        document.querySelectorAll('.profile-modal, .photo-modal').forEach(modal => {
-            modal.classList.remove('active');
-        });
-        document.body.style.overflow = '';
-    };
-</script>
-
 <style>
     /* ==========================================================================
       ESTILOS BASE Y UTILITARIOS
     ========================================================================== */
     :root {
         /* Colores Primarios Intensos */
-        --color-primary-male: #1976D2;
-        --color-primary-male-dark: #1565C0;
+        --color-primary-male: #0f5db6;
+        --color-primary-male-dark: #0756b0;
         --color-primary-female: #D81B60;
         --color-primary-female-dark: #AD1457;
 
-        /* Colores Estándar para User Actions/Dropdown */
-        --color-standard: #1E88E5;
-        --color-standard-light: #64B5F6;
-        --color-standard-dark: #1565C0;
+        /* Colores Neutros de Hover y Estado */
+        --color-neutral-hover: #e9ecef;
+        /* Gris muy claro para hover (Mi Perfil/Inicio) */
+        --color-neutral-text: #343a40;
+        /* Gris oscuro para texto */
+        --color-online: #28a745;
+        /* Verde para punto de estado */
 
         --color-secondary: #6c757d;
         --color-danger: #dc3545;
@@ -503,7 +93,7 @@
 
     .notification-icon:hover {
         background: var(--color-light);
-        color: var(--color-standard-dark);
+        color: var(--color-dark);
         transform: scale(1.05);
     }
 
@@ -545,26 +135,48 @@
         box-shadow: var(--sombra-intensa);
     }
 
-    .user-photo {
+    /* Contenedor para foto y estado */
+    .user-photo-status-container {
+        position: relative;
+        width: 40px;
+        height: 40px;
+    }
+
+    .user-photo,
+    .user-icon {
         width: 40px;
         height: 40px;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid var(--color-standard);
+        border: none;
         transition: var(--transicion);
         opacity: 0;
     }
 
     .user-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--color-standard);
+        background: var(--color-secondary);
         color: white;
         font-size: 1.2rem;
+        opacity: 1;
+    }
+
+    /* Punto de estado "En línea" */
+    .status-dot {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 2px solid white;
+        z-index: 5;
+    }
+
+    .status-dot.online {
+        background-color: var(--color-online);
     }
 
     .user-name {
@@ -606,6 +218,7 @@
         border-bottom: 1px solid #e1e5e9;
     }
 
+    /* Foto del Dropdown sin borde de color */
     .dropdown-photo {
         width: 50px;
         height: 50px;
@@ -623,7 +236,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--color-standard);
+        background: var(--color-secondary);
         color: white;
         font-size: 20px;
         box-shadow: var(--sombra);
@@ -645,6 +258,7 @@
         margin: 5px 0;
     }
 
+    /* Neutralizar hover y texto del dropdown */
     .dropdown-item {
         padding: 12px 20px;
         cursor: pointer;
@@ -653,7 +267,7 @@
         align-items: center;
         font-size: 14px;
         text-decoration: none;
-        color: inherit;
+        color: var(--color-neutral-text);
         width: 100%;
         background: none;
         border: none;
@@ -661,8 +275,10 @@
     }
 
     .dropdown-item:hover {
-        background: #f0f4f8;
-        color: var(--color-standard);
+        background: var(--color-neutral-hover);
+        /* Gris claro */
+        color: var(--color-neutral-text);
+        /* Mantener texto oscuro */
     }
 
     .dropdown-item i {
@@ -671,11 +287,13 @@
         text-align: center;
         font-size: 15px;
         color: var(--color-secondary);
+        /* Icono gris */
         transition: var(--transicion);
     }
 
     .dropdown-item:hover i {
-        color: var(--color-standard);
+        color: var(--color-dark);
+        /* Icono más oscuro */
     }
 
     .logout {
@@ -699,6 +317,7 @@
     /* ==========================================================================
       MODAL DE PERFIL DE EMPLEADO
     ========================================================================== */
+    /* 🐛 FIX: Modificar el comportamiento de la clase .profile-modal para usar display: flex solo cuando está activo */
     .profile-modal {
         position: fixed;
         top: 0;
@@ -708,8 +327,9 @@
         z-index: 1002;
         opacity: 0;
         visibility: hidden;
-        transition: all 0.3s ease;
-        display: flex;
+        display: none;
+        /* ✅ CLAVE: Ocultar por defecto */
+        transition: opacity 0.3s ease, visibility 0.3s ease;
         align-items: center;
         justify-content: center;
         padding: 20px;
@@ -720,6 +340,8 @@
     .profile-modal.active {
         opacity: 1;
         visibility: visible;
+        display: flex !important;
+        /* ✅ CLAVE: Mostrar solo cuando está activo */
     }
 
     .profile-modal-backdrop {
@@ -746,8 +368,15 @@
     }
 
     @keyframes modalFadeIn {
-        from { transform: translateY(-20px) scale(0.98); opacity: 0; }
-        to { transform: translateY(0) scale(1); opacity: 1; }
+        from {
+            transform: translateY(-20px) scale(0.98);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
     }
 
     .profile-modal-content {
@@ -799,7 +428,7 @@
         box-sizing: border-box;
     }
 
-    /* Encabezado de la empresa en Sidebar - CORREGIDO */
+    /* Encabezado de la empresa en Sidebar */
     .company-header {
         display: flex;
         flex-direction: row;
@@ -810,15 +439,18 @@
         width: 100%;
     }
 
-    .company-logo {
-        width: 45px;
-        height: 45px;
-        object-fit: contain;
-        border-radius: 50%;
-        background: white;
-        padding: 5px;
-        flex-shrink: 0;
-    }
+/* Logo sin contenedor circular */
+.company-logo {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+    border-radius: 0;
+    padding: 0;
+    flex-shrink: 0;
+
+    /* ✅ MODIFICACIÓN CSS: Aplicar filtro para invertir o forzar el color blanco */
+    filter: brightness(0) invert(1); /* Convierte colores oscuros a blanco */
+}
 
     .company-name {
         font-size: 1.1rem;
@@ -848,6 +480,7 @@
         cursor: pointer;
     }
 
+    /* Foto del modal sin borde de color */
     .profile-photo-large {
         width: 150px;
         height: 150px;
@@ -986,7 +619,7 @@
         color: var(--color-primary-female-dark);
     }
 
-    /* Grid de Información - CORREGIDO A 2 COLUMNAS */
+    /* Grid de Información */
     .profile-info-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -1073,7 +706,7 @@
     }
 
     .profile-sidebar-placeholder .info-placeholder i {
-        color: var(--color-standard);
+        color: var(--color-secondary);
     }
 
     .info-placeholder p {
@@ -1083,6 +716,7 @@
     /* ==========================================================================
       MODAL DE FOTO AMPLIADA
     ========================================================================== */
+    /* 🐛 FIX: Modificar el comportamiento de la clase .photo-modal para usar display: flex solo cuando está activo */
     .photo-modal {
         position: fixed;
         top: 0;
@@ -1092,8 +726,9 @@
         z-index: 1003;
         opacity: 0;
         visibility: hidden;
-        transition: all 0.3s ease;
-        display: flex;
+        display: none;
+        /* ✅ CLAVE: Ocultar por defecto */
+        transition: opacity 0.3s ease, visibility 0.3s ease;
         align-items: center;
         justify-content: center;
         padding: 20px;
@@ -1103,6 +738,8 @@
     .photo-modal.active {
         opacity: 1;
         visibility: visible;
+        display: flex !important;
+        /* ✅ CLAVE: Mostrar solo cuando está activo */
     }
 
     .photo-modal-backdrop {
@@ -1165,9 +802,17 @@
       ANIMACIONES Y RESPONSIVE
     ========================================================================== */
     @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
     }
 
     @keyframes dropdownSlide {
@@ -1175,6 +820,7 @@
             opacity: 0;
             transform: translateY(-5px) scale(0.98);
         }
+
         to {
             opacity: 1;
             transform: translateY(0) scale(1);
@@ -1189,7 +835,8 @@
             overflow-y: auto;
         }
 
-        .profile-sidebar, .profile-main {
+        .profile-sidebar,
+        .profile-main {
             width: 100%;
             padding: 30px;
         }
@@ -1264,10 +911,12 @@
             text-align: center;
         }
 
-        .user-photo, .user-icon {
-             width: 35px;
-             height: 35px;
-             font-size: 1rem;
+        .user-photo,
+        .user-icon,
+        .user-photo-status-container {
+            width: 35px;
+            height: 35px;
+            font-size: 1rem;
         }
 
         .notification-icon {
@@ -1275,8 +924,475 @@
             height: 40px;
         }
 
-        .profile-sidebar, .profile-main {
+        /* Ajuste de punto de estado para móviles */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border: 1px solid white;
+        }
+
+        .profile-sidebar,
+        .profile-main {
             padding: 20px;
         }
     }
 </style>
+<div class="user-actions" data-gender="{{ $userGender }}">
+    <div class="notification-icon" style="display: none;">
+        <i class="fas fa-bell"></i>
+        @if ($notificationCount > 0)
+            <span class="notification-count">{{ $notificationCount }}</span>
+        @endif
+    </div>
+
+    <div class="user-profile" id="userDropdownBtn">
+        @auth
+            <div class="user-photo-status-container">
+                @if ($employee && $employee->photo)
+                    <img src="{{ asset($employee->photo) }}" alt="Foto de perfil" class="user-photo"
+                        onload="this.style.opacity='1'" />
+                @else
+                    <div class="user-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                @endif
+                {{-- Punto de estado en línea (Siempre que esté autenticado) --}}
+                <span class="status-dot online"></span>
+            </div>
+            <div class="user-name">{{ Auth::user()->name }}</div>
+        @else
+            <div class="user-icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-name">Usuario</div>
+        @endauth
+    </div>
+
+    <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-header">
+            @auth
+                @if ($employee && $employee->photo)
+                    <img src="{{ asset($employee->photo) }}" alt="Foto de perfil" class="dropdown-photo"
+                        onload="this.style.opacity='1'" />
+                @else
+                    <div class="dropdown-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                @endif
+                <div class="dropdown-user-info">
+                    <div class="dropdown-username">{{ $employee->full_name ?? Auth::user()->name }}</div>
+                    <div class="dropdown-email">{{ Auth::user()->email }}</div>
+                </div>
+            @else
+                <div class="dropdown-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="dropdown-user-info">
+                    <div class="dropdown-username">Usuario</div>
+                    <div class="dropdown-email">No autenticado</div>
+                </div>
+            @endauth
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <a class="dropdown-item" id="profileBtn">
+            <i class="fas fa-user-circle"></i>
+            Mi perfil
+        </a>
+        <a class="dropdown-item" href="{{ route('home') }}">
+            <i class="fas fa-home"></i>
+            Inicio
+        </a>
+
+        <form action="{{ route('logout') }}" method="POST" class="logout-form">
+            @csrf
+            <button type="submit" class="dropdown-item logout">
+                <i class="fas fa-sign-out-alt"></i>
+                Cerrar sesión
+            </button>
+        </form>
+    </div>
+</div>
+
+{{-- ✅ REFUERZO DE OCULTAMIENTO: Estilo inline para asegurar que no se muestre inicialmente --}}
+<div class="profile-modal" id="profileModal" style="display: none !important;">
+    <div class="profile-modal-backdrop"></div>
+    <div class="profile-modal-container">
+        <div class="profile-modal-content">
+            <button class="profile-modal-close" id="profileModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+
+            @auth
+                @if ($employee)
+                    <div class="profile-sidebar">
+                        <div class="company-header">
+                            <img src="{{ asset($companyLogoPath) }}" alt="Logo de {{ $companyName }}"
+                                class="company-logo">
+                            <div class="company-name">{{ $companyName }}</div>
+                        </div>
+                        <h2 class="sidebar-title">Información del Empleado</h2>
+
+                        <div class="profile-photo-container" id="profilePhotoContainer">
+                            @if ($employee->photo)
+                                <img src="{{ asset($employee->photo) }}" alt="Foto de perfil" class="profile-photo-large"
+                                    id="profilePhoto" onload="this.style.opacity='1'" />
+                            @else
+                                <div class="profile-photo-large profile-photo-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            @endif
+                            <div class="profile-photo-zoom">
+                                <i class="fas fa-search-plus"></i>
+                            </div>
+                        </div>
+
+                        <div class="profile-name-large">{{ $employee->full_name ?? Auth::user()->name }}</div>
+
+                        @if ($employee->job_title)
+                            <div class="profile-position">{{ $employee->job_title }}</div>
+                        @endif
+
+                        @if ($employee->department)
+                            <div class="profile-department">{{ $employee->department }}</div>
+                        @endif
+
+                        <div class="profile-stats">
+                            <div class="profile-stat">
+                                <div class="profile-stat-value">
+                                    {{ $employee->employee_number ?? '-' }}
+                                </div>
+                                <div class="profile-stat-label">ID Empleado</div>
+                            </div>
+                            <div class="profile-stat">
+                                <div class="profile-stat-value">
+                                    {{ $employee->hire_date ? \Carbon\Carbon::parse($employee->hire_date)->format('Y') : '-' }}
+                                </div>
+                                <div class="profile-stat-label">Año Ingreso</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-main">
+                        <h2 class="profile-modal-title">
+                            <i class="fas fa-user-tie"></i>
+                            Detalles Laborales
+                        </h2>
+
+                        <div class="profile-info-grid">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">
+                                    <i class="fas fa-envelope"></i>
+                                    Correo electrónico
+                                </div>
+                                <div class="profile-info-value">
+                                    {{ Auth::user()->email }}
+                                </div>
+                            </div>
+
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">
+                                    <i class="fas fa-phone"></i>
+                                    Teléfono
+                                </div>
+                                <div class="profile-info-value {{ !$employee->phone ? 'empty' : '' }}">
+                                    {{ $employee->phone ?? 'No disponible' }}
+                                </div>
+                            </div>
+
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">
+                                    <i class="fas fa-id-badge"></i>
+                                    Número de empleado
+                                </div>
+                                <div class="profile-info-value {{ !$employee->employee_number ? 'empty' : '' }}">
+                                    {{ $employee->employee_number ?? 'No disponible' }}
+                                </div>
+                            </div>
+
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    Fecha de contratación
+                                </div>
+                                <div class="profile-info-value {{ !$employee->hire_date ? 'empty' : '' }}">
+                                    {{ $hireDateFormatted }}
+                                </div>
+                            </div>
+
+                            <div class="profile-info-item full-width">
+                                <div class="profile-info-label">
+                                    <i class="fas fa-briefcase"></i>
+                                    Estado laboral
+                                </div>
+                                <div
+                                    class="profile-info-value {{ $employmentStatusFormatted == 'No disponible' ? 'empty' : '' }}">
+                                    {{ $employmentStatusFormatted }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 class="profile-modal-title">
+                            <i class="fas fa-info-circle"></i>
+                            Información Personal
+                        </h2>
+
+                        <div class="profile-info-grid">
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">
+                                    <i class="fas fa-venus-mars"></i>
+                                    Género
+                                </div>
+                                <div class="profile-info-value {{ !$employee->gender ? 'empty' : '' }}">
+                                    {{ $employee->gender ?? 'No disponible' }}
+                                </div>
+                            </div>
+
+                            <div class="profile-info-item">
+                                <div class="profile-info-label">
+                                    <i class="fas fa-birthday-cake"></i>
+                                    Fecha de nacimiento
+                                </div>
+                                <div class="profile-info-value {{ !$employee->birth_date ? 'empty' : '' }}">
+                                    {{ $birthDateFormatted }}
+                                </div>
+                            </div>
+
+                            <div class="profile-info-item full-width">
+                                <div class="profile-info-label">
+                                    <i class="fas fa-globe-americas"></i>
+                                    Nacionalidad
+                                </div>
+                                <div class="profile-info-value {{ !$employee->nationality ? 'empty' : '' }}">
+                                    {{ $employee->nationality ?? 'No disponible' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="profile-sidebar profile-sidebar-placeholder">
+                        <div class="company-header">
+                            <img src="{{ asset($companyLogoPath) }}" alt="Logo de {{ $companyName }}"
+                                class="company-logo">
+                            <div class="company-name">{{ $companyName }}</div>
+                        </div>
+                        <h2 class="sidebar-title">Información del Empleado</h2>
+                        <div class="profile-photo-large profile-photo-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="profile-name-large">{{ Auth::user()->name }}</div>
+                        <div class="profile-position">Usuario</div>
+                    </div>
+                    <div class="profile-main profile-main-placeholder">
+                        <div class="info-placeholder">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <p>No hay información detallada de empleado disponible.</p>
+                        </div>
+                    </div>
+                @endif
+            @else
+                <div class="profile-sidebar profile-sidebar-placeholder">
+                    <div class="company-header">
+                        <img src="{{ asset($companyLogoPath) }}" alt="Logo de {{ $companyName }}"
+                            class="company-logo">
+                        <div class="company-name">{{ $companyName }}</div>
+                    </div>
+                    <h2 class="sidebar-title">Información del Empleado</h2>
+                    <div class="profile-photo-large profile-photo-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="profile-name-large">Usuario</div>
+                    <div class="profile-position">No autenticado</div>
+                </div>
+                <div class="profile-main profile-main-placeholder">
+                    <div class="info-placeholder">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Debe iniciar sesión para ver los detalles del perfil.</p>
+                    </div>
+                </div>
+            @endauth
+        </div>
+    </div>
+</div>
+
+{{-- ✅ REFUERZO DE OCULTAMIENTO: Estilo inline para asegurar que no se muestre inicialmente --}}
+<div class="photo-modal" id="photoModal" style="display: none !important;">
+    <div class="photo-modal-backdrop"></div>
+    <div class="photo-modal-container">
+        <div class="photo-modal-content">
+            <button class="photo-modal-close" id="photoModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            @auth
+                @if ($employee && $employee->photo)
+                    <img src="{{ asset($employee->photo) }}" alt="Foto de perfil ampliada" class="photo-modal-img"
+                        onload="this.style.opacity='1'" />
+                @endif
+            @endauth
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userDropdownBtn = document.getElementById('userDropdownBtn');
+        const userDropdown = document.getElementById('userDropdown');
+        const profileBtn = document.getElementById('profileBtn');
+        const profileModal = document.getElementById('profileModal');
+        const profileModalClose = document.getElementById('profileModalClose');
+        const profilePhotoContainer = document.getElementById('profilePhotoContainer');
+        const photoModal = document.getElementById('photoModal');
+        const photoModalClose = document.getElementById('photoModalClose');
+
+        // 🚨 LÓGICA DE GÉNERO DINÁMICO PARA EL MODAL (Aplicación del tema)
+        const userActions = document.querySelector('.user-actions');
+        const gender = userActions ? userActions.getAttribute('data-gender') : null;
+
+        // Se aplica la clase para el tema de color más intenso
+        if (profileModal && gender === 'female') {
+            profileModal.classList.add('theme-female');
+        }
+
+        // 🚨 DROPDOWN SOLO CON CLICK (Lógica mantenida)
+        if (userDropdownBtn && userDropdown) {
+            userDropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+            });
+
+            // Cerrar al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (!userDropdown.contains(e.target) && !userDropdownBtn.contains(e.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+
+            // Cerrar con Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && userDropdown.classList.contains('active')) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+        }
+
+        // Abrir modal de perfil
+        function openProfileModal() {
+            if (userDropdown) userDropdown.classList.remove('active');
+            if (profileModal) {
+                // **MODIFICACIÓN JS**: Remover el estilo inline para permitir que el CSS active el display: flex
+                profileModal.style.display = '';
+                profileModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        if (profileBtn) {
+            profileBtn.addEventListener('click', openProfileModal);
+        }
+
+        // Cerrar modal de perfil (Lógica mantenida)
+        function closeProfileModal() {
+            if (profileModal) {
+                profileModal.classList.remove('active');
+                document.body.style.overflow = '';
+                // **MODIFICACIÓN JS**: Restablecer el estilo inline después de la transición
+                setTimeout(() => {
+                    if (!profileModal.classList.contains('active')) {
+                        profileModal.style.display = 'none';
+                    }
+                }, 300); // 300ms es la duración de la transición CSS
+            }
+        }
+
+        if (profileModalClose) {
+            profileModalClose.addEventListener('click', closeProfileModal);
+        }
+
+        const profileModalBackdrop = profileModal ? profileModal.querySelector('.profile-modal-backdrop') :
+            null;
+        if (profileModalBackdrop) {
+            profileModalBackdrop.addEventListener('click', closeProfileModal);
+        }
+
+        // Cerrar con tecla Escape (para modal de perfil)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && profileModal && profileModal.classList.contains('active')) {
+                closeProfileModal();
+            }
+        });
+
+        // Modal de foto ampliada (Lógica modificada)
+        if (profilePhotoContainer) {
+            // Solo si existe la foto para evitar errores en placeholder
+            const profilePhoto = document.getElementById('profilePhoto');
+            if (profilePhoto) {
+                profilePhotoContainer.addEventListener('click', function() {
+                    if (profilePhoto.src) {
+                        if (photoModal) {
+                            // **MODIFICACIÓN JS**: Remover el estilo inline
+                            photoModal.style.display = '';
+                            photoModal.classList.add('active');
+                            document.body.style.overflow = 'hidden';
+                        }
+                    }
+                });
+            }
+        }
+
+        function closePhotoModal() {
+            if (photoModal) {
+                photoModal.classList.remove('active');
+                // **MODIFICACIÓN JS**: Restablecer el estilo inline después de la transición
+                setTimeout(() => {
+                    if (!photoModal.classList.contains('active')) {
+                        photoModal.style.display = 'none';
+                    }
+                }, 300); // 300ms es la duración de la transición CSS
+
+                // Solo restablecer el scroll si *ningún* modal está activo
+                if (profileModal && !profileModal.classList.contains('active')) {
+                    document.body.style.overflow = '';
+                } else if (!profileModal) {
+                    document.body.style.overflow = '';
+                }
+            }
+        }
+
+        if (photoModalClose) {
+            photoModalClose.addEventListener('click', closePhotoModal);
+        }
+
+        const photoModalBackdrop = photoModal ? photoModal.querySelector('.photo-modal-backdrop') : null;
+        if (photoModalBackdrop) {
+            photoModalBackdrop.addEventListener('click', closePhotoModal);
+        }
+
+        // Cerrar con Escape (para modal de foto)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && photoModal && photoModal.classList.contains('active')) {
+                closePhotoModal();
+            }
+        });
+
+        // Prevenir parpadeo de imágenes (Lógica mantenida)
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            if (img.complete) {
+                img.style.opacity = '1';
+            }
+        });
+    });
+
+    // Función global para cerrar modales (Mantenida)
+    window.closeModals = function() {
+        document.querySelectorAll('.profile-modal, .photo-modal, .user-dropdown').forEach(modal => {
+            modal.classList.remove('active');
+            if (modal.id === 'profileModal' || modal.id === 'photoModal') {
+                // Asegurar que el display: none se aplica después del cierre
+                modal.style.display = 'none';
+            }
+        });
+        document.body.style.overflow = '';
+    };
+</script>

@@ -49,7 +49,7 @@
                                     {{ $currentYear }}</span>
                                 <button id="next-month"><i class="fas fa-chevron-right"></i></button>
                             </div>
-                          @if (!isset($isForModal) || !$isForModal)
+                            @if (!isset($isForModal) || !$isForModal)
                                 @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_loadchart'))
                                     <button class="btn btn-orange" id="approve-loadchart" data-route="/approval">
                                         <i class="fas fa-check-circle"></i> Aprobar Loadchart
@@ -219,8 +219,12 @@
                         </div>
 
                         <div class="legend-item">
-                            <i class="fas fa-flag  payroll-start-1"></i>
+                            <i class="fas fa-flag payroll-start-1"></i>
                             <div>Inicio Q1</div>
+                        </div>
+                        <div class="legend-item">
+                            <i class="fas fa-flag payroll-start-2"></i>
+                            <div>Inicio Q2</div>
                         </div>
                         <div class="legend-item">
                             <i class="fas fa-flag payroll-end"></i>
@@ -429,7 +433,8 @@
 
                             <div class="error-message" id="activity-type-error">Debes seleccionar un tipo de actividad
                             </div>
-                            <div class="error-message" id="vacation-balance-error" style="display:none;">No tienes días de vacaciones disponibles.</div>
+                            <div class="error-message" id="vacation-balance-error" style="display:none;">No tienes
+                                días de vacaciones disponibles.</div>
 
                         </div>
 
@@ -603,7 +608,7 @@
                         </div>
                     </div>
 
-                 <div class="form-actions" style="@if (isset($isForModal) && $isForModal) display: none; @endif">
+                    <div class="form-actions" style="@if (isset($isForModal) && $isForModal) display: none; @endif">
                         <button class="btn btn-outline" id="cancel-activity">
                             <i class="fas fa-times"></i> Cancelar
                         </button>
@@ -615,4 +620,3 @@
                 </div>
             </div>
         </div>
-

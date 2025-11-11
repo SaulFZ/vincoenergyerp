@@ -16,7 +16,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-    <!-- Incluir SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -25,7 +24,6 @@
 </head>
 
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="logo-container">
             <div class="logo">
@@ -36,11 +34,10 @@
             </div>
         </div>
         <div class="nav-links">
-            <a data-route="calendar"><i class="fas fa-home"></i> Inicio</a>
+            <a data-route="calendar"><i class="fas fa-calendar-alt"></i> Calendario</a>
 
             {{-- Add the notification badge span here --}}
-            <a data-route="history"><i class="fas fa-history"></i> Historial <span
-                    class="notification-badge">10</span></a>
+            <a data-route="history"><i class="fas fa-history"></i> Historial {{-- <span class="notification-badge">10</span> --}}</a>
 
             @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_estadisticas'))
                 <a data-route="stats"><i class="fas fa-chart-bar"></i> Estadísticas</a>
@@ -67,13 +64,10 @@
 
     </header>
 
-    <!-- Main Content -->
     <div class="container" id="main-content">
-        <!-- Content will be loaded here dynamically -->
         @yield('content')
     </div>
 
-    <!-- Footer -->
     <footer class="footer">
         <p>Sistema Load Chart - Vinco Energy © 2025 | Todos los derechos reservados</p>
     </footer>
