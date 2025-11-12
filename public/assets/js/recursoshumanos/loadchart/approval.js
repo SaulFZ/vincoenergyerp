@@ -593,13 +593,16 @@ function addRowToModalTable(concept, details, identifier, additionalDetails, ite
 
     const commentValue = rejectionReason || '';
 
+    // CORRECCIÓN: Si no se pueden ver montos, la celda de monto estará vacía.
+    const amountCellContent = amount !== null ? `${amount}` : (canSeeAmounts ? 'N/A' : '');
+
     // Usamos innerHTML para permitir el formato (ej. <strong>)
     row.innerHTML = `
         <td>${concept}</td>
         <td>${details}</td>
         <td>${identifier}</td>
         <td>${additionalDetails}</td>
-        <td class="amount-cell">${amount !== null ? `${amount}` : 'N/A'}</td>
+        <td class="amount-cell">${amountCellContent}</td>
         <td>
             ${approvalSelector}
         </td>
@@ -928,7 +931,7 @@ async function handleApprove() {
         let message = `Se aprobarán todas las actividades (${activitiesToApprove.length} días) en estado `;
         const statesToApprove = [];
         if (underReviewActivitiesExist) statesToApprove.push('Bajo Revisión');
-        if (reviewedActivitiesExist) statesToApprove.push('Revisado');
+        if (reviewedActivitiesExist) statesToToApprove.push('Revisado');
         message += `${statesToApprove.join(' y ')} para este período. Esta acción es irreversible.`;
 
         Swal.fire({
@@ -1147,27 +1150,16 @@ function toggleActivityRows(employeeRow) {
     for (let i = startIndex + 1; i < allRows.length; i++) {
         // La condición de parada es encontrar la siguiente fila principal (employee-row) o una fila que no sea activity-row.
         if (allRows[i].classList.contains('activity-row') && allRows[i].getAttribute('data-employee-id') === employeeRow.getAttribute('data-employee-id')) {
-            allRows[i].classList.toggle('hidden');
-            activityRowCount++;
+            // Solo alternar si la fila NO es hidden por la lógica de visibilidad de items
+            if (allRows[i].style.display !== 'none') {
+                allRows[i].classList.toggle('hidden');
+                activityRowCount++;
+            }
         } else if (allRows[i].classList.contains('employee-row') || allRows[i].classList.contains('squad-group-row')) { // CRÍTICO: Detener también en la fila de cuadrilla
             // Detener si es la siguiente fila de empleado o de cuadrilla
             break;
         }
     }
-
-    // Esta lógica de conteo es más simple, solo recorre las 3 filas de detalle y las oculta/muestra.
-    // Como creamos 3 filas de detalle inmediatamente después de la principal, la lógica de bucle anterior es más robusta.
-    // Solo necesitamos asegurarnos de que solo se ocultan/muestran las filas asociadas a ese `data-employee-id`.
-    // La plantilla Blade garantiza que las 3 filas de detalle sigan a la principal.
-    /*
-    const foodRow = employeeRow.nextElementSibling;
-    const fieldBonusRow = foodRow.nextElementSibling;
-    const serviceRow = fieldBonusRow.nextElementSibling;
-
-    if (foodRow && foodRow.classList.contains('activity-row')) foodRow.classList.toggle('hidden');
-    if (fieldBonusRow && fieldBonusRow.classList.contains('activity-row')) fieldBonusRow.classList.toggle('hidden');
-    if (serviceRow && serviceRow.classList.contains('activity-row')) serviceRow.classList.toggle('hidden');
-    */
 }
 
 async function navigateToPreviousMonth() {
@@ -1359,8 +1351,8 @@ function updateDaysHeader(monthlyDays) {
 /**
  * CRÍTICO: Reconstruye el cuerpo de la tabla (tbody) para soportar la carga AJAX
  * de meses con diferente número de días y empleados.
- * Nota: Esta lógica es una simplificación de la lógica de agrupación por cuadrillas
- * en el archivo Blade.
+ *
+ * **CORRECCIÓN DE CUADRILLAS IMPLEMENTADA AQUÍ.**
  */
 function updateTableBody(employeesData, monthlyDaysData) {
     const tbody = document.getElementById('approval-table-body');
@@ -1368,100 +1360,122 @@ function updateTableBody(employeesData, monthlyDaysData) {
 
     tbody.innerHTML = ''; // Limpiar el cuerpo existente
 
-    const showSquadGrouping = document.querySelector('.squad-group-row') !== null; // Determinar si la agrupación está activa
+    // 1. Agrupar empleados por número de cuadrilla (squad_number)
+    const groupedEmployees = {};
 
-    // 1. Simular la lógica de agrupación y ordenación de Blade (simplificado)
-    const employeesWithSquad = employeesData.map(employee => {
-        // En el backend, 'employee' ya tiene la relación 'squads' cargada.
-        // Aquí en JS, 'employee' es solo un objeto con id, full_name, etc.
-        // Para simplificar, asumiremos que no podemos agrupar correctamente sin
-        // la estructura completa del backend. Sin embargo, para que funcione
-        // la representación, crearemos un array de filas directamente.
+    employeesData.forEach(employee => {
+        // Accedemos a la propiedad `squads` que debe ser devuelta por la API (ver corrección en PHP)
+        const squadNumber = employee.squads && employee.squads.length > 0
+            ? employee.squads[0].squad_number
+            : 999; // Usar 999 para "Sin Cuadrilla Asignada"
 
-        // Dado que el endpoint AJAX devuelve 'employees' *sin* la relación 'squads'
-        // (porque se seleccionan columnas específicas: select('id', 'full_name', 'employee_number', 'position')),
-        // y la lógica de cuadrilla es compleja, *SIMPLIFICAREMOS* la lógica de renderizado
-        // y **eliminaremos temporalmente la agrupación por cuadrilla en JS**
-        // para que la recarga AJAX sea funcional, o modificaremos el endpoint
-        // para incluir `squads`.
-
-        // Vamos a modificar el endpoint en PHP para incluir la `squad_number` en el objeto `employee`
-        // o, mejor aún, dejar que el renderizado de filas suceda de forma secuencial
-        // para simplificar el JS.
-
-        // Solución temporal: Renderizar secuencialmente sin agrupación de Cuadrilla en JS.
-        return employee;
+        if (!groupedEmployees[squadNumber]) {
+            groupedEmployees[squadNumber] = [];
+        }
+        groupedEmployees[squadNumber].push(employee);
     });
 
-    employeesWithSquad.forEach(employee => {
-        // Obtenemos la asignación para los botones de aprobar/revisar
-        const assignment = loadChartAssignments.find(a => a.employee_id === employee.id);
-        const isReviewerForEmployee = assignment && assignment.reviewer_id === currentUserId;
-        const isApproverForEmployee = assignment && assignment.approver_id === currentUserId;
+    // 2. Ordenar las cuadrillas: 1, 2, ..., 999
+    const sortedSquadNumbers = Object.keys(groupedEmployees).sort((a, b) => parseInt(a) - parseInt(b));
 
+    // Verificar si el usuario tiene el permiso de ver cuadrillas (simulación del Blade @if)
+    // Asumimos que `userPermissions` tiene la información de permisos (aunque no la vemos aquí, se asume poblada).
+    // Para no romper la lógica, usamos una aproximación, pero para que la funcionalidad vuelva,
+    // necesitamos que el backend devuelva la info de permisos O que el Blade original lo haga.
+    // Usaremos un flag simple basado en si existió la fila en la carga inicial (opción más segura en JS).
+    const showSquadGrouping = document.getElementById('squad-control') !== null;
 
-        // ------------------
-        // Fila Principal (Actividad)
-        // ------------------
-        let mainRow = document.createElement('tr');
-        mainRow.className = 'employee-row';
-        mainRow.setAttribute('data-employee-id', employee.id);
-        mainRow.innerHTML = `
-            <td rowspan="4" class="employee-info-cell" data-icon="bx bx-calendar" data-text="ver calendario">
-                ${employee.full_name}
-            </td>
-            <td class="activity-label-cell">Actividad</td>
-            ${monthlyDaysData.map(dayInfo => `
-                <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
-                    data-day="${dayInfo.day}" data-date="${dayInfo.date}">
-                    <div class="status-indicator status-n">N</div>
+    // Calcular el colspan total (Nombre + KPI + Días + Total + Vac + Desc + Utiliz + Aprob)
+    // Colspan = (Columnas de la izquierda sin rowspan) + (Días) + (Columna total) + (Columnas de la derecha con rowspan - 1)
+    // Nombre (1) + KPI (1) + Días (monthlyDays.length) + Total (1) + (Vac, Desc, Utiliz, Aprob - 4) = 6 + monthlyDays.length
+    // En el blade original, el colspan de la fila de cuadrilla es 'Nombre' (1) + 'KPI' (1) + Días + 'Total' (1) + 'Vac' (1) + 'Desc' (1) + 'Utiliz' (1) + 'Aprob' (1) = 4 + monthlyDays.length
+    const totalColumnsForSquadRow = 4 + monthlyDaysData.length;
+
+    // 3. Renderizar filas
+    sortedSquadNumbers.forEach(squadNumber => {
+        const squadEmployees = groupedEmployees[squadNumber];
+
+        // 3.1. Fila de Encabezado de Cuadrilla (si el permiso está activo)
+        if (showSquadGrouping) {
+            const squadLabel = squadNumber !== '999'
+                ? `Cuadrilla-${squadNumber.padStart(2, '0')}`
+                : 'Sin Cuadrilla Asignada';
+            const squadClass = squadNumber !== '999' ? 'squad-group-row-active' : 'squad-group-row-none';
+
+            let squadRow = document.createElement('tr');
+            squadRow.className = `squad-group-row ${squadClass}`;
+            squadRow.innerHTML = `
+                <td colspan="${totalColumnsForSquadRow}" class="squad-group-label">
+                    ${squadLabel}
                 </td>
-            `).join('')}
-            <td class="data-cell total-activity">
-                <div class="status-indicator">0</div>
-            </td>
-            <td rowspan="4" class="vacations-cell">
-                <div class="vacations-container">
-                    <div class="vacations-value">0</div>
-                </div>
-            </td>
-            <td rowspan="4" class="breaks-cell">
-                <div class="breaks-container">
-                    <div class="breaks-value">0</div>
-                </div>
-            </td>
-            <td rowspan="4" class="utilization-cell">
-                <div class="utilization-container">
-                    <div class="utilization-value">0%</div>
-                </div>
-            </td>
-            <td rowspan="4" class="actions-cell">
-                <div class="actions-container">
-                    ${isReviewerForEmployee ? '<button class="btn-review">Revisar</button>' : ''}
-                    ${isApproverForEmployee ? '<button class="btn-approve">Aprobar</button>' : ''}
-                    ${!isReviewerForEmployee && !isApproverForEmployee ? '<span class="no-permissions">Sin permisos</span>' : ''}
-                </div>
-            </td>
-        `;
-        tbody.appendChild(mainRow);
+            `;
+            tbody.appendChild(squadRow);
+        }
 
-        // ------------------
-        // Filas de Detalle (Comida, Bono, Servicio)
-        // ------------------
-        const rowTypes = ['Comida', 'Bono', 'Servicio'];
-        rowTypes.forEach(rowType => {
-            let detailRow = document.createElement('tr');
-            detailRow.className = 'activity-row hidden';
-            detailRow.setAttribute('data-employee-id', employee.id);
-            detailRow.innerHTML = `
-                <td class="activity-label-cell">${rowType}</td>
+        squadEmployees.forEach(employee => {
+            const assignment = loadChartAssignments.find(a => a.employee_id === employee.id);
+            const isReviewerForEmployee = assignment && assignment.reviewer_id === currentUserId;
+            const isApproverForEmployee = assignment && assignment.approver_id === currentUserId;
+
+            // 3.2. Fila Principal (Actividad)
+            let mainRow = document.createElement('tr');
+            mainRow.className = 'employee-row';
+            mainRow.setAttribute('data-employee-id', employee.id);
+            mainRow.innerHTML = `
+                <td rowspan="4" class="employee-info-cell" data-icon="bx bx-calendar" data-text="ver calendario">
+                    ${employee.full_name}
+                </td>
+                <td class="activity-label-cell activity-main-label">Actividad</td>
                 ${monthlyDaysData.map(dayInfo => `
                     <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
-                        data-day="${dayInfo.day}" data-date="${dayInfo.date}">0</td>
+                        data-day="${dayInfo.day}" data-date="${dayInfo.date}">
+                        <div class="status-indicator status-n">N</div>
+                    </td>
                 `).join('')}
-                <td class="data-cell total-${rowType.toLowerCase()}">0</td>
+                <td class="data-cell total-activity">
+                    <div class="status-indicator">0</div>
+                </td>
+                <td rowspan="4" class="vacations-cell">
+                    <div class="vacations-container">
+                        <div class="vacations-value">0</div>
+                    </div>
+                </td>
+                <td rowspan="4" class="breaks-cell">
+                    <div class="breaks-container">
+                        <div class="breaks-value">0</div>
+                    </div>
+                </td>
+                <td rowspan="4" class="utilization-cell">
+                    <div class="utilization-container">
+                        <div class="utilization-value">0%</div>
+                    </div>
+                </td>
+                <td rowspan="4" class="actions-cell">
+                    <div class="actions-container">
+                        ${isReviewerForEmployee ? '<button class="btn-review">Revisar</button>' : ''}
+                        ${isApproverForEmployee ? '<button class="btn-approve">Aprobar</button>' : ''}
+                        ${!isReviewerForEmployee && !isApproverForEmployee ? '<span class="no-permissions">Sin permisos</span>' : ''}
+                    </div>
+                </td>
             `;
-            tbody.appendChild(detailRow);
+            tbody.appendChild(mainRow);
+
+            // 3.3. Filas de Detalle (Comida, Bono, Servicio)
+            const rowTypes = ['Comida', 'Bono', 'Servicio'];
+            rowTypes.forEach(rowType => {
+                let detailRow = document.createElement('tr');
+                detailRow.className = 'activity-row hidden';
+                detailRow.setAttribute('data-employee-id', employee.id);
+                detailRow.innerHTML = `
+                    <td class="activity-label-cell">${rowType}</td>
+                    ${monthlyDaysData.map(dayInfo => `
+                        <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
+                            data-day="${dayInfo.day}" data-date="${dayInfo.date}">0</td>
+                    `).join('')}
+                    <td class="data-cell total-${rowType.toLowerCase()}">0</td>
+                `;
+                tbody.appendChild(detailRow);
+            });
         });
     });
 }
@@ -1594,11 +1608,15 @@ function calculateAndRenderTotals() {
         }
 
         let totalDays = 0; // Días de actividad contables (Base, Pozo, etc.) EN EL PERÍODO VISIBLE
-        let totalFood = 0;
-        let totalFieldBonus = 0;
-        let totalService = 0;
+        let totalFood = 0; // Monto total o conteo total (depende de canSeeAmounts)
+        let totalFieldBonus = 0; // Monto total o conteo total
+        let totalService = 0; // Monto total o conteo total
         let totalBreaks = 0; // Descansos (D)
         let totalVacations = 0; // Días VAC
+
+        let foodCount = 0; // Conteo real de ítems
+        let fieldBonusCount = 0;
+        let serviceCount = 0;
 
         const dailyActivitiesMap = new Map(employeeData.daily_activities.map(activity => [activity.date, activity]));
 
@@ -1621,24 +1639,36 @@ function calculateAndRenderTotals() {
                     totalBreaks++;
                 }
 
-                // Sumar bonos/servicios (Lógica de montos visible/oculto ya es correcta)
-                const dailyFoodBonus = dailyActivity.food_bonuses ? dailyActivity.food_bonuses.reduce((sum, bonus) => sum + Number(bonus.daily_amount || 0), 0) : 0;
-                totalFood += dailyFoodBonus;
+                // Sumar bonos/servicios (Corregido para manejar montos y conteos)
+                const dailyFoodBonuses = dailyActivity.food_bonuses || [];
+                const dailyFieldBonuses = dailyActivity.field_bonuses || [];
+                const dailyServices = dailyActivity.services_list || [];
 
+                foodCount += dailyFoodBonuses.length;
+                fieldBonusCount += dailyFieldBonuses.length;
+                serviceCount += dailyServices.length;
 
-                const dailyFieldBonus = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.reduce((sum, bonus) => {
-                    const amount = Number(bonus.daily_amount || 0);
-                    if (bonus.currency === 'USD' && bonus.usd_to_mxn_rate) {
-                        // El workLog no contiene usd_to_mxn_rate, por lo que esta conversión será 0 si la tasa no está ahí.
-                        // Lo dejamos como estaba.
-                        return sum + amount; // Asumir que el monto ya está en MXN o es 0.
-                    }
-                    return sum + amount;
-                }, 0) : 0;
-                totalFieldBonus += dailyFieldBonus;
+                if (canSeeAmounts) {
+                    const dailyFoodBonus = dailyFoodBonuses.reduce((sum, bonus) => sum + Number(bonus.daily_amount || 0), 0);
+                    totalFood += dailyFoodBonus;
 
-                const dailyServiceAmount = dailyActivity.services_list ? dailyActivity.services_list.reduce((sum, service) => sum + Number(service.amount || 0), 0) : 0;
-                totalService += dailyServiceAmount;
+                    const dailyFieldBonus = dailyFieldBonuses.reduce((sum, bonus) => {
+                        const amount = Number(bonus.daily_amount || 0);
+                        if (bonus.currency === 'USD' && bonus.usd_to_mxn_rate) {
+                            // Asume que la conversión de USD a MXN ya se realizó o que el monto es el que se quiere sumar.
+                            return sum + amount;
+                        }
+                        return sum + amount;
+                    }, 0);
+                    totalFieldBonus += dailyFieldBonus;
+
+                    const dailyServiceAmount = dailyServices.reduce((sum, service) => sum + Number(service.amount || 0), 0);
+                    totalService += dailyServiceAmount;
+                } else {
+                    // Si no se ven montos, los "totales" deben ser el CONTEO de ítems
+                    // Esta lógica en calculateAndRenderTotals es solo para el renderizado final del total.
+                    // Los contadores de ítems ya están sumados arriba.
+                }
             }
         });
         // 🚨 FIN DE LA CORRECCIÓN CRÍTICA
@@ -1667,15 +1697,17 @@ function calculateAndRenderTotals() {
         // Renderizar los totales de Días, Bonos y Servicios
         if (activityTotalCell) activityTotalCell.textContent = totalDays;
 
-        // **CRÍTICO:** Asegurar que los totales de bonos/servicios se muestren en la fila de detalle,
-        // NO en la celda total-activity.
-        const totalFoodCell = foodRow ? foodRow.querySelector('.total-comida') : null;
-        const totalFieldBonusCell = fieldBonusRow ? fieldBonusRow.querySelector('.total-bono') : null;
-        const totalServiceCell = serviceRow ? serviceRow.querySelector('.total-servicio') : null;
-
-        if (totalFoodCell) totalFoodCell.textContent = canSeeAmounts ? totalFood.toFixed(2) : totalFood.toFixed(0);
-        if (totalFieldBonusCell) totalFieldBonusCell.textContent = canSeeAmounts ? totalFieldBonus.toFixed(2) : totalFieldBonus.toFixed(0);
-        if (totalServiceCell) totalServiceCell.textContent = canSeeAmounts ? totalService.toFixed(2) : totalService.toFixed(0);
+        // **CRÍTICO: Renderizar totales de Bonos y Servicios**
+        if (foodTotalCell) {
+            // Mostrar monto con 2 decimales O conteo (entero)
+            foodTotalCell.textContent = canSeeAmounts ? totalFood.toFixed(2) : foodCount.toString();
+        }
+        if (fieldBonusTotalCell) {
+            fieldBonusTotalCell.textContent = canSeeAmounts ? totalFieldBonus.toFixed(2) : fieldBonusCount.toString();
+        }
+        if (serviceTotalCell) {
+            serviceTotalCell.textContent = canSeeAmounts ? totalService.toFixed(2) : serviceCount.toString();
+        }
 
 
         // Renderizar Saldos y Utilización
@@ -1750,6 +1782,54 @@ function renderEmployeeWorkLog() {
             });
         }
 
+        // **INICIO LÓGICA DE VISIBILIDAD DE FILAS DE DETALLE (CORRECCIÓN PREVIA)**
+        let hasFoodItemsInPeriod = false;
+        let hasFieldBonusItemsInPeriod = false;
+        let hasServiceItemsInPeriod = false;
+
+        const visibleDayHeaders = Array.from(document.querySelectorAll('.day-header')).filter(header => header.style.display !== 'none');
+        const visibleDates = visibleDayHeaders.map(header => header.getAttribute('data-date'));
+
+        visibleDates.forEach(dateAttr => {
+            const dailyActivity = dailyActivitiesMap.get(dateAttr);
+            if (dailyActivity) {
+                if (dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0) hasFoodItemsInPeriod = true;
+                if (dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0) hasFieldBonusItemsInPeriod = true;
+                if (dailyActivity.services_list && dailyActivity.services_list.length > 0) hasServiceItemsInPeriod = true;
+            }
+        });
+
+        // Ocultar/Mostrar filas completas si no hay items de ese tipo en el periodo visible
+        if (comidaRow) {
+            comidaRow.style.display = hasFoodItemsInPeriod ? '' : 'none';
+        }
+        if (fieldBonusRow) {
+            fieldBonusRow.style.display = hasFieldBonusItemsInPeriod ? '' : 'none';
+        }
+        if (servicioRow) {
+            servicioRow.style.display = hasServiceItemsInPeriod ? '' : 'none';
+        }
+
+        // Lógica de ajuste de Rowspan de la celda de nombre (manual y simple)
+        let visibleDetailRows = 1; // La fila de Actividad siempre está visible
+        if (hasFoodItemsInPeriod) visibleDetailRows++;
+        if (hasFieldBonusItemsInPeriod) visibleDetailRows++;
+        if (hasServiceItemsInPeriod) visibleDetailRows++;
+
+        const employeeNameCell = employeeRow.querySelector('.employee-info-cell');
+        const vacationsCell = employeeRow.querySelector('.vacations-cell');
+        const breaksCell = employeeRow.querySelector('.breaks-cell');
+        const utilizationCell = employeeRow.querySelector('.utilization-cell');
+        const actionsCell = employeeRow.querySelector('.actions-cell');
+
+        if (employeeNameCell) employeeNameCell.setAttribute('rowspan', visibleDetailRows);
+        if (vacationsCell) vacationsCell.setAttribute('rowspan', visibleDetailRows);
+        if (breaksCell) breaksCell.setAttribute('rowspan', visibleDetailRows);
+        if (utilizationCell) utilizationCell.setAttribute('rowspan', visibleDetailRows);
+        if (actionsCell) actionsCell.setAttribute('rowspan', visibleDetailRows);
+        // **FIN LÓGICA DE VISIBILIDAD DE FILAS DE DETALLE**
+
+
         activityCells.forEach((cell, index) => {
             const dateAttr = cell.getAttribute('data-date');
             if (!dateAttr) {
@@ -1793,7 +1873,7 @@ function renderEmployeeWorkLog() {
                 }
 
                 // Renderizar datos de las filas de detalles (Comida, Bono, Servicio)
-                if (canSeeAmounts) { // 👈🏼 CRITICAL: Verificar si se pueden ver montos
+                if (canSeeAmounts) { // 👈🏼 CRITICAL: Verificar si se pueden ver montos (Mostrar MONTOS)
                     if (comidaCells[index]) {
                         const totalFoodBonus = dailyActivity.food_bonuses ? dailyActivity.food_bonuses.reduce((sum, bonus) => sum + Number(bonus.daily_amount || 0), 0) : 0;
                         // Muestra 0.00 si no hay monto, de lo contrario el monto con 2 decimales
@@ -1821,25 +1901,49 @@ function renderEmployeeWorkLog() {
                         servicioCells[index].title = dailyActivity.services_list && dailyActivity.services_list.length > 0 ? dailyActivity.services_list.map(s => s.service_name).join(', ') : '';
                     }
                 } else {
-                    // Mostrar conteo si no se pueden ver montos (se mantiene la lógica original de conteo/0)
+                    // **INICIO CORRECCIÓN para mostrar el IDENTIFICADOR/TIPO si no hay montos**
                     if (comidaCells[index]) {
-                        const foodCount = dailyActivity.food_bonuses ? dailyActivity.food_bonuses.length : 0;
-                        // 🚨 CORRECCIÓN: Si no hay montos, mostrar el número de ítems registrados
-                        comidaCells[index].textContent = foodCount > 0 ? foodCount : '0';
-                        comidaCells[index].title = dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0 ? dailyActivity.food_bonuses.map(b => `${b.bonus_type} x${b.num_daily}`).join(', ') : '';
+                        const foodBonuses = dailyActivity.food_bonuses || [];
+                        if (foodBonuses.length > 0) {
+                            // Si solo hay un tipo de comida, mostrar el count, si hay varios, mostrar el conteo total de items (ej: 2)
+                            const totalNumDaily = foodBonuses.reduce((sum, bonus) => sum + Number(bonus.num_daily || 0), 0);
+
+                            // Mostrar la cantidad de ítems si hay más de 1 tipo, o el total de comidas si es solo un tipo
+                            // Para 'Comida', el requisito es mostrar 1, 2, 3... comidas, no el identificador.
+                            comidaCells[index].textContent = foodBonuses.length > 1 ? `${foodBonuses.length} items` : `${totalNumDaily}`;
+                            comidaCells[index].title = foodBonuses.map(b => `${b.bonus_type} x${b.num_daily}`).join(', ');
+                        } else {
+                            comidaCells[index].textContent = '0';
+                            comidaCells[index].title = '';
+                        }
                     }
 
                     if (fieldBonusCells[index]) {
-                        const bonusCount = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.length : 0;
-                        fieldBonusCells[index].textContent = bonusCount > 0 ? bonusCount : '0';
-                        fieldBonusCells[index].title = dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0 ? dailyActivity.field_bonuses.map(b => b.bonus_type).join(', ') : '';
+                        const fieldBonuses = dailyActivity.field_bonuses || [];
+                        if (fieldBonuses.length > 0) {
+                            // Si hay un solo bono, mostrar su identificador; si hay varios, el conteo.
+                            // El identificador (bonus_identifier) es el ID/Tipo que solicitas.
+                            fieldBonusCells[index].textContent = fieldBonuses.length > 1 ? fieldBonuses.length : (fieldBonuses[0].bonus_identifier || 'Bono');
+                            fieldBonusCells[index].title = fieldBonuses.map(b => `${b.bonus_type} (${b.bonus_identifier})`).join(', ');
+                        } else {
+                            fieldBonusCells[index].textContent = '0';
+                            fieldBonusCells[index].title = '';
+                        }
                     }
 
                     if (servicioCells[index]) {
-                        const serviceCount = dailyActivity.services_list ? dailyActivity.services_list.length : 0;
-                        servicioCells[index].textContent = serviceCount > 0 ? serviceCount : '0';
-                        servicioCells[index].title = dailyActivity.services_list && dailyActivity.services_list.length > 0 ? dailyActivity.services_list.map(s => s.service_name).join(', ') : '';
+                        const services = dailyActivity.services_list || [];
+                        if (services.length > 0) {
+                            // Si hay un solo servicio, mostrar su identificador; si hay varios, el conteo.
+                            // El identificador (service_identifier) es el ID/Tipo que solicitas.
+                            servicioCells[index].textContent = services.length > 1 ? services.length : (services[0].service_identifier || 'Servicio');
+                            servicioCells[index].title = services.map(s => `${s.service_name} (${s.service_identifier})`).join(', ');
+                        } else {
+                            servicioCells[index].textContent = '0';
+                            servicioCells[index].title = '';
+                        }
                     }
+                    // **FIN CORRECCIÓN**
                 }
             }
         });

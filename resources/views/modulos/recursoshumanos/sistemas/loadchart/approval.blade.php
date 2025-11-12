@@ -545,13 +545,3 @@
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/approval.js') }}"></script>
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/approvalModals.js') }}"></script>
 @endsection
-
-
-
-
-
-
-
-
-
-

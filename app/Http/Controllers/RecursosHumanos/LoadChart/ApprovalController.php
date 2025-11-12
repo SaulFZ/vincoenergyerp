@@ -141,9 +141,9 @@ class ApprovalController extends Controller
                 $workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => [], 'reviewed_at' => null, 'approved_at' => null];
             }
         }
-        $canSeeAmounts        = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
+        $canSeeAmounts         = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
         $loadChartAssignments = LoadChartAssignment::whereIn('employee_id', $assignedEmployeeIds)->get();
-        $userPermissions      = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
+        $userPermissions       = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
         return view('modulos.recursoshumanos.sistemas.loadchart.approval', compact(
             'employees', 'workLogsData', 'fortnightlyConfig', 'monthlyDays', 'currentMonth', 'currentYear',
@@ -165,8 +165,8 @@ class ApprovalController extends Controller
             $isQuincena2    = $date >= $q2Start && $date <= $q2End;
             $isCurrentMonth = $date->month == $month;
             $monthlyDays[]  = [
-                'day'              => $date->day, 'date'            => $date->copy()->format('Y-m-d'), 'day_name' => $date->locale('es')->shortDayName,
-                'is_quincena_1'    => $isQuincena1, 'is_quincena_2' => $isQuincena2, 'is_working_day'             => $isQuincena1 || $isQuincena2,
+                'day'              => $date->day, 'date'              => $date->copy()->format('Y-m-d'), 'day_name' => $date->locale('es')->shortDayName,
+                'is_quincena_1'    => $isQuincena1, 'is_quincena_2' => $isQuincena2, 'is_working_day'              => $isQuincena1 || $isQuincena2,
                 'is_current_month' => $isCurrentMonth, 'month'      => $date->month,
             ];
         }
@@ -182,7 +182,7 @@ class ApprovalController extends Controller
         if ($sixteenthDay->month !== $month) {$sixteenthDay = $lastDay->copy();}
 
         return FortnightlyConfig::create([
-            'year'     => $year, 'month'          => $month, 'q1_start' => $firstDay, 'q1_end' => $fifteenthDay,
+            'year'     => $year, 'month'           => $month, 'q1_start' => $firstDay, 'q1_end' => $fifteenthDay,
             'q2_start' => $sixteenthDay, 'q2_end' => $lastDay,
         ]);
     }
@@ -231,17 +231,17 @@ class ApprovalController extends Controller
                 }
                 if ($log) {$workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => $log->daily_activities ?? [], 'reviewed_at' => $log->reviewed_at, 'approved_at' => $log->approved_at];} else { $workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => [], 'reviewed_at' => null, 'approved_at' => null];}
             }
-            $canSeeAmounts        = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
+            $canSeeAmounts         = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
             $loadChartAssignments = LoadChartAssignment::whereIn('employee_id', $assignedEmployeeIds)->get();
-            $userPermissions      = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
+            $userPermissions       = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
             // ⚠️ La respuesta de AJAX AHORA INCLUYE LOS DATOS DEL EMPLEADO
             // Esto es crucial para que JavaScript pueda re-renderizar la estructura de las filas.
 
             return response()->json([
-                'success'              => true, 'employees'                        => $employees, 'workLogsData' => $workLogsData,
+                'success'              => true, 'employees'                         => $employees, 'workLogsData' => $workLogsData,
                 'fortnightlyConfig'    => $fortnightlyConfig, 'monthlyDays'        => $monthlyDays,
-                'currentMonth'         => $month, 'currentYear'                    => $year, 'canSeeAmounts'     => $canSeeAmounts,
+                'currentMonth'         => $month, 'currentYear'                     => $year, 'canSeeAmounts'     => $canSeeAmounts,
                 'loadChartAssignments' => $loadChartAssignments, 'userPermissions' => $userPermissions,
                 'message'              => 'Datos cargados para ' . $this->getMonthName($month) . ' ' . $year,
             ]);
@@ -261,11 +261,11 @@ class ApprovalController extends Controller
     private function updateItemStatus($item, $statusKey, $currentStatus, $newStatus, $isReviewer, $isApprover, &$updated)
     {
         if ($isReviewer && $newStatus === 'reviewed' && $currentStatus === 'under_review') {$item[$statusKey] = 'Reviewed';
-            $updated                                     = true;}
+            $updated                                 = true;}
         if ($isApprover && $newStatus === 'approved' && ($currentStatus === 'under_review' || $currentStatus === 'reviewed')) {$item[$statusKey] = 'Approved';
-            $updated                                     = true;}
+            $updated                                 = true;}
         if ($isApprover && $newStatus === 'rejected' && $currentStatus !== 'rejected') {$item[$statusKey] = 'Rejected';
-            $updated                                     = true;}
+            $updated                                 = true;}
         return $item;
     }
 
@@ -283,12 +283,12 @@ class ApprovalController extends Controller
         }
 
         if ($newStatus === 'reviewed' && $all_items_reviewed) {$workLog->reviewed_at = now();
-            $workLog->reviewed_by                            = $userId;
+            $workLog->reviewed_by                           = $userId;
             $workLog->save();}
         if ($newStatus === 'approved' && $all_items_approved) {$workLog->approved_at = now();
-            $workLog->approved_by                            = $userId;
+            $workLog->approved_by                           = $userId;
             if (! $workLog->reviewed_at) {$workLog->reviewed_at = now();
-                $workLog->reviewed_by                            = $userId;}
+                $workLog->reviewed_by                           = $userId;}
             $workLog->save();}
     }
 
@@ -335,9 +335,9 @@ class ApprovalController extends Controller
             $startDate = null;
             $endDate   = null;
             if ($fortnight === 'quincena1') {$startDate = Carbon::parse($fortnightlyConfig->q1_start);
-                $endDate                              = Carbon::parse($fortnightlyConfig->q1_end);} elseif ($fortnight === 'quincena2') {$startDate = Carbon::parse($fortnightlyConfig->q2_start);
-                $endDate                              = Carbon::parse($fortnightlyConfig->q2_end);} else { $startDate = Carbon::createFromDate($year, $month, 1);
-                $endDate                               = Carbon::createFromDate($year, $month, 1)->endOfMonth();}
+                $endDate                           = Carbon::parse($fortnightlyConfig->q1_end);} elseif ($fortnight === 'quincena2') {$startDate = Carbon::parse($fortnightlyConfig->q2_start);
+                $endDate                           = Carbon::parse($fortnightlyConfig->q2_end);} else { $startDate = Carbon::createFromDate($year, $month, 1);
+                $endDate                            = Carbon::createFromDate($year, $month, 1)->endOfMonth();}
 
             DB::beginTransaction();
             $dailyActivities = collect($workLog->daily_activities);
@@ -461,15 +461,15 @@ class ApprovalController extends Controller
     {
         try {
             $request->validate([
-                'employee_id'                => 'required|exists:employees,id',
-                'changes'                    => 'required|array',
-                'changes.*.date'             => 'required|date_format:Y-m-d',
-                'changes.*.item_type'        => 'required|string',
-                'changes.*.item_index'       => 'nullable|integer',
-                'changes.*.status'           => 'required|string|in:reviewed,approved,rejected,under_review',
-                'changes.*.rejection_reason' => 'nullable|string',
-                'month'                      => 'required|integer|min:1|max:12',
-                'year'                       => 'required|integer|min:2020|max:2030',
+                'employee_id'                  => 'required|exists:employees,id',
+                'changes'                      => 'required|array',
+                'changes.*.date'               => 'required|date_format:Y-m-d',
+                'changes.*.item_type'          => 'required|string',
+                'changes.*.item_index'         => 'nullable|integer',
+                'changes.*.status'             => 'required|string|in:reviewed,approved,rejected,under_review',
+                'changes.*.rejection_reason'   => 'nullable|string',
+                'month'                        => 'required|integer|min:1|max:12',
+                'year'                         => 'required|integer|min:2020|max:2030',
             ]);
 
             $employeeId = $request->input('employee_id');
@@ -657,7 +657,7 @@ class ApprovalController extends Controller
      * Obtiene la etiqueta del tipo de ítem para el correo
      */
     private function getItemTypeLabel($itemType)
-    {
+        {
         $labels = [
             'activity'      => 'Actividad Principal',
             'food_bonuses'  => 'Bono de Comida',
@@ -864,3 +864,9 @@ class ApprovalController extends Controller
         return $descriptions[$activityType] ?? 'Actividad tipo ' . $activityType;
     }
 }
+
+
+
+
+
+
