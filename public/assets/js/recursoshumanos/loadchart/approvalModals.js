@@ -1,5 +1,4 @@
 
-
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function () {
     initializeServicesModal();
@@ -17,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const servicesCloseBtn = document.querySelector('.services-close-btn');
         const tabButtons = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
+        const searchInput = document.getElementById('service-search'); // Nuevo input de búsqueda
 
         if (servicesInfoBtn) {
             servicesInfoBtn.addEventListener('click', function () {
@@ -49,6 +49,45 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.classList.add('active');
             });
         });
+
+        // **NUEVO: Lógica de filtrado al escribir**
+        if (searchInput) {
+            searchInput.addEventListener('keyup', filterServices);
+        }
+    }
+
+    /**
+     * Normaliza y elimina acentos de una cadena de texto.
+     * @param {string} str - La cadena de texto.
+     * @returns {string} La cadena sin acentos.
+     */
+    function removeAccents(str) {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    /**
+     * Filtra las filas de la tabla de servicios basándose en el valor del input de búsqueda.
+     */
+    function filterServices() {
+        const searchInput = document.getElementById('service-search');
+        // **NORMALIZACIÓN: Se normaliza y se quitan acentos del filtro**
+        const filter = removeAccents(searchInput.value).toUpperCase();
+        const servicesTableBody = document.getElementById('services-table-body');
+
+        if (!servicesTableBody) return;
+
+        const rows = servicesTableBody.querySelectorAll('.table-row');
+        rows.forEach(row => {
+            const textContent = row.textContent || row.innerText;
+            // **NORMALIZACIÓN: Se normaliza y se quitan acentos del contenido de la fila**
+            const normalizedContent = removeAccents(textContent).toUpperCase();
+
+            if (normalizedContent.indexOf(filter) > -1) {
+                row.style.display = ""; // Mostrar
+            } else {
+                row.style.display = "none"; // Ocultar
+            }
+        });
     }
 
     /**
@@ -57,9 +96,14 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadServicesAndBonuses() {
         const servicesPlaceholder = document.getElementById('services-placeholder');
         const bonusesPlaceholder = document.getElementById('bonuses-placeholder');
+        const searchInput = document.getElementById('service-search');
 
         servicesPlaceholder.innerHTML = '<p>Cargando servicios...</p>';
         bonusesPlaceholder.innerHTML = '<p>Cargando bonos...</p>';
+        if (searchInput) {
+             searchInput.value = ''; // Limpiar la búsqueda al cargar
+        }
+
 
         try {
             const response = await fetch('/recursoshumanos/loadchart/info-services');
@@ -88,17 +132,27 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Crear el contenedor principal de la tabla
+        const servicesTableContainer = document.createElement('div');
+        servicesTableContainer.className = 'services-table-container';
+
         const servicesTable = document.createElement('div');
         servicesTable.className = 'services-table';
+
+        // **ACTUALIZADO: Se agregó la columna 'Monto' (col-6)**
         servicesTable.innerHTML = `
         <div class="table-header">
-            <div class="col-1">Tipo de Operación</div>
+            <div class="col-1">Operación</div>
             <div class="col-2">Tipo de Servicio</div>
             <div class="col-3">Servicio Realizado</div>
             <div class="col-4">ID</div>
             <div class="col-5">Descripción</div>
+            <div class="col-6">Monto</div>
         </div>
-    `;
+        <div id="services-table-body"></div>
+        `;
+
+        const servicesTableBody = servicesTable.querySelector('#services-table-body');
 
         for (const operationType in servicesData) {
             const operationGroup = servicesData[operationType];
@@ -109,19 +163,31 @@ document.addEventListener('DOMContentLoaded', function () {
                     servicesArray.forEach(service => {
                         const row = document.createElement('div');
                         row.className = 'table-row';
+
+                        // Formatear el monto a moneda
+                        const formattedAmount = new Intl.NumberFormat('es-MX', {
+                            style: 'currency',
+                            currency: 'MXN',
+                            minimumFractionDigits: 2,
+                        }).format(service.amount);
+
+
+                        // **ACTUALIZADO: Se agregó service.amount**
                         row.innerHTML = `
                         <div class="col-1">${service.operation_type}</div>
                         <div class="col-2">${service.service_type}</div>
                         <div class="col-3">${service.service_performed}</div>
                         <div class="col-4">${service.identifier}</div>
                         <div class="col-5">${service.service_description}</div>
-                    `;
-                        servicesTable.appendChild(row);
+                        <div class="col-6">${formattedAmount}</div>
+                        `;
+                        servicesTableBody.appendChild(row);
                     });
                 }
             }
         }
 
+        // Reemplazar el contenido del placeholder con la nueva estructura
         placeholder.innerHTML = '';
         placeholder.appendChild(servicesTable);
     }
@@ -161,7 +227,6 @@ document.addEventListener('DOMContentLoaded', function () {
         placeholder.innerHTML = '';
         placeholder.appendChild(bonusesTable);
     }
-
 
     /*MODAL DE CUADRILLA*/
     function initializeSquadControl() {

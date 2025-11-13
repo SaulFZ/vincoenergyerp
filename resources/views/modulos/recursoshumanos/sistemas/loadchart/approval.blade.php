@@ -320,31 +320,34 @@
 
     {{-- Aquí el resto de tus modales (services-modal, quincena-modal, squad-control-modal) --}}
 
-    <div id="services-modal" class="services-modal">
-        <div class="services-modal-content">
-            <span class="services-close-btn">&times;</span>
-            <h2 class="services-title">Catálogo de Servicios y Bonos</h2>
+<div id="services-modal" class="services-modal">
+    <div class="services-modal-content">
+        <span class="services-close-btn">&times;</span>
+        <h2 class="services-title">Catálogo de Servicios y Bonos</h2>
 
-            <div class="modal-body">
-                <div class="form-tabs">
-                    <button class="tab-btn active" data-tab="services-tab">Servicios</button>
-                    <button class="tab-btn" data-tab="bonuses-tab">Bonos</button>
+        <div class="modal-body">
+            <div class="form-tabs">
+                <button class="tab-btn active tab-services" data-tab="services-tab">Servicios</button>
+                <button class="tab-btn tab-bonuses" data-tab="bonuses-tab">Bonos</button>
+                <div class="search-container">
+                    <input type="text" id="service-search" placeholder="Buscar por ID, Operación, o Descripción..." class="search-input">
                 </div>
+            </div>
 
-                <div class="tab-content active" id="services-tab">
-                    <div id="services-placeholder" class="services-section">
-                        <p>Cargando servicios...</p>
-                    </div>
+            <div class="tab-content active" id="services-tab">
+                <div id="services-placeholder" class="services-section">
+                    <p>Cargando servicios...</p>
                 </div>
+            </div>
 
-                <div class="tab-content" id="bonuses-tab">
-                    <div id="bonuses-placeholder" class="bonuses-section">
-                        <p>Cargando bonos...</p>
-                    </div>
+            <div class="tab-content" id="bonuses-tab">
+                <div id="bonuses-placeholder" class="bonuses-section">
+                    <p>Cargando bonos...</p>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
     <div id="quincena-modal" class="quincena-modal-container" style="display: none;">
         <div class="quincena-modal-card">

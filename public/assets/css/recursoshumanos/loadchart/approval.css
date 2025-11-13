@@ -1457,11 +1457,9 @@ select option[disabled]:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
-
 /* Modal container and content */
 .services-modal {
     display: none;
-    /* Se oculta por defecto */
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -1471,16 +1469,13 @@ select option[disabled]:hover {
     align-items: flex-end;
 }
 
-/* New class to show the modal */
 .services-modal.show-modal {
     display: flex;
-    /* Se muestra cuando la clase está presente */
 }
 
 .services-modal-content {
     background-color: var(--white);
     padding: 12px;
-    /* Reducido para menor altura */
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
     max-width: 850px;
@@ -1496,19 +1491,14 @@ select option[disabled]:hover {
 .services-close-btn {
     position: absolute;
     top: 6px;
-    /* Ajuste para acercar al borde superior */
     right: 10px;
-    /* Ajuste para acercar al borde derecho */
     color: var(--medium-gray);
     font-size: 18px;
-    /* Icono de cierre más pequeño */
     font-weight: 300;
     cursor: pointer;
     transition: all 0.2s ease;
     width: 22px;
-    /* Tamaño del botón reducido */
     height: 22px;
-    /* Tamaño del botón reducido */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1526,74 +1516,98 @@ select option[disabled]:hover {
     color: var(--primary-blue);
     text-align: center;
     margin-bottom: 10px;
-    /* Reducido */
     border-bottom: 1px solid #e2e8f0;
     padding-bottom: 8px;
-    /* Reducido */
     font-weight: 700;
     font-size: 18px;
-    /* Título más pequeño */
     letter-spacing: -0.025em;
 }
 
-/* Tab styling */
+/* Tab styling - Específico para este modal */
 .modal-body {
     max-height: 40vh;
-    /* Altura máxima del contenido reducida */
     overflow-y: auto;
     padding-bottom: 10px;
-    /* Reducido */
 }
 
-.form-tabs {
+.modal-body .form-tabs {
     display: flex;
     border-bottom: 1px solid #cbd5e0;
     margin-bottom: 10px;
-    /* Reducido */
     background-color: var(--background-gray);
     border-radius: 8px 8px 0 0;
     padding: 2px;
+    gap: 4px;
+    position: relative;
+    padding-right: 200px; /* Espacio para el buscador */
 }
 
-.tab-btn {
+.modal-body .tab-btn {
     background-color: transparent;
     border: none;
     outline: none;
     cursor: pointer;
     padding: 6px 12px;
-    /* Padding reducido para menor altura de los botones */
     transition: all 0.3s ease;
     font-size: 13px;
-    /* Fuente más pequeña */
     font-weight: 700;
     border-radius: 6px;
     color: #4a5568;
-    flex: 1;
+    flex: 0 1 auto;
     position: relative;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
-.tab-btn.active {
+.modal-body .tab-btn.active {
     background-color: var(--primary-blue);
     color: var(--white);
     box-shadow: 0 1px 4px rgba(40, 56, 72, 0.1);
 }
 
-.tab-btn:not(.active):hover {
+.modal-body .tab-btn:not(.active):hover {
     background-color: var(--white);
     color: #1a202c;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.tab-content {
+.modal-body .tab-content {
     display: none;
     padding-top: 8px;
-    /* Reducido */
 }
 
-.tab-content.active {
+.modal-body .tab-content.active {
     display: block;
+}
+
+/* Buscador mejorado */
+.modal-body .search-container {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    width: 190px;
+}
+
+.modal-body .search-input {
+    width: 100%;
+    padding: 6px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.modal-body .search-input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+}
+
+.modal-body .search-input::placeholder {
+    color: #a0aec0;
 }
 
 /* Table styling */
@@ -1616,7 +1630,6 @@ select option[disabled]:hover {
 .table-row {
     display: flex;
     padding: 8px 10px;
-    /* Padding de filas y encabezado reducido */
     align-items: center;
     border-bottom: 1px solid #e2e8f0;
 }
@@ -1626,7 +1639,6 @@ select option[disabled]:hover {
     font-weight: 700;
     color: var(--white);
     font-size: 11px;
-    /* Fuente más pequeña */
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -1639,7 +1651,6 @@ select option[disabled]:hover {
     background-color: var(--white);
     transition: all 0.2s ease;
     font-size: 12px;
-    /* Fuente más pequeña */
 }
 
 .table-row:nth-child(even) {
@@ -1656,7 +1667,7 @@ select option[disabled]:hover {
     border-bottom: none;
 }
 
-/* Column widths for services table - ajustado para ser más compacto */
+/* Column widths for services table */
 .services-table .col-1 {
     flex: 0 0 12%;
     font-weight: 600;
@@ -1680,11 +1691,10 @@ select option[disabled]:hover {
 .services-table .col-5 {
     flex: 1;
     line-height: 1.3;
-    /* Altura de línea reducida */
     font-weight: 400;
 }
 
-/* Column widths for bonuses table - ajustado para ser más compacto */
+/* Column widths for bonuses table */
 .bonuses-table .col-1 {
     flex: 0 0 30%;
     font-weight: 600;
@@ -1714,10 +1724,8 @@ select option[disabled]:hover {
 .bonuses-section p {
     text-align: center;
     padding: 15px 10px;
-    /* Reducido */
     color: #2d3748;
     font-size: 13px;
-    /* Fuente más pequeña */
     margin: 0;
     font-weight: 500;
 }
@@ -1729,7 +1737,6 @@ select option[disabled]:hover {
     border: 1px solid #feb2b2;
     border-radius: 6px;
     padding: 8px;
-    /* Reducido */
 }
 
 /* Scrollbar styling */

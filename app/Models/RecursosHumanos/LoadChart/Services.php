@@ -10,8 +10,6 @@ class Services extends Model
 {
     use HasFactory;
 
-    // ... (otras propiedades y métodos)
-
     /**
      * Get grouped services, ordered by specific operation type and identifier.
      *
@@ -20,7 +18,8 @@ class Services extends Model
     public static function getGroupedServices()
     {
         // 1. Obtiene todos los servicios y los ordena por identificador de menor a mayor.
-        $services = self::select('operation_type', 'service_type', 'service_performed', 'identifier', 'service_description')
+        // **IMPORTANTE: Se agregó el campo 'amount'**
+        $services = self::select('operation_type', 'service_type', 'service_performed', 'identifier', 'service_description', 'amount')
             ->orderBy('identifier', 'asc')
             ->get();
 
@@ -28,7 +27,7 @@ class Services extends Model
         $groupedServices = $services->groupBy('operation_type');
 
         // 3. Define el orden deseado para las claves del array.
-        $order = ['Tierra', 'Marino'];
+        $order = ['Tierra', 'Marina']; // Corregido 'Marino' a 'Marina' para coincidir con tus datos
 
         // 4. Crea un nuevo array en el orden especificado.
         $orderedGroupedServices = [];
