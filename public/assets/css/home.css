@@ -245,6 +245,58 @@ body {
     min-height: calc(100vh - 60px);
 }
 
+
+/* ==================================== */
+/* 6. Estilo de Estado Vacío (Empty State) */
+/* ==================================== */
+.empty-state-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    /* Ocupa el espacio disponible en main-content */
+    min-height: calc(100vh - 100px);
+    padding: 40px 20px;
+    background-color: var(--blanco);
+    border-radius: var(--border-radius);
+    box-shadow: var(--sombra);
+}
+
+.empty-state-content {
+    max-width: 400px;
+    padding: 30px;
+}
+
+.empty-state-icon {
+    color: var(--gris-medio);
+    font-size: 3rem;
+    margin-bottom: 20px;
+    /* Fondo circular suave, simulando el estilo de la imagen */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgb(80, 80, 80); /* Gris claro transparente */
+}
+
+.empty-state-icon i {
+    font-size: 2.5rem;
+}
+
+.empty-state-title {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--negro);
+    margin-bottom: 10px;
+}
+
+.empty-state-text {
+    font-size: 1rem;
+    color: var(--gris-oscuro);
+    line-height: 1.5;
+}
 /* ==================================== */
 /* 4. Responsive Design */
 /* ==================================== */

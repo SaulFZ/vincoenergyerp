@@ -34,6 +34,7 @@ function initializeModalCalendarScripts(employeeId) {
     const loadingSpinner = saveBtn?.querySelector('.loading-spinner'); // Uso de Optional Chaining
     const serviceTabBtn = document.getElementById('service-tab-btn');
     const vacationDaysElement = document.querySelector('p[data-balance-type="vacation"]');
+    // ✅ CAMBIO: Mantener el elemento para la actualización del conteo de días 'D'
     const restDaysElement = document.querySelector('p[data-balance-type="rest"]');
     const conditionalFields = document.getElementById('conditional-fields');
 
@@ -49,8 +50,9 @@ function initializeModalCalendarScripts(employeeId) {
     let monthlyActivities = {};
     let currentActivity = null;
     let currentPayrollDates = {};
+    // ✅ CAMBIO: Solo mantener el balance de vacaciones.
     let vacationDaysAvailable = parseInt(vacationDaysElement?.textContent) || 0;
-    let restDaysAvailable = parseInt(restDaysElement?.textContent) || 0;
+    // ❌ CAMBIO: Eliminar 'restDaysAvailable'
 
     let currentEmployeeId = employeeId; // 👈 Guarda el ID aquí
 
@@ -104,113 +106,128 @@ function initializeModalCalendarScripts(employeeId) {
     }
 
     /**
-     * Actualiza la UI con los nuevos saldos.
-     */
-    async function updateBalanceUI(vacationDays, restDays) {
+      * Actualiza la UI con los nuevos saldos.
+      * @param {number} vacationDays - Días de vacaciones disponibles.
+      * @param {number} totalRestDaysInMonth - Días de descanso (actividad 'D') registrados en el mes actual.
+      */
+    async function updateBalanceUI(vacationDays, totalRestDaysInMonth) {
         if (vacationDaysElement) {
             vacationDaysAvailable = parseInt(vacationDays);
             vacationDaysElement.textContent = `${vacationDaysAvailable} días`;
         }
+        // ✅ CAMBIO: Actualizar el conteo de días de descanso del mes
         if (restDaysElement) {
-            restDaysAvailable = parseInt(restDays);
-            restDaysElement.textContent = `${restDaysAvailable} días`;
+            restDaysElement.textContent = `${totalRestDaysInMonth} días`;
         }
     }
 
     /**
-     * Llama al backend para obtener y actualizar los saldos.
-     */
-async function fetchBalances() {
-    try {
-        // ⚠️ CORRECCIÓN: Agregar employee_id a la URL
-        const employeeParam = currentEmployeeId ? `?employee_id=${currentEmployeeId}` : '';
-        const response = await fetch(`/recursoshumanos/loadchart/balances-data${employeeParam}`);
-        const data = await response.json();
-        if (data.success) {
-            updateBalanceUI(data.vacationDays, data.restDays);
-        }
-    } catch (error) {
-        console.error('Error fetching balances:', error);
-    }
-}
+      * Llama al backend para obtener y actualizar los saldos.
+      */
+    async function fetchBalances() {
+        try {
+            // ⚠️ CORRECCIÓN: Agregar employee_id y el mes/año actual a la URL para el conteo de días 'D'
+            const monthSpan = document.querySelector('.month-navigation span');
+            const currentMonth = monthSpan.getAttribute('data-month');
+            const currentYear = monthSpan.getAttribute('data-year');
 
- function handleActivityTypeChange(activityType) {
-    const wellNameField = document.getElementById('well-name-field');
-    const wellNameInput = document.getElementById('well-name');
-    const commissionedField = document.getElementById('commissioned-field');
-    const commissionedSelect = document.getElementById('commissioned-select');
-    const vacationError = document.getElementById('vacation-balance-error');
-    const hasServiceBonusSelect = document.querySelector('input[name="has_service_bonus"]:checked');
-    const foodBonusSelect = document.getElementById('food-bonus');
-    const fieldBonusSelect = document.getElementById('field-bonus');
-
-    // Mostrar/Ocultar error de Vacaciones
-    if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
-        vacationError.style.display = 'block';
-    } else {
-        vacationError.style.display = 'none';
-    }
-
-    // Resetear campos de viaje antes de re-evaluar
-    travelDestinationField.style.display = 'none';
-    travelDestinationInput.value = '';
-    travelReasonField.style.display = 'none';
-    travelReasonInput.value = '';
-
-    // --- Lógica de campos condicionales por Tipo de Actividad ---
-    if (activityType === 'P') { // Trabajo en Pozo
-        wellNameField.style.display = 'block';
-        commissionedField.style.display = 'none';
-        commissionedSelect.selectedIndex = 0;
-        conditionalFields.style.display = 'block'; // Mostrar bonos/servicio
-        handleServiceBonusChange(hasServiceBonusSelect?.value); // Re-evaluar pestaña de servicio
-
-    } else {
-        // ✅ PARA TODAS LAS OTRAS ACTIVIDADES (B, C, TC, V, D, VAC, E, M, A, PE, N)
-        // Limpiar campos específicos de Pozo
-        wellNameField.style.display = 'none';
-        wellNameInput.value = '';
-
-        // Limpiar campos de Comisionado
-        commissionedField.style.display = 'none';
-        commissionedSelect.selectedIndex = 0;
-
-        // ✅ SOLO LIMPIAR BONOS si NO están BLOQUEADOS (aprobados/revisados)
-        const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
-        const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
-
-        // Si el bono de comida NO está bloqueado (puede ser rejected o under_review), limpiarlo
-        if (!statusesToBlockField.includes(foodBonusStatus)) {
-            if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
-        }
-
-        // Si el bono de campo NO está bloqueado (puede ser rejected o under_review), limpiarlo
-        if (!statusesToBlockField.includes(fieldBonusStatus)) {
-            if (fieldBonusSelect) fieldBonusSelect.selectedIndex = 0;
-        }
-
-        // Ocultar sección de bonos (pero mantener los valores si están bloqueados)
-        conditionalFields.style.display = 'none';
-
-        // Forzar que no tenga bono de servicio (solo si no está bloqueado)
-        const serviceStatus = getFieldStatus(currentActivity, 'service');
-        if (!statusesToBlockField.includes(serviceStatus)) {
-            document.getElementById('service-bonus-no').checked = true;
-            document.querySelector('.service-bonus-option[data-value="no"]').classList.add('selected');
-            document.querySelector('.service-bonus-option[data-value="si"]').classList.remove('selected');
-            handleServiceBonusChange('no'); // Ocultar pestaña de servicio
-
-            // ✅ Limpiar servicios solo si no están bloqueados
-            resetServiceForm();
+            const employeeParam = currentEmployeeId ? `?employee_id=${currentEmployeeId}&month=${currentMonth}&year=${currentYear}` : `?month=${currentMonth}&year=${currentYear}`;
+            // ⚠️ CORRECCIÓN: El endpoint debe cambiar para reflejar que también queremos el conteo de días 'D'
+            const response = await fetch(`/recursoshumanos/loadchart/balances-data${employeeParam}`);
+            const data = await response.json();
+            if (data.success) {
+                // ✅ CAMBIO: Enviar los días de descanso contados ('totalRestDaysInMonth') a updateBalanceUI
+                updateBalanceUI(data.vacationDays, data.totalRestDaysInMonth);
+            }
+        } catch (error) {
+            console.error('Error fetching balances:', error);
         }
     }
 
-    // Manejo específico para Viaje
-    if (activityType === 'V') {
-        travelDestinationField.style.display = 'block';
-        travelReasonField.style.display = 'block';
+    function handleActivityTypeChange(activityType) {
+        const wellNameField = document.getElementById('well-name-field');
+        const wellNameInput = document.getElementById('well-name');
+        const commissionedField = document.getElementById('commissioned-field');
+        const commissionedSelect = document.getElementById('commissioned-select');
+        const vacationError = document.getElementById('vacation-balance-error');
+        const hasServiceBonusSelect = document.querySelector('input[name="has_service_bonus"]:checked');
+        const foodBonusSelect = document.getElementById('food-bonus');
+        const fieldBonusSelect = document.getElementById('field-bonus');
+
+        // Mostrar/Ocultar error de Vacaciones
+        if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
+            vacationError.style.display = 'block';
+        } else {
+            vacationError.style.display = 'none';
+        }
+
+        // Resetear campos de viaje antes de re-evaluar
+        travelDestinationField.style.display = 'none';
+        travelDestinationInput.value = '';
+        travelReasonField.style.display = 'none';
+        travelReasonInput.value = '';
+
+        // --- Lógica de campos condicionales por Tipo de Actividad ---
+        if (activityType === 'P') { // Trabajo en Pozo
+            wellNameField.style.display = 'block';
+            commissionedField.style.display = 'none';
+            commissionedSelect.selectedIndex = 0;
+            conditionalFields.style.display = 'block'; // Mostrar bonos/servicio
+            handleServiceBonusChange(hasServiceBonusSelect?.value); // Re-evaluar pestaña de servicio
+
+        } else {
+            // ✅ PARA TODAS LAS OTRAS ACTIVIDADES (B, C, TC, V, D, VAC, E, M, A, PE, N)
+            // Limpiar campos específicos de Pozo
+            wellNameField.style.display = 'none';
+            wellNameInput.value = '';
+
+            // Limpiar campos de Comisionado
+            commissionedField.style.display = 'none';
+            commissionedSelect.selectedIndex = 0;
+
+            // ✅ SOLO LIMPIAR BONOS si NO están BLOQUEADOS (aprobados/revisados)
+            const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
+            const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
+
+            // Si el bono de comida NO está bloqueado (puede ser rejected o under_review), limpiarlo
+            if (!statusesToBlockField.includes(foodBonusStatus)) {
+                if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
+            }
+
+            // Si el bono de campo NO está bloqueado (puede ser rejected o under_review), limpiarlo
+            if (!statusesToBlockField.includes(fieldBonusStatus)) {
+                if (fieldBonusSelect) fieldBonusSelect.selectedIndex = 0;
+            }
+
+            // Ocultar sección de bonos (pero mantener los valores si están bloqueados)
+            conditionalFields.style.display = 'none';
+
+            // Forzar que no tenga bono de servicio (solo si no está bloqueado)
+            const serviceStatus = getFieldStatus(currentActivity, 'service');
+            if (!statusesToBlockField.includes(serviceStatus)) {
+
+                // 💡 CORRECCIÓN: Verifica si los elementos existen (si el usuario tiene el permiso de Blade)
+                const radioNo = document.getElementById('service-bonus-no');
+                const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+                const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+
+                if (radioNo && optionNo && optionSi) {
+                    radioNo.checked = true;
+                    optionNo.classList.add('selected');
+                    optionSi.classList.remove('selected');
+                    handleServiceBonusChange('no'); // Ocultar pestaña de servicio
+                }
+                // ✅ Limpiar servicios solo si no están bloqueados
+                resetServiceForm();
+            }
+        }
+
+        // Manejo específico para Viaje
+        if (activityType === 'V') {
+            travelDestinationField.style.display = 'block';
+            travelReasonField.style.display = 'block';
+        }
     }
-}
 
 
     function handleServiceBonusChange(hasServiceBonus) {
@@ -397,11 +414,11 @@ async function fetchBalances() {
     }
 
     /**
-     * @param {Object} activity - El objeto de actividad para el día.
-     * @param {string} fieldType - El tipo de campo ('activity', 'service', 'food_bonus', 'field_bonus').
-     * @param {number} itemIndex - Índice del item (generalmente 0 para bonos/servicios).
-     * @returns {string} - El estado del campo ('approved', 'reviewed', 'rejected', 'under_review').
-     */
+      * @param {Object} activity - El objeto de actividad para el día.
+      * @param {string} fieldType - El tipo de campo ('activity', 'service', 'food_bonus', 'field_bonus').
+      * @param {number} itemIndex - Índice del item (generalmente 0 para bonos/servicios).
+      * @returns {string} - El estado del campo ('approved', 'reviewed', 'rejected', 'under_review').
+      */
     function getFieldStatus(activity, fieldType, itemIndex = 0) {
         if (!activity) return 'under_review';
         let status = 'under_review'; // Valor por defecto
@@ -611,47 +628,57 @@ async function fetchBalances() {
     }
 
     function populateModalWithActivity(activity) {
-        currentActivity = activity;
-        resetActivityOptions();
-        resetServiceForm();
-        resetAdditionalForms();
-        resetBonusFields();
-        clearAllBlocksAndMessages();
+    currentActivity = activity;
+    resetActivityOptions();
+    resetServiceForm();
+    resetAdditionalForms();
+    resetBonusFields();
+    clearAllBlocksAndMessages();
 
-        const activityTabBtn = document.querySelector('.tab-btn[data-tab="activity"]');
-        const serviceTabButton = document.querySelector('.tab-btn[data-tab="service"]');
-        const vacationError = document.getElementById('vacation-balance-error');
-        const isActivityP = activity.activity_type === 'P';
+    const activityTabBtn = document.querySelector('.tab-btn[data-tab="activity"]');
+    const serviceTabButton = document.querySelector('.tab-btn[data-tab="service"]');
+    const vacationError = document.getElementById('vacation-balance-error');
+    const isActivityP = activity.activity_type === 'P';
 
-        // Mostrar/Ocultar campos condicionales
-        conditionalFields.style.display = isActivityP ? 'block' : 'none';
+    // Mostrar/Ocultar campos condicionales
+    conditionalFields.style.display = isActivityP ? 'block' : 'none';
 
-        // Mostrar/Ocultar error de Vacaciones si aplica
-        if (activity.activity_type === 'VAC' && vacationDaysAvailable <= 0) {
-            vacationError.style.display = 'block';
-        } else {
-            vacationError.style.display = 'none';
+    // Mostrar/Ocultar error de Vacaciones si aplica
+    if (activity.activity_type === 'VAC' && vacationDaysAvailable <= 0) {
+        vacationError.style.display = 'block';
+    } else {
+        vacationError.style.display = 'none';
+    }
+
+    const hasService = activity.services_list && activity.services_list.length > 0;
+
+    // ✅ CORRECCIÓN EN populateModalWithActivity (LÍNEA 771 APROXIMADAMENTE)
+    const radioYes = document.getElementById('service-bonus-yes');
+    const radioNo = document.getElementById('service-bonus-no');
+    const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+    const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+
+    if (hasService && isActivityP) {
+        serviceTabBtn.style.display = 'block';
+        if (radioYes && optionNo && optionSi) { // Verificar existencia
+            radioYes.checked = true;
+            optionSi.classList.add('selected');
+            optionNo.classList.remove('selected');
         }
-
-
-        const hasService = activity.services_list && activity.services_list.length > 0;
-        if (hasService && isActivityP) {
-            serviceTabBtn.style.display = 'block';
-            document.getElementById('service-bonus-yes').checked = true;
-            document.querySelector('.service-bonus-option[data-value="si"]').classList.add('selected');
-            document.querySelector('.service-bonus-option[data-value="no"]').classList.remove('selected');
-            if (!document.querySelector('.tab-btn.active')) {
-                serviceTabButton.click();
-            }
-        } else {
-            serviceTabBtn.style.display = 'none';
-            if (document.getElementById('service-tab').classList.contains('active')) {
-                activityTabBtn.click();
-            }
-            document.getElementById('service-bonus-no').checked = true;
-            document.querySelector('.service-bonus-option[data-value="no"]').classList.add('selected');
-            document.querySelector('.service-bonus-option[data-value="si"]').classList.remove('selected');
+        if (!document.querySelector('.tab-btn.active')) {
+            serviceTabButton.click();
         }
+    } else {
+        serviceTabBtn.style.display = 'none';
+        if (document.getElementById('service-tab').classList.contains('active')) {
+            activityTabBtn.click();
+        }
+        if (radioNo && optionNo && optionSi) { // Verificar existencia
+            radioNo.checked = true;
+            optionNo.classList.add('selected');
+            optionSi.classList.remove('selected');
+        }
+    }
 
         const activityTypeOption = document.querySelector(`.activity-option[data-value="${activity.activity_type}"]`);
         if (activityTypeOption) {
@@ -716,11 +743,11 @@ async function fetchBalances() {
     // =========================================================================
 
     /**
-     * Rellena las opciones del selector de 'Servicio Realizado' (Nivel 2)
-     * @param {string} workType - 'Tierra' o 'Marina'
-     * @param {string} serviceTypeFormatted - El valor (value) del tipo de servicio.
-     * @param {string} [selectedPerformedId=null] - El ID a seleccionar.
-     */
+      * Rellena las opciones del selector de 'Servicio Realizado' (Nivel 2)
+      * @param {string} workType - 'Tierra' o 'Marina'
+      * @param {string} serviceTypeFormatted - El valor (value) del tipo de servicio.
+      * @param {string} [selectedPerformedId=null] - El ID a seleccionar.
+      */
     function updateServicePerformedOptions(workType, serviceTypeFormatted, selectedPerformedId = null) {
         const servicePerformedSelect = document.getElementById('service-performed');
         const serviceSelect = document.getElementById('service');
@@ -755,12 +782,12 @@ async function fetchBalances() {
     }
 
     /**
-     * Rellena las opciones del selector de 'Servicio' (Nivel 3)
-     * @param {string} workType - 'Tierra' o 'Marina'
-     * @param {string} serviceTypeFormatted - El valor (value) del tipo de servicio.
-     * @param {string} servicePerformedFormatted - El valor (value) del servicio realizado.
-     * @param {string} [selectedServiceId=null] - El ID del servicio a seleccionar.
-     */
+      * Rellena las opciones del selector de 'Servicio' (Nivel 3)
+      * @param {string} workType - 'Tierra' o 'Marina'
+      * @param {string} serviceTypeFormatted - El valor (value) del tipo de servicio.
+      * @param {string} servicePerformedFormatted - El valor (value) del servicio realizado.
+      * @param {string} [selectedServiceId=null] - El ID del servicio a seleccionar.
+      */
     function updateServiceOptions(workType, serviceTypeFormatted, servicePerformedFormatted, selectedServiceId = null) {
         const serviceSelect = document.getElementById('service');
         serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
@@ -856,7 +883,7 @@ async function fetchBalances() {
             // 3. Servicio Realizado (Select) - Llama a la nueva función auxiliar y luego selecciona el valor.
             servicePerformedSelect.disabled = false;
             // Llama a la función para poblar el Nivel 2. La función se encarga de seleccionar el valor y llamar a Nivel 3.
-            updateServicePerformedOptions(workTypeValue, serviceTypeFormatted, servicePerformedFormatted);
+            updateServicePerformedOptions(workTypeValue, serviceTypeFormatted, servicePerformedFormatted, servicePerformedFormatted);
 
             // 4. Servicio (Select) - Llama a la nueva función auxiliar y luego selecciona el valor, lo que también actualiza el monto.
             serviceSelect.disabled = false;
@@ -875,47 +902,65 @@ async function fetchBalances() {
     }
 
 
-    function openModal(processedDate, displayDate) {
-        if (processedDate && displayDate) {
-            currentSelectedDate = processedDate;
-            document.getElementById('activity-date').value = displayDate;
-            const existingActivity = monthlyActivities[processedDate];
-            populatePayrollPeriodOptions();
+function openModal(processedDate, displayDate) {
+    if (processedDate && displayDate) {
+        currentSelectedDate = processedDate;
+        document.getElementById('activity-date').value = displayDate;
+        const existingActivity = monthlyActivities[processedDate];
+        populatePayrollPeriodOptions();
 
-            if (existingActivity) {
-                populateModalWithActivity(existingActivity);
-            } else {
-                currentActivity = null;
-                resetActivityOptions();
-                resetServiceForm();
-                resetAdditionalForms();
-                resetBonusFields();
-                clearAllBlocksAndMessages();
-                document.getElementById('vacation-balance-error').style.display = 'none';
-                document.querySelector('.tab-btn[data-tab="activity"]').click();
-                conditionalFields.style.display = 'none';
-                serviceTabBtn.style.display = 'none';
-                document.getElementById('service-bonus-no').checked = true;
-                document.querySelector('.service-bonus-option[data-value="no"]').classList.add('selected');
-                document.querySelector('.service-bonus-option[data-value="si"]').classList.remove('selected');
+        if (existingActivity) {
+            populateModalWithActivity(existingActivity);
+        } else {
+            currentActivity = null;
+            resetActivityOptions();
+            resetServiceForm();
+            resetAdditionalForms();
+            resetBonusFields();
+            clearAllBlocksAndMessages();
+            document.getElementById('vacation-balance-error').style.display = 'none';
+            document.querySelector('.tab-btn[data-tab="activity"]').click();
+            conditionalFields.style.display = 'none';
+            serviceTabBtn.style.display = 'none';
+
+            // ✅ CORRECCIÓN EN openModal (LÍNEA 898 APROXIMADAMENTE)
+            const radioNo = document.getElementById('service-bonus-no');
+            const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+            const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+
+            if (radioNo && optionNo && optionSi) {
+                radioNo.checked = true;
+                optionNo.classList.add('selected');
+                optionSi.classList.remove('selected');
             }
         }
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
     }
-
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
     function closeModal() {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-        resetActivityOptions();
-        resetServiceForm();
-        resetAdditionalForms();
-        resetBonusFields();
-        clearAllBlocksAndMessages();
-        currentSelectedDate = null;
-        currentActivity = null;
-        conditionalFields.style.display = 'none';
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    resetActivityOptions();
+    resetServiceForm();
+    resetAdditionalForms();
+    resetBonusFields();
+    clearAllBlocksAndMessages();
+    currentSelectedDate = null;
+    currentActivity = null;
+    conditionalFields.style.display = 'none';
+
+    // ✅ CORRECCIÓN EN closeModal (LÍNEA 865 APROXIMADAMENTE)
+    const radioNo = document.getElementById('service-bonus-no');
+    const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+    const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+
+    if (radioNo && optionNo && optionSi) {
+        radioNo.checked = true;
+        optionNo.classList.add('selected');
+        optionSi.classList.remove('selected');
     }
+}
 
     function resetActivityOptions() {
         document.querySelectorAll('.activity-option').forEach(opt => opt.classList.remove('selected'));
@@ -1481,9 +1526,9 @@ async function fetchBalances() {
     const calendarLoadingOverlay = document.getElementById('calendarLoadingOverlay');
 
     /**
-     * Muestra u oculta la capa de superposición de carga.
-     * @param {boolean} isLoading - true para mostrar, false para ocultar.
-     */
+      * Muestra u oculta la capa de superposición de carga.
+      * @param {boolean} isLoading - true para mostrar, false para ocultar.
+      */
     function toggleLoadingOverlay(isLoading) {
         // CORRECCIÓN: Usar Optional Chaining para evitar error si el elemento no existe (en el modal de empleado, por ejemplo)
         if (!calendarLoadingOverlay) return;
@@ -1593,6 +1638,7 @@ async function fetchBalances() {
             attachDayClickEvents();
             updateNavigationButtons();
             await loadMonthlyActivities(month, year);
+            // ✅ CORRECCIÓN: Llamar a fetchBalances sin parámetros, ya usa el contexto del mes
             await fetchBalances();
 
             // 4. Ocultar la capa de carga al finalizar
@@ -1658,13 +1704,7 @@ async function fetchBalances() {
     // Fin del contenido que estaba originalmente dentro de document.addEventListener('DOMContentLoaded', function () {
 }
 
-// =========================================================================
-// INICIALIZACIÓN AUTOMÁTICA (MANTIENE LA FUNCIÓN EN EL MISMO ARCHIVO)
-// =========================================================================
-// calendar.js (FINAL DEL ARCHIVO)
 
-// ... (Aquí termina la función initializeModalCalendarScripts) ...
-// }
 
 // =========================================================================
 // INICIALIZACIÓN AUTOMÁTICA (MANTIENE LA FUNCIÓN EN EL MISMO ARCHIVO)

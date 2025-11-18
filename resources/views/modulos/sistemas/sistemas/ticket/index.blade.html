@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
 <style>
 /* Variables y Colores (PALETA PASTEL SUAVE Y BLANCO) */
 :root {
@@ -16,19 +18,23 @@
     --color-primary-light: #D9E3E7;     /* Azul muy pálido (Bordes, Separadores) */
     --color-primary-softest: #F5F9FA;   /* Fondo de página (Blanco casi puro) */
 
-    --color-secondary-accent: #FFDAB9;  /* Melocotón Suave (Acento secundario) */
-    --color-tertiary-accent: #FFB6C1;   /* Rosa Pastel (Otro acento) */
+    --color-secondary-accent: #FFDAB9;  /* Melocotón Suave */
+    --color-tertiary-accent: #FFB6C1;   /* Rosa Pastel */
+    --color-green-soft: #C3E6CB;        /* Verde suave para éxito */
 
     --color-background: #FFFFFF;        /* Blanco Puro (DOMINANTE) */
-    --color-text-dark: #2C3E50;          /* Gris Azulado Oscuro para texto principal (Mejor contraste) */
+    --color-text-dark: #2C3E50;          /* Gris Azulado Oscuro para texto principal */
     --color-text-soft: #7F8C8D;          /* Gris suave para texto secundario */
     --color-shadow: rgba(0, 0, 0, 0.08); /* Sombra más suave */
 
-    /* Colores de Estado (Pasteles y armoniosos) */
-    --status-pending: #FFD54F;    /* Amarillo Pastel */
-    --status-assigned: #81D4FA;   /* Azul Claro Pastel */
-    --status-closed: #BDBDBD;     /* Gris Pastel */
-    --status-red: #EF9A9A;        /* Rojo Pastel (Para Prioridad Alta) */
+    /* Colores de ESTADO (Nuevos) */
+    --status-new: #81D4FA;          /* Azul Claro (Nuevo) */
+    --status-waiting: #FFD54F;      /* Amarillo (En Espera) */
+    --status-open: #4DB6AC;         /* Turquesa (Abierto) */
+    --status-onhold: #EF9A9A;       /* Rojo Pastel (Por Concluir) */
+    --status-done: #BDBDBD;         /* Gris Pastel (Realizado) */
+
+    --status-red: var(--status-onhold); /* Usamos el color de "Por Concluir" para Prioridad Alta */
 }
 
 /* Reset Básico y Fuente */
@@ -168,7 +174,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Eliminamos el título redundante en tickets, pero mantenemos el espacio */
+/* Encabezado de la Sección */
 .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -182,109 +188,123 @@ body {
     font-size: 24px;
     font-weight: 600;
     color: var(--color-text-dark);
-    margin-bottom: 0; /* Ajustado */
+    margin-bottom: 0;
 }
 
-/* Ocultar títulos de sección que ya no se usan */
-.dashboard-header.hidden {
-    display: none;
-}
-
+/* --- TARJETAS DE RESUMEN --- */
 .summary-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 25px;
+    gap: 20px;
     margin-bottom: 30px;
 }
 
-/* Estilos de Tarjetas */
+/* Específico para Tickets, ahora 3 columnas */
+#tickets .summary-container {
+     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+
 .summary-card {
-    background-color: var(--color-background);
-    padding: 25px;
+    background: var(--color-background);
+    padding: 20px 25px;
     border-radius: 12px;
-    box-shadow: 0 4px 15px var(--color-shadow);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
+    border: none;
     position: relative;
     overflow: hidden;
-    border: 1px solid var(--color-primary-light);
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
-    align-items: center;
 }
 
 .summary-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
 }
 
+/* Pseudo-elemento para el gradiente superior */
 .summary-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    height: 4px;
-    background-color: var(--color-primary-accent);
+    width: 100%;
+    height: 100%;
+    opacity: 0.1;
+    z-index: 1;
+    pointer-events: none;
 }
 
-.summary-card.total::before { background-color: var(--color-primary-accent); }
-.summary-card.pending::before { background-color: var(--color-secondary-accent); }
-.summary-card.assigned::before { background-color: var(--color-tertiary-accent); }
-.summary-card.closed::before { background-color: var(--status-closed); }
+.summary-card.total::before { background: linear-gradient(135deg, var(--color-primary-accent), var(--color-primary-light)); }
+.summary-card.pending::before { background: linear-gradient(135deg, var(--status-waiting), var(--color-secondary-accent)); }
+.summary-card.closed::before { background: linear-gradient(135deg, var(--color-green-soft), var(--status-done)); }
 
 .card-content {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
+    position: relative;
+    z-index: 2;
 }
 
 .card-info h4 {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--color-text-soft);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     font-weight: 600;
 }
 
 .card-info p {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 700;
     color: var(--color-text-dark);
-    margin-bottom: 5px;
+    margin-bottom: 0;
 }
 
 .card-info .card-subtitle {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--color-text-soft);
     font-weight: 400;
-    margin-top: 5px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-primary-light);
 }
 
+/* Contenedor del ícono */
 .card-icon-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     margin-left: 15px;
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
-.summary-card.total .card-icon { color: var(--color-primary-accent); }
-.summary-card.pending .card-icon { color: var(--color-secondary-accent); }
-.summary-card.assigned .card-icon { color: var(--color-tertiary-accent); }
-.summary-card.closed .card-icon { color: var(--status-closed); }
+.card-icon {
+    font-size: 18px;
+    font-weight: 900;
+}
+
+/* Colores de ícono específicos basados en el estado */
+.summary-card.total .card-icon { color: var(--color-primary-dark); }
+.summary-card.pending .card-icon { color: #D4AF37; }
+.summary-card.closed .card-icon { color: #28a745; }
 
 
 /* === 5. LAYOUT DE TICKETS CON FORMULARIO (OPTIMIZADO) === */
 .tickets-layout {
     display: grid;
-    grid-template-columns: 350px 1fr; /* Formulario 350px, Tabla el resto */
+    grid-template-columns: 350px 1fr;
     gap: 25px;
     align-items: start;
-    /* Transición suave para la rejilla */
     transition: grid-template-columns 0.4s ease-in-out;
 }
 
@@ -302,25 +322,21 @@ body {
     border: 1px solid var(--color-primary-light);
     position: sticky;
     top: 20px;
-    overflow-y: auto; /* Permite scroll si el contenido es largo */
-    max-height: 85vh; /* Limita la altura del formulario */
-    min-width: 350px; /* Evita que el ancho se colapse durante la transición */
-
-    /* Transiciones para la animación de cierre/apertura */
+    overflow-y: auto;
+    max-height: 85vh;
+    min-width: 350px;
     transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out, margin 0.4s ease-in-out;
     transform: translateX(0);
     opacity: 1;
 }
 
-/* Estado oculto con desplazamiento y transparencia */
 .tickets-layout.form-hidden .form-section {
     opacity: 0;
     transform: translateX(-100%);
     padding: 0;
-    margin-right: -25px; /* Compensa el gap para un cierre completo */
+    margin-right: -25px;
 }
 
-/* Asegura que el contenido del formulario desaparezca correctamente */
 .tickets-layout.form-hidden .form-section > * {
     visibility: hidden;
     opacity: 0;
@@ -396,7 +412,7 @@ textarea.form-control {
     border: 1px solid var(--color-primary-light);
     border-radius: 6px;
     font-size: 14px;
-    background-color: var(--color-primary-softest); /* Color de fondo más claro */
+    background-color: var(--color-primary-softest);
     color: var(--color-text-soft);
     font-weight: 600;
 }
@@ -431,30 +447,24 @@ textarea.form-control {
 
 .table-controls {
     display: flex;
-    /* Reducimos la separación entre elementos */
     gap: 10px;
     align-items: center;
     margin-bottom: 20px;
 }
 
-/* Optimizamos los anchos de los controles de la tabla */
 .table-controls .btn-primary {
-    /* El botón Nuevo Ticket tiene un ancho fijo */
     flex-shrink: 0;
     min-width: 150px;
 }
 
-/* Modificación: Botón de exportar en la tabla de estadísticas */
 .table-controls .btn-export {
-    margin-left: auto; /* Empuja el botón a la derecha */
+    margin-left: auto;
     flex-shrink: 0;
     min-width: 180px;
 }
 
-
 .table-controls input[type="text"],
 .table-controls select {
-    /* Búsqueda y Filtro tienen anchos más flexibles */
     flex-grow: 1;
     max-width: 250px;
     padding: 8px 12px;
@@ -478,7 +488,6 @@ textarea.form-control {
     font-weight: 600;
     text-transform: uppercase;
     font-size: 13px;
-    /* Bordes redondeados para el encabezado */
     border-radius: 0;
 }
 
@@ -496,7 +505,7 @@ textarea.form-control {
 }
 
 .main-table tbody tr:last-child {
-    border-bottom: none; /* Eliminar el borde inferior de la última fila */
+    border-bottom: none;
 }
 
 .main-table tbody tr:hover {
@@ -520,26 +529,32 @@ textarea.form-control {
     text-transform: uppercase;
 }
 
-.status-tag.pending { background-color: var(--status-pending); }
-.status-tag.assigned { background-color: var(--status-assigned); }
-.status-tag.closed { background-color: var(--status-closed); }
+.status-tag.nuevo { background-color: var(--status-new); }
+.status-tag.en-espera {
+    background-color: var(--status-waiting);
+    color: var(--color-text-dark);
+}
+.status-tag.abierto { background-color: var(--status-open); }
+.status-tag.por-concluir { background-color: var(--status-onhold); }
+.status-tag.realizado { background-color: var(--status-done); }
+
 
 .priority-high { color: var(--status-red); font-weight: 700; }
-.priority-medium { color: var(--status-pending); }
-.priority-low { color: var(--status-assigned); }
+.priority-medium { color: var(--status-waiting); }
+.priority-low { color: var(--status-new); }
 
 /* Acciones en la tabla */
 .table-actions {
     display: flex;
-    gap: 5px; /* Reducción de la separación */
+    gap: 5px;
 }
 
-/* === 7. VISTA DE ESTADÍSTICAS === */
+/* === 7. VISTA DE ESTADÍSTICAS (APEXCHARTS) === */
 .stats-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 25px;
-    margin-top: 30px; /* Separación de la tabla de arriba */
+    margin-top: 30px;
 }
 
 .stat-card {
@@ -559,78 +574,35 @@ textarea.form-control {
     font-weight: 600;
 }
 
-.stat-chart {
-    height: 200px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-around;
-    margin-top: 20px;
+/* Contenedores de gráficas ApexChart */
+.chart-container {
+    min-height: 250px;
+    /* ApexCharts manejará el resto */
 }
 
-.chart-bar {
-    width: 40px;
-    background-color: var(--color-primary-accent);
-    border-radius: 4px 4px 0 0;
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-.chart-bar:hover {
-    transform: scale(1.05);
-    opacity: 0.8;
-}
-
-.chart-label {
-    position: absolute;
-    bottom: -25px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 11px;
-    color: var(--color-text-soft);
-    font-weight: 500;
-}
-
-.chart-value {
-    position: absolute;
-    top: -25px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-dark);
-}
-
-/* === MEDIA QUERIES (RESPONSIVO) === */
+/* Media Queries ajustadas para el nuevo layout */
 @media (max-width: 1024px) {
     .tickets-layout {
-        /* Desactivar la rejilla de 2 columnas para apilar en pantallas medianas */
         grid-template-columns: 1fr;
         gap: 20px;
     }
 
     .form-section {
-        order: 1; /* Poner el formulario primero */
-        position: static; /* Desactivar sticky */
+        order: 1;
+        position: static;
         max-height: none;
-        min-width: unset; /* Permitir que ocupe el ancho completo */
+        min-width: unset;
         overflow-y: visible;
-
-        /* Ajuste para que ocupe el 100% y se oculte bien */
         margin-right: 0;
-        transform: none; /* Desactivar la transformación en el estado normal */
+        transform: none;
     }
 
-    /* Ocultamos completamente el formulario para que no ocupe espacio cuando está 'hidden' */
     .tickets-layout.form-hidden .form-section {
-        /* Usamos display: none para colapso instantáneo en móviles después de la transición JS */
         display: none !important;
         opacity: 0;
     }
 
     .tickets-layout.form-hidden .form-section > * {
-        /* No necesitamos transiciones de visibilidad en móvil porque usamos display: none */
         visibility: visible;
     }
 
@@ -672,7 +644,7 @@ textarea.form-control {
 
     .table-controls > * {
         max-width: 100%;
-        width: 100%; /* Asegura que ocupen el ancho completo */
+        width: 100%;
     }
 
     .main-table {
@@ -685,7 +657,6 @@ textarea.form-control {
         flex-wrap: wrap;
     }
 
-    /* Ajuste para el botón de exportar en móvil */
     .table-controls .btn-export {
         margin-left: 0;
     }
@@ -718,48 +689,38 @@ textarea.form-control {
                         <div class="card-info">
                             <h4>Total de Tickets</h4>
                             <p>120</p>
-                            <div class="card-subtitle">Últimos 30 días</div>
                         </div>
                         <div class="card-icon-container">
                             <i class="card-icon fas fa-ticket-alt"></i>
                         </div>
                     </div>
+                    <div class="card-subtitle">Últimos 30 días</div>
                 </div>
+
                 <div class="summary-card pending">
                     <div class="card-content">
                         <div class="card-info">
-                            <h4>Tickets Pendientes</h4>
-                            <p>12</p>
-                            <div class="card-subtitle">Esperando asignación</div>
+                            <h4>Tickets Activos</h4>
+                            <p>17</p>
                         </div>
                         <div class="card-icon-container">
                             <i class="card-icon fas fa-clock"></i>
                         </div>
                     </div>
+                    <div class="card-subtitle">Nuevo, Abierto, En Espera, Por Concluir</div>
                 </div>
-                <div class="summary-card assigned">
-                    <div class="card-content">
-                        <div class="card-info">
-                            <h4>Tickets Asignados</h4>
-                            <p>5</p>
-                            <div class="card-subtitle">En proceso de resolución</div>
-                        </div>
-                        <div class="card-icon-container">
-                            <i class="card-icon fas fa-user-check"></i>
-                        </div>
-                    </div>
-                </div>
+
                 <div class="summary-card closed">
                     <div class="card-content">
                         <div class="card-info">
-                            <h4>Tickets Cerrados</h4>
+                            <h4>Tickets Realizados</h4>
                             <p>103</p>
-                            <div class="card-subtitle">Resueltos este mes</div>
                         </div>
                         <div class="card-icon-container">
                             <i class="card-icon fas fa-check-circle"></i>
                         </div>
                     </div>
+                    <div class="card-subtitle">Cerrados este mes</div>
                 </div>
             </div>
 
@@ -807,6 +768,23 @@ textarea.form-control {
                             <textarea id="descripcion" class="form-control" placeholder="Describa el problema en detalle..." required></textarea>
                         </div>
 
+                        <div class="form-group" id="temp-status-group">
+                            <label for="temp-status">Simular Estado Inicial</label>
+                            <select id="temp-status" class="form-control">
+                                <option value="nuevo">1. Nuevo</option>
+                                <option value="abierto">2. Abierto</option>
+                                <option value="en-espera">3. En Espera</option>
+                                <option value="por-concluir">4. Por Concluir</option>
+                                <option value="realizado">5. Realizado</option>
+                            </select>
+                            <small class="form-text text-muted" style="color: var(--color-text-soft); font-size: 11px;">(En un sistema real, el estado se cambia en la tabla)</small>
+                        </div>
+
+                        <div class="form-group" id="bloqueo-comment-group" style="display:none;">
+                            <label for="comentario-bloqueo">Razón de "Por Concluir" *</label>
+                            <textarea id="comentario-bloqueo" class="form-control" placeholder="Escriba la razón del bloqueo (ej: Espera de pieza X, Espera de aprobación, etc.)" disabled></textarea>
+                        </div>
+
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Crear Ticket
@@ -825,9 +803,11 @@ textarea.form-control {
                         <input type="text" placeholder="Buscar por ID, Asunto o Usuario..." />
                         <select>
                             <option>Filtrar por Estado...</option>
-                            <option>Pendiente</option>
-                            <option>Asignado</option>
-                            <option>Cerrado</option>
+                            <option value="nuevo">Nuevo</option>
+                            <option value="abierto">Abierto</option>
+                            <option value="en-espera">En Espera</option>
+                            <option value="por-concluir">Por Concluir</option>
+                            <option value="realizado">Realizado</option>
                         </select>
                     </div>
 
@@ -853,7 +833,7 @@ textarea.form-control {
                                 <td>Ana García</td>
                                 <td>Recursos Humanos</td>
                                 <td class="priority-medium">Media</td>
-                                <td><span class="status-tag assigned">Asignado</span></td>
+                                <td><span class="status-tag en-espera">En Espera</span></td>
                                 <td>2025-11-12</td>
                                 <td class="table-actions"><button class="btn btn-secondary"><i class="fas fa-eye"></i> Ver</button></td>
                             </tr>
@@ -864,7 +844,7 @@ textarea.form-control {
                                 <td>Carlos Ruiz</td>
                                 <td>QHSE</td>
                                 <td class="priority-high">Alta</td>
-                                <td><span class="status-tag pending">Pendiente</span></td>
+                                <td><span class="status-tag abierto">Abierto</span></td>
                                 <td>2025-11-11</td>
                                 <td class="table-actions"><button class="btn btn-secondary"><i class="fas fa-eye"></i> Ver</button></td>
                             </tr>
@@ -875,7 +855,7 @@ textarea.form-control {
                                 <td>María López</td>
                                 <td>Sistemas</td>
                                 <td class="priority-high">Alta</td>
-                                <td><span class="status-tag assigned">Asignado</span></td>
+                                <td><span class="status-tag por-concluir">Por Concluir</span></td>
                                 <td>2025-11-10</td>
                                 <td class="table-actions"><button class="btn btn-secondary"><i class="fas fa-eye"></i> Ver</button></td>
                             </tr>
@@ -884,9 +864,8 @@ textarea.form-control {
                                 <td>RH-2</td>
                                 <td>Solicitud de acceso a sistema de nómina</td>
                                 <td>Pedro Martínez</td>
-                                <td>Recursos Humanos</td>
                                 <td class="priority-low">Baja</td>
-                                <td><span class="status-tag closed">Cerrado</span></td>
+                                <td><span class="status-tag realizado">Realizado</span></td>
                                 <td>2025-11-09</td>
                                 <td class="table-actions"><button class="btn btn-secondary"><i class="fas fa-eye"></i> Ver</button></td>
                             </tr>
@@ -903,54 +882,42 @@ textarea.form-control {
                 <h2>Indicadores Clave de Desempeño</h2>
             </div>
 
-            <div class="summary-container">
+            <div class="summary-container" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
                 <div class="summary-card total">
                     <div class="card-content">
                         <div class="card-info">
                             <h4>Tiempo Promedio de Respuesta</h4>
                             <p>2.4h</p>
-                            <div class="card-subtitle">Este mes</div>
                         </div>
                         <div class="card-icon-container">
                             <i class="card-icon fas fa-stopwatch"></i>
                         </div>
                     </div>
+                    <div class="card-subtitle">Este mes</div>
                 </div>
                 <div class="summary-card pending">
                     <div class="card-content">
                         <div class="card-info">
                             <h4>Tasa de Resolución</h4>
                             <p>85%</p>
-                            <div class="card-subtitle">Tickets cerrados vs total</div>
                         </div>
                         <div class="card-icon-container">
                             <i class="card-icon fas fa-chart-line"></i>
                         </div>
                     </div>
-                </div>
-                <div class="summary-card assigned">
-                    <div class="card-content">
-                        <div class="card-info">
-                            <h4>Satisfacción del Usuario</h4>
-                            <p>4.7/5</p>
-                            <div class="card-subtitle">Calificación promedio</div>
-                        </div>
-                        <div class="card-icon-container">
-                            <i class="card-icon fas fa-star"></i>
-                        </div>
-                    </div>
+                    <div class="card-subtitle">Tickets cerrados vs total</div>
                 </div>
                 <div class="summary-card closed">
                     <div class="card-content">
                         <div class="card-info">
                             <h4>Tickets por Técnico</h4>
                             <p>28</p>
-                            <div class="card-subtitle">Promedio mensual</div>
                         </div>
                         <div class="card-icon-container">
                             <i class="card-icon fas fa-users"></i>
                         </div>
                     </div>
+                    <div class="card-subtitle">Promedio mensual</div>
                 </div>
             </div>
 
@@ -981,86 +948,22 @@ textarea.form-control {
             <div class="stats-container">
                 <div class="stat-card">
                     <h3>Tickets por Departamento</h3>
-                    <div class="stat-chart">
-                        <div class="chart-bar" style="height: 80%;">
-                            <div class="chart-value">40</div>
-                            <div class="chart-label">SIS</div>
-                        </div>
-                        <div class="chart-bar" style="height: 60%;">
-                            <div class="chart-value">30</div>
-                            <div class="chart-label">RH</div>
-                        </div>
-                        <div class="chart-bar" style="height: 40%;">
-                            <div class="chart-value">20</div>
-                            <div class="chart-label">QHSE</div>
-                        </div>
-                        <div class="chart-bar" style="height: 70%;">
-                            <div class="chart-value">35</div>
-                            <div class="chart-label">VNT</div>
-                        </div>
-                    </div>
+                    <div id="chart-departamento" class="chart-container"></div>
                 </div>
 
                 <div class="stat-card">
                     <h3>Tickets por Estado</h3>
-                    <div class="stat-chart">
-                        <div class="chart-bar" style="height: 100%; background-color: var(--status-closed);">
-                            <div class="chart-value">103</div>
-                            <div class="chart-label">Cerrados</div>
-                        </div>
-                        <div class="chart-bar" style="height: 12%; background-color: var(--status-pending);">
-                            <div class="chart-value">12</div>
-                            <div class="chart-label">Pendientes</div>
-                        </div>
-                        <div class="chart-bar" style="height: 5%; background-color: var(--status-assigned);">
-                            <div class="chart-value">5</div>
-                            <div class="chart-label">Asignados</div>
-                        </div>
-                    </div>
+                    <div id="chart-estado" class="chart-container"></div>
                 </div>
 
                 <div class="stat-card">
                     <h3>Tickets por Prioridad</h3>
-                    <div class="stat-chart">
-                        <div class="chart-bar" style="height: 30%; background-color: var(--status-red);">
-                            <div class="chart-value">15</div>
-                            <div class="chart-label">Alta</div>
-                        </div>
-                        <div class="chart-bar" style="height: 60%; background-color: var(--status-pending);">
-                            <div class="chart-value">30</div>
-                            <div class="chart-label">Media</div>
-                        </div>
-                        <div class="chart-bar" style="height: 75%; background-color: var(--status-assigned);">
-                            <div class="chart-value">75</div>
-                            <div class="chart-label">Baja</div>
-                        </div>
-                    </div>
+                    <div id="chart-prioridad" class="chart-container"></div>
                 </div>
 
                 <div class="stat-card">
                     <h3>Tendencia Mensual</h3>
-                    <div class="stat-chart">
-                        <div class="chart-bar" style="height: 40%;">
-                            <div class="chart-value">20</div>
-                            <div class="chart-label">Jul</div>
-                        </div>
-                        <div class="chart-bar" style="height: 55%;">
-                            <div class="chart-value">28</div>
-                            <div class="chart-label">Ago</div>
-                        </div>
-                        <div class="chart-bar" style="height: 70%;">
-                            <div class="chart-value">35</div>
-                            <div class="chart-label">Sep</div>
-                        </div>
-                        <div class="chart-bar" style="height: 80%;">
-                            <div class="chart-value">40</div>
-                            <div class="chart-label">Oct</div>
-                        </div>
-                        <div class="chart-bar" style="height: 100%;">
-                            <div class="chart-value">50</div>
-                            <div class="chart-label">Nov</div>
-                        </div>
-                    </div>
+                    <div id="chart-tendencia" class="chart-container"></div>
                 </div>
             </div>
         </section>
@@ -1068,137 +971,154 @@ textarea.form-control {
     </main>
 
     <script>
-        // Lógica para el cambio de pestañas
         document.addEventListener('DOMContentLoaded', () => {
             const navItems = document.querySelectorAll('.nav-item');
             const tabContents = document.querySelectorAll('.tab-content');
             const ticketsLayout = document.getElementById('ticketsLayout');
 
+            // --- LÓGICA DE REINICIO MENSUAL Y CONTADORES ---
+            const today = new Date();
+            const currentYearMonth = `${today.getFullYear()}-${today.getMonth() + 1}`;
+
+            const initialData = {
+                "2025-11": { 'RH': 2, 'QHSE': 1, 'SIS': 1, 'CONT': 0, 'VNT': 0, 'OPR': 0 }
+            };
+
+            let deptCounters = initialData[currentYearMonth] || {
+                'RH': 0, 'QHSE': 0, 'SIS': 0, 'CONT': 0, 'VNT': 0, 'OPR': 0
+            };
+
+            const initialRows = document.querySelectorAll('.main-table tbody tr').length;
+            let ticketCounter = initialRows + 1;
+
+
+            const DEPT_SIGLAS = {
+                'SIS': 'SIS', 'RH': 'RH', 'QHSE': 'QHSE', 'CONT': 'CNT', 'VNT': 'VNT', 'OPR': 'OPR'
+            };
+
+            // Referencias del Formulario
+            const ticketForm = document.getElementById('ticket-form');
+            const prioridadSelect = document.getElementById('prioridad');
+            const tempStatusSelect = document.getElementById('temp-status');
+            const bloqueoCommentGroup = document.getElementById('bloqueo-comment-group');
+            const comentarioBloqueo = document.getElementById('comentario-bloqueo');
+
+            // --- LÓGICA DE INTERACCIÓN DE FORMULARIO ---
+            // Simulación de interacción (Maneja la visualización del campo de bloqueo)
+            tempStatusSelect.addEventListener('change', function() {
+                if (this.value === 'por-concluir') {
+                    bloqueoCommentGroup.style.display = 'block';
+                    comentarioBloqueo.required = true;
+                    comentarioBloqueo.disabled = false;
+                } else {
+                    bloqueoCommentGroup.style.display = 'none';
+                    comentarioBloqueo.required = false;
+                    comentarioBloqueo.disabled = true;
+                }
+            });
+
             // Ocultar el formulario al inicio (Estado por defecto)
             ticketsLayout.classList.add('form-hidden');
 
+            // Lógica de navegación (se mantiene)
             navItems.forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
 
-                    // Quitar 'active' de navegación y contenido
                     navItems.forEach(nav => nav.classList.remove('active'));
                     tabContents.forEach(content => content.classList.remove('active'));
 
-                    // Añadir 'active' al elemento clickeado
                     item.classList.add('active');
 
-                    // Mostrar el contenido de la pestaña correspondiente
                     const tabId = item.getAttribute('data-tab');
                     const targetTab = document.getElementById(tabId);
                     if (targetTab) {
                         targetTab.classList.add('active');
+                        // Si cambia a Estadísticas, renderizar las gráficas
+                        if (tabId === 'estadisticas') {
+                            setTimeout(renderApexCharts, 100);
+                        }
                     }
                 });
             });
 
-            // Lógica para el formulario de creación de tickets
-            const ticketForm = document.getElementById('ticket-form');
-            // Inicializar el contador para nuevos tickets (ID: 5)
-            let ticketCounter = 5;
-
-            // Mapeo de siglas (para generar el N° de Reporte)
-            const DEPT_SIGLAS = {
-                'SIS': 'SIS',
-                'RH': 'RH',
-                'QHSE': 'QHSE',
-                // Simulamos que el usuario logeado siempre es de Sistemas (SIS)
-            };
-
-            // Contadores por departamento (para generar el N° de Reporte consecutivo)
-            // Se inicializa con los valores de la tabla de ejemplo, con SIS a 1 para el ejemplo
-            const deptCounters = {
-                'RH': 2,
-                'QHSE': 1,
-                'SIS': 1,
-                'CONT': 0,
-                'VNT': 0,
-                'OPR': 0
-            };
-
             // Función que maneja la presentación del formulario
             window.showTicketForm = function() {
                 const formSection = ticketsLayout.querySelector('.form-section');
-
-                // En móvil, forzar la visibilidad (display: block)
                 if (window.innerWidth <= 1024) {
                     formSection.style.display = 'block';
                 }
-
-                // Remover la clase que activa la animación de cierre (grid y transform/opacity)
                 ticketsLayout.classList.remove('form-hidden');
             }
 
             // Función que maneja el ocultamiento del formulario
             window.hideTicketForm = function() {
                 const formSection = ticketsLayout.querySelector('.form-section');
-
-                // Agregar la clase que activa la animación de cierre (grid y transform/opacity)
                 ticketsLayout.classList.add('form-hidden');
 
-                // En móvil, ocultar por completo después de la transición
+                // Resetear estado del campo de bloqueo
+                bloqueoCommentGroup.style.display = 'none';
+                comentarioBloqueo.required = false;
+                comentarioBloqueo.disabled = true;
+
                 if (window.innerWidth <= 1024) {
                     setTimeout(() => {
                         formSection.style.display = 'none';
-                    }, 400); // 400ms para coincidir con la transición CSS
+                    }, 400);
                 }
             }
 
 
+            // Lógica de Submit del Formulario
             ticketForm.addEventListener('submit', (e) => {
                 e.preventDefault();
 
-                // Obtener valores del formulario (tomando los simulados de los campos hidden)
-                const departamentoValue = document.getElementById('departamento').value; // 'SIS'
-                const departamentoText = document.getElementById('departamento-static').textContent; // 'Sistemas (SIS)'
-                const creadoPor = document.getElementById('creado-por').value; // 'Admin Logeado'
+                const departamentoValue = document.getElementById('departamento').value;
+                const departamentoStaticText = document.getElementById('departamento-static').textContent;
+                const departamentoText = departamentoStaticText.split('(')[0].trim();
+                const creadoPor = document.getElementById('creado-por').value;
                 const asunto = document.getElementById('asunto').value;
                 const prioridad = document.getElementById('prioridad').value;
+                const estadoSimulado = tempStatusSelect.value;
 
-                // 1. Aumentar el contador del departamento
+                if (estadoSimulado === 'por-concluir' && !comentarioBloqueo.value) {
+                    alert('Debe especificar la razón en el campo "Razón de Por Concluir".');
+                    return;
+                }
+
                 deptCounters[departamentoValue] = (deptCounters[departamentoValue] || 0) + 1;
                 const consecutivo = deptCounters[departamentoValue];
-
-                // 2. Generar siglas y número de reporte
                 const siglas = DEPT_SIGLAS[departamentoValue];
                 const numeroReporte = `${siglas}-${consecutivo}`;
 
-                // Crear nuevo ticket
                 const nuevoTicket = {
                     id: ticketCounter,
                     numeroReporte: numeroReporte,
                     asunto: asunto,
                     creadoPor: creadoPor,
-                    // Limpiamos el texto para solo mostrar el nombre del departamento en la tabla
-                    departamento: departamentoText.split('(')[0].trim(),
+                    departamento: departamentoText,
                     prioridad: prioridad,
-                    estado: 'pendiente', // Nuevo ticket siempre es pendiente
+                    estado: estadoSimulado,
                     fechaCreacion: new Date().toISOString().split('T')[0]
                 };
 
-                // Agregar a la tabla
                 agregarTicketATabla(nuevoTicket);
 
-                // Incrementar contador de ID global
                 ticketCounter++;
+                initialData[currentYearMonth] = deptCounters;
 
-                // Resetear formulario y cerrar
+
                 ticketForm.reset();
                 hideTicketForm();
 
-                alert(`Ticket ${numeroReporte} creado exitosamente.`);
+                alert(`Ticket ${numeroReporte} creado exitosamente. Estado: ${estadoSimulado.toUpperCase().replace('-', ' ')}`);
             });
 
+            // Función para añadir la fila a la tabla
             function agregarTicketATabla(ticket) {
                 const tbody = document.querySelector('.main-table tbody');
                 const tr = document.createElement('tr');
 
-                // Determinar clase de prioridad
                 let prioridadText = ticket.prioridad.charAt(0).toUpperCase() + ticket.prioridad.slice(1);
                 let prioridadClass = '';
                 switch(ticket.prioridad) {
@@ -1207,8 +1127,8 @@ textarea.form-control {
                     case 'baja': prioridadClass = 'priority-low'; break;
                 }
 
-                // Determinar estado tag
-                const estadoTag = `<span class="status-tag ${ticket.estado}">Pendiente</span>`;
+                const estadoText = ticket.estado.charAt(0).toUpperCase() + ticket.estado.slice(1).replace('-', ' ');
+                const estadoTag = `<span class="status-tag ${ticket.estado}">${estadoText}</span>`;
 
                 tr.innerHTML = `
                     <td>${ticket.id}</td>
@@ -1222,9 +1142,120 @@ textarea.form-control {
                     <td class="table-actions"><button class="btn btn-secondary"><i class="fas fa-eye"></i> Ver</button></td>
                 `;
 
-                // Agregamos la nueva fila al principio de la tabla
                 tbody.insertBefore(tr, tbody.firstChild);
             }
+
+
+            // ==========================================
+            // APEXCHARTS INTEGRATION
+            // ==========================================
+            function getChartColors(statusList) {
+                const colors = {
+                    'nuevo': '#81D4FA',
+                    'en-espera': '#FFD54F',
+                    'abierto': '#4DB6AC',
+                    'por-concluir': '#EF9A9A',
+                    'realizado': '#BDBDBD',
+                    'alta': '#EF9A9A',
+                    'media': '#FFD54F',
+                    'baja': '#81D4FA',
+                    'sis': '#AEC6CF',
+                    'rh': '#FFDAB9',
+                    'qhse': '#FFB6C1',
+                    'vnt': '#C3E6CB'
+                };
+                return statusList.map(s => colors[s.toLowerCase().replace(/ /g, '-')]);
+            }
+
+            function renderApexCharts() {
+                // 1. Tickets por Departamento
+                const deptData = {
+                    series: [{
+                        name: 'Tickets',
+                        data: [40, 35, 30, 20, 15, 10]
+                    }],
+                    categories: ['Sistemas', 'Ventas', 'RH', 'QHSE', 'Contabilidad', 'Operaciones']
+                };
+                const deptColors = getChartColors(deptData.categories.map(c => c.substring(0,3)));
+
+                const deptOptions = {
+                    chart: { type: 'bar', height: 250, toolbar: { show: false } },
+                    series: deptData.series,
+                    xaxis: { categories: deptData.categories },
+                    yaxis: { title: { text: 'Total' } },
+                    plotOptions: { bar: { horizontal: false, columnWidth: '60%', borderRadius: 5 } },
+                    dataLabels: { enabled: false },
+                    colors: deptColors,
+                    grid: { show: false }
+                };
+                new ApexCharts(document.querySelector("#chart-departamento"), deptOptions).render();
+
+                // 2. Tickets por Estado (Gráfica de Pastel)
+                const estadoData = {
+                    series: [5, 5, 5, 2, 103],
+                    labels: ['Nuevo', 'En Espera', 'Abierto', 'Por Concluir', 'Realizado']
+                };
+                const estadoColors = getChartColors(estadoData.labels);
+
+                const estadoOptions = {
+                    chart: { type: 'donut', height: 250 },
+                    series: estadoData.series,
+                    labels: estadoData.labels,
+                    colors: estadoColors,
+                    legend: { position: 'bottom' },
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '70%',
+                                labels: {
+                                    show: true,
+                                    total: { show: true, label: 'Total', formatter: (w) => w.globals.seriesTotals.reduce((a, b) => a + b, 0) }
+                                }
+                            }
+                        }
+                    }
+                };
+                new ApexCharts(document.querySelector("#chart-estado"), estadoOptions).render();
+
+                // 3. Tickets por Prioridad (Barras horizontales)
+                const prioridadData = {
+                    series: [{
+                        name: 'Tickets',
+                        data: [15, 30, 75]
+                    }],
+                    categories: ['Alta', 'Media', 'Baja']
+                };
+                const prioridadColors = getChartColors(prioridadData.categories);
+
+                const prioridadOptions = {
+                    chart: { type: 'bar', height: 250, toolbar: { show: false } },
+                    series: prioridadData.series,
+                    xaxis: { categories: prioridadData.categories },
+                    yaxis: { show: false },
+                    plotOptions: { bar: { horizontal: true, columnWidth: '80%', borderRadius: 5, distributed: true } },
+                    dataLabels: { enabled: true },
+                    colors: prioridadColors,
+                    grid: { show: false }
+                };
+                new ApexCharts(document.querySelector("#chart-prioridad"), prioridadOptions).render();
+
+                // 4. Tendencia Mensual (Gráfica de Área)
+                const tendenciaOptions = {
+                    chart: { type: 'area', height: 250, toolbar: { show: false } },
+                    series: [{
+                        name: 'Tickets Creados',
+                        data: [20, 28, 35, 40, 50]
+                    }],
+                    xaxis: { categories: ['Jul', 'Ago', 'Sep', 'Oct', 'Nov'] },
+                    colors: [ '#81D4FA'],
+                    stroke: { curve: 'smooth' },
+                    dataLabels: { enabled: false },
+                    grid: { show: false }
+                };
+                new ApexCharts(document.querySelector("#chart-tendencia"), tendenciaOptions).render();
+
+            }
+
         });
     </script>
 

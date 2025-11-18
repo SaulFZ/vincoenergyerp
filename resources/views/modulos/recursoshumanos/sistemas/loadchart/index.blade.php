@@ -30,7 +30,6 @@
                 <div class="logo-img">
                     <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Vinco Energy">
                 </div>
-                <div class="logo-text">Load Chart</div>
             </div>
         </div>
         <div class="nav-links">

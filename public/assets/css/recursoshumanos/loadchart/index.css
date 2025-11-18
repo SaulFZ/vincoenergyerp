@@ -1,30 +1,8 @@
-::-webkit-scrollbar {
-    width: 10px;
-    /* Ajuste: El ancho en 'px' estaba vacío */
-}
+/* ======================================================= */
+/* 1. ESTILOS GENERALES Y RESETS */
+/* ======================================================= */
 
-::-webkit-scrollbar-thumb {
-    background-color: #697177;
-    border-radius: 3px;
-    border: 3px solid #2c3e50;
-    transition: background-color 0.3s;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background-color: #8395a7;
-}
-
-::-webkit-scrollbar-track {
-    background-color: #ecf0f1;
-    border-radius: 5px;
-    /* Corrección: Faltaba 'px' */
-    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-}
-
-::-webkit-scrollbar-track:hover {
-    background-color: #dfe6e9;
-}
-
+/* Variables de Color */
 :root {
     --primary-blue: #334c95;
     --primary-orange: #d67e29;
@@ -32,9 +10,10 @@
     --medium-gray: #4a5568;
     --light-gray: #e2e8f0;
     --background-gray: #f7fafc;
-    --primary-blue: #283848;
     --secondary-blue: #34495e;
     --white: #ffffff;
+
+    /* Colores de Actividad */
     --work-base: #334c95;
     --work-well: #6475aa;
     --home-office: #7293ff;
@@ -46,15 +25,17 @@
     --commissioned: #249399;
     --absence: #7d4e4e;
     --permission: #49c0c9;
+
+    /* Colores de Estado */
     --under-review: #ffd900;
     --reviewed: #da8544;
     --not-approved: #f35900;
     --approved: #64946f;
+
+    /* Colores de Nómina */
     --payroll-start-1: #00a700;
     --payroll-start-2: #004bad;
     --payroll-end: #d61c1c;
-    --payroll-end-1: #d61c1c;
-    --payroll-end-2: #d61c1c;
 }
 
 * {
@@ -71,19 +52,55 @@ body {
     display: flex;
     flex-direction: column;
     font-size: 14px;
-    /* Base Font Size for 15" screens and below */
 }
 
-/* Header Styles */
+/* Scrollbar Styles (Webkit Only) */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #697177;
+    border-radius: 3px;
+    border: 3px solid #2c3e50;
+    transition: background-color 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #8395a7;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #ecf0f1;
+    border-radius: 5px;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-track:hover {
+    background-color: #dfe6e9;
+}
+
+/* Animación de Carga/Spinner */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* ======================================================= */
+/* 2. DISEÑO DEL ENCABEZADO (HEADER) Y NAVEGACIÓN - MEJORADO */
+/* ======================================================= */
 .header {
     position: sticky;
     top: 0;
     z-index: 1000;
     background-color: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    /* Ajuste: Sombra más suave */
     padding: 8px 15px;
-    /* Ajuste: Padding vertical reducido */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -93,21 +110,18 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    /* Ajuste: Espacio reducido */
 }
 
 .logo {
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Ajuste: Espacio reducido */
 }
 
 .logo-img {
     width: 90px;
-    /* Ajuste: Ancho reducido */
+    /* Tamaño por defecto para desktop/tablet */
     height: 35px;
-    /* Ajuste: Altura reducida */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -123,17 +137,14 @@ body {
 .logo-text {
     font-weight: 700;
     font-size: 20px;
-    /* Ajuste: Tamaño reducido */
     color: var(--primary-orange);
     letter-spacing: -0.5px;
     display: none;
-    /* Ocultar por defecto en móviles si es necesario, pero lo mantendremos visible */
 }
 
 .nav-links {
     display: flex;
     gap: 10px;
-    /* Ajuste: Espacio reducido */
 }
 
 .nav-links a {
@@ -141,9 +152,7 @@ body {
     color: var(--medium-gray);
     font-weight: 500;
     font-size: 13px;
-    /* Ajuste: Tamaño reducido */
     padding: 5px 8px;
-    /* Ajuste: Padding reducido */
     border-radius: 4px;
     transition: all 0.3s ease;
     cursor: pointer;
@@ -154,205 +163,183 @@ body {
 
 .nav-links a:hover,
 .nav-links a.active {
-    background-color: var(--primary-blue);
+    background-color: var(--dark-gray);
     color: white;
 }
 
 .nav-links a i {
     margin-right: 4px;
-    /* Ajuste: Margen reducido */
 }
 
-/* ================================== */
-/* NOTIFICATION BADGE           */
-/* ================================== */
+/* Indicador de Notificación (Badge) */
 .notification-badge {
-    background-color: var(--primary-blue);
+    background-color: var(--dark-gray);
     color: white;
     font-size: 9px;
-    /* Ajuste: Tamaño reducido */
     font-weight: bold;
     border: 1px solid white;
-    /* Ajuste: Borde más fino */
     border-radius: 50%;
     padding: 1px 5px;
-    /* Ajuste: Padding reducido */
     position: absolute;
     top: -5px;
-    /* Ajuste: Posición */
     right: -5px;
-    /* Ajuste: Posición */
     min-width: 16px;
-    /* Ajuste: Ancho mínimo reducido */
     text-align: center;
     line-height: 1.2;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    /* Ajuste: Sombra más suave */
     animation: pulse-and-pop 5s infinite ease-in-out;
 }
 
-/* ================================== */
-/* ANIMATION KEYFRAMES            */
-/* ================================== */
 @keyframes pulse-and-pop {
-    0% {
+
+    0%,
+    100% {
         transform: scale(1);
-        background-color: var(--primary-blue);
+        background-color: var(--medium-gray);
+        color: white;
     }
 
     50% {
         transform: scale(1.05);
-        /* Ajuste: Pulso más suave */
         background-color: white;
-        color: var(--primary-blue);
-    }
-
-    100% {
-        transform: scale(1);
-        background-color: var(--primary-blue);
-        color: white;
+        color: var(--medium-gray);
     }
 }
 
-
-/* Main Content */
+/* ======================================================= */
+/* 3. CONTENIDO PRINCIPAL Y LAYOUT */
+/* ======================================================= */
 .container {
     padding: 0 10px;
-    /* Base Padding */
     flex: auto;
 }
 
-/* Content Layout */
 .content-layout {
     display: grid;
     grid-template-columns: 1fr 3fr;
-    gap: 15px;
-    /* Ajuste: Espacio entre columnas */
+    gap: 10px;
 }
 
-@media (max-width: 992px) {
-    .content-layout {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Employee Details */
+/* Sección de Detalles del Empleado */
 .employee-details {
     background: white;
-    border-radius: 8px;
-    /* Ajuste: Borde ligeramente más pequeño */
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-    /* Ajuste: Sombra más suave */
-    padding: 15px;
-    margin-right: 0;
-    /* Eliminado el margin-right fijo */
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    padding: 20px;
     height: fit-content;
-    position: relative;
-    border-left: 3px solid var(--primary-orange);
-    /* Ajuste: Borde más fino */
+    position: sticky;
+    top: 20px;
+    border-left: 4px solid var(--primary-orange);
 }
 
 .employee-header {
     display: flex;
     align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    /* Ajuste: Padding reducido */
+    margin-bottom: 20px;
+    padding-bottom: 15px;
     border-bottom: 1px solid var(--light-gray);
-    width: 100%;
     gap: 15px;
 }
 
-.employee-header h2 {
-    color: var(--primary-blue);
-    font-size: 17px;
-    /* Ajuste: Tamaño reducido */
-    font-weight: 600;
-    margin: 0;
-    flex-grow: 1;
-}
-
 .employee-photo-container {
-    width: 90px;
-    /* Ajuste: Tamaño reducido */
-    height: 90px;
-    /* Ajuste: Tamaño reducido */
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid var(--primary-orange);
-    /* Ajuste: Borde más fino */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    /* Ajuste: Sombra más suave */
+    border: 3px solid var(--primary-orange);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
 }
 
 .employee-photo {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
+}
+
+.employee-header-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.employee-header h2 {
+    color: var(--dark-gray);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.employee-name-header {
+    color: var(--medium-gray);
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .employee-info {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    /* Ajuste: Espacio reducido */
-    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 12px;
 }
 
 .info-group {
-    background: #f9fafc;
-    padding: 8px;
-    /* Ajuste: Padding reducido */
-    border-radius: 6px;
-    /* Ajuste: Borde ligeramente más pequeño */
-    border-left: 2px solid var(--primary-blue);
-    transition: transform 0.3s ease;
+    background: linear-gradient(135deg, #f9fafc 0%, #ffffff 100%);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--dark-gray);
+    transition: all 0.3s ease;
     position: relative;
+    overflow: hidden;
+}
+
+.info-group::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--medium-gray), transparent);
 }
 
 .info-group:hover {
-    transform: translateY(-1px);
-    /* Ajuste: Transformación más sutil */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    /* Ajuste: Sombra más suave */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .info-group h3 {
-    font-size: 10px;
-    /* Ajuste: Tamaño reducido */
+    font-size: 11px;
     color: var(--medium-gray);
-    margin-bottom: 2px;
-    /* Ajuste: Margen reducido */
+    margin-bottom: 6px;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .info-group p {
-    font-size: 13px;
-    /* Ajuste: Tamaño reducido */
+    font-size: 14px;
     color: var(--dark-gray);
     font-weight: 600;
 }
 
-.info-group .vacation-days {
-    color: var(--primary-orange);
+.vacation-days {
+    color: var(--primary-orange) !important;
     font-size: 16px;
-    /* Ajuste: Tamaño reducido */
     font-weight: 700;
 }
 
-/* Load Chart Section */
+/* ======================================================= */
+/* 4. CALENDARIO DE CARGA (LOAD CHART) */
+/* ======================================================= */
 .load-chart-container {
     background: white;
     border-radius: 8px;
-    /* Ajuste: Borde ligeramente más pequeño */
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-    /* Ajuste: Sombra más suave */
     padding: 15px;
-    /* Ajuste: Padding reducido */
     margin-bottom: 20px;
-    /* Ajuste: Margen reducido */
     position: relative;
-    /* Essential for overlay */
 }
 
 .chart-header {
@@ -360,49 +347,40 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-    /* Ajuste: Margen reducido */
     flex-wrap: wrap;
     gap: 10px;
-    /* Ajuste: Espacio reducido */
 }
 
 .chart-header h2 {
-    color: var(--primary-blue);
+    color: var(--dark-gray);
     font-size: 18px;
-    /* Ajuste: Tamaño reducido */
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Ajuste: Espacio reducido */
     font-weight: 600;
 }
 
 .chart-actions {
     display: flex;
     gap: 10px;
-    /* Ajuste: Espacio reducido */
     flex-wrap: wrap;
 }
 
+/* Navegación de Meses */
 .month-navigation {
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Ajuste: Espacio reducido */
     background: var(--light-gray);
     border-radius: 20px;
-    /* Ajuste: Borde más pequeño */
     padding: 3px;
-    /* Ajuste: Padding reducido */
 }
 
 .month-navigation button {
     background: none;
     border: none;
     width: 28px;
-    /* Ajuste: Tamaño reducido */
     height: 28px;
-    /* Ajuste: Tamaño reducido */
     border-radius: 50%;
     cursor: pointer;
     display: flex;
@@ -411,47 +389,41 @@ body {
     color: var(--dark-gray);
     transition: all 0.3s ease;
     font-size: 14px;
-    /* Ajuste: Tamaño del icono */
 }
 
 .month-navigation button:hover {
-    background: var(--primary-blue);
+    background: var(--medium-gray);
     color: white;
 }
 
 .month-navigation span {
     font-size: 14px;
-    /* Ajuste: Tamaño reducido */
     font-weight: 600;
     min-width: 100px;
-    /* Ajuste: Ancho mínimo reducido */
     text-align: center;
 }
 
+/* Botones Generales */
 .btn {
     padding: 7px 14px;
-    /* Ajuste: Padding reducido */
     border-radius: 5px;
-    /* Ajuste: Borde ligeramente más pequeño */
     font-weight: 500;
     cursor: pointer;
     border: none;
     transition: all 0.3s ease;
     font-size: 12px;
-    /* Ajuste: Tamaño de fuente reducido */
     display: flex;
     align-items: center;
     gap: 5px;
-    /* Ajuste: Espacio reducido */
 }
 
 .btn-primary {
-    background-color: var(--primary-blue);
+    background-color: var(--dark-gray);
     color: white;
 }
 
 .btn-primary:hover {
-    background-color: #2a407c;
+    background-color: var(--medium-gray);
 }
 
 .btn-orange {
@@ -463,46 +435,49 @@ body {
     background-color: #c06d1f;
 }
 
+/* CALENDARIO - MEJORADO PARA TAMAÑOS UNIFORMES */
+.calendar-container {
+    overflow-x: auto;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
 .calendar {
     width: 100%;
     border-collapse: collapse;
     border-radius: 6px;
-    /* Ajuste: Borde ligeramente más pequeño */
     overflow: hidden;
     font-size: 13px;
-    /* Ajuste: Fuente base del calendario */
-    /* Añadir un borde principal para contener el calendario */
-    border: 1px solid #ddd;
+    min-width: 600px;
+    table-layout: fixed;
 }
 
 .calendar th {
-    background-color: var(--primary-blue);
+    background-color: var(--dark-gray);
     color: white;
     padding: 10px;
-    /* Ajuste: Padding reducido */
     text-align: center;
     font-weight: 500;
     font-size: 13px;
-    /* Ajuste: Tamaño reducido */
+    width: 14.2857%;
 }
 
 .calendar td {
     height: 75px;
-    /* Ajuste: Altura de la celda reducida */
     vertical-align: top;
     padding: 5px;
-    /* Ajuste: Padding reducido */
     position: relative;
     cursor: pointer;
     transition: all 0.2s ease;
-    /* AÑADIDO: Líneas divisorias grises muy bajas */
-    border: 1px solid #0000002e; /* Borde muy claro */
-    box-sizing: border-box; /* Asegurar que el padding y el borde no aumenten el tamaño de la celda */
+    border: 1px solid #0000002e;
+    box-sizing: border-box;
+    width: 14.2857%;
+    min-height: 75px;
 }
 
 .calendar td:hover {
     background-color: rgba(225, 225, 225, 0.27);
-    /* Opacidad reducida */
 }
 
 .calendar .other-month {
@@ -517,40 +492,189 @@ body {
 
 .calendar .current-d {
     background-color: rgba(0, 62, 248, 0.08);
-    /* Opacidad reducida */
-    border: 2px solid var(--primary-blue);
-    /* Ajuste: Borde más fino */
+    border: 2px solid var(--dark-gray);
 }
 
-/* ================================== */
-/* NUEVOS ESTILOS: TOOLTIP DE FECHA   */
-/* ================================== */
-.calendar-tooltip {
-    /* El contenedor de la celda debe ser relative para que el tooltip sea absoluto */
+.day-number {
+    font-weight: 600;
+    font-size: 13px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+/* ======================================================= */
+/* TAGS DE ACTIVIDAD - CENTRADOS EN PANTALLAS PEQUEÑAS - MEJORADO */
+/* ======================================================= */
+.activity-tag {
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: white;
+    text-align: center;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+    min-height: 18px;
+    line-height: 12px;
+    margin-top: 2px;
+    transition: all 0.3s ease;
+}
+
+/* En pantallas grandes: comportamiento normal */
+.activity-tag {
+    text-align: left;
+}
+
+/* En pantallas pequeñas: centrado y tamaño ajustado */
+@media (max-width: 768px) {
+
+    /* MODIFICACIÓN CLAVE: Ajuste del Contenedor de Tags */
+    .activity-tag {
+        text-align: center;
+        /* Centra el texto */
+        padding: 2px 1px;
+        /* Reduce el padding para más espacio */
+        font-size: 8px;
+        /* Reduce el tamaño de la fuente */
+        min-height: 14px;
+        line-height: 10px;
+        margin: 2px auto 0 auto;
+        /* Usa margen auto para centrar horizontalmente, 0 arriba */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 95%;
+
+        /* Ajusta el ancho para dejar un pequeño margen dentro de la celda */
+        max-width: 95%;
+        /* Asegura que no se exceda este tamaño */
+        box-sizing: border-box;
+        /* Asegura que padding y border no afecten el ancho */
+    }
+
+    .calendar td {
+        padding: 2px;
+        /* Reduce un poco el padding de las celdas para dar más espacio */
+    }
+}
+
+/* Colores de tags de actividad */
+.activity-tag.work-base {
+    background-color: var(--work-base);
+}
+
+.activity-tag.work-well {
+    background-color: var(--work-well);
+}
+
+.activity-tag.home-office {
+    background-color: var(--home-office);
+}
+
+.activity-tag.traveling {
+    background-color: var(--traveling);
+}
+
+.activity-tag.rest {
+    background-color: var(--rest);
+}
+
+.activity-tag.vacation {
+    background-color: var(--vacation);
+}
+
+.activity-tag.training {
+    background-color: var(--training);
+}
+
+.activity-tag.medical {
+    background-color: var(--medical);
+}
+
+.activity-tag.commissioned {
+    background-color: var(--commissioned);
+}
+
+.activity-tag.absence {
+    background-color: var(--absence);
+}
+
+.activity-tag.permission {
+    background-color: var(--permission);
+}
+
+/* Overlay de Carga del Calendario */
+.loading-overlay {
     position: absolute;
-    top: -30px; /* Ajustar para que aparezca por encima */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    border-radius: 8px;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.loading-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.loading-spinner-lg {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--light-gray);
+    border-radius: 50%;
+    border-top-color: var(--dark-gray);
+    animation: spin 1s ease-in-out infinite;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.loading-message {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--medium-gray);
+    margin-left: 10px;
+}
+
+.calendar tbody tr td.loading {
+    display: none;
+}
+
+/* Tooltip de Fecha */
+.calendar-tooltip {
+    position: absolute;
+    top: -30px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--primary-blue);
+    background-color: var(--dark-gray);
     color: var(--white);
     padding: 5px 10px;
     border-radius: 4px;
     font-size: 11px;
     white-space: nowrap;
-    z-index: 100; /* Asegurar que esté por encima de otros elementos */
+    z-index: 100;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
-    pointer-events: none; /* Asegurar que no interfiera con los clics */
+    pointer-events: none;
 }
 
-/* Triángulo del tooltip */
 .calendar-tooltip::after {
     content: '';
     position: absolute;
-    top: 100%; /* Posiciona el triángulo en la parte inferior del tooltip */
+    top: 100%;
     left: 50%;
-    margin-left: -5px; /* Centra el triángulo */
+    margin-left: -5px;
     border-width: 5px;
     border-style: solid;
     border-color: var(--primary-blue) transparent transparent transparent;
@@ -560,130 +684,23 @@ body {
     opacity: 1;
     visibility: visible;
 }
-/* ================================== */
 
-
-.day-number {
-    font-weight: 600;
-    font-size: 13px;
-    /* Ajuste: Tamaño reducido */
-    display: inline-block;
-}
+/* ======================================================= */
+/* 5. ESTILOS DE ACTIVIDADES Y ESTADOS */
+/* ======================================================= */
 
 .day-header-info {
     position: absolute;
     top: 5px;
-    /* Ajuste: Posición */
     right: 5px;
-    /* Ajuste: Posición */
     display: flex;
     align-items: center;
     gap: 3px;
-    /* Ajuste: Espacio reducido */
 }
 
-.activity-tag {
-    padding: 1px 3px;
-    /* Ajuste: Padding reducido */
-    border-radius: 3px;
-    /* Ajuste: Borde ligeramente más pequeño */
-    font-size: 10px;
-    /* Ajuste: Tamaño reducido */
-    color: white;
-    text-align: center;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
-    width: auto;
-    min-height: 14px;
-    /* Ajuste: Altura mínima reducida */
-    line-height: 14px;
-    /* Ajuste: Altura de línea reducida */
-    max-width: 100%;
-    margin-top: 2px;
-    /* Espacio para que no esté pegado al número */
-}
-
-.loading {
-    text-align: center;
-    padding: 15px 0;
-    /* Ajuste: Padding reducido */
-    font-size: 1.2rem;
-    /* Ajuste: Tamaño reducido */
-    color: #4a5568;
-}
-
-.loading i {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.calendar tbody tr td.loading {
-    background-color: transparent !important;
-    border: none !important;
-}
-
-/* Activity tags colors - Se mantienen igual */
-.activity-tag.work-base {
-    background-color: var(--work-base);
-    color: white;
-}
-
-.activity-tag.work-well {
-    background-color: var(--work-well);
-    color: white;
-}
-
-.activity-tag.home-office {
-    background-color: var(--home-office);
-    color: white;
-}
-
-.activity-tag.traveling {
-    background-color: var(--traveling);
-    color: white;
-}
-
-.activity-tag.rest {
-    background-color: var(--rest);
-    color: white;
-}
-
-.activity-tag.vacation {
-    background-color: var(--vacation);
-    color: white;
-}
-
-.activity-tag.training {
-    background-color: var(--training);
-}
-
-.activity-tag.medical {
-    background-color: var(--medical);
-    color: white;
-}
-
-.activity-tag.commissioned {
-    background-color: var(--commissioned);
-    color: white;
-}
-
-
-/* Status icons */
+/* Iconos de Estado */
 .status-icon {
     font-size: 11px;
-    /* Ajuste: Tamaño reducido */
     z-index: 10;
 }
 
@@ -702,23 +719,18 @@ body {
 .status-icon.rejected {
     color: var(--not-approved);
     filter: drop-shadow(0 0 1px #ffffff);
-    /* Sombra más sutil */
 }
 
-/* Color específico para REVISADO */
 .status-indicator.reviewed {
     background-color: var(--reviewed);
 }
 
-/* Payroll icons */
+/* Iconos de Nómina */
 .payroll-icon {
     position: absolute;
     bottom: 3px;
-    /* Ajuste: Posición */
     right: 3px;
-    /* Ajuste: Posición */
     font-size: 10px;
-    /* Ajuste: Tamaño reducido */
     z-index: 10;
 }
 
@@ -731,48 +743,44 @@ body {
 }
 
 .payroll-end {
-    color: var(--payroll-end-1);
+    color: var(--payroll-end);
 }
 
-.payroll-end-2 {
-    color: var(--payroll-end-2);
+/* Icono de Día Festivo */
+.holiday-icon {
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    z-index: 10;
 }
 
-/* Activity Legend */
+/* Leyenda de Actividad */
 .activity-legend {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    /* Ajuste: Ancho mínimo reducido para más columnas */
     gap: 10px;
-    /* Ajuste: Espacio reducido */
     margin-top: 15px;
-    /* Ajuste: Margen reducido */
     background: var(--light-gray);
     padding: 10px;
-    /* Ajuste: Padding reducido */
     border-radius: 6px;
-    /* Ajuste: Borde ligeramente más pequeño */
     font-size: 12px;
-    /* Ajuste: Tamaño de fuente reducido */
 }
 
 .legend-item {
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Ajuste: Espacio reducido */
 }
 
 .legend-color {
     width: 16px;
-    /* Ajuste: Tamaño reducido */
     height: 16px;
-    /* Ajuste: Tamaño reducido */
     border-radius: 3px;
-    /* Ajuste: Borde ligeramente más pequeño */
 }
 
-/* Legend colors for activity types - Se mantienen igual */
+/* Colores de la Leyenda */
 .legend-color.work-base {
     background-color: var(--work-base);
 }
@@ -809,86 +817,61 @@ body {
     background-color: var(--commissioned);
 }
 
-/* Legend icons */
+/* Iconos de la Leyenda */
+.legend-approved,
+.legend-reviewed,
+.legend-not-approved,
+.legend-under-review,
+.legend-payroll-start-1,
+.legend-payroll-start-2,
+.legend-payroll-end {
+    width: 16px;
+    text-align: center;
+}
+
 .legend-approved {
     color: var(--approved);
-    width: 16px;
-    /* Ajuste: Tamaño reducido */
-    text-align: center;
 }
 
 .legend-reviewed {
     color: var(--reviewed);
-    width: 16px;
-    /* Ajuste: Tamaño reducido */
-    text-align: center;
 }
 
 .legend-not-approved,
 .fa-exclamation-triangle {
     color: var(--not-approved);
-    width: 16px;
-    /* Ajuste: Tamaño reducido */
-    text-align: center;
     filter: drop-shadow(0 0 1px #817c7c);
-    /* Sombra más sutil */
 }
 
 .legend-under-review {
     color: var(--under-review);
-    width: 16px;
-    /* Ajuste: Tamaño reducido */
-    text-align: center;
 }
 
 .legend-payroll-start-1 {
     color: var(--payroll-start-1);
-    width: 16px;
-    /* Ajuste: Tamaño reducido */
-    text-align: center;
 }
 
 .legend-payroll-start-2 {
     color: var(--payroll-start-2);
-    width: 16px;
-    /* Ajuste: Tamaño reducido */
-    text-align: center;
 }
 
-.payroll-end {
-    color: var(--payroll-end-1);
-    width: 16px;
-    /* Ajuste: Tamaño reducido */
-    text-align: center;
+.legend-payroll-end {
+    color: var(--payroll-end);
 }
 
-/* Estilo general para todos los íconos de días festivos (imágenes) */
-.holiday-icon {
-    position: absolute;
-    bottom: 3px;
-    /* Ajuste: Posición */
-    left: 3px;
-    /* Ajuste: Posición */
-    width: 16px;
-    /* Ajuste: Tamaño reducido */
-    height: 16px;
-    /* Ajuste: Tamaño reducido */
-    z-index: 10;
-}
-
-/* Estilo para el ícono de la leyenda de día festivo */
 .legend-holiday-icon {
     width: 16px;
-    /* Ajuste: Tamaño reducido */
     height: 16px;
-    /* Ajuste: Tamaño reducido */
     display: inline-block;
     vertical-align: middle;
     margin-right: 5px;
 }
 
-/* Activity Form Modal - CSS Actualizado */
-/* Modal Styles */
+/* ======================================================= */
+/* 6. ESTILOS DE MODAL Y FORMULARIO */
+/* ======================================================= */
+
+/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -897,12 +880,10 @@ body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.4);
-    /* Opacidad ligeramente reducida */
     z-index: 1000;
     align-items: center;
     justify-content: center;
     padding: 10px;
-    /* Ajuste: Padding reducido */
     box-sizing: border-box;
     backdrop-filter: blur(2px);
     transition: all 0.3s ease;
@@ -911,13 +892,9 @@ body {
 .modal-content {
     background: white;
     border-radius: 10px;
-    /* Ajuste: Borde ligeramente más pequeño */
     width: 95%;
-    /* Asegura que no sea demasiado grande en móviles */
     max-width: 500px;
-    /* Ajuste: Ancho máximo reducido para laptops de 14-15" */
     box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.1), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
-    /* Sombra más sutil */
     overflow: hidden;
     animation: modalFadeIn 0.3s ease-out;
     transform: translateY(0);
@@ -926,7 +903,6 @@ body {
 
 .modal-content:hover {
     transform: translateY(-1px);
-    /* Ajuste: Transformación más sutil */
     box-shadow: 0 15px 20px -4px rgba(0, 0, 0, 0.1), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
 }
 
@@ -934,7 +910,6 @@ body {
     from {
         opacity: 0;
         transform: translateY(-10px);
-        /* Ajuste: Movimiento más sutil */
     }
 
     to {
@@ -944,22 +919,18 @@ body {
 }
 
 .modal-header {
-    background: var(--primary-blue);
+    background: var(--dark-gray);
     color: white;
     padding: 15px 20px;
-    /* Ajuste: Padding reducido */
     position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
-    /* Ajuste: Espacio reducido */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    /* Sombra más sutil */
 }
 
 .header-icon {
     font-size: 18px;
-    /* Ajuste: Tamaño reducido */
     display: flex;
     align-items: center;
     color: rgba(255, 255, 255, 0.9);
@@ -967,7 +938,6 @@ body {
 
 .modal-header h3 {
     font-size: 16px;
-    /* Ajuste: Tamaño reducido */
     font-weight: 600;
     margin: 0;
     flex-grow: 1;
@@ -979,18 +949,14 @@ body {
     border: none;
     color: white;
     font-size: 20px;
-    /* Ajuste: Tamaño reducido */
     cursor: pointer;
     padding: 2px;
-    /* Ajuste: Padding reducido */
     display: flex;
     align-items: center;
     transition: all 0.3s ease;
     border-radius: 50%;
     width: 28px;
-    /* Ajuste: Tamaño reducido */
     height: 28px;
-    /* Ajuste: Tamaño reducido */
     justify-content: center;
 }
 
@@ -1002,27 +968,23 @@ body {
 .modal-body {
     padding: 0;
     max-height: 80vh;
-    /* Ajuste: Mayor altura vertical disponible */
     overflow-y: auto;
 }
 
-/* Tabs */
+/* Pestañas (Tabs) */
 .form-tabs {
     display: flex;
     border-bottom: 1px solid #e2e8f0;
     padding: 0 20px;
-    /* Ajuste: Padding reducido */
     background-color: #f8fafc;
 }
 
 .tab-btn {
     padding: 12px 14px;
-    /* Ajuste: Padding reducido */
     background: none;
     border: none;
     cursor: pointer;
     font-size: 13px;
-    /* Ajuste: Tamaño reducido */
     font-weight: 500;
     color: var(--medium-gray);
     position: relative;
@@ -1030,10 +992,9 @@ body {
     margin-bottom: -1px;
 }
 
-/* Tab content and animation - Se mantienen iguales */
+/* Contenido de la Pestaña */
 .tab-content {
     padding: 20px;
-    /* Ajuste: Padding reducido */
     display: none;
     animation: fadeIn 0.3s ease;
 }
@@ -1042,7 +1003,6 @@ body {
     from {
         opacity: 0;
         transform: translateY(3px);
-        /* Ajuste: Movimiento más sutil */
     }
 
     to {
@@ -1055,21 +1015,20 @@ body {
     display: block;
 }
 
-/* Form Elements */
+/* ======================================================= */
+/* 7. ELEMENTOS DEL FORMULARIO */
+/* ======================================================= */
 .form-group {
     margin-bottom: 15px;
-    /* Ajuste: Margen reducido */
     position: relative;
 }
 
 .form-group label {
     display: block;
     margin-bottom: 6px;
-    /* Ajuste: Margen reducido */
     font-weight: 500;
     color: var(--dark-gray);
     font-size: 13px;
-    /* Ajuste: Tamaño reducido */
 }
 
 .input-with-icon {
@@ -1081,33 +1040,26 @@ body {
 .input-with-icon i {
     position: absolute;
     left: 10px;
-    /* Ajuste: Posición */
     color: var(--medium-gray);
     z-index: 1;
     font-size: 14px;
-    /* Ajuste: Tamaño de icono */
 }
 
 .input-with-icon input {
     padding-left: 32px !important;
-    /* Ajuste: Padding para icono */
 }
 
 .input-custom,
 .select-custom {
     width: 100%;
     padding: 9px 10px;
-    /* Ajuste: Padding reducido */
     border: 1px solid #e2e8f0;
     border-radius: 6px;
-    /* Ajuste: Borde ligeramente más pequeño */
     font-size: 13px;
-    /* Ajuste: Tamaño reducido */
     transition: all 0.3s ease;
     background-color: white;
     color: var(--dark-gray);
     min-height: 38px;
-    /* Altura mínima consistente */
 }
 
 .input-custom:focus,
@@ -1115,7 +1067,6 @@ body {
     outline: none;
     border-color: var(--primary-blue);
     box-shadow: 0 0 0 2px rgba(51, 76, 149, 0.1);
-    /* Sombra más sutil */
 }
 
 .input-custom:disabled,
@@ -1125,7 +1076,7 @@ body {
     cursor: not-allowed;
 }
 
-/* Custom Select for Activity Type */
+/* Custom Select para Tipo de Actividad */
 .custom-select {
     position: relative;
     width: 100%;
@@ -1133,12 +1084,9 @@ body {
 
 .select-header {
     padding: 9px 10px;
-    /* Ajuste: Padding reducido */
     border: 1px solid #e2e8f0;
     border-radius: 6px;
-    /* Ajuste: Borde ligeramente más pequeño */
     font-size: 13px;
-    /* Ajuste: Tamaño reducido */
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -1146,7 +1094,6 @@ body {
     background-color: white;
     transition: all 0.3s ease;
     min-height: 38px;
-    /* Altura mínima consistente */
 }
 
 .select-header:hover {
@@ -1163,13 +1110,9 @@ body {
     color: var(--primary-blue);
 }
 
-
-
 .select-options {
     position: relative;
-    /* CAMBIADO: De absolute a relative */
     top: 0;
-    /* CAMBIADO: Ajustado para el flujo normal */
     left: 0;
     width: 100%;
     max-height: 0;
@@ -1184,12 +1127,9 @@ body {
 
 .select-options.open {
     max-height: 500px;
-    /* Aumentado a un valor grande para que se expanda sin generar scroll interno */
     overflow-y: hidden;
-    /* Asegurarse de que no haya scroll interno */
     border-color: #e2e8f0;
     border-top: none;
-
 }
 
 .activity-option {
@@ -1197,7 +1137,6 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 10px;
-    /* Ajuste: Padding reducido */
     cursor: pointer;
     transition: all 0.3s ease;
     border-bottom: 1px solid #f1f5f9;
@@ -1220,43 +1159,34 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    /* Ajuste: Espacio reducido */
 }
 
 .color-indicator {
     width: 14px;
-    /* Ajuste: Tamaño reducido */
     height: 14px;
-    /* Ajuste: Tamaño reducido */
     border-radius: 3px;
-    /* Ajuste: Borde ligeramente más pequeño */
     flex-shrink: 0;
 }
 
 .activity-label {
     font-size: 12px;
-    /* Ajuste: Tamaño reducido */
     color: var(--dark-gray);
     font-weight: 500;
 }
 
 .activity-code {
     font-size: 11px;
-    /* Ajuste: Tamaño reducido */
     font-weight: 600;
     color: var(--background-gray);
     background: #f1f5f9;
     padding: 1px 6px;
-    /* Ajuste: Padding reducido */
     border-radius: 3px;
-    /* Ajuste: Borde ligeramente más pequeño */
 }
 
-/* Work Type Options */
+/* Opciones de Tipo de Trabajo (Radio Buttons) */
 .work-type-options {
     display: flex;
     gap: 10px;
-    /* Ajuste: Espacio reducido */
     margin-top: 5px;
 }
 
@@ -1264,13 +1194,10 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Ajuste: Espacio reducido */
     cursor: pointer;
     padding: 8px;
-    /* Ajuste: Padding reducido */
     border: 1px solid #e2e8f0;
     border-radius: 6px;
-    /* Ajuste: Borde ligeramente más pequeño */
     flex: 1;
     transition: all 0.3s ease;
 }
@@ -1278,7 +1205,6 @@ body {
 .work-type-option:hover {
     border-color: var(--primary-blue);
     background-color: rgba(51, 76, 149, 0.03);
-    /* Opacidad reducida */
 }
 
 .work-type-option.selected {
@@ -1292,7 +1218,6 @@ body {
 
 .work-type-label {
     font-size: 13px;
-    /* Ajuste: Tamaño reducido */
     color: var(--dark-gray);
 }
 
@@ -1301,11 +1226,10 @@ body {
     font-weight: 500;
 }
 
-/* NUEVOS ESTILOS - Service Bonus Options */
+/* Opciones de Bono de Servicio */
 .service-bonus-options {
     display: flex;
     gap: 10px;
-    /* Ajuste: Espacio reducido */
     margin-top: 5px;
 }
 
@@ -1313,14 +1237,10 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Ajuste: Espacio reducido */
     cursor: pointer;
     padding: 10px 14px;
-    /* Ajuste: Padding reducido */
     border: 1px solid #e2e8f0;
-    /* Ajuste: Borde más fino */
     border-radius: 8px;
-    /* Ajuste: Borde ligeramente más pequeño */
     flex: 1;
     transition: all 0.3s ease;
     text-align: center;
@@ -1330,16 +1250,13 @@ body {
 .service-bonus-option:hover {
     border-color: var(--primary-blue);
     background-color: rgba(51, 76, 149, 0.03);
-    /* Opacidad reducida */
     transform: translateY(-1px);
-    /* Transformación más sutil */
 }
 
 .service-bonus-option.selected {
     border-color: var(--primary-blue);
     background-color: #f0f4ff;
     box-shadow: 0 2px 8px rgba(51, 76, 149, 0.1);
-    /* Sombra más sutil */
 }
 
 .service-bonus-option input[type="radio"] {
@@ -1348,13 +1265,11 @@ body {
 
 .service-bonus-label {
     font-size: 13px;
-    /* Ajuste: Tamaño reducido */
     font-weight: 600;
     color: var(--dark-gray);
     display: flex;
     align-items: center;
     gap: 4px;
-    /* Ajuste: Espacio reducido */
 }
 
 .service-bonus-option.selected .service-bonus-label {
@@ -1369,26 +1284,21 @@ body {
     color: #38a169;
 }
 
-.service-bonus-option[data-value="no"].selected .service-bonus-label i {
-    color: var(--primary-blue);
-}
-
+.service-bonus-option[data-value="no"].selected .service-bonus-label i,
 .service-bonus-option[data-value="si"].selected .service-bonus-label i {
     color: var(--primary-blue);
 }
 
-/* Form Help Text */
+/* Texto de Ayuda del Formulario */
 .form-help {
     color: #64748b;
     font-size: 11px;
-    /* Ajuste: Tamaño reducido */
     margin-top: 3px;
-    /* Ajuste: Margen reducido */
     display: block;
     font-style: italic;
 }
 
-/* Well Name Field Styling */
+/* Campo "Well Name" */
 #well-name-field .input-with-icon i {
     color: #475f92;
 }
@@ -1400,380 +1310,38 @@ body {
 #well-name:focus {
     border-color: #1e3b7a;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-    /* Sombra más sutil */
 }
 
-/* Buttons - Centrar los botones */
+/* Acciones del Formulario */
 .form-actions {
     display: flex;
     justify-content: center;
     gap: 10px;
-    /* Ajuste: Espacio reducido */
     padding: 12px 20px;
-    /* Ajuste: Padding reducido */
     background-color: #f8fafc;
     border-top: 1px solid #e2e8f0;
     margin-top: 6px;
-    /* Ajuste: Margen reducido */
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-    .modal-content {
-        max-width: 95%;
-        margin: 10px;
-        /* Ajuste para mejor visualización en móviles */
-    }
-
-    .form-tabs {
-        padding: 0 10px;
-        /* Ajuste: Padding reducido */
-    }
-
-    .tab-content {
-        padding: 15px;
-        /* Ajuste: Padding reducido */
-    }
-
-    .form-actions {
-        padding: 10px;
-        /* Ajuste: Padding reducido */
-        flex-direction: column;
-        /* Botones apilados en móvil */
-    }
-
-    .btn {
-        width: 100%;
-        /* Botones de ancho completo */
-        justify-content: center;
-    }
-
-    .work-type-options {
-        flex-direction: column;
-    }
-
-    .service-bonus-options {
-        flex-direction: column;
-    }
-
-    .employee-details {
-        margin-bottom: 15px;
-        /* Separación en vista móvil */
-    }
-
-    .employee-header {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .employee-photo-container {
-        margin: 0 auto;
-    }
-
-    .employee-info {
-        grid-template-columns: 1fr;
-        /* Una columna en móvil */
-    }
-
-    .logo-text {
-        font-size: 18px;
-        /* Ajuste: Tamaño reducido */
-    }
-
-    .nav-links a {
-        font-size: 0;
-        /* Ocultar texto de navegación para iconos en móvil */
-        padding: 8px;
-    }
-
-    .nav-links a i {
-        margin-right: 0;
-        font-size: 16px;
-    }
-
-    .chart-actions {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .month-navigation {
-        flex: 1;
-    }
-
-    .btn {
-        flex: 1;
-    }
 }
 
 /* ======================================================= */
-/* NUEVA REGLA: Escalado para Monitores Grandes (>= 23") */
-/* ======================================================= */
-@media (min-width: 1440px) {
-    body {
-        font-size: 16px;
-        /* Aumenta la fuente base */
-    }
-
-    .container {
-        padding: 0 20px;
-        /* Aumenta el padding lateral */
-    }
-
-    /* Escalar elementos de interfaz clave */
-    .logo-img {
-        width: 100px;
-        /* Ligeramente más grande */
-        height: 40px;
-    }
-
-    .logo-text {
-        font-size: 22px;
-        /* Ligeramente más grande */
-    }
-
-    .employee-header h2 {
-        font-size: 19px;
-        /* Títulos más grandes */
-    }
-
-    .employee-photo-container {
-        width: 100px;
-        /* Foto más grande */
-        height: 100px;
-    }
-
-    /* Aumentar el tamaño de fuente en las tarjetas de información */
-    .info-group h3 {
-        font-size: 11px;
-    }
-
-    .info-group p {
-        font-size: 15px;
-    }
-
-    .info-group .vacation-days {
-        font-size: 18px;
-    }
-
-    .calendar td {
-        height: 85px;
-        /* Altura de la celda de calendario aumentada */
-    }
-
-    /* Aumentar el tamaño del modal y sus elementos */
-    .modal-content {
-        max-width: 650px;
-        /* Aumenta el ancho máximo del modal */
-    }
-
-    .modal-header h3 {
-        font-size: 18px;
-    }
-
-    .form-group label {
-        font-size: 14px;
-    }
-
-    .input-custom,
-    .select-custom,
-    .select-header {
-        padding: 10px 12px;
-        /* Aumentar padding de inputs */
-        font-size: 14px;
-        min-height: 42px;
-        /* Altura mínima consistente aumentada */
-    }
-
-    .btn {
-        padding: 9px 16px;
-        /* Botones más grandes */
-        font-size: 14px;
-    }
-
-    /* Ajustar espaciado en la leyenda */
-    .activity-legend {
-        gap: 15px;
-        padding: 12px;
-        font-size: 13px;
-    }
-
-}
-
+/* 8. ESTADOS DE VALIDACIÓN Y BLOQUEO */
 /* ======================================================= */
 
-
-/* Loading state - Se mantienen iguales */
-.loading-spinner {
-    display: none;
-    width: 14px;
-    /* Ajuste: Tamaño reducido */
-    height: 14px;
-    /* Ajuste: Tamaño reducido */
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.error-message {
-    color: #e53e3e;
-    font-size: 11px;
-    /* Ajuste: Tamaño reducido */
-    margin-top: 4px;
-    /* Ajuste: Margen reducido */
-    display: none;
-}
-
-
-/* Footer */
-.footer {
-    background-color: var(--dark-gray);
-    padding: 10px 15px;
-    /* Ajuste: Padding reducido */
-    text-align: center;
-    font-family: sans-serif;
-    color: rgb(255, 255, 255);
-    width: 100%;
-    font-size: 12px;
-    /* Ajuste: Tamaño reducido */
-    margin-top: 15px;
-    /* Ajuste: Margen superior reducido */
-}
-
-
-/* ================================== */
-/* ESTILOS ADICIONALES PARA EL BLOQUEO */
-/* ================================== */
-.lock-indicator {
-    position: absolute;
-    top: -4px;
-    /* Ajuste: Posición */
-    right: 0;
-    font-size: 10px;
-    /* Ajuste: Tamaño reducido */
-    font-weight: 600;
-    padding: 2px 6px;
-    /* Ajuste: Padding reducido */
-    border-radius: 5px;
-    /* Ajuste: Borde ligeramente más pequeño */
-    color: var(--white);
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    /* Ajuste: Espacio reducido */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    /* Sombra más sutil */
-    opacity: 0.95;
-    transition: background-color 0.3s ease;
-}
-
-.lock-indicator i {
-    font-size: 9px;
-    /* Ajuste: Tamaño reducido */
-}
-
-.form-group:has(.lock-indicator) label {
-    font-style: italic;
-    color: var(--medium-gray);
-}
-
-/* Animaciones para SweetAlert2 - Se mantienen iguales (con ajustes en valores) */
-.animate__animated {
-    animation-duration: 0.4s;
-    /* Duración reducida */
-}
-
-.animate__fadeInDown {
-    animation-name: fadeInDown;
-}
-
-.animate__fadeOutUp {
-    animation-name: fadeOutUp;
-}
-
-.animate__fadeInRight {
-    animation-name: fadeInRight;
-}
-
-.animate__fadeOutRight {
-    animation-name: fadeOutRight;
-}
-
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translate3d(0, -50%, 0);
-        /* Movimiento más sutil */
-    }
-
-    to {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-    }
-}
-
-@keyframes fadeOutUp {
-    from {
-        opacity: 1;
-    }
-
-    to {
-        opacity: 0;
-        transform: translate3d(0, -50%, 0);
-        /* Movimiento más sutil */
-    }
-}
-
-@keyframes fadeInRight {
-    from {
-        opacity: 0;
-        transform: translate3d(50%, 0, 0);
-        /* Movimiento más sutil */
-    }
-
-    to {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-    }
-}
-
-@keyframes fadeOutRight {
-    from {
-        opacity: 1;
-    }
-
-    to {
-        opacity: 0;
-        transform: translate3d(50%, 0, 0);
-        /* Movimiento más sutil */
-    }
-}
-
-/* Para inputs, selects normales y el contenedor del custom-select */
+/* Campo Rechazado (Validation Error) */
 .rejected-field {
     border: 1px solid #e53e3e !important;
     box-shadow: 0 0 0 1px #e53e3e !important;
 }
 
-/* Específico para los contenedores de opciones (los botones de radio) */
 .work-type-options.rejected-field,
 .service-bonus-options.rejected-field {
     border: 1px solid #e53e3e !important;
     border-radius: 8px;
     padding: 8px 12px;
     background-color: #fff5f5;
-    /* Quitar el box-shadow para que no se vea doble borde */
     box-shadow: none !important;
 }
 
-/* Estilo para el mensaje de rechazo (tu código ya estaba bien) */
 .rejection-message {
     margin-top: 6px;
     padding: 6px 10px;
@@ -1790,67 +1358,401 @@ body {
     color: #c53030;
 }
 
-
-
-/* ================================== */
-/* NUEVOS ESTILOS: OVERLAY DE CARGA */
-/* ================================== */
-
-/* Contenedor principal que contendrá el overlay */
-.load-chart-container {
-    position: relative;
-    /* Esencial para el posicionamiento absoluto del overlay */
+.error-message {
+    color: #e53e3e;
+    font-size: 11px;
+    margin-top: 4px;
+    display: none;
 }
 
-/* Overlay para oscurecer y bloquear el contenido */
-.loading-overlay {
+/* Indicador de Bloqueo (Lock Indicator) */
+.lock-indicator {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.7);
-    /* Fondo blanco semitransparente */
-    display: none;
-    /* Oculto por defecto */
-    justify-content: center;
-    align-items: center;
-    z-index: 50;
-    /* Por encima del contenido normal del calendario */
-    border-radius: 8px;
-    transition: opacity 0.3s ease;
-    opacity: 0;
-    /* Para la animación de entrada/salida */
-}
-
-.loading-overlay.active {
-    display: flex;
-    opacity: 1;
-}
-
-/* Mejorar el estilo del spinner para que sea más notable y profesional */
-.loading-spinner-lg {
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--light-gray);
-    border-radius: 50%;
-    border-top-color: var(--primary-blue);
-    animation: spin 1s ease-in-out infinite;
-    /* Aplicar una pequeña sombra para que resalte sobre el fondo */
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-}
-
-/* Opcional: Mejorar el estilo para el texto de carga */
-.loading-message {
-    font-size: 16px;
+    top: -4px;
+    right: 0;
+    font-size: 10px;
     font-weight: 600;
-    color: var(--primary-blue);
-    margin-left: 10px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: var(--white);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    opacity: 0.95;
+    transition: background-color 0.3s ease;
 }
 
-/* Modificación de la celda de carga para que no se vea doble */
-.calendar tbody tr td.loading {
-    display: none;
-    /* Eliminamos el spinner de la celda de la tabla */
+.lock-indicator i {
+    font-size: 9px;
+}
+
+.form-group:has(.lock-indicator) label {
+    font-style: italic;
+    color: var(--medium-gray);
+}
+
+/* ======================================================= */
+/* 9. RESPONSIVE Y MEDIA QUERIES - HEADER Y CALENDARIO MEJORADO */
+/* ======================================================= */
+
+/* Media Query para Móviles/Tabletas pequeñas (<= 768px) */
+@media (max-width: 768px) {
+
+    /* --- HEADER CORREGIDO --- */
+    .header {
+        padding: 8px 10px;
+        align-items: center;
+    }
+
+    .logo-img {
+        width: 75px;
+        /* LOGO MÁS PEQUEÑO: 75px en lugar de 90px */
+        height: 30px;
+    }
+
+    .logo-container {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+
+    .nav-links {
+        width: 100%;
+        justify-content: space-around;
+        gap: 0;
+    }
+
+    .nav-links a {
+        font-size: 0;
+        padding: 8px 5px;
+        min-width: 40px;
+        justify-content: center;
+    }
+
+    .nav-links a i {
+        margin-right: 0;
+        font-size: 16px;
+    }
+
+    /* ---------------------- */
+
+    .container {
+        padding: 0 8px;
+    }
+
+    .content-layout {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .employee-details {
+        position: static;
+        margin-bottom: 0;
+    }
+
+    .employee-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .employee-photo-container {
+        margin: 0 auto;
+    }
+
+    .employee-info {
+        grid-template-columns: 1fr;
+    }
+
+    .load-chart-container {
+        padding: 12px;
+        overflow-x: auto;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .chart-actions {
+        width: 100%;
+        justify-content: space-between;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .month-navigation {
+        flex: 1;
+        justify-content: space-between;
+        min-width: 50%;
+    }
+
+    .btn {
+        flex: 1;
+    }
+
+    /* CALENDARIO */
+    .calendar {
+        min-width: 500px;
+        table-layout: fixed;
+    }
+
+    .calendar td {
+        height: 70px;
+        padding: 3px;
+        min-height: 70px;
+        width: 14.2857%;
+    }
+
+    /* MODIFICACIÓN CLAVE SOLICITADA */
+    .day-header-info {
+        position: static;
+        /* CAMBIO: Eliminar la posición absoluta */
+        top: initial;
+        right: initial;
+        justify-content: flex-end;
+        /* Alinear los iconos a la derecha del flujo normal */
+        margin-bottom: 2px;
+    }
+
+    .day-number {
+        position: relative;
+        /* Asegurar que el número tenga su propia capa y prioridad visual */
+        top: 0;
+        left: 0;
+    }
+
+
+    .activity-tag {
+        text-align: center;
+        padding: 1px;
+        font-size: 8px;
+        min-height: 12px;
+        line-height: 10px;
+        margin: 1px auto 0 auto;
+        display: block;
+        width: 95%;
+        /* Mantiene el ancho controlado para que quepan */
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .day-number {
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+
+    /* MODAL EN MÓVIL */
+    .modal-content {
+        margin: 5px;
+        width: calc(100% - 10px);
+    }
+
+    .form-tabs {
+        padding: 0 10px;
+    }
+
+    .tab-content {
+        padding: 15px;
+    }
+
+    .work-type-options,
+    .service-bonus-options {
+        flex-direction: column;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Responsive para Móviles Muy Pequeños (<= 480px) */
+@media (max-width: 480px) {
+    body {
+        font-size: 13px;
+    }
+
+    .container {
+        padding: 0 5px;
+    }
+
+    .header {
+        padding: 6px 8px;
+    }
+
+    .logo-img {
+        width: 65px;
+        /* LOGO AÚN MÁS PEQUEÑO: 65px */
+        height: 25px;
+    }
+
+    .nav-links a {
+        font-size: 0;
+        padding: 5px 6px;
+    }
+
+    .nav-links a i {
+        font-size: 14px;
+    }
+
+    .employee-details {
+        padding: 15px;
+    }
+
+    .employee-photo-container {
+        width: 70px;
+        height: 70px;
+    }
+
+    .employee-name-header {
+        font-size: 16px;
+    }
+
+    .load-chart-container {
+        padding: 10px;
+    }
+
+    .chart-header h2 {
+        font-size: 15px;
+    }
+
+    .calendar {
+        min-width: 450px;
+    }
+
+    .calendar td {
+        height: 65px;
+        padding: 2px;
+        min-height: 65px;
+    }
+
+    **
+
+    /* Ajuste de actividad para móviles muy pequeños */
+    .activity-tag {
+        font-size: 7px;
+        /* Fuente más pequeña para que quepa */
+        padding: 1px;
+        min-height: 10px;
+        line-height: 8px;
+        margin: 1px auto 0 auto;
+    }
+
+    ** .activity-legend {
+        grid-template-columns: repeat(4, 1fr);
+        font-size: 10px;
+    }
+
+    .modal-header {
+        padding: 12px 15px;
+    }
+
+    .modal-header h3 {
+        font-size: 15px;
+    }
+
+    .form-tabs {
+        padding: 0 8px;
+    }
+
+    .tab-btn {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+
+    .tab-content {
+        padding: 12px;
+    }
+
+    .input-custom,
+    .select-custom,
+    .select-header {
+        padding: 8px 10px;
+        font-size: 12px;
+        min-height: 36px;
+    }
+}
+
+/* Responsive para Monitores Grandes (>= 1440px) */
+@media (min-width: 1440px) {
+    body {
+        font-size: 15px;
+    }
+
+    .container {
+        padding: 0 20px;
+    }
+
+    .content-layout {
+        grid-template-columns: 350px 1fr;
+        gap: 25px;
+    }
+
+    .employee-details {
+        padding: 25px;
+    }
+
+    .employee-photo-container {
+        width: 100px;
+        height: 100px;
+    }
+
+    .employee-name-header {
+        font-size: 20px;
+    }
+
+    .info-group h3 {
+        font-size: 12px;
+    }
+
+    .info-group p {
+        font-size: 15px;
+    }
+
+    .vacation-days {
+        font-size: 18px;
+    }
+
+    .load-chart-container {
+        padding: 25px;
+    }
+
+    .calendar td {
+        height: 85px;
+        min-height: 85px;
+    }
+
+    .modal-content {
+        max-width: 550px;
+    }
+
+    /* En pantallas grandes los tags se alinean a la izquierda */
+    .activity-tag {
+        text-align: left;
+    }
+}
+
+/* ======================================================= */
+/* 10. ESTILOS DE PIE DE PÁGINA (FOOTER) */
+/* ======================================================= */
+.footer {
+    background-color: var(--dark-gray);
+    padding: 10px 15px;
+    text-align: center;
+    font-family: sans-serif;
+    color: rgb(255, 255, 255);
+    width: 100%;
+    font-size: 12px;
+    margin-top: 15px;
 }

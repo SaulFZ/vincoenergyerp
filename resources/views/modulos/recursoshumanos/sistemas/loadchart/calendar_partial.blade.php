@@ -517,26 +517,27 @@
                                 <div class="error-message" id="field-bonus-error">Debes seleccionar un bono de campo.
                                 </div>
                             </div>
-
-                            <div class="form-group">
-                                <label for="has-service-bonus">¿Bono de servicio?</label>
-                                <div class="service-bonus-options">
-                                    <div class="service-bonus-option selected" data-value="no">
-                                        <input type="radio" name="has_service_bonus" id="service-bonus-no"
-                                            value="no" checked>
-                                        <span class="service-bonus-label">
-                                            <i class="fas fa-times-circle"></i> No
-                                        </span>
-                                    </div>
-                                    <div class="service-bonus-option" data-value="si">
-                                        <input type="radio" name="has_service_bonus" id="service-bonus-yes"
-                                            value="si">
-                                        <span class="service-bonus-label">
-                                            <i class="fas fa-check-circle"></i> Sí
-                                        </span>
+                            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_servicios'))
+                                <div class="form-group">
+                                    <label for="has-service-bonus">¿Bono de servicio?</label>
+                                    <div class="service-bonus-options">
+                                        <div class="service-bonus-option selected" data-value="no">
+                                            <input type="radio" name="has_service_bonus" id="service-bonus-no"
+                                                value="no" checked>
+                                            <span class="service-bonus-label">
+                                                <i class="fas fa-times-circle"></i> No
+                                            </span>
+                                        </div>
+                                        <div class="service-bonus-option" data-value="si">
+                                            <input type="radio" name="has_service_bonus" id="service-bonus-yes"
+                                                value="si">
+                                            <span class="service-bonus-label">
+                                                <i class="fas fa-check-circle"></i> Sí
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            @endif
                         </div>
                     </div>
 

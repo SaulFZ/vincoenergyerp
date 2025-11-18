@@ -151,8 +151,9 @@ class EmployeeVacationBalanceController extends Controller
         $balance = EmployeeVacationBalance::with('employee')->findOrFail($id);
 
         if ($balance->employee) {
+            // Sincroniza años y posibles días de vacaciones si es aniversario
             $this->updateYearsOfService($balance);
-            $balance->refresh();
+            $balance->refresh(); // Recarga para obtener los datos actualizados
         }
 
         return response()->json($balance);
@@ -180,16 +181,18 @@ class EmployeeVacationBalanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Error de validación', 'errors' => $validator->errors()], 422);
         }
 
+        // Recalcula los años de servicio al actualizar para mantener la consistencia
         $currentYearsOfService = Carbon::parse($employee->hire_date)->diffInYears(Carbon::now());
 
         try {
-            // Se mantienen los campos de ciclo en la BD con su valor anterior (no se tocan)
+            // Se actualizan los campos directos, incluyendo years_of_service con el valor recalculado
             $balance->update([
                 'employee_id' => $request->employee_id,
                 'vacation_days_available' => $request->vacation_days_available,
                 'rest_days_available' => $request->rest_days_available,
                 'years_of_service' => $currentYearsOfService,
                 'rest_mode' => $request->rest_mode,
+                // work_rest_cycle_counter y last_activity_date mantienen su valor anterior
             ]);
 
             return response()->json(['success' => true, 'message' => '¡Balance de vacaciones actualizado exitosamente!']);

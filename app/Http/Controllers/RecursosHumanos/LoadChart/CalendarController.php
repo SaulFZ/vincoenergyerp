@@ -43,7 +43,11 @@ class CalendarController extends Controller
             return redirect('/dashboard')->with('error', 'Datos de empleado no encontrados.');
         }
 
-        // --- OBTENER SALDOS DE VACACIONES Y DESCANSOS ---
+        $currentMonth = $request->input('month', date('n'));
+        $currentYear  = $request->input('year', date('Y'));
+        $monthYear    = sprintf('%04d-%02d', $currentYear, $currentMonth);
+
+        // --- OBTENER SALDOS DE VACACIONES Y CONTEO DE DÍAS DE DESCANSO ---
         $vacationBalance = EmployeeVacationBalance::firstOrNew(['employee_id' => $employee->id]);
 
         if (! $vacationBalance->exists) {
@@ -54,7 +58,21 @@ class CalendarController extends Controller
         }
 
         $vacationDays = $vacationBalance->vacation_days_available;
-        $restDays     = $vacationBalance->rest_days_available;
+        // ❌ CAMBIO: Eliminar la obtención del balance de días de descanso
+
+        // ✅ NUEVA LÓGICA: Contar los días de actividad 'D' (Descanso) en el mes
+        $monthlyLog = EmployeeMonthlyWorkLog::where('employee_id', $employee->id)
+            ->where('month_and_year', $monthYear)
+            ->first();
+
+        $employeeActivities = $monthlyLog ? $monthlyLog->daily_activities : [];
+        $totalRestDaysInMonth = 0;
+        foreach ($employeeActivities as $activity) {
+            if (($activity['activity_type'] ?? null) === 'D') {
+                $totalRestDaysInMonth++;
+            }
+        }
+        // -----------------------------------------------------------------
 
         $hire_date = $this->formatDate($employee->hire_date);
         $photo     = $employee->photo ? asset($employee->photo) : asset('assets/img/perfil.png');
@@ -72,7 +90,7 @@ class CalendarController extends Controller
 
         $foodOptions = Meal::orderBy('meal_number')->get();
 
-        // Lógica de mapeo de Bonos de Campo
+        // Lógica de mapeo de Bonos de Campo (Se mantiene igual)
         $jobTitle      = $employee->job_title;
         $bonusMappings = [
             'Ingeniero de Campo'                               => 'Ingeniero de Campo',
@@ -111,9 +129,6 @@ class CalendarController extends Controller
         $fieldBonuses = FieldBonus::where('employee_category', $employeeBonusCategory)
             ->orderBy('bonus_identifier')
             ->get();
-
-        $currentMonth = $request->input('month', date('n'));
-        $currentYear  = $request->input('year', date('Y'));
 
         $fortnightlyConfig = FortnightlyConfig::where('year', $currentYear)
             ->where('month', $currentMonth)
@@ -162,14 +177,6 @@ class CalendarController extends Controller
             ];
         }
 
-        // Obtener actividades del empleado para el mes actual
-        $monthYear  = sprintf('%04d-%02d', $currentYear, $currentMonth);
-        $monthlyLog = EmployeeMonthlyWorkLog::where('employee_id', $employee->id)
-            ->where('month_and_year', $monthYear)
-            ->first();
-
-        $employeeActivities = $monthlyLog ? $monthlyLog->daily_activities : [];
-
         // Datos comunes para ambas vistas
         $viewData = [
             'employee'           => $employee,
@@ -184,10 +191,11 @@ class CalendarController extends Controller
             'foodOptions'        => $foodOptions,
             'fieldBonuses'       => $fieldBonuses,
             'vacationDays'       => $vacationDays,
-            'restDays'           => $restDays,
+            // ✅ CAMBIO: Devolver el conteo en lugar del balance de 6 días
+            'restDays'           => $totalRestDaysInMonth,
             'employeeActivities' => $employeeActivities,
             'isForModal'         => $isForModal,
-            'isForModal'         => $isForModal, // 👈 Esta variable es la clave
+            // 'isForModal'         => $isForModal, // 👈 Se elimina duplicado
         ];
 
         // Determinar qué vista retornar
@@ -293,10 +301,6 @@ class CalendarController extends Controller
         ]);
     }
 
-    // El resto de las funciones (getEmployeeBalancesAjax, calculateInitialVacationData, saveActivity,
-    // determinePayrollPeriodMarker, getActivityDescription, getMonthlyActivities, formatDate, getMonthName,
-    // getUsdToMxnExchangeRate, getMandatoryHolidays, recalculateDayStatus) permanecen sin cambios.
-
     /**
      * Devuelve los datos de balance para ser usados en AJAX
      */
@@ -304,6 +308,9 @@ class CalendarController extends Controller
     {
         // ⚠️ CORRECCIÓN: Priorizar employee_id del request
         $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
+        $month = $request->input('month', date('n'));
+        $year = $request->input('year', date('Y'));
+        $monthYear = sprintf('%04d-%02d', $year, $month);
 
         $employee = Employee::find($employeeId);
 
@@ -313,11 +320,27 @@ class CalendarController extends Controller
 
         $vacationBalance = EmployeeVacationBalance::where('employee_id', $employee->id)->first();
 
+        // ✅ NUEVA LÓGICA: Contar los días de actividad 'D' (Descanso) en el mes
+        $monthlyLog = EmployeeMonthlyWorkLog::where('employee_id', $employee->id)
+            ->where('month_and_year', $monthYear)
+            ->first();
+
+        $employeeActivities = $monthlyLog ? $monthlyLog->daily_activities : [];
+        $totalRestDaysInMonth = 0;
+        foreach ($employeeActivities as $activity) {
+            if (($activity['activity_type'] ?? null) === 'D') {
+                $totalRestDaysInMonth++;
+            }
+        }
+        // -----------------------------------------------------------------
+
+
         return response()->json([
             'success'      => true,
             // ⚠️ Nota: Asegúrate de devolver los datos del empleado buscado, no del logeado
             'vacationDays' => $vacationBalance->vacation_days_available ?? 0,
-            'restDays'     => $vacationBalance->rest_days_available ?? 0,
+            // ✅ CAMBIO: Devolver el conteo en lugar del balance de 6 días
+            'totalRestDaysInMonth' => $totalRestDaysInMonth,
         ]);
     }
 
@@ -335,7 +358,8 @@ class CalendarController extends Controller
         return [
             'years_of_service'        => $yearsOfService,
             'vacation_days_available' => $mandatoryVacationDays,
-            'rest_days_available'     => 6,
+            // ❌ CAMBIO: Eliminar 'rest_days_available' del cálculo inicial, ya no se usa.
+            'rest_days_available'     => 0, // Se inicializa a 0 o se remueve, pero se mantendrá con 0 para evitar errores si el campo existe en DB
             'rest_mode'               => '5x2',
             'work_rest_cycle_counter' => 0,
             'last_activity_date'      => null,

@@ -60,7 +60,7 @@ let currentEmployeeModal = null;
  * Inicializa los event listeners para los nombres de empleados
  */
 function initializeEmployeeNameClickListeners() {
-    document.getElementById('approval-table-body').addEventListener('click', function(event) {
+    document.getElementById('approval-table-body').addEventListener('click', function (event) {
         const employeeNameCell = event.target.closest('.employee-info-cell');
         if (employeeNameCell) {
             event.preventDefault();
@@ -104,37 +104,37 @@ function openEmployeeDetailModal(employeeId, employeeName, month = null, year = 
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            content.innerHTML = data.html;
-            subtitle.textContent = employeeName;
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                content.innerHTML = data.html;
+                subtitle.textContent = employeeName;
 
-            // ⚠️ CORRECCIÓN CLAVE:
-            // Llamar a la función de inicialización global de calendar.js
-            if (typeof initializeModalCalendarScripts === 'function') {
-                 initializeModalCalendarScripts(employeeId);
+                // ⚠️ CORRECCIÓN CLAVE:
+                // Llamar a la función de inicialización global de calendar.js
+                if (typeof initializeModalCalendarScripts === 'function') {
+                    initializeModalCalendarScripts(employeeId);
+                } else {
+                    console.error("Error: La función initializeModalCalendarScripts no está definida. Asegúrate de que calendar.js esté cargado y modificado correctamente.");
+                }
+
             } else {
-                 console.error("Error: La función initializeModalCalendarScripts no está definida. Asegúrate de que calendar.js esté cargado y modificado correctamente.");
+                throw new Error(data.message || 'Error al cargar la información');
             }
-
-        } else {
-            throw new Error(data.message || 'Error al cargar la información');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        content.innerHTML = `
-            <div class="error-container">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>Error al cargar la información</h3>
-                <p>${error.message}</p>
-                <button class="btn btn-primary" onclick="openEmployeeDetailModal(${employeeId}, '${employeeName}')">
-                    <i class="fas fa-redo"></i> Reintentar
-                </button>
-            </div>
-        `;
-    });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            content.innerHTML = `
+                <div class="error-container">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error al cargar la información</h3>
+                    <p>${error.message}</p>
+                    <button class="btn btn-primary" onclick="openEmployeeDetailModal(${employeeId}, '${employeeName}')">
+                        <i class="fas fa-redo"></i> Reintentar
+                    </button>
+                </div>
+            `;
+        });
 }
 
 /**
@@ -154,14 +154,14 @@ function initializeEmployeeModalListeners() {
     document.querySelector('.employee-detail-close-btn').addEventListener('click', closeEmployeeDetailModal);
 
     // Cerrar modal haciendo clic fuera del contenido
-    document.getElementById('employee-detail-modal').addEventListener('click', function(event) {
+    document.getElementById('employee-detail-modal').addEventListener('click', function (event) {
         if (event.target === this) {
             closeEmployeeDetailModal();
         }
     });
 
     // Cerrar modal con la tecla Escape
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             closeEmployeeDetailModal();
         }
@@ -825,7 +825,7 @@ async function updateDailyItemsStatus(employeeId, changes) {
             await loadMonthData(true); // Recargar datos para actualizar la tabla
         } else {
             showSwalNotification('Error', data.message, 'error');
-            // No cerrar el modal para que el usuario pueda corregir
+            // No cerrar el modal
         }
     } catch (error) {
         console.error('Error al actualizar el estado de los ítems:', error);
@@ -931,7 +931,7 @@ async function handleApprove() {
         let message = `Se aprobarán todas las actividades (${activitiesToApprove.length} días) en estado `;
         const statesToApprove = [];
         if (underReviewActivitiesExist) statesToApprove.push('Bajo Revisión');
-        if (reviewedActivitiesExist) statesToToApprove.push('Revisado');
+        if (reviewedActivitiesExist) statesToApprove.push('Revisado');
         message += `${statesToApprove.join(' y ')} para este período. Esta acción es irreversible.`;
 
         Swal.fire({
@@ -1556,7 +1556,7 @@ function showFullMonth() {
         header.style.display = "";
 
         allRows.forEach((row) => {
-             // Asegurarse de que estamos manipulando solo las celdas de días
+            // Asegurarse de que estamos manipulando solo las celdas de días
             if (row.classList.contains('activity-row') || row.classList.contains('employee-row')) {
                 const dayCell = Array.from(row.children).find(cell => cell.getAttribute('data-day') === header.getAttribute('data-day') && cell.getAttribute('data-date') === header.getAttribute('data-date'));
 

@@ -128,6 +128,19 @@
 
         <main class="main-content">
             @yield('content')
+            <div class="empty-state-container">
+                <div class="empty-state-content">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h2 class="empty-state-title">
+                        No hay comunicados o avisos recientes.
+                    </h2>
+                    <p class="empty-state-text">
+                        En este espacio se mostrarán las noticias importantes, comunicados internos.
+                    </p>
+                </div>
+            </div>
         </main>
     </div>
 
