@@ -104,6 +104,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* Añadido para móvil */
 }
 
 .logo-container {
@@ -259,7 +260,7 @@ body {
 
 .employee-header-content {
     flex: 1;
-    min-width: 0;
+    min-width: 0; /* Permite que el contenido se reduzca */
 }
 
 .employee-header h2 {
@@ -273,9 +274,12 @@ body {
     color: var(--medium-gray);
     font-size: 18px;
     font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* --- INICIO DE AJUSTE PARA ENVOLVER EN VARIAS LÍNEAS --- */
+    white-space: normal; /* Permite que el texto se envuelva */
+    overflow: visible; /* Asegura que el texto sea visible aunque se envuelva */
+    text-overflow: clip; /* Quita el recorte con puntos suspensivos */
+    line-height: 1.2; /* Ajusta la altura de la línea para espacio de 2 filas */
+    /* --- FIN DE AJUSTE --- */
 }
 
 .employee-info {
@@ -1404,6 +1408,7 @@ body {
     .header {
         padding: 8px 10px;
         align-items: center;
+        flex-direction: column; /* <-- **AJUSTE CLAVE 2: En móvil, apila logo y nav** */
     }
 
     .logo-img {
@@ -1461,6 +1466,21 @@ body {
     .employee-photo-container {
         margin: 0 auto;
     }
+
+    /* En móvil, el contenedor se vuelve full width, no necesita min-width: 0 porque ya no es un flex-item con espacio restringido */
+    .employee-header-content {
+        flex: 1;
+        min-width: auto;
+        width: 100%;
+    }
+
+    .employee-name-header {
+        /* Asegura centrado en la vista de columna si el nombre es corto, pero sigue recortando si es necesario */
+        text-align: center;
+        width: 100%;
+        line-height: 1.2; /* Permite que se envuelva en dos líneas en móvil también */
+    }
+
 
     .employee-info {
         grid-template-columns: 1fr;
@@ -1637,7 +1657,6 @@ body {
         min-height: 65px;
     }
 
-    **
 
     /* Ajuste de actividad para móviles muy pequeños */
     .activity-tag {
@@ -1647,9 +1666,16 @@ body {
         min-height: 10px;
         line-height: 8px;
         margin: 1px auto 0 auto;
+        display: block;
+        width: 95%;
+        /* Mantiene el ancho controlado para que quepan */
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    ** .activity-legend {
+     .activity-legend {
         grid-template-columns: repeat(4, 1fr);
         font-size: 10px;
     }

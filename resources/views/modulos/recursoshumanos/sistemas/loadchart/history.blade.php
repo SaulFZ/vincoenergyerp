@@ -1,1110 +1,1590 @@
 @extends('modulos.recursoshumanos.sistemas.loadchart.index')
-<STYle>
-/* Variables CSS actualizadas */
-:root {
-    /* Colores Primarios y de Estado */
-    --primary-color: #334c95;
-    --secondary-color: #283848;
-    --accent-color: #d67e29;
-    --white: #ffffff;
-
-    --success-color: #64946f;
-    --warning-color: #da8544;
-    --danger-color: #f35900;
-    --info-color: #ffd900;
-
-    /* Colores de Fondo y Texto */
-    --light-color: #f7fafc;
-    --dark-color: #2d3748;
-    --medium-text: #4a5568;
-    --border-color: #e2e8f0;
-
-    --shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-/* Contenedor Principal */
-.history-container {
-    padding: 25px;
-    background: var(--light-color);
-    min-height: 100vh;
-}
-
-/* Tarjeta Base */
-.card-base {
-    background: var(--white);
-    border-radius: 12px;
-    margin-bottom: 25px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-}
-
-/* Header */
-.history-header {
-    padding: 25px 30px;
-    margin-bottom: 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.title-section .history-title {
-    color: var(--secondary-color);
-    margin: 0;
-    font-size: 2rem;
-    font-weight: 700;
-}
-
-.title-section .history-subtitle {
-    color: var(--medium-text);
-    margin: 5px 0 0 0;
-    font-size: 1rem;
-}
-
-/* Estadísticas */
-.header-stats {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-}
-
-.stat-card {
-    display: flex;
-    align-items: center;
-    background: var(--white);
-    padding: 15px 20px;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    min-width: 160px;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-}
-
-.stat-icon {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-    font-size: 1.4rem;
-}
-
-.stat-icon.approved {
-    background: rgba(100, 148, 111, 0.15);
-    color: var(--success-color);
-}
-
-.stat-icon.pending {
-    background: rgba(255, 217, 0, 0.15);
-    color: var(--info-color);
-}
-
-.stat-icon.rejected {
-    background: rgba(243, 89, 0, 0.15);
-    color: var(--danger-color);
-}
-
-.stat-number {
-    display: block;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--dark-color);
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    color: var(--medium-text);
-    text-transform: uppercase;
-}
-
-/* Panel de Filtros */
-.filters-panel {
-    margin-bottom: 25px;
-}
-
-.filters-header {
-    padding: 20px 30px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.filters-title {
-    margin: 0;
-    font-size: 1.4rem;
-    color: var(--secondary-color);
-    font-weight: 600;
-}
-
-.btn-clear-filters {
-    background: var(--medium-text);
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: background 0.3s, transform 0.2s;
-    font-weight: 500;
-}
-
-.btn-clear-filters:hover {
-    background: var(--dark-color);
-    transform: translateY(-1px);
-}
-
-.filters-content {
-    padding: 30px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 25px;
-    align-items: end;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.filter-group label {
-    font-weight: 600;
-    margin-bottom: 10px;
-    color: var(--medium-text);
-}
-
-.date-range-inputs {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.date-separator {
-    color: var(--medium-text);
-    font-weight: 600;
-}
-
-.form-control {
-    padding: 10px 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    background-color: var(--white);
-    color: var(--dark-color);
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(51, 76, 149, 0.2);
-}
-
-.btn-apply-filters {
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.3s, transform 0.2s;
-    height: fit-content;
-    white-space: nowrap;
-}
-
-.btn-apply-filters:hover {
-    background: #c07225;
-    transform: translateY(-1px);
-}
-
-/* Contenido Principal */
-.history-content {
-    margin-bottom: 25px;
-}
-
-.quick-summary {
-    padding: 15px 30px;
-    background: #ebf8ff;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.summary-content {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-/* Tabla Mejorada */
-.table-container {
-    padding: 0;
-}
-
-.table-responsive {
-    overflow-x: auto;
-}
-
-.history-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0;
-    font-size: 0.85rem;
-}
-
-.history-table th {
-    background: var(--light-color);
-    padding: 15px 10px;
-    font-weight: 700;
-    color: var(--secondary-color);
-    border-bottom: 2px solid var(--border-color);
-    text-align: left;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.history-table td {
-    padding: 12px 10px;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: top;
-    color: var(--dark-color);
-}
-
-.history-table tbody tr {
-    transition: background 0.3s;
-}
-
-.history-table tbody tr:hover {
-    background: var(--light-color);
-}
-
-/* Estados de la tabla */
-.status-badge {
-    padding: 6px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    display: inline-block;
-    min-width: 80px;
-    text-align: center;
-}
-
-.status-approved {
-    background: rgba(100, 148, 111, 0.15);
-    color: var(--success-color);
-    border: 1px solid var(--success-color);
-}
-
-.status-reviewed {
-    background: rgba(218, 133, 68, 0.15);
-    color: var(--warning-color);
-    border: 1px solid var(--warning-color);
-}
-
-.status-rejected {
-    background: rgba(243, 89, 0, 0.15);
-    color: var(--danger-color);
-    border: 1px solid var(--danger-color);
-}
-
-.status-under_review {
-    background: rgba(255, 217, 0, 0.15);
-    color: var(--info-color);
-    border: 1px solid var(--info-color);
-}
-
-/* Celdas específicas */
-.date-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.date-cell strong {
-    font-size: 0.9rem;
-    color: var(--dark-color);
-}
-
-.date-cell .text-muted {
-    font-size: 0.75rem;
-}
-
-.activity-type-cell {
-    text-align: center;
-}
-
-.activity-type-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    background: var(--light-color);
-    border: 1px solid var(--border-color);
-    color: var(--dark-color);
-}
-
-.activity-type-badge.P {
-    background: rgba(51, 76, 149, 0.1);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.activity-type-badge.B {
-    background: rgba(100, 117, 170, 0.1);
-    border-color: #6475aa;
-    color: #6475aa;
-}
-
-.activity-type-badge.C {
-    background: rgba(36, 147, 153, 0.1);
-    border-color: #249399;
-    color: #249399;
-}
-
-.amount-cell {
-    text-align: right;
-    font-weight: 600;
-    color: var(--dark-color);
-}
-
-.amount-cell .currency {
-    font-size: 0.75rem;
-    color: var(--medium-text);
-    margin-left: 2px;
-}
-
-/* Actividad principal */
-.activity-main {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.activity-main strong {
-    font-size: 0.9rem;
-    color: var(--secondary-color);
-}
-
-.activity-details {
-    font-size: 0.8rem;
-    color: var(--medium-text);
-    line-height: 1.3;
-}
-
-/* Items de actividad */
-.activity-items {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.activity-item {
-    padding: 8px;
-    background: var(--light-color);
-    border-radius: 6px;
-    border-left: 3px solid var(--primary-color);
-    font-size: 0.8rem;
-}
-
-.activity-item.rejected {
-    border-left-color: var(--danger-color);
-    background: rgba(243, 89, 0, 0.05);
-}
-
-.item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 4px;
-}
-
-.item-concept {
-    font-weight: 600;
-    color: var(--secondary-color);
-    flex: 1;
-}
-
-.item-amount {
-    font-weight: 600;
-    color: var(--dark-color);
-    font-size: 0.8rem;
-    white-space: nowrap;
-}
-
-.item-body {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.item-type {
-    color: var(--medium-text);
-    font-size: 0.75rem;
-}
-
-.item-details {
-    color: var(--medium-text);
-    font-size: 0.75rem;
-    line-height: 1.3;
-}
-
-.item-comment {
-    background: rgba(255, 255, 255, 0.7);
-    padding: 4px 6px;
-    border-radius: 4px;
-    border-left: 2px solid var(--accent-color);
-    margin-top: 3px;
-    font-size: 0.75rem;
-    color: var(--dark-color);
-    font-style: italic;
-}
-
-.rejection-reason {
-    color: var(--danger-color);
-    font-size: 0.75rem;
-    font-style: italic;
-    margin-top: 3px;
-    padding: 3px 5px;
-    background: rgba(243, 89, 0, 0.1);
-    border-radius: 3px;
-}
-
-/* Botones de acción */
-.btn-action {
-    background: var(--white);
-    border: 1px solid var(--border-color);
-    padding: 6px 8px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.3s;
-    color: var(--medium-text);
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-}
-
-.btn-action:hover {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-    transform: translateY(-1px);
-}
-
-/* Estados de carga y vacío */
-.loading-row {
-    padding: 60px 20px;
-    text-align: center;
-}
-
-.loading-spinner {
-    width: 35px;
-    height: 35px;
-    border: 4px solid var(--border-color);
-    border-top: 4px solid var(--accent-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 15px;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 80px 20px;
-}
-
-.empty-icon {
-    font-size: 5rem;
-    color: var(--border-color);
-    margin-bottom: 20px;
-}
-
-.empty-state h3 {
-    color: var(--medium-text);
-    margin-bottom: 10px;
-    font-size: 1.5rem;
-}
-
-/* Estilos para el Modal (necesarios para que Bootstrap lo muestre) */
-.modal-content {
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-}
-
-.modal-header {
-    border-bottom: 1px solid var(--border-color);
-    padding: 20px 25px;
-}
-
-.modal-title {
-    color: var(--primary-color);
-    font-weight: 700;
-}
-
-.modal-footer {
-    border-top: 1px solid var(--border-color);
-    padding: 15px 25px;
-}
-
-/* Estilos de los detalles del modal */
-.detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed var(--border-color);
-}
-
-.detail-section {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-}
-
-.detail-section h5 {
-    color: var(--secondary-color);
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-weight: 600;
-    font-size: 1.1rem;
-}
-
-.detail-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.detail-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.detail-item label {
-    font-weight: 600;
-    color: var(--medium-text);
-    font-size: 0.85rem;
-    margin-bottom: 3px;
-}
-
-.detail-item span {
-    color: var(--dark-color);
-    font-size: 0.95rem;
-}
-
-.items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.detail-item-card {
-    padding: 10px 15px;
-    border: 1px solid var(--border-color);
-    border-left: 4px solid var(--primary-color);
-    border-radius: 6px;
-    background: var(--light-color);
-}
-
-.detail-item-card.rejected {
-    border-left-color: var(--danger-color);
-    background: rgba(243, 89, 0, 0.05);
-}
-
-.detail-item-card .item-header {
-    padding: 0;
-    border: none;
-    margin-bottom: 5px;
-}
-
-.detail-item-card .item-header strong {
-    color: var(--secondary-color);
-    font-size: 1rem;
-}
-
-.detail-item-card .item-amount {
-    color: var(--success-color);
-}
-
-.detail-item-card .item-body > div {
-    font-size: 0.85rem;
-    color: var(--medium-text);
-}
-
-.rejection-note {
-    color: var(--danger-color);
-    font-size: 0.85rem !important;
-    font-style: italic;
-    margin-top: 5px;
-    padding: 5px;
-    background: rgba(243, 89, 0, 0.1);
-    border-radius: 4px;
-}
-
-
-/* Responsive */
-@media (max-width: 1200px) {
-    .history-table {
-        font-size: 0.8rem;
+<style>
+    /* Variables CSS actualizadas con los colores proporcionados */
+    :root {
+        /* Colores Primarios y de Estado */
+        --primary-color: #2d3748;
+        --secondary-color: #4a5568;
+        --accent-color: #d67e29;
+        --white: #ffffff;
+
+        /* Colores de Tipos de Actividad */
+        --work-base: #334c95;
+        --work-well: #6475aa;
+        --home-office: #7293ff;
+        --traveling: #a2b5ff;
+        --rest: #118b20;
+        --vacation: #59983e;
+        --training: #a5a5a5;
+        --medical: #dd840fe0;
+        --absence: #7d4e4e;
+        --permission: #49c0c9;
+        --commissioned: #249399;
+
+        /* Colores de Estado */
+        --under-review: #ffdc13ef;
+        --reviewed-yellow: #ffa723ef;
+        --approved-green: #26b30e;
+        --rejected-red: #f55134e5;
+
+        /* Colores de Fondo y Texto */
+        --light-color: #f8fafc;
+        --dark-color: #2d3748;
+        --medium-text: #64748b;
+        --border-color: #e2e8f0;
+        --card-bg: #ffffff;
+
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
 
-    .history-table th,
-    .history-table td {
-        padding: 10px 8px;
-    }
-}
-
-@media (max-width: 768px) {
+    /* Contenedor Principal */
     .history-container {
-        padding: 15px;
+        padding: 16px;
+        background: var(--light-color);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    .filters-content {
-        grid-template-columns: 1fr;
-        padding: 20px;
+    /* Tarjeta Base */
+    .card-base {
+        background: var(--card-bg);
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .card-base:hover {
+        box-shadow: var(--shadow-hover);
+    }
+
+    /* Header Compacto y Moderno */
+    .compact-header {
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .compact-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(30%, -30%);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .title-section {
+        flex: 1;
+    }
+
+    .history-title {
+        color: white;
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .history-title i {
+        font-size: 1.8rem;
+        opacity: 0.9;
+    }
+
+    .history-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 6px 0 0 0;
+        font-size: 0.875rem;
+        font-weight: 400;
+    }
+
+    /* Estadísticas Compactas y Modernas */
+    .header-stats {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        min-width: 140px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .stat-card:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 1.2rem;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-icon.approved {
+        color: var(--approved-green);
+    }
+
+    .stat-icon.reviewed {
+        color: var(--reviewed-yellow);
+    }
+
+    .stat-icon.rejected {
+        color: var(--rejected-red);
+    }
+
+    .stat-icon.under-review {
+        color: var(--under-review);
+    }
+
+    .stat-info {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-left: 10px;
+        line-height: 1.2;
+    }
+
+    .stat-number {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.9);
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    /* Panel de Filtros Compacto y Moderno */
+    .filters-section {
+        padding: 20px 24px;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-group label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--medium-text);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-control {
+        padding: 10px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        background-color: var(--white);
+        color: var(--dark-color);
+        height: 42px;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--work-base);
+        box-shadow: 0 0 0 3px rgba(51, 76, 149, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 8px;
+        align-items: end;
+    }
+
+    .btn-apply-filters {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+    }
+
+    .btn-apply-filters:hover {
+        background: var(--secondary-color);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-light);
+    }
+
+    .btn-clear-filters {
+        background: var(--medium-text);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-clear-filters:hover {
+        background: var(--dark-color);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-light);
+    }
+
+    /* Contenido Principal */
+    .history-content {
+        margin-bottom: 20px;
+    }
+
+    .quick-summary {
+        padding: 12px 24px;
+        background: var(--secondary-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .summary-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--white);
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    /* Tabla Mejorada y Compacta */
+    .table-container {
+        padding: 0;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 0 0 12px 12px;
     }
 
     .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+        font-size: 0.8rem;
+        background: var(--card-bg);
+    }
+
+    .history-table th {
+        background: var(--light-color);
+        padding: 14px 12px;
+        font-weight: 700;
+        color: var(--secondary-color);
+        border-bottom: 2px solid var(--border-color);
+        text-align: left;
+        text-transform: uppercase;
         font-size: 0.75rem;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        letter-spacing: 0.5px;
+    }
+
+    .history-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--dark-color);
+    }
+
+    .history-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .history-table tbody tr:hover {
+        background: #f8fafc;
+        transform: scale(1.002);
+    }
+
+    /* **Ajuste para centrar columnas solicitadas (HORIZONTALMENTE)** */
+    .history-table th:nth-child(1),
+    .history-table td:nth-child(1),
+    /* Fecha */
+    .history-table th:nth-child(2),
+    .history-table td:nth-child(2),
+    /* Tipo */
+    .history-table th:nth-child(3),
+    .history-table td:nth-child(3),
+    /* Actividad */
+    .history-table th:nth-child(4),
+    .history-table td:nth-child(4) {
+        /* Estado */
+        text-align: center;
+    }
+
+    /* Estados de la tabla - Colores actualizados */
+    .status-badge {
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        display: inline-block;
+        min-width: 80px;
+        text-align: center;
+        letter-spacing: 0.5px;
+    }
+
+    .status-approved {
+        background: rgba(38, 179, 14, 0.1);
+        color: var(--approved-green);
+        border: 1px solid var(--approved-green);
+    }
+
+    .status-reviewed {
+        background: rgba(255, 167, 35, 0.1);
+        color: var(--reviewed-yellow);
+        border: 1px solid var(--reviewed-yellow);
+    }
+
+    .status-rejected {
+        background: rgba(245, 81, 52, 0.1);
+        color: var(--rejected-red);
+        border: 1px solid var(--rejected-red);
+    }
+
+    .status-under_review {
+        background: rgba(255, 220, 19, 0.1);
+        color: var(--under-review);
+        border: 1px solid var(--under-review);
+    }
+
+    /* Celdas específicas */
+    .date-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+        /* Centrar contenido de la fecha */
+    }
+
+    .date-cell strong {
+        font-size: 0.8rem;
+        color: var(--dark-color);
+        font-weight: 600;
+    }
+
+    .date-cell .text-muted {
+        font-size: 0.7rem;
+        color: var(--medium-text);
+    }
+
+    .activity-type-cell {
+        text-align: center;
+    }
+
+    .activity-type-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--white);
+        /* ¡CONFIRMADO: El texto es blanco! */
+        letter-spacing: 0.5px;
+    }
+
+    /* Colores para tipos de actividad */
+    .activity-type-badge.B {
+        background: var(--work-base);
+    }
+
+    .activity-type-badge.P {
+        background: var(--work-well);
+    }
+
+    .activity-type-badge.TC {
+        background: var(--home-office);
+    }
+
+    .activity-type-badge.V {
+        background: var(--traveling);
+    }
+
+    .activity-type-badge.D {
+        background: var(--rest);
+    }
+
+    .activity-type-badge.VAC {
+        background: var(--vacation);
+    }
+
+    .activity-type-badge.E {
+        background: var(--training);
+    }
+
+    .activity-type-badge.M {
+        background: var(--medical);
+    }
+
+    .activity-type-badge.A {
+        background: var(--absence);
+    }
+
+    .activity-type-badge.PE {
+        background: var(--permission);
+    }
+
+    .activity-type-badge.C {
+        background: var(--commissioned);
+    }
+
+    /* Actividad principal */
+    .activity-main {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+        /* Centrar contenido de la actividad */
+        text-align: center;
+        /* Asegurar el centrado del texto */
+    }
+
+    .activity-main strong {
+        font-size: 0.8rem;
+        color: var(--secondary-color);
+        font-weight: 600;
+    }
+
+    .activity-details {
+        font-size: 0.75rem;
+        color: var(--medium-text);
+        line-height: 1.3;
+        display: none;
+        /* Ocultar detalles aquí, se movieron a items */
+    }
+
+    /* Items de actividad - DISPOSICIÓN HORIZONTAL */
+    .activity-items {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     .activity-item {
+        padding: 8px;
+        background: var(--light-color);
+        border-radius: 6px;
+        border-left: 3px solid var(--primary-color);
         font-size: 0.75rem;
+        transition: all 0.3s ease;
+        min-width: 120px;
+        flex: 1;
+    }
+
+    .activity-item:hover {
+        transform: translateX(2px);
+    }
+
+    .activity-item.rejected {
+        border-left-color: var(--rejected-red);
+        background: rgba(245, 81, 52, 0.05);
+    }
+
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 4px;
+    }
+
+    .item-concept {
+        font-weight: 600;
+        color: var(--secondary-color);
+        flex: 1;
+    }
+
+    .item-amount {
+        font-weight: 700;
+        color: var(--dark-color);
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+
+    .item-body {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .item-type {
+        color: var(--medium-text);
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .item-details {
+        color: var(--medium-text);
+        font-size: 0.7rem;
+        line-height: 1.3;
+        /* Asegurar que el <br> funcione correctamente */
+        white-space: normal;
+    }
+
+    .item-comment {
+        background: rgba(255, 255, 255, 0.7);
+        padding: 4px 6px;
+        border-radius: 4px;
+        border-left: 2px solid var(--accent-color);
+        margin-top: 3px;
+        font-size: 0.7rem;
+        color: var(--dark-color);
+        font-style: italic;
+    }
+
+    .rejection-reason {
+        color: var(--rejected-red);
+        font-size: 0.7rem;
+        font-style: italic;
+        margin-top: 3px;
+        padding: 3px 5px;
+        background: rgba(245, 81, 52, 0.1);
+        border-radius: 3px;
+        border-left: 2px solid var(--rejected-red);
+    }
+
+    /* Botones de acción */
+    .btn-action {
+        background: var(--white);
+        border: 1px solid var(--border-color);
+        padding: 6px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--medium-text);
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+    }
+
+    .btn-action:hover {
+        background: var(--secondary-color);
+        color: white;
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-light);
+    }
+
+    /* Estados de carga y vacío */
+    .loading-row {
+        padding: 60px 15px;
+        text-align: center;
+    }
+
+    .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--work-base);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 12px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 15px;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: var(--border-color);
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        color: var(--medium-text);
+        margin-bottom: 8px;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+
+    .empty-state p {
+        color: var(--medium-text);
+        margin-bottom: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .filters-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .history-container {
+            padding: 12px;
+        }
+
+        .compact-header {
+            padding: 16px 20px;
+        }
+
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .header-stats {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .stat-card {
+            min-width: calc(25% - 12px);
+            flex-direction: column;
+            text-align: center;
+            padding: 12px;
+        }
+
+        .stat-icon {
+            margin-right: 0;
+            margin-bottom: 8px;
+        }
+
+        .stat-info {
+            text-align: center;
+            align-items: center;
+            margin-left: 0;
+        }
+
+        .filters-section {
+            padding: 16px 20px;
+        }
+
+        .filters-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .history-table {
+            font-size: 0.75rem;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 10px 8px;
+        }
+
+        /* Ajustes para disposición horizontal en móviles */
+        .activity-items {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .header-stats {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        /* Revertir el centrado en móvil para mejor lectura */
+        .stat-card {
+            width: 100%;
+            flex-direction: row;
+            text-align: left;
+        }
+
+        .stat-icon {
+            margin-right: 12px;
+            margin-bottom: 0;
+        }
+
+        .stat-info {
+            text-align: left;
+            align-items: flex-start;
+            margin-left: 0;
+        }
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Animaciones suaves */
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Scrollbar personalizado */
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: var(--light-color);
+        border-radius: 3px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 3px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: var(--medium-text);
+    }
+
+    /* Estilos para el ID de actividad */
+    .activity-id {
+        background: var(--accent-color);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        margin-right: 6px;
+    }
+
+    /* --- ESTILOS DEL MODAL PERSONALIZADO (SIN BOOTSTRAP) --- */
+    .custom-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        /* Fondo oscuro semitransparente */
+        display: none;
+        /* Oculto por defecto */
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+        /* Z-index alto para que esté encima de todo */
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .custom-modal-backdrop.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .custom-modal-dialog {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: var(--shadow-hover);
+        max-width: 900px;
+        /* Tamaño del modal-lg de Bootstrap */
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: translateY(-50px);
+        transition: transform 0.3s ease;
+    }
+
+    .custom-modal-backdrop.show .custom-modal-dialog {
+        transform: translateY(0);
+    }
+
+    .custom-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .custom-modal-header h5 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--dark-color);
+    }
+
+    .custom-modal-header .close-btn {
+        background: transparent;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--medium-text);
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .custom-modal-header .close-btn:hover {
+        color: var(--rejected-red);
+    }
+
+    .custom-modal-body {
+        padding: 24px;
+    }
+
+    .custom-modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .btn-close-modal {
+        background: var(--medium-text);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+    }
+
+    .btn-close-modal:hover {
+        background: var(--dark-color);
+        transform: translateY(-1px);
+    }
+
+    /* Estilos para el contenido del modal de detalles */
+    .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .detail-header h4 {
+        margin: 0;
+        font-size: 1.25rem;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .detail-section {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px dotted var(--border-color);
+    }
+
+    .detail-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .detail-section h5 {
+        color: var(--secondary-color);
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        font-weight: 600;
     }
 
     .detail-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
     }
-}
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-</STYle>
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .detail-item label {
+        font-weight: 600;
+        color: var(--medium-text);
+        font-size: 0.85rem;
+    }
+
+
+    /* Y si quiere asegurar que afecte al badge interno: */
+    .fonttype .activity-type-badge {
+        color: var(--white) !important;
+        /* Reconfirma que el badge interno es blanco */
+    }
+
+    .detail-item span {
+        color: var(--dark-color);
+        font-size: 0.9rem;
+    }
+
+
+    .items-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 15px;
+    }
+
+    .detail-item-card {
+        padding: 15px;
+        background: var(--light-color);
+        border-radius: 8px;
+        border-left: 4px solid var(--work-base);
+        box-shadow: var(--shadow-light);
+    }
+
+    .detail-item-card.rejected {
+        border-left-color: var(--rejected-red);
+        background: rgba(245, 81, 52, 0.05);
+    }
+
+    .detail-item-card .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .detail-item-card .item-body {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .rejection-note {
+        color: var(--rejected-red);
+        font-style: italic;
+        padding: 8px;
+        background: rgba(245, 81, 52, 0.1);
+        border-radius: 4px;
+        border-left: 3px solid var(--rejected-red);
+    }
+
+    /* Nuevos estilos para mejor presentación */
+    .item-id-amount {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 4px;
+    }
+
+    .item-id {
+        font-size: 0.65rem;
+        color: var(--medium-text);
+        font-weight: 600;
+    }
+
+    /* **Ajuste para resaltar el monto** */
+    .item-amount-separate {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--dark-color);
+    }
+
+    /* Estilo para items sin concepto */
+    .item-no-concept {
+        font-style: italic;
+        color: var(--medium-text);
+    }
+</style>
 
 @section('content')
-<div class="history-container">
-    <div class="history-header card-base">
-        <div class="header-content">
-            <div class="title-section">
-                <h1 class="history-title">
-                    <i class="fas fa-history"></i>
-                    Historial de Actividades
-                </h1>
-                <p class="history-subtitle">
-                    Consulta el registro completo de tus actividades y su estado de aprobación.
-                </p>
-            </div>
-            <div class="header-stats">
-                <div class="stat-card">
-                    <div class="stat-icon approved">
-                        <i class="fas fa-check-circle"></i>
+    <div class="history-container">
+        <div class="card-base">
+            <div class="compact-header">
+                <div class="header-content">
+                    <div class="title-section">
+                        <h1 class="history-title">
+                            <i class="fas fa-history"></i>
+                            Historial de Actividades
+                        </h1>
+                        <p class="history-subtitle">
+                            Consulta el registro completo de tus actividades y su estado de aprobación
+                        </p>
                     </div>
-                    <div class="stat-info">
-                        <span class="stat-number" id="approved-count">0</span>
-                        <span class="stat-label">Aprobadas</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon pending">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-number" id="pending-count">0</span>
-                        <span class="stat-label">Pendientes</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon rejected">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-number" id="rejected-count">0</span>
-                        <span class="stat-label">Rechazadas</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="filters-panel card-base">
-        <div class="filters-header">
-            <h3 class="filters-title">
-                <i class="fas fa-filter"></i>
-                Opciones de Filtro
-            </h3>
-            <button class="btn-clear-filters" id="clear-filters">
-                <i class="fas fa-times"></i>
-                Limpiar
-            </button>
-        </div>
-
-        <div class="filters-content">
-            <div class="filter-group">
-                <label for="date-range">Rango de Fechas</label>
-                <div class="date-range-inputs">
-                    <input type="date" id="start-date" class="form-control" placeholder="Fecha inicio">
-                    <span class="date-separator">a</span>
-                    <input type="date" id="end-date" class="form-control" placeholder="Fecha fin">
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <label for="status-filter">Estado</label>
-                <select id="status-filter" class="form-control">
-                    <option value="all">Todos los estados</option>
-                    <option value="approved">Aprobado</option>
-                    <option value="reviewed">Revisado</option>
-                    <option value="under_review">Pendiente</option>
-                    <option value="rejected">Rechazado</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="activity-type-filter">Tipo de Actividad</label>
-                <select id="activity-type-filter" class="form-control">
-                    <option value="all">Todos los tipos</option>
-                    <option value="B">Trabajo en Base</option>
-                    <option value="P">Trabajo en Pozo</option>
-                    <option value="C">Comisionado</option>
-                    <option value="TC">Trabajo en Casa</option>
-                    <option value="V">Viaje</option>
-                    <option value="D">Descanso</option>
-                    <option value="VAC">Vacaciones</option>
-                    <option value="E">Entrenamiento</option>
-                    <option value="M">Médico</option>
-                    <option value="A">Ausencia</option>
-                    <option value="PE">Permiso</option>
-                </select>
-            </div>
-
-            <div class="filter-actions">
-                <button class="btn-apply-filters" id="apply-filters">
-                    <i class="fas fa-search"></i>
-                    Aplicar Filtros
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="history-content card-base">
-        <div class="quick-summary" id="quick-summary" style="display: none;">
-            <div class="summary-content">
-                <i class="fas fa-info-circle"></i>
-                <span id="summary-text"></span>
-            </div>
-        </div>
-
-        <div class="table-container">
-            <div class="table-responsive">
-                <table class="history-table" id="history-table">
-                    <thead>
-                        <tr>
-                            <th width="90px">
-                                <i class="fas fa-calendar"></i>
-                                Fecha
-                            </th>
-                            <th width="70px">
-                                <i class="fas fa-tag"></i>
-                                Tipo
-                            </th>
-                            <th width="140px">
-                                <i class="fas fa-tasks"></i>
-                                Actividad
-                            </th>
-                                                        <th width="90px">
-                                <i class="fas fa-info-circle"></i>
-                                Estado
-                            </th>
-                            <th>
-                                <i class="fas fa-list"></i>
-                                Detalles
-                            </th>
-                            <th width="60px" class="text-center">
-                                <i class="fas fa-cog"></i>
-                                Acciones
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-table-body">
-                        <tr>
-                            <td colspan="6" class="text-center loading-row">
-                                <div class="loading-spinner"></div>
-                                <p>Cargando historial...</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="empty-state" id="empty-state" style="display: none;">
-                <div class="empty-icon">
-                    <i class="fas fa-inbox"></i>
-                </div>
-                <h3>No se encontraron registros</h3>
-                <p>No hay actividades que coincidan con los filtros aplicados.</p>
-                <button class="btn-clear-filters" onclick="clearFilters()">
-                    <i class="fas fa-times"></i>
-                    Limpiar filtros
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-info-circle"></i>
-                    Detalles de Actividad
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="detail-modal-content">
+                    <div class="header-stats">
+                        <div class="stat-card" data-status="approved">
+                            <div class="stat-icon approved">
+                                <i class="fas fa-check-circle"></i>
                             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                    Cerrar
-                </button>
+                            <div class="stat-info">
+                                <span class="stat-number" id="approved-count">0</span>
+                                <span class="stat-label">Aprobadas</span>
+                            </div>
+                        </div>
+                        <div class="stat-card" data-status="reviewed">
+                            <div class="stat-icon reviewed">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="stat-info"> <span class="stat-number" id="reviewed-count">0</span>
+                                <span class="stat-label">Revisadas</span>
+                            </div>
+                        </div>
+                        <div class="stat-card" data-status="rejected">
+                            <div class="stat-icon rejected">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="rejected-count">0</span>
+                                <span class="stat-label">Rechazadas</span>
+                            </div>
+                        </div>
+                        <div class="stat-card" data-status="under_review">
+                            <div class="stat-icon under-review">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="under-review-count">0</span>
+                                <span class="stat-label">En Revisión</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filters-section">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="start-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            Fecha Inicio
+                        </label>
+                        <input type="date" id="start-date" class="form-control">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="end-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            Fecha Fin
+                        </label>
+                        <input type="date" id="end-date" class="form-control">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="status-filter">
+                            <i class="fas fa-filter"></i>
+                            Estado
+                        </label>
+                        <select id="status-filter" class="form-control">
+                            <option value="all">Todos los estados</option>
+                            <option value="approved">Aprobado</option>
+                            <option value="reviewed">Revisado</option>
+                            <option value="rejected">Rechazado</option>
+                            <option value="under_review">En Revisión</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="activity-type-filter">
+                            <i class="fas fa-tag"></i>
+                            Tipo de Actividad
+                        </label>
+                        <select id="activity-type-filter" class="form-control">
+                            <option value="all">Todos los tipos</option>
+                            <option value="B">Trabajo en Base</option>
+                            <option value="P">Trabajo en Pozo</option>
+                            <option value="C">Comisionado</option>
+                            <option value="TC">Trabajo en Casa</option>
+                            <option value="V">Viaje</option>
+                            <option value="D">Descanso</option>
+                            <option value="VAC">Vacaciones</option>
+                            <option value="E">Entrenamiento</option>
+                            <option value="M">Médico</option>
+                            <option value="A">Ausencia</option>
+                            <option value="PE">Permiso</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button class="btn-apply-filters" id="apply-filters">
+                            <i class="fas fa-search"></i>
+                            Aplicar Filtros
+                        </button>
+                        <button class="btn-clear-filters" id="clear-filters">
+                            <i class="fas fa-eraser"></i>
+                            Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-content card-base">
+            <div class="quick-summary" id="quick-summary" style="display: none;">
+                <div class="summary-content">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="summary-text"></span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="history-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th width="100px">
+                                    <i class="fas fa-calendar"></i>
+                                    Fecha
+                                </th>
+                                <th width="80px">
+                                    <i class="fas fa-tag"></i>
+                                    Tipo
+                                </th>
+                                <th width="150px">
+                                    <i class="fas fa-tasks"></i>
+                                    Actividad
+                                </th>
+                                <th width="100px">
+                                    <i class="fas fa-info-circle"></i>
+                                    Estado
+                                </th>
+                                <th>
+                                    <i class="fas fa-list"></i>
+                                    Detalles
+                                </th>
+                                <th width="70px" class="text-center">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                    Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <tr>
+                                <td colspan="6" class="text-center loading-row">
+                                    <div class="loading-spinner"></div>
+                                    <p>Cargando historial...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <div class="empty-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h3>No se encontraron registros</h3>
+                    <p>No hay actividades que coincidan con los filtros aplicados.</p>
+                    <button class="btn-clear-filters" onclick="window.historyManager.clearFilters()">
+                        <i class="fas fa-times"></i>
+                        Limpiar filtros
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-@endsection
 
-@push('scripts')
-<script>
-class HistoryManager {
-    constructor() {
-        this.currentPage = 1;
-        this.filters = {
-            start_date: '',
-            end_date: '',
-            status: 'all',
-            activity_type: 'all'
-        };
-        this.employeeName = '';
-        this.init();
-    }
+    {{-- MODAL EN HTML PURO --}}
+    <div class="custom-modal-backdrop" id="detailModalBackdrop">
+        <div class="custom-modal-dialog">
+            <div class="custom-modal-content">
+                <div class="custom-modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle"></i>
+                        Detalles de Actividad
+                    </h5>
+                    <button type="button" class="close-btn" id="closeModalHeaderBtn" aria-label="Cerrar">
+                        &times;
+                    </button>
+                </div>
+                <div class="custom-modal-body" id="detail-modal-content">
+                </div>
+                <div class="custom-modal-footer">
+                    <button type="button" class="btn-close-modal" id="closeModalFooterBtn">
+                        <i class="fas fa-times"></i>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    init() {
-        this.bindEvents();
-        this.loadHistory();
-        this.setupDateDefaults();
-    }
+    @push('scripts')
+        <script>
+            // Clase para manejar el modal sin Bootstrap
+            class CustomModal {
+                constructor(modalId) {
+                    this.modalBackdrop = document.getElementById(modalId + 'Backdrop');
+                    this.closeHeaderBtn = document.getElementById('closeModalHeaderBtn');
+                    this.closeFooterBtn = document.getElementById('closeModalFooterBtn');
+                    this.contentElement = document.getElementById('detail-modal-content');
 
-    bindEvents() {
-        document.getElementById('apply-filters').addEventListener('click', () => this.applyFilters());
-        document.getElementById('clear-filters').addEventListener('click', () => this.clearFilters());
+                    if (!this.modalBackdrop) {
+                        console.error(`El modal con ID ${modalId} no se pudo encontrar.`);
+                        return;
+                    }
 
-        document.getElementById('start-date').addEventListener('change', (e) => this.onDateChange());
-        document.getElementById('end-date').addEventListener('change', (e) => this.onDateChange());
+                    this.bindEvents();
+                }
 
-        document.getElementById('status-filter').addEventListener('change', (e) => this.onFilterChange());
-        document.getElementById('activity-type-filter').addEventListener('change', (e) => this.onFilterChange());
-    }
+                bindEvents() {
+                    // Cerrar al hacer clic en el fondo
+                    this.modalBackdrop.addEventListener('click', (e) => {
+                        if (e.target === this.modalBackdrop) {
+                            this.hide();
+                        }
+                    });
+                    // Cerrar con los botones
+                    this.closeHeaderBtn.addEventListener('click', () => this.hide());
+                    this.closeFooterBtn.addEventListener('click', () => this.hide());
+                    // Cerrar con la tecla ESC
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') {
+                            this.hide();
+                            // Detener la propagación para evitar acciones adicionales si el modal está abierto
+                            if (this.modalBackdrop.classList.contains('show')) {
+                                e.stopPropagation();
+                            }
+                        }
+                    });
+                }
 
-    setupDateDefaults() {
-        const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                show() {
+                    this.modalBackdrop.classList.add('show');
+                    document.body.style.overflow = 'hidden'; // Evita el scroll del cuerpo
+                }
 
-        document.getElementById('start-date').value = this.formatDate(firstDay);
-        document.getElementById('end-date').value = this.formatDate(today);
+                hide() {
+                    this.modalBackdrop.classList.remove('show');
+                    document.body.style.overflow = ''; // Restaura el scroll del cuerpo
+                }
 
-        this.filters.start_date = this.formatDate(firstDay);
-        this.filters.end_date = this.formatDate(today);
-    }
-
-    formatDate(date) {
-        return date.toISOString().split('T')[0];
-    }
-
-    async loadHistory(page = 1) {
-        this.showLoading();
-
-        try {
-            const params = new URLSearchParams({
-                ...this.filters,
-                page: page
-            });
-
-            const response = await fetch(`/recursoshumanos/loadchart/history/data?${params}`);
-            const data = await response.json();
-
-            if (data.success) {
-                this.employeeName = data.employee_name || '';
-                this.renderHistory(data.history);
-                this.updateStats(data.history);
-                this.updateSummary(data.history.length);
-            } else {
-                this.showError(data.message || 'Error al cargar el historial');
+                setContent(contentHTML) {
+                    this.contentElement.innerHTML = contentHTML;
+                }
             }
-        } catch (error) {
-            console.error('Error:', error);
-            this.showError('Error de conexión al servidor');
-        }
-    }
 
-    renderHistory(history) {
-        const tbody = document.getElementById('history-table-body');
+            // Inicialización del modal custom
+            const detailModalInstance = new CustomModal('detailModal');
 
-        if (history.length === 0) {
-            this.showEmptyState();
-            return;
-        }
 
-        tbody.innerHTML = history.map(item => this.createHistoryRow(item)).join('');
-        this.bindRowEvents();
-    }
+            class HistoryManager {
+                constructor() {
+                    this.currentPage = 1;
+                    this.filters = {
+                        start_date: '',
+                        end_date: '',
+                        status: 'all',
+                        activity_type: 'all'
+                    };
+                    this.employeeName = '';
+                    this.init();
+                }
 
-    createHistoryRow(item) {
-        const hasRejections = item.has_rejections;
-        const rowClass = hasRejections ? 'has-rejection' : '';
+                init() {
+                    this.bindEvents();
+                    this.setupDateDefaults();
+                    this.loadHistory();
+                }
 
-        return `
-            <tr class="${rowClass}" data-item='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
-                <td>
-                    <div class="date-cell">
-                        <strong>${item.date}</strong>
-                        <small class="text-muted">${item.day_name}</small>
+                bindEvents() {
+                    // Eventos de botones
+                    document.getElementById('apply-filters').addEventListener('click', () => this.applyFilters());
+                    document.getElementById('clear-filters').addEventListener('click', () => this.clearFilters());
+
+                    // Eventos de cambio en filtros
+                    document.getElementById('start-date').addEventListener('change', (e) => this.onDateChange());
+                    document.getElementById('end-date').addEventListener('change', (e) => this.onDateChange());
+                    document.getElementById('status-filter').addEventListener('change', (e) => this.onFilterChange());
+                    document.getElementById('activity-type-filter').addEventListener('change', (e) => this
+                        .onFilterChange());
+
+                    // Eventos en tarjetas de estadísticas
+                    document.querySelectorAll('.stat-card').forEach(card => {
+                        card.addEventListener('click', (e) => {
+                            const status = e.currentTarget.getAttribute('data-status');
+                            if (status) {
+                                document.getElementById('status-filter').value = status;
+                                this.applyFilters();
+                            }
+                        });
+                    });
+                }
+
+                setupDateDefaults() {
+                    const today = new Date();
+                    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+
+                    document.getElementById('start-date').value = this.formatDate(firstDay);
+                    document.getElementById('end-date').value = this.formatDate(today);
+
+                    this.filters.start_date = this.formatDate(firstDay);
+                    this.filters.end_date = this.formatDate(today);
+                }
+
+                formatDate(date) {
+                    return date.toISOString().split('T')[0];
+                }
+
+                async loadHistory(page = 1) {
+                    this.showLoading();
+
+                    try {
+                        const params = new URLSearchParams({
+                            ...this.filters,
+                            page: page
+                        });
+
+                        // Nota: Esta URL de API es la que se usaba en el código original.
+                        const response = await fetch(`/recursoshumanos/loadchart/history/data?${params}`);
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.employeeName = data.employee_name || '';
+                            const historyData = data.history.data || data.history;
+                            this.renderHistory(historyData);
+                            this.updateStats(historyData);
+                            this.updateSummary(historyData.length);
+                        } else {
+                            this.showError(data.message || 'Error al cargar el historial');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.showError('Error de conexión al servidor');
+                    }
+                }
+
+                renderHistory(history) {
+                    const tbody = document.getElementById('history-table-body');
+                    tbody.innerHTML = '';
+
+                    if (history.length === 0) {
+                        this.showEmptyState();
+                        return;
+                    }
+
+                    tbody.innerHTML = history.map(item => this.createHistoryRow(item)).join('');
+                    this.bindRowEvents();
+                    document.getElementById('empty-state').style.display = 'none';
+
+                    // Añadir animación de entrada
+                    setTimeout(() => {
+                        document.querySelectorAll('#history-table-body tr').forEach((row, index) => {
+                            row.style.animationDelay = `${index * 0.05}s`;
+                            row.classList.add('fade-in');
+                        });
+                    }, 100);
+                }
+
+                createHistoryRow(item) {
+                    const hasRejections = item.has_rejections;
+                    const rowClass = hasRejections ? 'has-rejection' : '';
+                    const statusClass = `status-${item.overall_status}`;
+                    // Reemplazamos los caracteres especiales para evitar errores de parseo en el atributo data-item
+                    const itemDataString = JSON.stringify(item).replace(/"/g, '&#34;');
+
+                    return `
+                <tr class="${rowClass}" data-item='${itemDataString}'>
+                    <td class="text-center">
+                        <div class="date-cell">
+                            <small class="text-muted">${item.day_name}</small>
+                            <strong>${item.date}</strong>
+                        </div>
+                    </td>
+                    <td class="activity-type-cell">
+                        <span class="activity-type-badge ${item.activity_type}" title="${this.getActivityTypeText(item.activity_type)}">
+                            ${item.activity_type}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="activity-main">
+                            <strong>${item.activity_description}</strong>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusClass}">
+                            ${this.getStatusText(item.overall_status)}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="activity-items">
+                            ${item.daily_items.map(subItem => this.createSubItem(subItem)).join('')}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-action btn-view-details" title="Ver detalles" data-item-data='${itemDataString}'>
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+        `;
+                }
+
+                createSubItem(subItem) {
+                    const hasRejection = subItem.rejection_reason;
+                    const itemClass = hasRejection ? 'activity-item rejected' : 'activity-item';
+
+                    // El concepto ya viene limpio y correcto del controlador
+                    const conceptContent = subItem.concept ? `<span class="item-concept">${subItem.concept}</span>` :
+                        '<span class="item-no-concept">Sin Concepto</span>';
+
+                    // NO mostrar el tipo si es "Actividad" o si es igual al concepto
+                    let showType = subItem.type && subItem.type !== 'Actividad' && subItem.type !== subItem.concept;
+
+                    const amountClass = `item-amount-separate`;
+
+                    return `
+                <div class="${itemClass}">
+                    <div class="item-header">
+                        ${conceptContent}
                     </div>
-                </td>
-                <td class="activity-type-cell">
+                    <div class="item-body">
+                        ${showType ? `<div class="item-type">${subItem.type}</div>` : ''}
+
+                        ${subItem.details ? `<div class="item-details">${subItem.details}</div>` : ''}
+
+                        ${subItem.comments ? `<div class="item-comment">${subItem.comments}</div>` : ''}
+                        <div class="item-id-amount">
+                            ${subItem.id ? `<div class="item-id">ID: ${subItem.id}</div>` : ''}
+                            ${subItem.amount ? `<div class="${amountClass}">${this.formatCurrency(subItem.amount)}</div>` : ''}
+                        </div>
+                        ${hasRejection ? `
+                                                <div class="rejection-reason">
+                                                    <i class="fas fa-exclamation-circle"></i>
+                                                    ${subItem.rejection_reason}
+                                                </div>
+                                            ` : ''}
+                    </div>
+                </div>
+        `;
+                }
+
+                formatCurrency(amount) {
+                    return new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(amount);
+                }
+
+                getStatusText(status) {
+                    const statusMap = {
+                        'approved': 'Aprobado',
+                        'reviewed': 'Revisado',
+                        'rejected': 'Rechazado',
+                        'under_review': 'En Revisión'
+                    };
+                    return statusMap[status] || status;
+                }
+
+                getActivityTypeText(type) {
+                    const types = {
+                        'B': 'Trabajo en Base',
+                        'P': 'Trabajo en Pozo',
+                        'C': 'Comisionado',
+                        'TC': 'Trabajo en Casa',
+                        'V': 'Viaje',
+                        'D': 'Descanso',
+                        'VAC': 'Vacaciones',
+                        'E': 'Entrenamiento',
+                        'M': 'Médico',
+                        'A': 'Ausencia',
+                        'PE': 'Permiso'
+                    };
+                    return types[type] || type;
+                }
+
+                bindRowEvents() {
+                    // Modificado para usar data-item-data y no depender del TR para obtener la info
+                    document.querySelectorAll('.btn-view-details').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const itemDataString = e.currentTarget.getAttribute('data-item-data').replace(
+                                /&#34;/g, '"');
+                            const itemData = JSON.parse(itemDataString);
+                            this.showDetailsModal(itemData);
+                        });
+                    });
+                }
+
+                showDetailsModal(item) {
+                    // ESTRUCTURA DEL BADGE DE TIPO DE ACTIVIDAD (Solo la letra, color blanco)
+                    const activityTypeBadge = `
                     <span class="activity-type-badge ${item.activity_type}" title="${this.getActivityTypeText(item.activity_type)}">
                         ${item.activity_type}
                     </span>
-                </td>
-                <td>
-                    <div class="activity-main">
-                        <strong>${item.activity_description}</strong>
-                        <div class="activity-details">
-                            ${item.well_name ? `<div>Pozo: ${item.well_name}</div>` : ''}
-                            ${item.travel_destination ? `<div>Destino: ${item.travel_destination}</div>` : ''}
-                            ${item.commissioned_to ? `<div>Comisionado: ${item.commissioned_to}</div>` : ''}
-                        </div>
-                    </div>
-                </td>
-                                <td>
-                    <span class="status-badge status-${item.overall_status}">
-                        ${this.getStatusText(item.overall_status)}
-                    </span>
-                </td>
-                <td>
-                    <div class="activity-items">
-                        ${item.daily_items.map(subItem => this.createSubItem(subItem)).join('')}
-                    </div>
-                </td>
-                <td class="text-center">
-                    <button class="btn-action btn-view-details" title="Ver detalles">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    }
-
-    createSubItem(subItem) {
-        const hasRejection = subItem.rejection_reason;
-        const itemClass = hasRejection ? 'activity-item rejected' : 'activity-item';
-        // Reemplazar "Bono de campo" por "Bono"
-        const concept = subItem.concept === 'Bono de campo' ? 'Bono' : subItem.concept;
-
-        return `
-            <div class="${itemClass}">
-                <div class="item-header">
-                    <span class="item-concept">${concept}</span>
-                    ${subItem.amount ? `<span class="item-amount">${this.formatCurrency(subItem.amount)}</span>` : ''}
-                </div>
-                <div class="item-body">
-                    <div class="item-type">${subItem.type}</div>
-                    ${subItem.details ? `<div class="item-details">${subItem.details}</div>` : ''}
-                    ${subItem.comments ? `<div class="item-comment">${subItem.comments}</div>` : ''}
-                    ${hasRejection ? `
-                        <div class="rejection-reason">
-                            <i class="fas fa-exclamation-circle"></i>
-                            ${subItem.rejection_reason}
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-    }
-
-    formatCurrency(amount) {
-        return new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
-    }
-
-    getStatusText(status) {
-        const statusMap = {
-            'approved': 'Aprobado',
-            'reviewed': 'Revisado',
-            'rejected': 'Rechazado',
-            'under_review': 'Pendiente'
-        };
-        return statusMap[status] || status;
-    }
-
-    getActivityTypeText(type) {
-        const types = {
-            'B': 'Trabajo en Base',
-            'P': 'Trabajo en Pozo',
-            'C': 'Comisionado',
-            'TC': 'Trabajo en Casa',
-            'V': 'Viaje',
-            'D': 'Descanso',
-            'VAC': 'Vacaciones',
-            'E': 'Entrenamiento',
-            'M': 'Médico',
-            'A': 'Ausencia',
-            'PE': 'Permiso'
-        };
-        return types[type] || type;
-    }
-
-    bindRowEvents() {
-        document.querySelectorAll('.btn-view-details').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const row = e.target.closest('tr');
-                const itemData = JSON.parse(row.getAttribute('data-item').replace(/&#39;/g, "'"));
-                this.showDetailsModal(itemData);
-            });
-        });
-    }
-
-    showDetailsModal(item) {
-        const modalContent = document.getElementById('detail-modal-content');
-
-        modalContent.innerHTML = `
+                `;
+                    // Generar el contenido del modal
+                    const modalHTML = `
             <div class="detail-header">
                 <h4>Actividad del ${item.date}</h4>
                 <span class="status-badge status-${item.overall_status}">
@@ -1116,158 +1596,198 @@ class HistoryManager {
                 <h5>Información Principal</h5>
                 <div class="detail-grid">
                     <div class="detail-item">
+                        <label>Día:</label>
+                        <span><strong>${item.day_name}</strong> - ${item.date}</span>
+                    </div>
+                    <div class="detail-item">
                         <label>Tipo:</label>
-                        <span>${this.getActivityTypeText(item.activity_type)} (${item.activity_type})</span>
+                        <span class="fonttype">${activityTypeBadge}</span>
                     </div>
                     <div class="detail-item">
                         <label>Actividad:</label>
                         <span>${item.activity_description}</span>
                     </div>
                     ${item.well_name ? `
-                    <div class="detail-item">
-                        <label>Pozo:</label>
-                        <span>${item.well_name}</span>
-                    </div>
-                    ` : ''}
+                                            <div class="detail-item">
+                                                <label>Pozo:</label>
+                                                <span>${item.well_name}</span>
+                                            </div>
+                                            ` : ''}
                     ${item.travel_destination ? `
-                    <div class="detail-item">
-                        <label>Destino:</label>
-                        <span>${item.travel_destination}</span>
-                    </div>
-                    ` : ''}
+                                            <div class="detail-item">
+                                                <label>Destino de Viaje:</label>
+                                                <span>${item.travel_destination}</span>
+                                            </div>
+                                            ` : ''}
+                    ${item.travel_reason ? `
+                                            <div class="detail-item">
+                                                <label>Motivo de Viaje:</label>
+                                                <span>${item.travel_reason}</span>
+                                            </div>
+                                            ` : ''}
+                    ${item.commissioned_to ? `
+                                            <div class="detail-item">
+                                                <label>Comisionado a:</label>
+                                                <span>${item.commissioned_to}</span>
+                                            </div>
+                                            ` : ''}
                     ${item.total_amount ? `
-                    <div class="detail-item">
-                        <label>Monto Total:</label>
-                        <span><strong>${this.formatCurrency(item.total_amount)} USD</strong></span>
-                    </div>
-                    ` : ''}
+                                            <div class="detail-item">
+                                                <label>Monto Total:</label>
+                                                <span><strong>${this.formatCurrency(item.total_amount)}</strong></span>
+                                            </div>
+                                            ` : ''}
                 </div>
             </div>
 
             <div class="detail-section">
-                <h5>Items del Día</h5>
+                <h5>Detalles del Día</h5>
                 <div class="items-list">
-                    ${item.daily_items.map(subItem => `
-                        <div class="detail-item-card ${subItem.rejection_reason ? 'rejected' : ''}">
-                            <div class="item-header">
-                                <strong>${subItem.concept === 'Bono de campo' ? 'Bono' : subItem.concept}</strong>
-                                ${subItem.amount ? `<span class="item-amount">${this.formatCurrency(subItem.amount)} USD</span>` : ''}
-                            </div>
-                            <div class="item-body">
-                                <div><strong>Tipo:</strong> ${subItem.type}</div>
-                                ${subItem.details ? `<div><strong>Detalles:</strong> ${subItem.details}</div>` : ''}
-                                ${subItem.comments ? `<div><strong>Comentarios:</strong> ${subItem.comments}</div>` : ''}
-                                ${subItem.rejection_reason ? `
-                                    <div class="rejection-note">
-                                        <strong>Motivo de rechazo:</strong> ${subItem.rejection_reason}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `).join('')}
+                    ${item.daily_items.map(subItem => {
+                        // El concepto ya viene limpio y correcto del controlador
+                        const concept = subItem.concept;
+
+                        // Mostrar el concepto, o un espacio si está vacío
+                        const conceptContent = concept ? `<strong>${concept}</strong>` : '<strong>Sin Concepto</strong>';
+
+                        // Clase para el monto (se mantiene para estilizado general)
+                        const amountClass = `item-amount`;
+
+                        let showType = subItem.type && subItem.type !== 'Actividad' && subItem.type !== concept;
+
+                        return `
+                                                <div class="detail-item-card ${subItem.rejection_reason ? 'rejected' : ''}">
+                                                    <div class="item-header">
+                                                        ${conceptContent}
+                                                        ${subItem.amount ? `<span class="${amountClass}">${this.formatCurrency(subItem.amount)}</span>` : ''}
+                                                    </div>
+                                                    <div class="item-body">
+                                                        ${subItem.id ? `<div><strong>ID:</strong> ${subItem.id}</div>` : ''}
+                                                        ${showType ? `<div><strong>Categoría:</strong> ${subItem.type}</div>` : ''}
+
+                                                        ${subItem.details ? `<div><strong>Detalles:</strong> ${subItem.details}</div>` : ''}
+
+                                                        ${subItem.comments ? `<div><strong>Comentarios:</strong> ${subItem.comments}</div>` : ''}
+                                                        ${subItem.rejection_reason ? `
+                                        <div class="rejection-note">
+                                            <strong>Motivo de rechazo:</strong> ${subItem.rejection_reason}
+                                        </div>
+                                    ` : ''}
+                                                    </div>
+                                                </div>
+                                            `;
+                    }).join('')}
                 </div>
             </div>
         `;
 
-        // Asegurarse de que Bootstrap esté cargado antes de intentar usar Modal
-        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-            const modal = new bootstrap.Modal(document.getElementById('detailModal'));
-            modal.show();
-        } else {
-            console.error('Bootstrap Modal no está disponible. Asegúrate de que los archivos JS de Bootstrap estén cargados.');
-            alert('No se puede mostrar la ventana de detalles. Error de inicialización de la librería.');
-        }
-    }
+                    // Asignar contenido y mostrar el modal
+                    detailModalInstance.setContent(modalHTML);
+                    detailModalInstance.show();
+                }
 
-    updateStats(history) {
-        const counts = {
-            approved: history.filter(item => item.overall_status === 'approved').length,
-            pending: history.filter(item => item.overall_status === 'under_review').length,
-            rejected: history.filter(item => item.overall_status === 'rejected').length
-        };
+                updateStats(history) {
+                    const counts = {
+                        approved: history.filter(item => item.overall_status === 'approved').length,
+                        reviewed: history.filter(item => item.overall_status === 'reviewed').length,
+                        rejected: history.filter(item => item.overall_status === 'rejected').length,
+                        under_review: history.filter(item => item.overall_status === 'under_review').length
+                    };
 
-        document.getElementById('approved-count').textContent = counts.approved;
-        document.getElementById('pending-count').textContent = counts.pending;
-        document.getElementById('rejected-count').textContent = counts.rejected;
-    }
+                    // Actualizar tarjetas principales
+                    document.getElementById('approved-count').textContent = counts.approved;
+                    document.getElementById('reviewed-count').textContent = counts.reviewed;
+                    document.getElementById('rejected-count').textContent = counts.rejected;
+                    document.getElementById('under-review-count').textContent = counts.under_review;
+                }
 
-    updateSummary(total) {
-        const summary = document.getElementById('quick-summary');
-        const summaryText = document.getElementById('summary-text');
+                updateSummary(total) {
+                    const summary = document.getElementById('quick-summary');
+                    const summaryText = document.getElementById('summary-text');
 
-        if (total === 0) {
-            summary.style.display = 'none';
-            return;
-        }
+                    if (total === 0) {
+                        summary.style.display = 'none';
+                        return;
+                    }
 
-        let filterText = [];
-        if (this.filters.start_date && this.filters.end_date) {
-            filterText.push(`desde ${this.formatDisplayDate(this.filters.start_date)} hasta ${this.formatDisplayDate(this.filters.end_date)}`);
-        }
-        if (this.filters.status !== 'all') {
-            filterText.push(`estado: ${this.getStatusText(this.filters.status)}`);
-        }
-        if (this.filters.activity_type !== 'all') {
-            filterText.push(`tipo: ${this.getActivityTypeText(this.filters.activity_type)}`);
-        }
+                    let filterText = [];
+                    if (this.filters.start_date && this.filters.end_date) {
+                        filterText.push(
+                            `desde ${this.formatDisplayDate(this.filters.start_date)} hasta ${this.formatDisplayDate(this.filters.end_date)}`
+                        );
+                    }
+                    if (this.filters.status !== 'all') {
+                        filterText.push(`estado: ${this.getStatusText(this.filters.status)}`);
+                    }
+                    if (this.filters.activity_type !== 'all') {
+                        filterText.push(`tipo: ${this.getActivityTypeText(this.filters.activity_type)}`);
+                    }
 
-        const employeeText = this.employeeName ? ` de ${this.employeeName}` : '';
-        const filterString = filterText.length > 0 ? ` (filtrado por ${filterText.join(', ')})` : '';
-        summaryText.textContent = `Mostrando ${total} registro(s)${employeeText}${filterString}`;
-        summary.style.display = 'block';
-    }
+                    const employeeText = this.employeeName ? ` de ${this.employeeName}` : '';
+                    const filterString = filterText.length > 0 ? ` (filtrado por ${filterText.join(', ')})` : '';
+                    summaryText.textContent = `Mostrando ${total} registro(s)${employeeText}${filterString}`;
+                    summary.style.display = 'block';
+                }
 
-    formatDisplayDate(dateString) {
-        return new Date(dateString).toLocaleDateString('es-ES');
-    }
+                formatDisplayDate(dateString) {
+                    const date = new Date(dateString + 'T00:00:00');
+                    if (isNaN(date)) {
+                        return dateString;
+                    }
+                    return date.toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                }
 
-    applyFilters() {
-        this.filters = {
-            start_date: document.getElementById('start-date').value,
-            end_date: document.getElementById('end-date').value,
-            status: document.getElementById('status-filter').value,
-            activity_type: document.getElementById('activity-type-filter').value
-        };
+                applyFilters() {
+                    this.filters = {
+                        start_date: document.getElementById('start-date').value,
+                        end_date: document.getElementById('end-date').value,
+                        status: document.getElementById('status-filter').value,
+                        activity_type: document.getElementById('activity-type-filter').value
+                    };
 
-        this.currentPage = 1;
-        this.loadHistory();
-    }
+                    this.currentPage = 1;
+                    this.loadHistory();
+                }
 
-    clearFilters() {
-        document.getElementById('start-date').value = '';
-        document.getElementById('end-date').value = '';
-        document.getElementById('status-filter').value = 'all';
-        document.getElementById('activity-type-filter').value = 'all';
+                clearFilters() {
+                    // Primero restablecer los valores de los inputs/selects
+                    document.getElementById('status-filter').value = 'all';
+                    document.getElementById('activity-type-filter').value = 'all';
 
-        this.filters = {
-            start_date: '',
-            end_date: '',
-            status: 'all',
-            activity_type: 'all'
-        };
+                    // Restablecer los valores por defecto del mes actual
+                    this.setupDateDefaults();
 
-        this.currentPage = 1;
-        this.loadHistory();
-    }
+                    this.filters = {
+                        start_date: document.getElementById('start-date').value,
+                        end_date: document.getElementById('end-date').value,
+                        status: 'all',
+                        activity_type: 'all'
+                    };
 
-    onDateChange() {
-        const startDate = document.getElementById('start-date').value;
-        const endDate = document.getElementById('end-date').value;
+                    this.currentPage = 1;
+                    this.loadHistory();
+                }
 
-        if (startDate && endDate && startDate > endDate) {
-            this.showError('La fecha de inicio no puede ser mayor a la fecha fin');
-            document.getElementById('start-date').value = '';
-        }
-    }
+                onDateChange() {
+                    const startDate = document.getElementById('start-date').value;
+                    const endDate = document.getElementById('end-date').value;
 
-    onFilterChange() {
-        // Carga automática opcional
-    }
+                    if (startDate && endDate && startDate > endDate) {
+                        this.showError('La fecha de inicio no puede ser posterior a la fecha fin.');
+                    }
+                }
 
-    showLoading() {
-        const tbody = document.getElementById('history-table-body');
-        // Colspan ajustado de 7 a 6
-        tbody.innerHTML = `
+                onFilterChange() {
+                    // Lógica adicional si se necesita
+                }
+
+                showLoading() {
+                    const tbody = document.getElementById('history-table-body');
+                    tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="text-center loading-row">
                     <div class="loading-spinner"></div>
@@ -1275,37 +1795,37 @@ class HistoryManager {
                 </td>
             </tr>
         `;
-        document.getElementById('empty-state').style.display = 'none';
-    }
+                    document.getElementById('empty-state').style.display = 'none';
+                }
 
-    showEmptyState() {
-        document.getElementById('history-table-body').innerHTML = '';
-        document.getElementById('empty-state').style.display = 'block';
-    }
+                showEmptyState() {
+                    document.getElementById('history-table-body').innerHTML = '';
+                    document.getElementById('empty-state').style.display = 'block';
+                }
 
-    showError(message) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: message,
-                confirmButtonText: 'Aceptar'
+                showError(message) {
+                    // Se mantiene la dependencia de Swal, ya que es la herramienta de notificación del código original
+                    // y la solicitud era solo sobre el modal. Si Swal no está disponible, se usa alert.
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message,
+                            confirmButtonText: 'Aceptar'
+                        });
+                    } else {
+                        alert(message);
+                    }
+                }
+            }
+
+            let historyManagerInstance;
+
+            document.addEventListener('DOMContentLoaded', function() {
+                historyManagerInstance = new HistoryManager();
+                // Esto se mantiene para que el botón "Limpiar filtros" del empty state funcione con el onclick
+                window.historyManager = historyManagerInstance;
             });
-        } else {
-            alert(message);
-        }
-    }
-}
-
-// Inicialización cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    new HistoryManager();
-});
-
-// Función global para el botón "Limpiar filtros" del estado vacío
-function clearFilters() {
-    const manager = new HistoryManager(); // Se asume que el manager es global o accesible
-    manager.clearFilters();
-}
-</script>
-@endpush
+        </script>
+    @endpush
+@endsection

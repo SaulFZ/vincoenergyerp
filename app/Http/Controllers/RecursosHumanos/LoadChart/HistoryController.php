@@ -89,12 +89,31 @@ class HistoryController extends Controller
             if ($log->daily_activities && is_array($log->daily_activities)) {
                 $filteredActivities = collect($log->daily_activities)->filter(function ($activity) use ($statusFilter, $activityTypeFilter) {
                     $matchesStatus = $statusFilter === 'all' ||
-                                   ($activity['day_status'] ?? 'under_review') === $statusFilter;
+                                    ($activity['day_status'] ?? 'under_review') === $statusFilter;
 
                     $matchesActivityType = $activityTypeFilter === 'all' ||
-                                         ($activity['activity_type'] ?? 'N') === $activityTypeFilter;
+                                        (($activity['activity_type'] ?? 'N') === $activityTypeFilter && $statusFilter === 'all') ||
+                                        ($activityTypeFilter !== 'all' && ($activity['activity_type'] ?? 'N') === $activityTypeFilter);
 
+
+                    // Si ambos filtros son 'all', muestra la actividad
+                    if ($statusFilter === 'all' && $activityTypeFilter === 'all') {
+                        return true;
+                    }
+
+                    // Si solo se filtra por estado, muestra si coincide el estado
+                    if ($statusFilter !== 'all' && $activityTypeFilter === 'all') {
+                        return $matchesStatus;
+                    }
+
+                    // Si solo se filtra por tipo, muestra si coincide el tipo
+                    if ($statusFilter === 'all' && $activityTypeFilter !== 'all') {
+                        return $matchesActivityType;
+                    }
+
+                    // Si se filtran ambos, deben coincidir
                     return $matchesStatus && $matchesActivityType;
+
                 })->toArray();
 
                 $log->daily_activities = array_values($filteredActivities);
@@ -104,6 +123,7 @@ class HistoryController extends Controller
             return !empty($log->daily_activities);
         });
     }
+
 
     /**
      * Formatea los datos del historial
@@ -146,60 +166,80 @@ class HistoryController extends Controller
     }
 
     /**
-     * Extrae items diarios
+     * Extrae items diarios - MEJORADO: Ahora incluye detalles de la actividad principal con <br>
      */
     private function extractDailyItems($activity)
     {
         $items = [];
+        $activityType = $activity['activity_type'] ?? 'N';
 
-        // Actividad principal
-        if (($activity['activity_type'] ?? 'N') !== 'N') {
+        // Actividad principal - MEJORADO: Incluir detalles en este item
+        if ($activityType !== 'N') {
+            $details = $this->getActivityDescription($activityType); // Primera línea: Nombre de la actividad
+
+            // Agregar detalles específicos de la actividad en líneas separadas usando <br>
+            if ($activityType === 'P') { // Trabajo en Pozo
+                // Se añade un <br> antes de cada detalle adicional
+                $details .= $activity['well_name'] ? "<br>Pozo: {$activity['well_name']}" : '';
+            } elseif ($activityType === 'V') { // Viaje
+                $details .= $activity['travel_destination'] ? "<br>Destino: {$activity['travel_destination']}" : '';
+                $details .= $activity['travel_reason'] ? "<br>Motivo: {$activity['travel_reason']}" : '';
+            } elseif ($activityType === 'C') { // Comisionado
+                $details .= $activity['commissioned_to'] ? "<br>Area: {$activity['commissioned_to']}" : '';
+            }
+
             $items[] = $this->createItem(
                 'Actividad',
-                $activity['activity_type'],
+                null, // No mostrar tipo redundante
                 $activity['activity_status'] ?? 'under_review',
-                $this->getActivityDescription($activity['activity_type']),
-                $activity['rejection_reason'] ?? null
+                $details, // Contiene la descripción y los detalles adicionales separados por <br>
+                $activity['rejection_reason'] ?? null,
+                null, // ID
+                null  // Monto
             );
         }
 
-        // Bonos de comida
+        // Bonos de comida - MEJORADO
         if (!empty($activity['food_bonuses'])) {
             foreach ($activity['food_bonuses'] as $item) {
                 $items[] = $this->createItem(
-                    'Bono Comida',
-                    $item['bonus_type'],
+                    'Bono de Comida',
+                    $item['bonus_type'] ?? 'Comida',
                     $item['status'] ?? 'under_review',
                     "Cant: {$item['num_daily']}",
-                    $item['rejection_reason'] ?? null
+                    $item['rejection_reason'] ?? null,
+                    $item['bonus_identifier'] ?? null,
+                    $item['daily_amount'] ?? null
                 );
             }
         }
 
-        // Bonos de campo
+        // Bonos de campo - MEJORADO
         if (!empty($activity['field_bonuses'])) {
             foreach ($activity['field_bonuses'] as $item) {
-                $amount = number_format($item['daily_amount'] ?? 0, 2);
                 $items[] = $this->createItem(
-                    'Bono Campo',
-                    $item['bonus_type'],
+                    'Bono',
+                    $item['bonus_type'] ?? 'Campo',
                     $item['status'] ?? 'under_review',
-                    "ID: {$item['bonus_identifier']}, Monto: \${$amount} {$item['currency']}",
-                    $item['rejection_reason'] ?? null
+                    $item['bonus_description'] ??null,
+                    $item['rejection_reason'] ?? null,
+                    $item['bonus_identifier'] ?? null,
+                    $item['daily_amount'] ?? null
                 );
             }
         }
 
-        // Servicios
+        // Servicios - MEJORADO
         if (!empty($activity['services_list'])) {
             foreach ($activity['services_list'] as $item) {
-                $amount = number_format($item['amount'] ?? 0, 2);
                 $items[] = $this->createItem(
                     'Servicio',
-                    $item['service_name'],
+                    $item['service_name'] ?? null,
                     $item['status'] ?? 'under_review',
-                    "ID: {$item['service_identifier']}, Monto: \${$amount}",
-                    $item['rejection_reason'] ?? null
+                    $item['service_description'] ??null,
+                    $item['rejection_reason'] ?? null,
+                    $item['service_identifier'] ?? null,
+                    $item['amount'] ?? null
                 );
             }
         }
@@ -208,9 +248,9 @@ class HistoryController extends Controller
     }
 
     /**
-     * Crea un item del historial
+     * Crea un item del historial - MEJORADO
      */
-    private function createItem($concept, $type, $status, $details = null, $rejectionReason = null)
+    private function createItem($concept, $type, $status, $details = null, $rejectionReason = null, $id = null, $amount = null)
     {
         return [
             'concept' => $concept,
@@ -218,6 +258,8 @@ class HistoryController extends Controller
             'status' => ucfirst(strtolower($status)),
             'details' => $details,
             'rejection_reason' => $rejectionReason,
+            'id' => $id,
+            'amount' => $amount,
             'status_color' => $this->getStatusColor($status),
         ];
     }

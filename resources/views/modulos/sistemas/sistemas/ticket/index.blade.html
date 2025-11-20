@@ -3,36 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Tickets | Dashboard</title>
+    <title>Sistema de Gestión de Tickets | Vinco Energy</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <style>
-/* Variables y Colores (PALETA PASTEL SUAVE Y BLANCO) */
+/* Variables y Colores (PALETA VERDE OLIVA, DOMINANCIA BLANCA) */
 :root {
-    --color-primary-accent: #AEC6CF;    /* Azul Celeste Pastel (Acento principal) */
-    --color-primary-dark: #8EABB4;      /* Azul Pastel más oscuro (Hover, Thead BG) */
-    --color-primary-light: #D9E3E7;     /* Azul muy pálido (Bordes, Separadores) */
-    --color-primary-softest: #F5F9FA;   /* Fondo de página (Blanco casi puro) */
+    --color-primary-accent: #728156;    /* Verde Oliva (Acento principal) */
+    --color-primary-dark: #5B6846;      /* Verde Musgo Oscuro (Hover, Thead BG) */
+    --color-primary-light: #E8EDE4;     /* Verde muy pálido/Grisáceo (Bordes, Separadores) */
+    --color-primary-softest: #F8FBF6;   /* Fondo de página (Blanco/Verde muy claro) */
 
-    --color-secondary-accent: #FFDAB9;  /* Melocotón Suave */
-    --color-tertiary-accent: #FFB6C1;   /* Rosa Pastel */
-    --color-green-soft: #C3E6CB;        /* Verde suave para éxito */
+    --color-secondary-accent: #DBCF91;  /* Beige/Arena (Secundario/Advertencia) */
+    --color-tertiary-accent: #B85F5F;   /* Rojo Tierra (Error/Peligro) */
+    --color-green-soft: #85C285;        /* Verde suave para éxito (diferente al acento) */
 
     --color-background: #FFFFFF;        /* Blanco Puro (DOMINANTE) */
-    --color-text-dark: #2C3E50;          /* Gris Azulado Oscuro para texto principal */
-    --color-text-soft: #7F8C8D;          /* Gris suave para texto secundario */
-    --color-shadow: rgba(0, 0, 0, 0.08); /* Sombra más suave */
+    --color-text-dark: #3F4A38;          /* Verde Oscuro/Casi Negro para texto principal */
+    --color-text-soft: #8D9B82;          /* Verde Grisáceo suave para texto secundario */
+    --color-shadow: rgba(0, 0, 0, 0.12); /* Sombra más pronunciada */
 
-    /* Colores de ESTADO (Nuevos) */
-    --status-new: #81D4FA;          /* Azul Claro (Nuevo) */
-    --status-waiting: #FFD54F;      /* Amarillo (En Espera) */
-    --status-open: #4DB6AC;         /* Turquesa (Abierto) */
-    --status-onhold: #EF9A9A;       /* Rojo Pastel (Por Concluir) */
-    --status-done: #BDBDBD;         /* Gris Pastel (Realizado) */
+    /* Colores de ESTADO (Más vibrantes) */
+    --status-new: #4CAF50;          /* Verde vibrante (Nuevo) */
+    --status-waiting: #FF9800;      /* Naranja vibrante (En Espera) */
+    --status-open: #2196F3;         /* Azul vibrante (Abierto) */
+    --status-onhold: #F44336;       /* Rojo vibrante (Por Concluir/Bloqueado) */
+    --status-done: #9C27B0;         /* Púrpura vibrante (Realizado) */
 
     --status-red: var(--status-onhold); /* Usamos el color de "Por Concluir" para Prioridad Alta */
 }
@@ -59,49 +59,130 @@ body {
     padding: 15px 40px;
     background-color: var(--color-background);
     border-bottom: 1px solid var(--color-primary-light);
-    box-shadow: 0 1px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--color-primary-dark);
+}
+
+.logo-icon {
+    font-size: 28px;
+    color: var(--color-primary-accent);
 }
 
 .logo h1 {
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 700;
-    color: var(--color-primary-accent);
+    color: var(--color-primary-dark);
+    margin: 0;
 }
 
 .nav {
     display: flex;
     background-color: var(--color-primary-light);
-    border-radius: 6px;
-    padding: 4px;
+    border-radius: 8px;
+    padding: 6px;
+    margin-left: 20px;
 }
 
 .nav a {
     text-decoration: none;
     color: var(--color-text-dark);
-    padding: 8px 18px;
+    padding: 8px 20px;
     margin: 0;
-    border-radius: 4px;
+    border-radius: 6px;
     transition: all 0.2s ease-in-out;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .nav a:hover {
-    background-color: var(--color-primary-accent);
-    color: var(--color-background);
+    background-color: var(--color-primary-light);
+    color: var(--color-primary-dark);
 }
 
 .nav-item.active {
-    background-color: var(--color-primary-dark);
+    background-color: var(--color-primary-accent);
     color: var(--color-background);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
-.user-info {
+/* === Dropdown de Usuario === */
+.user-dropdown {
+    position: relative;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.user-button {
     display: flex;
     align-items: center;
-    gap: 20px;
-    font-size: 14px;
-    color: var(--color-text-soft);
+    gap: 10px;
+    padding: 8px 15px;
+    border: 1px solid var(--color-primary-light);
+    border-radius: 6px;
+    background-color: var(--color-background);
+    color: var(--color-text-dark);
+    transition: background-color 0.2s;
+}
+
+.user-button:hover {
+    background-color: var(--color-primary-softest);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: var(--color-background);
+    box-shadow: 0 4px 10px var(--color-shadow);
+    border-radius: 8px;
+    min-width: 180px;
+    z-index: 10;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid var(--color-primary-light);
+}
+
+.dropdown-content.show {
+    display: block;
+}
+
+.user-name-display {
+    padding: 5px 10px 10px;
+    color: var(--color-primary-dark);
+    font-weight: 700;
+    border-bottom: 1px solid var(--color-primary-light);
+    margin-bottom: 10px;
+}
+
+.dropdown-content .btn-logout {
+    width: 100%;
+    justify-content: center;
+    padding: 8px;
+    background-color: var(--color-primary-accent); /* Verde Oliva */
+    color: var(--color-background);
+    transition: background-color 0.2s;
+}
+
+.dropdown-content .btn-logout:hover {
+    background-color: var(--color-primary-dark);
 }
 
 /* === 2. Botones Generales === */
@@ -126,31 +207,35 @@ body {
 .btn-primary:hover {
     background-color: var(--color-primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .btn-secondary {
     background-color: transparent;
-    color: var(--color-primary-accent);
+    color: var(--color-text-soft);
     border: 1px solid var(--color-primary-light);
-    padding: 6px 12px;
+    padding: 8px 15px;
     font-size: 13px;
 }
 
 .btn-secondary:hover {
     background-color: var(--color-primary-softest);
     color: var(--color-primary-dark);
+    border-color: var(--color-primary-light);
 }
 
-.btn-logout {
+/* Botón de Logout original */
+.btn-logout-header {
     background-color: var(--color-primary-light);
     color: var(--color-text-dark);
     padding: 8px 15px;
 }
 
-.btn-logout:hover {
-    background-color: var(--color-secondary-accent);
+.btn-logout-header:hover {
+    background-color: var(--status-onhold);
+    color: var(--color-background);
 }
+
 
 /* === 3. Contenido Principal y Vistas === */
 .main-content {
@@ -194,7 +279,7 @@ body {
 /* --- TARJETAS DE RESUMEN --- */
 .summary-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
 }
@@ -208,10 +293,10 @@ body {
 .summary-card {
     background: var(--color-background);
     padding: 20px 25px;
-    border-radius: 12px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 6px 15px var(--color-shadow);
     transition: all 0.3s ease;
-    border: none;
+    border-left: 5px solid var(--color-primary-accent); /* Borde de color */
     position: relative;
     overflow: hidden;
     display: flex;
@@ -220,8 +305,8 @@ body {
 }
 
 .summary-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
 /* Pseudo-elemento para el gradiente superior */
@@ -232,14 +317,14 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    opacity: 0.1;
+    opacity: 0.05;
     z-index: 1;
     pointer-events: none;
 }
 
-.summary-card.total::before { background: linear-gradient(135deg, var(--color-primary-accent), var(--color-primary-light)); }
-.summary-card.pending::before { background: linear-gradient(135deg, var(--status-waiting), var(--color-secondary-accent)); }
-.summary-card.closed::before { background: linear-gradient(135deg, var(--color-green-soft), var(--status-done)); }
+.summary-card.total { border-left-color: var(--color-primary-dark); }
+.summary-card.pending { border-left-color: var(--status-waiting); }
+.summary-card.closed { border-left-color: var(--color-green-soft); }
 
 .card-content {
     display: flex;
@@ -260,10 +345,15 @@ body {
 }
 
 .card-info p {
-    font-size: 36px;
+    font-size: 38px;
     font-weight: 700;
     color: var(--color-text-dark);
     margin-bottom: 0;
+    transition: color 0.3s;
+}
+
+.summary-card:hover .card-info p {
+    color: var(--color-primary-accent);
 }
 
 .card-info .card-subtitle {
@@ -280,23 +370,23 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 50px;
-    height: 50px;
+    width: 55px;
+    height: 55px;
     border-radius: 50%;
     margin-left: 15px;
-    background: rgba(255, 255, 255, 0.7);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    background: var(--color-primary-softest);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .card-icon {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 900;
 }
 
 /* Colores de ícono específicos basados en el estado */
 .summary-card.total .card-icon { color: var(--color-primary-dark); }
-.summary-card.pending .card-icon { color: #D4AF37; }
-.summary-card.closed .card-icon { color: #28a745; }
+.summary-card.pending .card-icon { color: var(--status-waiting); }
+.summary-card.closed .card-icon { color: var(--color-green-soft); }
 
 
 /* === 5. LAYOUT DE TICKETS CON FORMULARIO (OPTIMIZADO) === */
@@ -325,7 +415,7 @@ body {
     overflow-y: auto;
     max-height: 85vh;
     min-width: 350px;
-    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out, margin 0.4s ease-in-out;
+    transition: all 0.4s ease-in-out;
     transform: translateX(0);
     opacity: 1;
 }
@@ -333,8 +423,8 @@ body {
 .tickets-layout.form-hidden .form-section {
     opacity: 0;
     transform: translateX(-100%);
+    min-width: 0; /* Asegura que el espacio se colapse */
     padding: 0;
-    margin-right: -25px;
 }
 
 .tickets-layout.form-hidden .form-section > * {
@@ -369,7 +459,7 @@ body {
     background: none;
     border: none;
     color: var(--color-text-soft);
-    font-size: 18px;
+    font-size: 20px;
     cursor: pointer;
     transition: color 0.2s;
 }
@@ -380,6 +470,7 @@ body {
 
 .form-group {
     margin-bottom: 20px;
+    position: relative;
 }
 
 .form-group label {
@@ -392,12 +483,20 @@ body {
 
 .form-control {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 15px;
     border: 1px solid var(--color-primary-light);
     border-radius: 6px;
     font-size: 14px;
-    transition: all 0.2s;
+    transition: all 0.3s;
     background-color: var(--color-background);
+    color: var(--color-text-dark);
+}
+
+.form-control:focus {
+    border-color: var(--color-primary-accent);
+    box-shadow: 0 0 0 3px rgba(114, 129, 86, 0.2); /* Sombra más pronunciada */
+    outline: none;
+    transform: translateY(-2px);
 }
 
 textarea.form-control {
@@ -408,7 +507,7 @@ textarea.form-control {
 /* Estilo para los campos de texto 'simulados' de usuario/depto */
 .form-static-control {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 15px;
     border: 1px solid var(--color-primary-light);
     border-radius: 6px;
     font-size: 14px;
@@ -426,6 +525,12 @@ textarea.form-control {
 .form-actions .btn {
     flex: 1;
     justify-content: center;
+    transition: all 0.3s;
+}
+
+.form-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* === 6. Tabla de Datos Avanzada === */
@@ -436,6 +541,7 @@ textarea.form-control {
     box-shadow: 0 4px 15px var(--color-shadow);
     overflow-x: auto;
     min-width: 0;
+    transition: all 0.4s ease-in-out;
 }
 
 .data-section h3 {
@@ -450,6 +556,7 @@ textarea.form-control {
     gap: 10px;
     align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap; /* Permitir que los controles se envuelvan */
 }
 
 .table-controls .btn-primary {
@@ -467,10 +574,18 @@ textarea.form-control {
 .table-controls select {
     flex-grow: 1;
     max-width: 250px;
-    padding: 8px 12px;
+    padding: 10px 12px;
     border: 1px solid var(--color-primary-light);
     border-radius: 6px;
     font-size: 14px;
+    transition: all 0.3s;
+}
+
+.table-controls input[type="text"]:focus,
+.table-controls select:focus {
+    border-color: var(--color-primary-accent);
+    box-shadow: 0 0 0 2px rgba(114, 129, 86, 0.2);
+    outline: none;
 }
 
 .main-table {
@@ -501,7 +616,7 @@ textarea.form-control {
 
 .main-table tbody tr {
     border-bottom: 1px solid var(--color-primary-light);
-    transition: background-color 0.2s;
+    transition: all 0.3s;
 }
 
 .main-table tbody tr:last-child {
@@ -510,43 +625,80 @@ textarea.form-control {
 
 .main-table tbody tr:hover {
     background-color: var(--color-primary-softest);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .main-table tbody td {
     padding: 15px;
     color: var(--color-text-dark);
     font-size: 14px;
+    transition: all 0.3s;
 }
 
 /* Etiquetas de Estado y Prioridad */
 .status-tag {
     display: inline-block;
-    padding: 5px 12px;
+    padding: 7px 15px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--color-background);
+    color: white;
     text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+}
+
+.status-tag:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .status-tag.nuevo { background-color: var(--status-new); }
-.status-tag.en-espera {
-    background-color: var(--status-waiting);
-    color: var(--color-text-dark);
-}
+.status-tag.en-espera { background-color: var(--status-waiting); }
 .status-tag.abierto { background-color: var(--status-open); }
 .status-tag.por-concluir { background-color: var(--status-onhold); }
 .status-tag.realizado { background-color: var(--status-done); }
 
-
-.priority-high { color: var(--status-red); font-weight: 700; }
-.priority-medium { color: var(--status-waiting); }
-.priority-low { color: var(--status-new); }
+/* Prioridades con colores más vibrantes */
+.priority-high {
+    color: var(--status-onhold);
+    font-weight: 700;
+    background-color: rgba(244, 67, 54, 0.1);
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+}
+.priority-medium {
+    color: var(--status-waiting);
+    font-weight: 600;
+    background-color: rgba(255, 152, 0, 0.1);
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+}
+.priority-low {
+    color: var(--status-new);
+    font-weight: 500;
+    background-color: rgba(76, 175, 80, 0.1);
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+}
 
 /* Acciones en la tabla */
 .table-actions {
     display: flex;
     gap: 5px;
+}
+
+.table-actions .btn {
+    transition: all 0.3s;
+}
+
+.table-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* === 7. VISTA DE ESTADÍSTICAS (APEXCHARTS) === */
@@ -560,9 +712,15 @@ textarea.form-control {
 .stat-card {
     background-color: var(--color-background);
     padding: 25px;
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow: 0 4px 15px var(--color-shadow);
     border: 1px solid var(--color-primary-light);
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .stat-card h3 {
@@ -593,8 +751,24 @@ textarea.form-control {
         max-height: none;
         min-width: unset;
         overflow-y: visible;
-        margin-right: 0;
         transform: none;
+    }
+
+    .header-left {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        gap: 10px;
+    }
+
+    .logo-container {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .nav {
+        margin-left: 0;
+        width: 100%;
     }
 
     .tickets-layout.form-hidden .form-section {
@@ -623,9 +797,17 @@ textarea.form-control {
         justify-content: center;
     }
 
-    .logo, .nav, .user-info {
+    .user-dropdown {
         width: 100%;
-        margin-bottom: 10px;
+    }
+    .user-button {
+        width: 100%;
+        justify-content: center;
+    }
+    .dropdown-content {
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: 90%;
     }
 
     .main-content {
@@ -651,14 +833,8 @@ textarea.form-control {
         min-width: 800px;
     }
 
-    .main-table tbody td:last-child {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-    }
-
-    .table-controls .btn-export {
-        margin-left: 0;
+    .form-actions {
+        flex-direction: column;
     }
 }
 </style>
@@ -666,16 +842,28 @@ textarea.form-control {
 <body>
 
     <header class="header">
-        <div class="logo">
-            <h1>SYS-MAN</h1>
+        <div class="header-left">
+            <div class="logo-container">
+                <i class="fas fa-leaf logo-icon"></i> <h1>Vinco Energy</h1>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-item active" data-tab="tickets"><i class="fas fa-clipboard-list"></i> Tickets</a>
+                <a href="#" class="nav-item" data-tab="estadisticas"><i class="fas fa-chart-bar"></i> Estadísticas</a>
+            </nav>
         </div>
-        <nav class="nav">
-            <a href="#" class="nav-item active" data-tab="tickets"><i class="fas fa-clipboard-list"></i> Tickets</a>
-            <a href="#" class="nav-item" data-tab="estadisticas"><i class="fas fa-chart-bar"></i> Estadísticas</a>
-        </nav>
-        <div class="user-info">
-            <span><i class="fas fa-user-circle"></i> Admin</span>
-            <button class="btn btn-logout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+
+        <div class="user-dropdown" id="userDropdown">
+            <button class="user-button">
+                <i class="fas fa-user-circle"></i>
+                Admin
+                <i class="fas fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content" id="dropdownContent">
+                <div class="user-name-display">Administrador de Tickets</div>
+                <button class="btn btn-logout" onclick="alert('Cerrando Sesión...')">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
         </div>
     </header>
 
@@ -809,6 +997,7 @@ textarea.form-control {
                             <option value="por-concluir">Por Concluir</option>
                             <option value="realizado">Realizado</option>
                         </select>
+                         <button class="btn btn-secondary btn-export"><i class="fas fa-download"></i> Exportar</button>
                     </div>
 
                     <table class="main-table">
@@ -864,6 +1053,7 @@ textarea.form-control {
                                 <td>RH-2</td>
                                 <td>Solicitud de acceso a sistema de nómina</td>
                                 <td>Pedro Martínez</td>
+                                <td>Recursos Humanos</td>
                                 <td class="priority-low">Baja</td>
                                 <td><span class="status-tag realizado">Realizado</span></td>
                                 <td>2025-11-09</td>
@@ -975,12 +1165,29 @@ textarea.form-control {
             const navItems = document.querySelectorAll('.nav-item');
             const tabContents = document.querySelectorAll('.tab-content');
             const ticketsLayout = document.getElementById('ticketsLayout');
+            const userDropdown = document.getElementById('userDropdown');
+            const dropdownContent = document.getElementById('dropdownContent');
+
+            // --- LÓGICA DEL DROPDOWN DE USUARIO ---
+            userDropdown.addEventListener('click', () => {
+                dropdownContent.classList.toggle('show');
+            });
+
+            // Cerrar el dropdown si se hace clic fuera de él
+            window.addEventListener('click', (e) => {
+                if (!userDropdown.contains(e.target)) {
+                    if (dropdownContent.classList.contains('show')) {
+                        dropdownContent.classList.remove('show');
+                    }
+                }
+            });
 
             // --- LÓGICA DE REINICIO MENSUAL Y CONTADORES ---
             const today = new Date();
             const currentYearMonth = `${today.getFullYear()}-${today.getMonth() + 1}`;
 
-            const initialData = {
+            // Simulación de persistencia de contadores de tickets
+            let initialData = JSON.parse(localStorage.getItem('ticketCounters')) || {
                 "2025-11": { 'RH': 2, 'QHSE': 1, 'SIS': 1, 'CONT': 0, 'VNT': 0, 'OPR': 0 }
             };
 
@@ -1036,6 +1243,8 @@ textarea.form-control {
                         targetTab.classList.add('active');
                         // Si cambia a Estadísticas, renderizar las gráficas
                         if (tabId === 'estadisticas') {
+                            // Destruir gráficas anteriores si existen para evitar problemas de re-renderizado
+                            destroyApexCharts();
                             setTimeout(renderApexCharts, 100);
                         }
                     }
@@ -1086,6 +1295,7 @@ textarea.form-control {
                     return;
                 }
 
+                // Generar el número de reporte
                 deptCounters[departamentoValue] = (deptCounters[departamentoValue] || 0) + 1;
                 const consecutivo = deptCounters[departamentoValue];
                 const siglas = DEPT_SIGLAS[departamentoValue];
@@ -1106,6 +1316,7 @@ textarea.form-control {
 
                 ticketCounter++;
                 initialData[currentYearMonth] = deptCounters;
+                localStorage.setItem('ticketCounters', JSON.stringify(initialData)); // Simular persistencia
 
 
                 ticketForm.reset();
@@ -1149,110 +1360,155 @@ textarea.form-control {
             // ==========================================
             // APEXCHARTS INTEGRATION
             // ==========================================
-            function getChartColors(statusList) {
-                const colors = {
-                    'nuevo': '#81D4FA',
-                    'en-espera': '#FFD54F',
-                    'abierto': '#4DB6AC',
-                    'por-concluir': '#EF9A9A',
-                    'realizado': '#BDBDBD',
-                    'alta': '#EF9A9A',
-                    'media': '#FFD54F',
-                    'baja': '#81D4FA',
-                    'sis': '#AEC6CF',
-                    'rh': '#FFDAB9',
-                    'qhse': '#FFB6C1',
-                    'vnt': '#C3E6CB'
+            let deptChart, estadoChart, prioridadChart, tendenciaChart;
+
+            function destroyApexCharts() {
+                if (deptChart) deptChart.destroy();
+                if (estadoChart) estadoChart.destroy();
+                if (prioridadChart) prioridadChart.destroy();
+                if (tendenciaChart) tendenciaChart.destroy();
+            }
+
+            function getChartColors(type) {
+                // Mapeo de colores basado en la nueva paleta vibrante
+                const colorsMap = {
+                    // Estados
+                    'nuevo': '#4CAF50',          // Verde vibrante
+                    'en-espera': '#FF9800',      // Naranja vibrante
+                    'abierto': '#2196F3',         // Azul vibrante
+                    'por-concluir': '#F44336',    // Rojo vibrante
+                    'realizado': '#9C27B0',       // Púrpura vibrante
+                    // Prioridades
+                    'alta': '#F44336',
+                    'media': '#FF9800',
+                    'baja': '#4CAF50',
+                    // Acento principal
+                    'acento': '#728156',
+                    'oscuro': '#5B6846'
                 };
-                return statusList.map(s => colors[s.toLowerCase().replace(/ /g, '-')]);
+
+                if (type === 'departamentos') {
+                    return [colorsMap.acento, colorsMap.abierto, colorsMap.media, colorsMap['por-concluir'], colorsMap.realizado, colorsMap.nuevo];
+                }
+                if (type === 'estados') {
+                    return [colorsMap.nuevo, colorsMap['en-espera'], colorsMap.abierto, colorsMap['por-concluir'], colorsMap.realizado];
+                }
+                if (type === 'prioridades') {
+                    return [colorsMap.alta, colorsMap.media, colorsMap.baja];
+                }
+                if (type === 'tendencia') {
+                    return [colorsMap.acento];
+                }
+                return [colorsMap.acento];
             }
 
             function renderApexCharts() {
                 // 1. Tickets por Departamento
                 const deptData = {
-                    series: [{
-                        name: 'Tickets',
-                        data: [40, 35, 30, 20, 15, 10]
-                    }],
+                    series: [{ name: 'Tickets', data: [40, 35, 30, 20, 15, 10] }],
                     categories: ['Sistemas', 'Ventas', 'RH', 'QHSE', 'Contabilidad', 'Operaciones']
                 };
-                const deptColors = getChartColors(deptData.categories.map(c => c.substring(0,3)));
+                const deptColors = getChartColors('departamentos');
 
                 const deptOptions = {
                     chart: { type: 'bar', height: 250, toolbar: { show: false } },
                     series: deptData.series,
-                    xaxis: { categories: deptData.categories },
-                    yaxis: { title: { text: 'Total' } },
-                    plotOptions: { bar: { horizontal: false, columnWidth: '60%', borderRadius: 5 } },
-                    dataLabels: { enabled: false },
+                    xaxis: { categories: deptData.categories, labels: { style: { colors: 'var(--color-text-dark)' } } },
+                    yaxis: { title: { text: 'Total', style: { color: 'var(--color-text-dark)' } }, labels: { style: { colors: 'var(--color-text-dark)' } } },
+                    plotOptions: {
+                        bar: {
+                            horizontal: false, columnWidth: '60%', borderRadius: 5,
+                            dataLabels: { position: 'top' }
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        offsetY: -20,
+                        style: { fontSize: '12px', colors: ['var(--color-text-dark)'] }
+                    },
+                    fill: {
+                        type: 'gradient',
+                        gradient: { shade: 'light', type: 'vertical', shadeIntensity: 0.25, gradientToColors: [getChartColors('acento')[0]], inverseColors: true, opacityFrom: 0.85, opacityTo: 0.85, stops: [0, 100] }
+                    },
                     colors: deptColors,
-                    grid: { show: false }
+                    grid: { show: true, borderColor: 'var(--color-primary-light)' }
                 };
-                new ApexCharts(document.querySelector("#chart-departamento"), deptOptions).render();
+                deptChart = new ApexCharts(document.querySelector("#chart-departamento"), deptOptions);
+                deptChart.render();
 
-                // 2. Tickets por Estado (Gráfica de Pastel)
+                // 2. Tickets por Estado (Gráfica de Pastel - Donut)
                 const estadoData = {
                     series: [5, 5, 5, 2, 103],
                     labels: ['Nuevo', 'En Espera', 'Abierto', 'Por Concluir', 'Realizado']
                 };
-                const estadoColors = getChartColors(estadoData.labels);
+                const estadoColors = getChartColors('estados');
 
                 const estadoOptions = {
                     chart: { type: 'donut', height: 250 },
                     series: estadoData.series,
                     labels: estadoData.labels,
                     colors: estadoColors,
-                    legend: { position: 'bottom' },
+                    legend: { position: 'bottom', labels: { colors: 'var(--color-text-dark)' } },
+                    stroke: { width: 0 },
                     plotOptions: {
                         pie: {
                             donut: {
                                 size: '70%',
                                 labels: {
                                     show: true,
-                                    total: { show: true, label: 'Total', formatter: (w) => w.globals.seriesTotals.reduce((a, b) => a + b, 0) }
+                                    name: { show: true, fontSize: '14px', color: 'var(--color-text-soft)' },
+                                    value: { show: true, fontSize: '24px', fontWeight: 700, color: 'var(--color-text-dark)' },
+                                    total: { show: true, label: 'Total', formatter: (w) => w.globals.seriesTotals.reduce((a, b) => a + b, 0), color: 'var(--color-primary-accent)' }
                                 }
                             }
                         }
                     }
                 };
-                new ApexCharts(document.querySelector("#chart-estado"), estadoOptions).render();
+                estadoChart = new ApexCharts(document.querySelector("#chart-estado"), estadoOptions);
+                estadoChart.render();
 
                 // 3. Tickets por Prioridad (Barras horizontales)
                 const prioridadData = {
-                    series: [{
-                        name: 'Tickets',
-                        data: [15, 30, 75]
-                    }],
+                    series: [{ name: 'Tickets', data: [15, 30, 75] }],
                     categories: ['Alta', 'Media', 'Baja']
                 };
-                const prioridadColors = getChartColors(prioridadData.categories);
+                const prioridadColors = getChartColors('prioridades');
 
                 const prioridadOptions = {
                     chart: { type: 'bar', height: 250, toolbar: { show: false } },
                     series: prioridadData.series,
-                    xaxis: { categories: prioridadData.categories },
+                    xaxis: { categories: prioridadData.categories, labels: { style: { colors: 'var(--color-text-dark)' } } },
                     yaxis: { show: false },
-                    plotOptions: { bar: { horizontal: true, columnWidth: '80%', borderRadius: 5, distributed: true } },
-                    dataLabels: { enabled: true },
+                    plotOptions: {
+                        bar: {
+                            horizontal: true, columnWidth: '80%', borderRadius: 5, distributed: true
+                        }
+                    },
+                    dataLabels: { enabled: true, style: { colors: ['#FFFFFF'] } },
                     colors: prioridadColors,
                     grid: { show: false }
                 };
-                new ApexCharts(document.querySelector("#chart-prioridad"), prioridadOptions).render();
+                prioridadChart = new ApexCharts(document.querySelector("#chart-prioridad"), prioridadOptions);
+                prioridadChart.render();
 
                 // 4. Tendencia Mensual (Gráfica de Área)
                 const tendenciaOptions = {
                     chart: { type: 'area', height: 250, toolbar: { show: false } },
-                    series: [{
-                        name: 'Tickets Creados',
-                        data: [20, 28, 35, 40, 50]
-                    }],
-                    xaxis: { categories: ['Jul', 'Ago', 'Sep', 'Oct', 'Nov'] },
-                    colors: [ '#81D4FA'],
-                    stroke: { curve: 'smooth' },
+                    series: [{ name: 'Tickets Creados', data: [20, 28, 35, 40, 50] }],
+                    xaxis: { categories: ['Jul', 'Ago', 'Sep', 'Oct', 'Nov'], labels: { style: { colors: 'var(--color-text-dark)' } } },
+                    yaxis: { labels: { style: { colors: 'var(--color-text-dark)' } } },
+                    colors: getChartColors('tendencia'),
+                    stroke: { curve: 'smooth', width: 3 },
+                    fill: {
+                        type: 'gradient',
+                        gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.9, stops: [0, 100] }
+                    },
                     dataLabels: { enabled: false },
-                    grid: { show: false }
+                    tooltip: { x: { format: 'MMM' } },
+                    grid: { show: true, borderColor: 'var(--color-primary-light)' }
                 };
-                new ApexCharts(document.querySelector("#chart-tendencia"), tendenciaOptions).render();
+                tendenciaChart = new ApexCharts(document.querySelector("#chart-tendencia"), tendenciaOptions);
+                tendenciaChart.render();
 
             }
 

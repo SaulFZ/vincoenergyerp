@@ -145,90 +145,111 @@ function initializeModalCalendarScripts(employeeId) {
     }
 
     function handleActivityTypeChange(activityType) {
-        const wellNameField = document.getElementById('well-name-field');
-        const wellNameInput = document.getElementById('well-name');
-        const commissionedField = document.getElementById('commissioned-field');
-        const commissionedSelect = document.getElementById('commissioned-select');
-        const vacationError = document.getElementById('vacation-balance-error');
-        const hasServiceBonusSelect = document.querySelector('input[name="has_service_bonus"]:checked');
-        const foodBonusSelect = document.getElementById('food-bonus');
-        const fieldBonusSelect = document.getElementById('field-bonus');
+        const wellNameField = document.getElementById('well-name-field');
+        const wellNameInput = document.getElementById('well-name');
+        const commissionedField = document.getElementById('commissioned-field');
+        const commissionedSelect = document.getElementById('commissioned-select');
+        const vacationError = document.getElementById('vacation-balance-error');
+        const hasServiceBonusSelect = document.querySelector('input[name="has_service_bonus"]:checked');
+        const foodBonusSelect = document.getElementById('food-bonus');
+        const fieldBonusSelect = document.getElementById('field-bonus');
 
-        // Mostrar/Ocultar error de Vacaciones
-        if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
-            vacationError.style.display = 'block';
-        } else {
-            vacationError.style.display = 'none';
-        }
+        // Mostrar/Ocultar error de Vacaciones
+        if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
+            vacationError.style.display = 'block';
+        } else {
+            vacationError.style.display = 'none';
+        }
 
-        // Resetear campos de viaje antes de re-evaluar
-        travelDestinationField.style.display = 'none';
-        travelDestinationInput.value = '';
-        travelReasonField.style.display = 'none';
-        travelReasonInput.value = '';
+        // Resetear campos de viaje antes de re-evaluar
+        travelDestinationField.style.display = 'none';
+        travelDestinationInput.value = '';
+        travelReasonField.style.display = 'none';
+        travelReasonInput.value = '';
 
-        // --- Lógica de campos condicionales por Tipo de Actividad ---
-        if (activityType === 'P') { // Trabajo en Pozo
-            wellNameField.style.display = 'block';
-            commissionedField.style.display = 'none';
-            commissionedSelect.selectedIndex = 0;
-            conditionalFields.style.display = 'block'; // Mostrar bonos/servicio
-            handleServiceBonusChange(hasServiceBonusSelect?.value); // Re-evaluar pestaña de servicio
+        // Resetear campos específicos de Pozo y Comisionado
+        wellNameField.style.display = 'none';
+        commissionedField.style.display = 'none';
 
-        } else {
-            // ✅ PARA TODAS LAS OTRAS ACTIVIDADES (B, C, TC, V, D, VAC, E, M, A, PE, N)
-            // Limpiar campos específicos de Pozo
-            wellNameField.style.display = 'none';
-            wellNameInput.value = '';
 
-            // Limpiar campos de Comisionado
-            commissionedField.style.display = 'none';
-            commissionedSelect.selectedIndex = 0;
+        // --- Lógica de campos condicionales por Tipo de Actividad ---
+        if (activityType === 'P') { // Trabajo en Pozo
+            wellNameField.style.display = 'block';
+            conditionalFields.style.display = 'block'; // Mostrar bonos/servicio
+            handleServiceBonusChange(hasServiceBonusSelect?.value); // Re-evaluar pestaña de servicio
 
-            // ✅ SOLO LIMPIAR BONOS si NO están BLOQUEADOS (aprobados/revisados)
-            const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
-            const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
+        } else if (activityType === 'C') { // 🚀 CORRECCIÓN: Comisionado
+            commissionedField.style.display = 'block';
+            conditionalFields.style.display = 'none'; // Ocultar bonos/servicio para Comisionado
+            // Limpiar campos específicos de Pozo
+            wellNameInput.value = '';
+            // Forzar que no tenga bono de servicio (solo si no está bloqueado)
+            const serviceStatus = getFieldStatus(currentActivity, 'service');
+            if (!statusesToBlockField.includes(serviceStatus)) {
+                const radioNo = document.getElementById('service-bonus-no');
+                const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+                const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
 
-            // Si el bono de comida NO está bloqueado (puede ser rejected o under_review), limpiarlo
-            if (!statusesToBlockField.includes(foodBonusStatus)) {
-                if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
-            }
+                if (radioNo && optionNo && optionSi) {
+                    radioNo.checked = true;
+                    optionNo.classList.add('selected');
+                    optionSi.classList.remove('selected');
+                    handleServiceBonusChange('no'); // Ocultar pestaña de servicio
+                }
+                resetServiceForm();
+            }
 
-            // Si el bono de campo NO está bloqueado (puede ser rejected o under_review), limpiarlo
-            if (!statusesToBlockField.includes(fieldBonusStatus)) {
-                if (fieldBonusSelect) fieldBonusSelect.selectedIndex = 0;
-            }
+        } else {
+            // ✅ PARA TODAS LAS OTRAS ACTIVIDADES (B, TC, V, D, VAC, E, M, A, PE, N)
+            // Limpiar campos específicos de Pozo
+            wellNameInput.value = '';
 
-            // Ocultar sección de bonos (pero mantener los valores si están bloqueados)
-            conditionalFields.style.display = 'none';
+            // Limpiar campos de Comisionado
+            commissionedSelect.selectedIndex = 0;
 
-            // Forzar que no tenga bono de servicio (solo si no está bloqueado)
-            const serviceStatus = getFieldStatus(currentActivity, 'service');
-            if (!statusesToBlockField.includes(serviceStatus)) {
+            // ✅ SOLO LIMPIAR BONOS si NO están BLOQUEADOS (aprobados/revisados)
+            const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
+            const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
 
-                // 💡 CORRECCIÓN: Verifica si los elementos existen (si el usuario tiene el permiso de Blade)
-                const radioNo = document.getElementById('service-bonus-no');
-                const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
-                const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+            // Si el bono de comida NO está bloqueado (puede ser rejected o under_review), limpiarlo
+            if (!statusesToBlockField.includes(foodBonusStatus)) {
+                if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
+            }
 
-                if (radioNo && optionNo && optionSi) {
-                    radioNo.checked = true;
-                    optionNo.classList.add('selected');
-                    optionSi.classList.remove('selected');
-                    handleServiceBonusChange('no'); // Ocultar pestaña de servicio
-                }
-                // ✅ Limpiar servicios solo si no están bloqueados
-                resetServiceForm();
-            }
-        }
+            // Si el bono de campo NO está bloqueado (puede ser rejected o under_review), limpiarlo
+            if (!statusesToBlockField.includes(fieldBonusStatus)) {
+                if (fieldBonusSelect) fieldBonusSelect.selectedIndex = 0;
+            }
 
-        // Manejo específico para Viaje
-        if (activityType === 'V') {
-            travelDestinationField.style.display = 'block';
-            travelReasonField.style.display = 'block';
-        }
-    }
+            // Ocultar sección de bonos (pero mantener los valores si están bloqueados)
+            conditionalFields.style.display = 'none';
 
+            // Forzar que no tenga bono de servicio (solo si no está bloqueado)
+            const serviceStatus = getFieldStatus(currentActivity, 'service');
+            if (!statusesToBlockField.includes(serviceStatus)) {
+
+                // 💡 CORRECCIÓN: Verifica si los elementos existen (si el usuario tiene el permiso de Blade)
+                const radioNo = document.getElementById('service-bonus-no');
+                const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+                const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+
+                if (radioNo && optionNo && optionSi) {
+                    radioNo.checked = true;
+                    optionNo.classList.add('selected');
+                    optionSi.classList.remove('selected');
+                    handleServiceBonusChange('no'); // Ocultar pestaña de servicio
+                }
+                // ✅ Limpiar servicios solo si no están bloqueados
+                resetServiceForm();
+            }
+        }
+
+        // Manejo específico para Viaje
+        if (activityType === 'V') {
+            travelDestinationField.style.display = 'block';
+            travelReasonField.style.display = 'block';
+        }
+    }
 
     function handleServiceBonusChange(hasServiceBonus) {
         const serviceTab = document.getElementById('service-tab');
