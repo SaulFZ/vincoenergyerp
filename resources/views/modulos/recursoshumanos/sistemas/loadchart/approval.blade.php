@@ -22,6 +22,12 @@
                 </div>
 
                 <div class="approval-actions">
+                    {{-- NUEVO BOTÓN DE FILTROS --}}
+                    @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
+                        <button class="back-btn" id="toggle-filters-btn">
+                            <i class="fas fa-filter"></i> Abrir Filtros
+                        </button>
+                    @endif
                     {{-- Control de Cuadrillas --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('control_cuadrillas'))
                         <button class="squad-btn" id="squad-control">
@@ -29,7 +35,7 @@
                         </button>
                     @endif
 
-                    {{-- Info de Servicios (Sin permiso explícito en tu solicitud, se mantiene visible) --}}
+                    {{-- Info de Servicios (Se mantiene visible) --}}
                     <button class="services-info-btn" id="services-info">
                         <i class="fas fa-tasks"></i> Info de Servicios
                     </button>
@@ -47,6 +53,27 @@
                     </button>
                 </div>
             </div>
+
+            {{-- INICIO: NUEVO CONTENEDOR DE FILTROS --}}
+            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
+                <div class="filters-container" id="filters-container" style="display: none;">
+                    <div class="filter-group">
+                        <label for="department-filter">Departamento:</label>
+                        <select id="department-filter" class="form-select filter-select">
+                            <option value="">Todos los Departamentos</option>
+                            @foreach ($departments as $department)
+                                <option value="{{ $department }}">{{ $department }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="filter-group filter-search-group">
+                        <label for="employee-search">Buscar Empleado:</label>
+                        <input type="text" id="employee-search" class="form-input filter-input"
+                            placeholder="Nombre, # Empleado...">
+                    </div>
+                </div>
+            @endif
+            {{-- FIN: NUEVO CONTENEDOR DE FILTROS --}}
 
             <div class="activity-legend">
                 <div class="legend-item">
@@ -158,8 +185,9 @@
                                 ->groupBy('squad_number');
 
                             $showSquadGrouping = \App\Helpers\PermissionHelper::hasDirectPermission('control_cuadrillas');
-                            $totalDayColumns = count($monthlyDays) + 4; // Nombre, KPI, Total, Vac, Desc, Utiliz, Aprob (7 columnas de rowspan)
-                            $colspanValue = $totalDayColumns + count($monthlyDays) - 1; // Calculando el colspan correcto (columna Nombre + días + Totales - 1)
+                            // Colspan = 1 (Nombre) + 1 (KPI) + Días + 1 (Total) + 1 (Vac) + 1 (Desc) + 1 (Utiliz) + 1 (Aprob) = 6 + count($monthlyDays)
+                            $colspanValue = 6 + count($monthlyDays);
+                            $currentUserId = auth()->id();
                         @endphp
 
                         @foreach ($groupedEmployees as $squadNumber => $squadEmployees)
@@ -183,8 +211,15 @@
                             {{-- FIN: Fila de Encabezado de Cuadrilla --}}
 
                             @foreach ($squadEmployees as $employee)
+                                {{-- LÓGICA DE PERMISOS PARA LOS BOTONES --}}
+                                @php
+                                    $employeeAssignment = $loadChartAssignments->firstWhere('employee_id', $employee->id);
+                                    $isReviewerForEmployee = $employeeAssignment && $employeeAssignment->reviewer_id === $currentUserId;
+                                    $isApproverForEmployee = $employeeAssignment && $employeeAssignment->approver_id === $currentUserId;
+                                @endphp
+
                                 {{-- Fila Principal (Actividad) --}}
-                                <tr class="employee-row" data-employee-id="{{ $employee->id }}">
+                                <tr class="employee-row" data-employee-id="{{ $employee->id }}" data-department="{{ $employee->department }}">
                                     <td rowspan="4" class="employee-info-cell" data-icon="bx bx-calendar"
                                         data-text="ver calendario">
                                         {{ $employee->full_name }}
@@ -193,6 +228,7 @@
                                     @foreach ($monthlyDays as $dayInfo)
                                         <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
                                             data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}">
+                                            {{-- IMPORTANTE: El modal individual se abrirá si el usuario tiene permiso (lógica en JS) --}}
                                             <div class="status-indicator status-n">N</div>
                                         </td>
                                     @endforeach
@@ -216,19 +252,7 @@
                                     </td>
                                     <td rowspan="4" class="actions-cell">
                                         <div class="actions-container">
-                                            @php
-                                                $employeeAssignment = $loadChartAssignments->firstWhere(
-                                                    'employee_id',
-                                                    $employee->id,
-                                                );
-                                                $isReviewerForEmployee =
-                                                    $employeeAssignment &&
-                                                    $employeeAssignment->reviewer_id === auth()->id();
-                                                $isApproverForEmployee =
-                                                    $employeeAssignment &&
-                                                    $employeeAssignment->approver_id === auth()->id();
-                                            @endphp
-
+                                            {{-- MOSTRAR BOTONES DE ACCIÓN SOLO SI ES REVISOR O APROBADOR DEL EMPLEADO --}}
                                             @if ($isReviewerForEmployee)
                                                 <button class="btn-review">Revisar</button>
                                             @endif
@@ -246,7 +270,7 @@
                                 {{-- Filas de Detalle --}}
                                 @php $rowTypes = ['Comida', 'Bono', 'Servicio']; @endphp
                                 @foreach ($rowTypes as $rowType)
-                                    <tr class="activity-row hidden" data-employee-id="{{ $employee->id }}">
+                                    <tr class="activity-row hidden" data-employee-id="{{ $employee->id }}" data-department="{{ $employee->department }}">
                                         <td class="activity-label-cell">{{ $rowType }}</td>
                                         @foreach ($monthlyDays as $dayInfo)
                                             <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
@@ -275,8 +299,13 @@
             let fortnightlyConfig = @json($fortnightlyConfig);
             let canSeeAmounts = @json($canSeeAmounts ?? false);
             let userPermissions = @json($userPermissions ?? []);
+            // ⚠️ Se envía TODA la data de asignación para que el JS pueda comprobar permisos en CADA empleado.
             let loadChartAssignments = @json($loadChartAssignments ?? []);
             let currentUserId = {{ auth()->id() }};
+            // NUEVAS VARIABLES GLOBALES PARA FILTROS
+            let allEmployeeRows = [];
+            let allSquadRows = [];
+            let canSeeFilters = @json(\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros')); // Permiso de filtro
         </script>
     </div>
     <div class="modal-approval-custom" id="approvalModal">
@@ -318,37 +347,37 @@
         </div>
     </div>
 
-    {{-- Aquí el resto de tus modales (services-modal, quincena-modal, squad-control-modal) --}}
+    {{-- Modal de Servicios --}}
+    <div id="services-modal" class="services-modal">
+        <div class="services-modal-content">
+            <span class="services-close-btn">&times;</span>
+            <h2 class="services-title">Catálogo de Servicios y Bonos</h2>
 
-<div id="services-modal" class="services-modal">
-    <div class="services-modal-content">
-        <span class="services-close-btn">&times;</span>
-        <h2 class="services-title">Catálogo de Servicios y Bonos</h2>
-
-        <div class="modal-body">
-            <div class="form-tabs">
-                <button class="tab-btn active tab-services" data-tab="services-tab">Servicios</button>
-                <button class="tab-btn tab-bonuses" data-tab="bonuses-tab">Bonos</button>
-                <div class="search-container">
-                    <input type="text" id="service-search" placeholder="Buscar por ID, Operación, o Descripción..." class="search-input">
+            <div class="modal-body">
+                <div class="form-tabs">
+                    <button class="tab-btn active tab-services" data-tab="services-tab">Servicios</button>
+                    <button class="tab-btn tab-bonuses" data-tab="bonuses-tab">Bonos</button>
+                    <div class="search-container">
+                        <input type="text" id="service-search" placeholder="Buscar por ID, Operación, o Descripción..." class="search-input">
+                    </div>
                 </div>
-            </div>
 
-            <div class="tab-content active" id="services-tab">
-                <div id="services-placeholder" class="services-section">
-                    <p>Cargando servicios...</p>
+                <div class="tab-content active" id="services-tab">
+                    <div id="services-placeholder" class="services-section">
+                        <p>Cargando servicios...</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="tab-content" id="bonuses-tab">
-                <div id="bonuses-placeholder" class="bonuses-section">
-                    <p>Cargando bonos...</p>
+                <div class="tab-content" id="bonuses-tab">
+                    <div id="bonuses-placeholder" class="bonuses-section">
+                        <p>Cargando bonos...</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
+    {{-- Modal de Quincenas --}}
     <div id="quincena-modal" class="quincena-modal-container" style="display: none;">
         <div class="quincena-modal-card">
             <div class="quincena-modal-header">
@@ -412,6 +441,7 @@
         </div>
     </div>
 
+    {{-- Modal de Gestión de Cuadrillas --}}
     <div id="squad-control-modal" class="squad-modal-container">
         <div class="squad-modal-card">
             <div class="squad-modal-header">
@@ -456,6 +486,7 @@
         </div>
     </div>
 
+    {{-- Modal de Formulario de Cuadrilla --}}
     <div id="squad-form-modal" class="form-modal">
         <div class="form-modal-content">
             <div class="form-header">
@@ -509,6 +540,7 @@
             </div>
         </div>
     </div>
+
     {{-- NUEVO Modal para ver detalles del empleado con el CALENDAR_PARTIAL --}}
     <div id="employee-detail-modal" class="employee-detail-modal">
         <div class="employee-detail-modal-content">

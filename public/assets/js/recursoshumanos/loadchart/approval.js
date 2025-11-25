@@ -10,8 +10,7 @@ window.addEventListener('beforeunload', function () {
 });
 
 // =========================================================================================
-// 🌎 GLOBAL VARIABLES (ASSUMING these are set by PHP before this script, but initializing
-// for robustness and to ensure `canSeeAmounts` has a fallback value.)
+// 🌎 GLOBAL VARIABLES
 // =========================================================================================
 let currentModalData = {
     employeeId: null,
@@ -21,8 +20,12 @@ let currentModalData = {
 
 let autoRefreshInterval = null;
 let lastUpdateTime = new Date();
-let monthlyDays = []; // 👈🏼 Nueva variable global para días del mes
-let employees = []; // 👈🏼 Nueva variable global para empleados
+let monthlyDays = [];
+let employees = [];
+// 🆕 Nuevas variables globales (CORREGIDO: Sin redeclaración "let" si ya están en Blade)
+allEmployeeRows = [];
+allSquadRows = [];
+let isFiltersOpen = false;
 
 // Detener el sistema de actualización automática
 function stopAutoRefresh() {
@@ -50,7 +53,17 @@ function initializeApprovalTable() {
         showQuincena(1);
         setActiveButton("quincena1");
         updatePeriodInfo();
+        // 🆕 Inicializar la lista de filas para el filtrado
+        allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
+        allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
     });
+
+    // 🆕 Inicializar Event Listeners de Filtro
+    if (canSeeFilters) {
+        document.getElementById('toggle-filters-btn').addEventListener('click', toggleFilters);
+        document.getElementById('department-filter').addEventListener('change', applyFilters);
+        document.getElementById('employee-search').addEventListener('input', applyFilters);
+    }
 }
 //INICIAMOS LOGICA DE NUEVO MODAL
 // Variables globales para el modal de empleado
@@ -169,6 +182,121 @@ function initializeEmployeeModalListeners() {
 }
 //TERMINA LA LOGICA DEL NUEVO MODAL
 
+// 🆕 LÓGICA DE FILTROS
+
+/**
+ * Muestra/Oculta el contenedor de filtros
+ */
+function toggleFilters() {
+    const filtersContainer = document.getElementById('filters-container');
+    const toggleButton = document.getElementById('toggle-filters-btn');
+
+    if (isFiltersOpen) {
+        filtersContainer.style.display = 'none';
+        toggleButton.innerHTML = '<i class="fas fa-filter"></i> Abrir Filtros';
+    } else {
+        filtersContainer.style.display = 'flex'; // O 'block', dependiendo de tu CSS. Usamos flex para el diseño de los filtros.
+        toggleButton.innerHTML = '<i class="fas fa-times"></i> Cerrar Filtros';
+    }
+    isFiltersOpen = !isFiltersOpen;
+}
+
+
+/**
+ * Aplica los filtros de departamento y búsqueda.
+ */
+function applyFilters() {
+    // Solo aplica los filtros si el usuario tiene el permiso
+    if (!canSeeFilters) {
+        return;
+    }
+
+    const departmentFilter = document.getElementById('department-filter').value;
+    const searchFilter = document.getElementById('employee-search').value.toLowerCase().trim();
+
+    allEmployeeRows.forEach(row => {
+        const department = row.getAttribute('data-department');
+        const employeeName = row.querySelector('.employee-info-cell').textContent.trim().toLowerCase();
+
+        // Buscar info del empleado en la lista global para obtener el número
+        const employeeId = row.getAttribute('data-employee-id');
+        const employeeData = employees.find(e => e.id.toString() === employeeId);
+        const employeeNumber = employeeData ? employeeData.employee_number.toString().toLowerCase() : '';
+
+
+        // 1. Filtrar por Departamento (DEBE coincidir con el valor EXACTO o ser vacío "Todos")
+        const matchesDepartment = !departmentFilter || department === departmentFilter;
+
+        // 2. Filtrar por Búsqueda (Nombre o Número de Empleado)
+        const matchesSearch = !searchFilter || employeeName.includes(searchFilter) || employeeNumber.includes(searchFilter);
+
+        // 3. Aplicar visibilidad a las filas principales (employee-row)
+        const isVisible = matchesDepartment && matchesSearch;
+        row.style.display = isVisible ? '' : 'none';
+
+        // 4. Ocultar filas de detalle asociadas al empleado si la fila principal no es visible
+        let nextRow = row.nextElementSibling;
+        while (nextRow && nextRow.classList.contains('activity-row') && nextRow.getAttribute('data-employee-id') === row.getAttribute('data-employee-id')) {
+            // Si la fila de empleado principal se oculta, también se ocultan sus detalles
+            if (!isVisible) {
+                nextRow.style.display = 'none';
+            } else {
+                // Si la fila de empleado principal es visible, restaurar/mantener la visibilidad
+                // definida por el renderizador (si tiene ítems o está colapsada/expandida).
+                // Mantenemos el estado de la clase 'hidden' y la visibilidad de ítems del render.
+                const isHiddenByToggle = nextRow.classList.contains('hidden');
+                const isHiddenByRender = nextRow.getAttribute('data-has-items') === 'false'; // Suponiendo que el renderizador añade este atributo para filas sin ítems
+
+                // Mantenemos la visibilidad por defecto del renderizador
+                if (isHiddenByToggle || isHiddenByRender) {
+                    nextRow.style.display = 'none';
+                } else {
+                    nextRow.style.display = '';
+                }
+            }
+            nextRow = nextRow.nextElementSibling;
+        }
+    });
+
+    // 5. Recalcular la visibilidad de las filas de cuadrilla (squad-group-row)
+    allSquadRows.forEach(squadRow => {
+        const nextRow = squadRow.nextElementSibling;
+        let showSquadRow = false;
+        let currentRow = nextRow;
+
+        // Iterar sobre las filas de empleados hasta encontrar la siguiente fila de cuadrilla
+        while (currentRow && !currentRow.classList.contains('squad-group-row')) {
+            // Verificar si la fila es de empleado y es visible por los filtros
+            if (currentRow.classList.contains('employee-row') && currentRow.style.display !== 'none') {
+                showSquadRow = true;
+                break;
+            }
+            // Saltar las filas de actividad (detalle)
+            if (currentRow.classList.contains('activity-row')) {
+                currentRow = currentRow.nextElementSibling;
+                continue;
+            }
+            currentRow = currentRow.nextElementSibling;
+        }
+
+        squadRow.style.display = showSquadRow ? '' : 'none';
+    });
+
+    // Re-aplicar el filtro de quincena para asegurar que las celdas de días se muestren correctamente
+    if (currentView === 'quincena1') {
+        showQuincena(1);
+    } else if (currentView === 'quincena2') {
+        showQuincena(2);
+    } else {
+        showFullMonth();
+    }
+
+    // Volver a calcular totales para actualizar el resumen (aunque esto es opcional si solo se filtra visualmente)
+    calculateAndRenderTotals();
+}
+// TERMINA LÓGICA DE FILTROS
+
+
 /**
  * Inicializar el sistema de actualización automática
  */
@@ -242,7 +370,7 @@ async function refreshData() {
         workLogsData = data.workLogsData;
         fortnightlyConfig = data.fortnightlyConfig;
         loadChartAssignments = data.loadChartAssignments;
-        canSeeAmounts = data.canSeeAmounts;
+        canSeeAmounts = data.canSeeAmounts; // 👈🏼 CRÍTICO: canSeeAmounts se actualiza aquí
         userPermissions = data.userPermissions;
         monthlyDays = data.monthlyDays; // 👈🏼 CRÍTICO: Actualizar la variable monthlyDays
         employees = data.employees; // 👈🏼 CRÍTICO: Actualizar la variable employees
@@ -323,6 +451,25 @@ function handleTableClick(event) {
         const row = cell.closest('.employee-row');
         const employeeId = row.getAttribute('data-employee-id');
         const date = cell.getAttribute('data-date');
+
+        // 🆕 Bloquear el modal si el usuario no es Revisor ni Aprobador del empleado
+        const employeeAssignment = loadChartAssignments.find(a => a.employee_id.toString() === employeeId);
+        const isReviewerForEmployee = employeeAssignment && employeeAssignment.reviewer_id === currentUserId;
+        const isApproverForEmployee = employeeAssignment && employeeAssignment.approver_id === currentUserId;
+
+        if (!isReviewerForEmployee && !isApproverForEmployee) {
+            // Solo mostrar el mensaje si hay actividad, si no, se muestra el mensaje 'No hay actividades'
+            const employeeData = workLogsData.find(log => log.employee_id.toString() === employeeId);
+            const dailyActivity = employeeData?.daily_activities.find(act => act.date === date);
+
+            if (dailyActivity) {
+                showSwalNotification('Acceso Denegado', 'Solo puede abrir el detalle de actividad para los empleados que tiene asignados como Revisor o Aprobador.', 'error');
+            } else {
+                showSwalNotification('Información', 'No hay actividades registradas para este día.', 'info');
+            }
+            return;
+        }
+
 
         const employeeData = workLogsData.find(log => log.employee_id.toString() === employeeId);
         const dailyActivity = employeeData?.daily_activities.find(act => act.date === date);
@@ -464,7 +611,7 @@ function openApprovalModal(employeeData, dailyActivity) {
     }
 
     // 2. Bonos de Comida
-// ... (Lógica de Bonos y Servicios sigue aquí, sin cambios)
+    // ... (Lógica de Bonos y Servicios sigue aquí, sin cambios)
     if (dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0) {
         dailyActivity.food_bonuses.forEach((bonus, index) => {
             const amount = canSeeAmounts ? `\$${Number(bonus.daily_amount).toFixed(2)} MXN` : null;
@@ -1136,7 +1283,9 @@ document.addEventListener('click', function (e) {
     if (e.target.closest('.employee-info-cell')) {
         const employeeRow = e.target.closest('.employee-row');
         if (employeeRow) {
-            toggleActivityRows(employeeRow);
+            // El click en el nombre ahora abre el modal de calendario, así que se usa una clase
+            // para alternar la visibilidad de las filas de detalle.
+            // toggleActivityRows(employeeRow);
         }
     }
 });
@@ -1215,10 +1364,10 @@ async function loadMonthData(isRefresh = false) {
         workLogsData = data.workLogsData;
         fortnightlyConfig = data.fortnightlyConfig;
         loadChartAssignments = data.loadChartAssignments;
-        canSeeAmounts = data.canSeeAmounts; // 👈🏼 CRITICAL: canSeeAmounts se actualiza aquí
+        canSeeAmounts = data.canSeeAmounts; // 👈🏼 CRÍTICO: canSeeAmounts se actualiza aquí
         userPermissions = data.userPermissions;
-        monthlyDays = data.monthlyDays; // 👈🏼 CRITICAL: Guardar los días para la renderización
-        employees = data.employees; // 👈🏼 CRITICAL: Guardar los empleados para la renderización
+        monthlyDays = data.monthlyDays; // 👈🏼 CRÍTICO: Guardar los días para la renderización
+        employees = data.employees; // 👈🏼 CRÍTICO: Guardar los empleados para la renderización
 
         // 1. Si es la primera carga o si la estructura de días cambió, se actualiza toda la tabla
         updateTableStructure(data.monthlyDays, data.employees);
@@ -1233,6 +1382,15 @@ async function loadMonthData(isRefresh = false) {
             showQuincena(2);
         } else {
             showFullMonth();
+        }
+
+        // 🆕 Aplicar filtros inmediatamente después de la recarga
+        // Esto es CRÍTICO para los usuarios con permiso de filtro
+        allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
+        allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
+
+        if (canSeeFilters) {
+            applyFilters();
         }
 
         // 3. Setup listeners *después* de que la vista se ha actualizado
@@ -1348,11 +1506,10 @@ function updateDaysHeader(monthlyDays) {
 
 }
 
+
 /**
  * CRÍTICO: Reconstruye el cuerpo de la tabla (tbody) para soportar la carga AJAX
  * de meses con diferente número de días y empleados.
- *
- * **CORRECCIÓN DE CUADRILLAS IMPLEMENTADA AQUÍ.**
  */
 function updateTableBody(employeesData, monthlyDaysData) {
     const tbody = document.getElementById('approval-table-body');
@@ -1364,7 +1521,7 @@ function updateTableBody(employeesData, monthlyDaysData) {
     const groupedEmployees = {};
 
     employeesData.forEach(employee => {
-        // Accedemos a la propiedad `squads` que debe ser devuelta por la API (ver corrección en PHP)
+        // Accedemos a la propiedad `squads` que debe ser devuelta por la API
         const squadNumber = employee.squads && employee.squads.length > 0
             ? employee.squads[0].squad_number
             : 999; // Usar 999 para "Sin Cuadrilla Asignada"
@@ -1379,17 +1536,11 @@ function updateTableBody(employeesData, monthlyDaysData) {
     const sortedSquadNumbers = Object.keys(groupedEmployees).sort((a, b) => parseInt(a) - parseInt(b));
 
     // Verificar si el usuario tiene el permiso de ver cuadrillas (simulación del Blade @if)
-    // Asumimos que `userPermissions` tiene la información de permisos (aunque no la vemos aquí, se asume poblada).
-    // Para no romper la lógica, usamos una aproximación, pero para que la funcionalidad vuelva,
-    // necesitamos que el backend devuelva la info de permisos O que el Blade original lo haga.
-    // Usaremos un flag simple basado en si existió la fila en la carga inicial (opción más segura en JS).
     const showSquadGrouping = document.getElementById('squad-control') !== null;
 
     // Calcular el colspan total (Nombre + KPI + Días + Total + Vac + Desc + Utiliz + Aprob)
-    // Colspan = (Columnas de la izquierda sin rowspan) + (Días) + (Columna total) + (Columnas de la derecha con rowspan - 1)
-    // Nombre (1) + KPI (1) + Días (monthlyDays.length) + Total (1) + (Vac, Desc, Utiliz, Aprob - 4) = 6 + monthlyDays.length
-    // En el blade original, el colspan de la fila de cuadrilla es 'Nombre' (1) + 'KPI' (1) + Días + 'Total' (1) + 'Vac' (1) + 'Desc' (1) + 'Utiliz' (1) + 'Aprob' (1) = 4 + monthlyDays.length
-    const totalColumnsForSquadRow = 4 + monthlyDaysData.length;
+    // 1 (Nombre) + 1 (KPI) + Días + 1 (Total) + 1 (Vac) + 1 (Desc) + 1 (Utiliz) + 1 (Aprob) = 6 + monthlyDaysData.length
+    const totalColumnsForSquadRow = 6 + monthlyDaysData.length;
 
     // 3. Renderizar filas
     sortedSquadNumbers.forEach(squadNumber => {
@@ -1404,6 +1555,8 @@ function updateTableBody(employeesData, monthlyDaysData) {
 
             let squadRow = document.createElement('tr');
             squadRow.className = `squad-group-row ${squadClass}`;
+            squadRow.setAttribute('data-squad-number', squadNumber);
+            // El colspan aquí debe ser el total de columnas, que es 8 + length(dias)
             squadRow.innerHTML = `
                 <td colspan="${totalColumnsForSquadRow}" class="squad-group-label">
                     ${squadLabel}
@@ -1421,6 +1574,10 @@ function updateTableBody(employeesData, monthlyDaysData) {
             let mainRow = document.createElement('tr');
             mainRow.className = 'employee-row';
             mainRow.setAttribute('data-employee-id', employee.id);
+            mainRow.setAttribute('data-department', employee.department); // Añadir departamento para el filtro
+
+            // Inicializamos el HTML de la fila principal. El rowspan es 4 por defecto,
+            // pero se ajustará luego en renderEmployeeWorkLog si hay filas ocultas.
             mainRow.innerHTML = `
                 <td rowspan="4" class="employee-info-cell" data-icon="bx bx-calendar" data-text="ver calendario">
                     ${employee.full_name}
@@ -1458,14 +1615,19 @@ function updateTableBody(employeesData, monthlyDaysData) {
                     </div>
                 </td>
             `;
-            tbody.appendChild(mainRow);
+            tbody.appendChild(mainRow); // Agregamos la fila principal
 
             // 3.3. Filas de Detalle (Comida, Bono, Servicio)
             const rowTypes = ['Comida', 'Bono', 'Servicio'];
             rowTypes.forEach(rowType => {
                 let detailRow = document.createElement('tr');
-                detailRow.className = 'activity-row hidden';
+                // Se eliminó la clase 'hidden' de forma predeterminada, ya que la visibilidad de ítems la maneja
+                // el renderizador en base a si el empleado tiene logs para ese ítem en el periodo visible.
+                detailRow.className = 'activity-row';
                 detailRow.setAttribute('data-employee-id', employee.id);
+                detailRow.setAttribute('data-department', employee.department);
+
+                // Mantenemos las celdas de días y la celda de total. Las celdas de rowspan están en la fila principal.
                 detailRow.innerHTML = `
                     <td class="activity-label-cell">${rowType}</td>
                     ${monthlyDaysData.map(dayInfo => `
@@ -1474,12 +1636,12 @@ function updateTableBody(employeesData, monthlyDaysData) {
                     `).join('')}
                     <td class="data-cell total-${rowType.toLowerCase()}">0</td>
                 `;
-                tbody.appendChild(detailRow);
+                tbody.appendChild(detailRow); // **CRÍTICO:** Agregar la fila de detalle INMEDIATAMENTE después de la principal.
             });
         });
     });
 }
-
+// ... (código que sigue)
 
 function setActiveButton(buttonId) {
     document.querySelectorAll(".period-btn").forEach((btn) => {
@@ -1527,7 +1689,10 @@ function showQuincena(quincena) {
                 const dayCell = Array.from(row.children).find(cell => cell.getAttribute('data-day') === header.getAttribute('data-day') && cell.getAttribute('data-date') === header.getAttribute('data-date'));
 
                 if (dayCell) {
-                    dayCell.style.display = shouldShow ? "" : "none";
+                    // Solo cambiar la visibilidad de la celda si la fila principal del empleado está visible por el filtro
+                    if (row.style.display !== 'none') {
+                        dayCell.style.display = shouldShow ? "" : "none";
+                    }
                 }
             }
         });
@@ -1561,7 +1726,10 @@ function showFullMonth() {
                 const dayCell = Array.from(row.children).find(cell => cell.getAttribute('data-day') === header.getAttribute('data-day') && cell.getAttribute('data-date') === header.getAttribute('data-date'));
 
                 if (dayCell) {
-                    dayCell.style.display = "";
+                    // Solo cambiar la visibilidad de la celda si la fila principal del empleado está visible por el filtro
+                    if (row.style.display !== 'none') {
+                        dayCell.style.display = "";
+                    }
                 }
             }
         });
@@ -1581,7 +1749,8 @@ function showFullMonth() {
  * Calcula y renderiza los totales de días y la utilización.
  */
 function calculateAndRenderTotals() {
-    const employeeRows = document.querySelectorAll('.employee-row');
+    // Solo calcular y renderizar para las filas VISIBLES
+    const employeeRows = Array.from(document.querySelectorAll('.employee-row')).filter(row => row.style.display !== 'none');
     const workingActivityTypes = ['B', 'P', 'TC', 'V', 'E', 'C'];
 
     // 1. OBTENER TODOS LOS ENCABEZADOS DE DÍA Y FILTRAR SOLO LOS VISIBLES
@@ -1809,6 +1978,12 @@ function renderEmployeeWorkLog() {
         if (servicioRow) {
             servicioRow.style.display = hasServiceItemsInPeriod ? '' : 'none';
         }
+
+        // 🆕 Añadir data-has-items para que el filtro JS sepa si ocultar la fila de detalle al restaurar la visibilidad
+        if (comidaRow) comidaRow.setAttribute('data-has-items', hasFoodItemsInPeriod ? 'true' : 'false');
+        if (fieldBonusRow) fieldBonusRow.setAttribute('data-has-items', hasFieldBonusItemsInPeriod ? 'true' : 'false');
+        if (servicioRow) servicioRow.setAttribute('data-has-items', hasServiceItemsInPeriod ? 'true' : 'false');
+
 
         // Lógica de ajuste de Rowspan de la celda de nombre (manual y simple)
         let visibleDetailRows = 1; // La fila de Actividad siempre está visible

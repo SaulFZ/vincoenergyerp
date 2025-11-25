@@ -1,286 +1,566 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
+
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Elementos Rechazados - Sistema de Carga</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restablecer Contraseña - Vinco</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
+        /* Reset básico para compatibilidad con clientes de correo */
+        body,
+        table,
+        td,
+        a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
         }
-        .container {
-            max-width: 650px;
-            margin: 20px auto;
+
+        body {
+            background-color: #f0f2f5;
+            color: #333333;
+        }
+
+        table,
+        td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+            border-collapse: collapse;
+        }
+
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+            display: block;
+        }
+
+        /* Contenedor principal */
+        .email-wrapper {
+            max-width: 600px;
+            margin: 40px auto;
             background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
             overflow: hidden;
         }
+
+        /* Header con degradado */
         .header {
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            color: white;
-            padding: 25px;
+            background: linear-gradient(135deg, #ff7b00 0%, #ff9933 100%);
+            padding: 40px 30px;
             text-align: center;
+            position: relative;
         }
-        .logo-container {
-            text-align: center;
-            margin-bottom: 15px;
-        }
+
         .logo {
             max-width: 160px;
-            height: auto;
+            margin: 0 auto;
+            filter: brightness(0) invert(1);
         }
-        .header h1 {
-            margin: 10px 0 0 0;
-            font-size: 24px;
+
+        .logo-text {
+            color: #ffffff;
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        /* Contenido */
+        .content {
+            padding: 40px 35px;
+        }
+
+        h1 {
+            font-size: 26px;
+            color: #1a1a1a;
+            margin: 0 0 20px 0;
             font-weight: 600;
         }
-        .content {
-            padding: 30px;
+
+        p {
+            font-size: 15px;
+            color: #4a5568;
+            line-height: 1.7;
+            margin: 0 0 16px 0;
         }
-        .alert-box {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-            border-left: 5px solid #dc3545;
-        }
-        .alert-box h3 {
-            margin: 0 0 10px 0;
-            color: #721c24;
-            font-size: 18px;
-        }
-        .details-box {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-        .details-box h3 {
-            margin-top: 0;
-            color: #495057;
-            border-bottom: 2px solid #dc3545;
-            padding-bottom: 10px;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+
+        .greeting {
+            font-size: 20px;
+            color: #2d3748;
+            font-weight: 600;
             margin-bottom: 20px;
         }
-        .info-item {
-            display: flex;
-            flex-direction: column;
+
+        /* Sección del código */
+        .code-section {
+            text-align: center;
+            margin: 35px 0;
+            padding: 30px 20px;
+            background-color: #f7fafc;
+            border-radius: 10px;
+            border: 2px dashed #cbd5e0;
         }
-        .info-label {
-            font-weight: bold;
-            color: #6c757d;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-        .info-value {
-            color: #495057;
-            font-size: 16px;
-        }
-        .items-section {
-            margin-top: 20px;
-        }
-        .items-title {
-            font-weight: bold;
-            color: #495057;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        .item-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            background: white;
-            border-radius: 5px;
-            border: 1px solid #dee2e6;
-        }
-        .item-list li {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-        }
-        .item-list li:before {
-            content: "•";
-            color: #dc3545;
-            font-weight: bold;
-            margin-right: 10px;
-            font-size: 18px;
-        }
-        .item-list li:last-child {
-            border-bottom: none;
-        }
-        .activity-detail {
+
+        .code-label {
             font-size: 13px;
-            color: #6c757d;
-            margin-top: 4px;
-            font-style: italic;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 18px;
         }
-        .reason-box {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-            border-left: 5px solid #ffc107;
-        }
-        .reason-title {
+
+        /* *** ESTILOS CLAVE DEL CÓDIGO (MODO CLARO) *** Fondo degradado naranja y texto negro/oscuro.
+        */
+        .code-box {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff7b00 0%, #ff9933 100%);
+            color: #1a1a1a; /* Texto NEGRO en Modo Claro */
+            padding: 20px 40px;
+            font-size: 42px;
             font-weight: bold;
-            color: #856404;
-            margin-bottom: 10px;
-            font-size: 16px;
+            letter-spacing: 10px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(255, 123, 0, 0.35);
+            font-family: 'Courier New', Courier, monospace;
         }
-        .reason-text {
-            color: #856404;
-            font-style: italic;
-            margin: 0;
-            line-height: 1.5;
+
+        /* --- Estilo Específico para Dark Mode --- */
+        @media (prefers-color-scheme: dark) {
+            /* Adaptar el contenedor principal a modo oscuro */
+            body {
+                background-color: #1a1a1a !important; /* Fondo del cliente de correo */
+            }
+            .email-wrapper {
+                background-color: #2d3748 !important; /* Fondo del contenedor del correo */
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+            }
+            .content, p, .security-item {
+                color: #e2e8f0 !important; /* Texto claro */
+            }
+            .greeting, h1 {
+                color: #ffffff !important; /* Títulos blancos */
+            }
+            .divider {
+                background: linear-gradient(to right, transparent, #4a5568, transparent) !important;
+            }
+
+            /* Sección de código en modo oscuro */
+            .code-section {
+                background-color: #1a202c !important; /* Fondo oscuro de la sección */
+                border: 2px dashed #4a5568 !important; /* Borde oscuro */
+            }
+
+            .code-label {
+                color: #a0aec0 !important; /* Etiqueta clara */
+            }
+
+            /* *** ESTILOS CLAVE DEL CÓDIGO (MODO OSCURO) *** Fondo del degradado original para que resalte y texto BLANCO.
+            */
+            .code-box {
+                background: linear-gradient(135deg, #ff7b00 0%, #ff9933 100%) !important; /* Mantener el degradado naranja */
+                color: #ffffff !important; /* Texto BLANCO en Modo Oscuro */
+            }
+
+            /* Otras secciones para modo oscuro */
+            .security-section {
+                background-color: #1a202c !important;
+            }
+            .security-title {
+                color: #ffffff !important;
+            }
+            .warning-box {
+                background: #4a5568 !important;
+                border-left: 5px solid #ff7b00 !important;
+            }
+            .warning-item, .warning-item strong {
+                color: #e2e8f0 !important;
+            }
+            .responsibility-box {
+                background-color: #1a365d !important;
+                border: 1px solid #4299e1 !important;
+            }
+            .responsibility-text {
+                color: #90cdf4 !important;
+            }
+            .responsibility-text strong {
+                color: #ff9933 !important;
+            }
+
         }
-        .actions-box {
-            background-color: #e9ecef;
-            padding: 20px;
+        /* -------------------------------------- */
+
+
+        /* Caja de advertencia (Nota de Caducidad) */
+        .warning-box {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe9cc 100%);
+            border-left: 5px solid #ff9933;
+            padding: 20px 25px;
+            margin: 30px 0;
             border-radius: 8px;
-            margin-top: 25px;
         }
-        .actions-title {
-            margin-top: 0;
-            color: #495057;
-            font-size: 18px;
+
+        .warning-item {
+            margin: 0 0 12px 0;
+            color: #744210;
+            font-size: 14px;
+            line-height: 1.6;
+            padding-left: 28px;
+            position: relative;
         }
-        .actions-list {
+
+        .warning-item:last-child {
             margin-bottom: 0;
         }
-        .actions-list li {
-            margin-bottom: 8px;
+
+        .warning-icon {
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+        }
+
+        .warning-item strong {
+            font-weight: 600;
+            color: #5a2d0c;
+        }
+
+        /* Nueva Caja de Responsabilidad */
+        .responsibility-box {
+            background-color: #ebf8ff; /* Azul claro */
+            border: 1px solid #90cdf4;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .responsibility-text {
+            color: #2c5282; /* Azul oscuro para el texto */
+            font-size: 14px;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+
+        /* Sección de seguridad */
+        .security-section {
+            background-color: #f7fafc;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .security-title {
+            font-size: 16px;
+            color: #2d3748;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+        }
+
+        .security-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .security-item {
+            padding: 10px 0 10px 30px;
+            position: relative;
+            color: #4a5568;
+            font-size: 14px;
             line-height: 1.5;
         }
+
+        .security-item-icon {
+            position: absolute;
+            left: 0;
+            font-size: 16px;
+        }
+
+        /* Divisor */
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+            margin: 30px 0;
+        }
+
+        /* Footer */
         .footer {
+            background-color: #2d3748;
+            color: #a0aec0;
+            padding: 35px;
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
-            color: #6c757d;
-            font-size: 14px;
         }
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            background-color: #dc3545;
-            color: white;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        .item-type {
+
+        .footer-brand {
+            color: #ff7b00;
             font-weight: 600;
-            color: #dc3545;
+            font-size: 18px;
+            margin: 0 0 15px 0;
         }
-        @media (max-width: 600px) {
-            .info-grid {
-                grid-template-columns: 1fr;
+
+        .footer-text {
+            font-size: 13px;
+            margin: 8px 0;
+            color: #718096;
+            line-height: 1.5;
+        }
+
+        .footer-link {
+            color: #ff7b00;
+            text-decoration: none;
+        }
+
+        .footer-divider {
+            height: 1px;
+            background-color: #4a5568;
+            margin: 20px 0;
+        }
+
+        /* Responsive para móviles */
+        @media only screen and (max-width: 600px) {
+            .email-wrapper {
+                width: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
             }
+
+            .header {
+                padding: 30px 20px !important;
+            }
+
             .content {
-                padding: 20px;
+                padding: 30px 20px !important;
+            }
+
+            .code-box {
+                font-size: 32px !important;
+                padding: 16px 28px !important;
+                letter-spacing: 6px !important;
+            }
+
+            h1 {
+                font-size: 22px !important;
+            }
+
+            .logo-text {
+                font-size: 28px !important;
+            }
+
+            .security-section,
+            .warning-box,
+            .responsibility-box {
+                padding: 18px !important;
             }
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo-container">
-                <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Logo Vinco" class="logo" width="160">
-            </div>
-            <h1>Elementos Rechazados - Sistema de Carga</h1>
-        </div>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+        style="background-color: #f0f2f5;">
+        <tr>
+            <td align="center" style="padding: 40px 15px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600"
+                    class="email-wrapper"
+                    style="max-width: 600px; background-color: #ffffff; border-radius: 12px;">
 
-        <div class="content">
-            <div class="alert-box">
-                <h3>Atención: Elementos Requieren Corrección</h3>
-                <p style="margin: 0; color: #721c24;">Uno o más elementos de tu registro del día han sido rechazados y requieren tu atención inmediata.</p>
-            </div>
+                    <tr>
+                        <td class="header"
+                            style="background: linear-gradient(135deg, #ff7b00 0%, #ff9933 100%); padding: 40px 30px; text-align: center;">
+                            @if (file_exists(public_path('assets/img/logovinco2.png')))
+                                <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Logo Vinco" width="160"
+                                    class="logo"
+                                    style="max-width: 160px; margin: 0 auto; filter: brightness(0) invert(1);">
+                            @else
+                                <h1 class="logo-text"
+                                    style="color: #ffffff; font-size: 36px; font-weight: bold; letter-spacing: 2px; margin: 0;">
+                                    VINCO</h1>
+                            @endif
+                        </td>
+                    </tr>
 
-            <div class="details-box">
-                <h3>Información del Rechazo</h3>
+                    <tr>
+                        <td class="content" style="padding: 40px 35px;">
 
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Empleado:</span>
-                        <span class="info-value">{{ $employeeName }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Fecha del Registro:</span>
-                        <span class="info-value">{{ $date }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Revisado por:</span>
-                        <span class="info-value">{{ $rejectedBy }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Elementos Rechazados:</span>
-                        <span class="info-value">{{ count($rejectedItems) }} <span class="badge">Por Corregir</span></span>
-                    </div>
-                </div>
+                            <p class="greeting"
+                                style="font-size: 20px; color: #2d3748; font-weight: 600; margin-bottom: 20px;">
+                                👋 ¡Hola, {{ $userName }}!</p>
 
-                @if(!empty($rejectedItems))
-                <div class="items-section">
-                    <div class="items-title">Detalle de Elementos Rechazados:</div>
-                    <ul class="item-list">
-                        @foreach($rejectedItems as $item)
-                        <li>
-                            <div>
-                                <span class="item-type">{{ $item['type'] ?? 'Elemento' }}</span>
-                                @if(isset($item['description']) && $item['description'])
-                                <div class="activity-detail">{{ $item['description'] }}</div>
-                                @endif
-                                @if(isset($item['details']) && $item['details'])
-                                <div class="activity-detail">{{ $item['details'] }}</div>
-                                @endif
+                            <p
+                                style="font-size: 15px; color: #4a5568; line-height: 1.7; margin: 0 0 16px 0;">
+                                Hemos recibido una solicitud para <strong
+                                    style="color: #2d3748;">restablecer la
+                                    contraseña</strong> de tu cuenta en Vinco ERP.
+                            </p>
+
+                            <p
+                                style="font-size: 15px; color: #4a5568; line-height: 1.7; margin: 0 0 16px 0;">
+                                Para continuar con el proceso, utiliza el siguiente
+                                **código de verificación** en la aplicación:
+                            </p>
+
+                            <table role="presentation"
+                                border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td class="code-section"
+
+                                        style="text-align: center; margin: 35px 0; padding: 30px 20px; background-color: #f7fafc; border-radius: 10px; border: 2px dashed #cbd5e0;">
+                                        <div class="code-label"
+
+                                            style="font-size: 13px; color: #718096; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 18px;">
+                                            Tu Código de Verificación
+                                        </div>
+                                        <div class="code-box"
+
+                                            style="display: inline-block; background: linear-gradient(135deg, #ff7b00 0%, #ff9933 100%); color: #1a1a1a; padding: 20px 40px; font-size: 42px; font-weight: bold; letter-spacing: 10px; border-radius: 10px; box-shadow: 0 8px 20px rgba(255, 123, 0, 0.35); font-family: 'Courier New', Courier, monospace;">
+                                            {{ $token }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {{-- Bloque de Nota de Responsabilidad --}}
+                            <table role="presentation"
+                                border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td class="responsibility-box"
+                                        style="background-color: #ebf8ff; border: 1px solid #90cdf4; padding: 15px 20px; margin: 20px 0; border-radius: 8px;">
+                                        <p class="responsibility-text"
+                                            style="color: #2c5282; font-size: 14px; line-height: 1.6; font-weight: 500; margin: 0;">
+                                            <strong style="color: #ff7b00;">Nota Importante:</strong> Al realizar el cambio de contraseña, el área de sistemas ya no tendrá acceso al control sobre la misma. A partir de ese momento, la gestión y resguardo de la contraseña será **responsabilidad exclusiva del usuario**.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {{-- Bloque de Advertencia de Caducidad --}}
+                            <table role="presentation"
+                                border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td class="warning-box"
+                                        style="background: linear-gradient(135deg, #fff5e6 0%, #ffe9cc 100%); border-left: 5px solid #ff9933; padding: 20px 25px; margin: 30px 0; border-radius: 8px;">
+                                        <div class="warning-item"
+
+                                            style="margin: 0 0 12px 0; color: #744210; font-size: 14px; line-height: 1.6; padding-left: 28px; position: relative;">
+                                            <span class="warning-icon"
+
+                                                style="position: absolute; left: 0; font-size: 18px;">⏱️</span>
+                                            <strong
+                                                style="font-weight: 600; color: #5a2d0c;">Este código expirará en
+                                                {{ $expirationMinutes }}
+                                                minutos</strong><br>
+                                            Por favor, úsalo pronto para
+                                            restablecer tu contraseña de forma segura.
+                                        </div>
+                                        <div class="warning-item"
+
+                                            style="margin: 0; color: #744210; font-size: 14px; line-height: 1.6; padding-left: 28px; position: relative;">
+                                            <span class="warning-icon"
+
+                                                style="position: absolute; left: 0; font-size: 18px;">🔒</span>
+                                            <strong
+                                                style="font-weight: 600; color: #5a2d0c;">Por seguridad, no
+                                                compartas este código
+                                                con nadie</strong>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+
+                            <div class="divider"
+                                style="height: 1px; background: linear-gradient(to right, transparent, #e2e8f0, transparent); margin: 30px 0;">
                             </div>
-                        </li>
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
 
-                @if($rejectionReason && $rejectionReason !== 'Sin motivo especificado')
-                <div class="reason-box">
-                    <div class="reason-title">Motivo del Rechazo:</div>
-                    <p class="reason-text">"{{ $rejectionReason }}"</p>
-                </div>
-                @endif
-            </div>
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td class="security-section"
 
-            <div class="actions-box">
-                <h4 class="actions-title">Acciones Requeridas</h4>
-                <ol class="actions-list">
-                    <li><strong>Revisa detenidamente</strong> todos los elementos rechazados listados arriba</li>
-                    <li><strong>Corrige la información</strong> según el motivo de rechazo indicado</li>
-                    <li><strong>Verifica que todos los datos</strong> cumplan con los requisitos establecidos</li>
-                    <li><strong>Vuelve a enviar el registro</strong> para una nueva revisión y aprobación</li>
-                    <li><strong>Contacta al supervisor</strong> si necesitas clarificaciones adicionales</li>
-                </ol>
-            </div>
-        </div>
+                                        style="background-color: #f7fafc; padding: 25px; border-radius: 8px; margin: 25px 0;">
+                                        <div class="security-title"
 
-        <div class="footer">
-            <p>Este es un mensaje automático del Sistema de Carga de Actividades - Vinco</p>
-            <p>Fecha de envío: {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}</p>
-            <p>© {{ date('Y') }} Vinco - Todos los derechos reservados</p>
-        </div>
-    </div>
+                                            style="font-size: 16px; color: #2d3748; font-weight: 600; margin: 0 0 15px 0;">
+                                            🛡️ Consejos de Seguridad
+                                        </div>
+                                        <div class="security-item"
+
+                                            style="padding: 10px 0 10px 30px; position: relative; color: #4a5568; font-size: 14px; line-height: 1.5;">
+                                            <span class="security-item-icon"
+
+                                                style="position: absolute; left: 0; font-size: 16px;">🔒</span>
+                                            No compartas este código con
+                                            nadie
+                                        </div>
+                                        <div class="security-item"
+
+                                            style="padding: 10px 0 10px 30px; position: relative; color: #4a5568; font-size: 14px; line-height: 1.5;">
+                                            <span class="security-item-icon"
+
+                                                style="position: absolute; left: 0; font-size: 16px;">🔒</span>
+                                            Nuestro equipo nunca te pedirá
+                                            este código
+                                        </div>
+                                        <div class="security-item"
+
+                                            style="padding: 10px 0 10px 30px; position: relative; color: #4a5568; font-size: 14px; line-height: 1.5;">
+                                            <span class="security-item-icon"
+
+                                                style="position: absolute; left: 0; font-size: 16px;">🔒</span>
+                                            Usa una contraseña única y
+                                            segura
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p
+                                style="font-size: 15px; color: #4a5568; line-height: 1.7; margin: 0 0 16px 0;">
+                                Si <strong style="color: #2d3748;">no
+                                    solicitaste</strong> este cambio de contraseña,
+                                puedes ignorar este mensaje de forma segura. Tu cuenta
+                                permanecerá protegida.
+                            </p>
+
+                            <p
+                                style="font-size: 15px; color: #4a5568; line-height: 1.7; margin: 30px 0 0 0;">
+                                Saludos cordiales,<br>
+                                <strong style="color: #2d3748;">El Equipo de Sistemas de Vinco Energy</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="footer"
+                            style="background-color: #2d3748; color: #a0aec0; padding: 35px; text-align: center;">
+                            <div class="footer-brand"
+                                style="color: #ff7b00; font-weight: 600; font-size: 18px; margin: 0 0 15px 0;">
+                                VINCO ENERGY ERP
+                            </div>
+                            <p class="footer-text"
+                                style="font-size: 13px; margin: 8px 0; color: #718096; line-height: 1.5;">
+                                &copy; {{ date('Y') }} Vinco Energy. Todos los
+                                derechos reservados.
+                            </p>
+                            <p class="footer-text"
+                                style="font-size: 13px; margin: 8px 0; color: #718096; line-height: 1.5;">
+                                Este es un correo automático, por favor no respondas a
+                                este mensaje.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
+
 </html>

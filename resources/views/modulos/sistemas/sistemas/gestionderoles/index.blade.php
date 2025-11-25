@@ -1763,9 +1763,7 @@
                     <h1>Gestión de Usuarios y Permisos</h1>
                 </div>
             </div>
-            <div class="user-profile">
-                <!-- Aquí iría el componente de perfil de usuario -->
-            </div>
+           @include('components.layouts._user-profile')
         </div>
     </header>
 

@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Helpers\PermissionHelper; // Importamos el helper de permisos
 
 class ApprovalController extends Controller
 {
@@ -119,13 +120,32 @@ class ApprovalController extends Controller
 
         $fortnightlyConfig = FortnightlyConfig::where('year', $currentYear)->where('month', $currentMonth)->first();
         if (! $fortnightlyConfig) {$fortnightlyConfig = $this->createDefaultFortnightlyConfig($currentYear, $currentMonth);}
-        $monthlyDays         = $this->getMonthlyDaysWithFortnights($currentYear, $currentMonth, $fortnightlyConfig);
+        $monthlyDays          = $this->getMonthlyDaysWithFortnights($currentYear, $currentMonth, $fortnightlyConfig);
         $assignedEmployeeIds = $this->getAssignedEmployeeIds();
+        $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
 
-        // MODIFICACIÓN CRÍTICA: Incluir la relación 'squads'
-        $employees = Employee::with(['employeeMonthlyWorkLogs' => function ($query) use ($currentMonth, $currentYear) {
+
+        // Obtener la lista de departamentos para el filtro de la vista
+        // Se carga para todos, ya que el select de filtros se construye en el Blade si tienen permiso.
+        $departments = Employee::select("department")
+            ->whereNotNull("department")
+            ->distinct()
+            ->orderBy("department")
+            ->pluck("department");
+
+        // MODIFICACIÓN CLAVE (index): Cargamos TODOS los empleados si tiene 'ver_filtros',
+        // de lo contrario, solo cargamos a los asignados.
+        $employeeQuery = Employee::with(['employeeMonthlyWorkLogs' => function ($query) use ($currentMonth, $currentYear) {
             $query->where('month_and_year', Carbon::createFromDate($currentYear, $currentMonth, 1)->format('Y-m'));
-        }])->whereIn('id', $assignedEmployeeIds)->with('squads')->get();
+        }])
+        ->with('squads')
+        ->select('id', 'full_name', 'employee_number', 'position', 'department');
+
+        if (!$canSeeFilters) {
+            $employeeQuery->whereIn('id', $assignedEmployeeIds);
+        }
+
+        $employees = $employeeQuery->get();
         // FIN MODIFICACIÓN
 
         $workLogsData = [];
@@ -133,7 +153,6 @@ class ApprovalController extends Controller
             $log = $employee->employeeMonthlyWorkLogs->first();
             if ($log && $log->daily_activities) {
                 $log->daily_activities = $this->updateDayStatusForAllActivities($log->daily_activities);
-                $log->save();
             }
             if ($log) {
                 $workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => $log->daily_activities, 'reviewed_at' => $log->reviewed_at, 'approved_at' => $log->approved_at];
@@ -141,13 +160,16 @@ class ApprovalController extends Controller
                 $workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => [], 'reviewed_at' => null, 'approved_at' => null];
             }
         }
-        $canSeeAmounts         = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
-        $loadChartAssignments = LoadChartAssignment::whereIn('employee_id', $assignedEmployeeIds)->get();
-        $userPermissions       = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
+
+        // Obtenemos todas las asignaciones para poder determinar los permisos en el Blade/JS
+        $loadChartAssignments = LoadChartAssignment::all();
+        $canSeeAmounts          = PermissionHelper::hasDirectPermission('ver_montos');
+        $userPermissions        = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
+
 
         return view('modulos.recursoshumanos.sistemas.loadchart.approval', compact(
             'employees', 'workLogsData', 'fortnightlyConfig', 'monthlyDays', 'currentMonth', 'currentYear',
-            'canSeeAmounts', 'loadChartAssignments', 'userPermissions'
+            'canSeeAmounts', 'loadChartAssignments', 'userPermissions', 'departments'
         ));
     }
 
@@ -161,12 +183,12 @@ class ApprovalController extends Controller
         $endDate     = $q2End->copy();
         $monthlyDays = [];
         for ($date = $startDate->copy(); $date <= $endDate; $date->addDay()) {
-            $isQuincena1     = $date >= $q1Start && $date <= $q1End;
-            $isQuincena2     = $date >= $q2Start && $date <= $q2End;
+            $isQuincena1      = $date >= $q1Start && $date <= $q1End;
+            $isQuincena2      = $date >= $q2Start && $date <= $q2End;
             $isCurrentMonth = $date->month == $month;
-            $monthlyDays[]   = [
-                'day'               => $date->day, 'date' => $date->copy()->format('Y-m-d'), 'day_name' => $date->locale('es')->shortDayName,
-                'is_quincena_1'     => $isQuincena1, 'is_quincena_2' => $isQuincena2, 'is_working_day' => $isQuincena1 || $isQuincena2,
+            $monthlyDays[]    = [
+                'day'                 => $date->day, 'date' => $date->copy()->format('Y-m-d'), 'day_name' => $date->locale('es')->shortDayName,
+                'is_quincena_1'       => $isQuincena1, 'is_quincena_2' => $isQuincena2, 'is_working_day' => $isQuincena1 || $isQuincena2,
                 'is_current_month' => $isCurrentMonth, 'month' => $date->month,
             ];
         }
@@ -194,11 +216,13 @@ class ApprovalController extends Controller
             $lastUpdate          = Carbon::parse($request->last_update);
             $month               = $request->month;
             $year                = $request->year;
-            $assignedEmployeeIds = $this->getAssignedEmployeeIds();
-            $hasUpdates          = EmployeeMonthlyWorkLog::whereIn('employee_id', $assignedEmployeeIds)
+
+            // Usamos las asignaciones de todos para verificar si CUALQUIER log se actualizó
+            $hasUpdates          = EmployeeMonthlyWorkLog::query()
                 ->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'))
                 ->where(function ($query) use ($lastUpdate) {$query->where('updated_at', '>', $lastUpdate)->orWhere('created_at', '>', $lastUpdate);})
                 ->exists();
+
             return response()->json(['success' => true, 'has_updates' => $hasUpdates, 'message' => $hasUpdates ? 'Hay actualizaciones disponibles' : 'No hay actualizaciones']);
         } catch (\Exception $e) {Log::error('Error checking updates: ' . $e->getMessage());return response()->json(['success' => false, 'error' => 'Error al verificar actualizaciones', 'message' => $e->getMessage()], 500);}
     }
@@ -209,17 +233,23 @@ class ApprovalController extends Controller
             if ($year < 2020 || $year > 2030 || $month < 1 || $month > 12) {return response()->json(['error' => 'Año o mes inválido'], 400);}
             $fortnightlyConfig = FortnightlyConfig::where('year', $year)->where('month', $month)->first();
             if (! $fortnightlyConfig) {$fortnightlyConfig = $this->createDefaultFortnightlyConfig($year, $month);}
-            $monthlyDays         = $this->getMonthlyDaysWithFortnights($year, $month, $fortnightlyConfig);
+            $monthlyDays          = $this->getMonthlyDaysWithFortnights($year, $month, $fortnightlyConfig);
+            $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
             $assignedEmployeeIds = $this->getAssignedEmployeeIds();
 
-            // MODIFICACIÓN CRÍTICA: Incluir la relación 'squads'
-            $employees = Employee::with(['employeeMonthlyWorkLogs' => function ($query) use ($month, $year) {
+            // MODIFICACIÓN CLAVE (getApprovalData): Cargamos TODOS los empleados si tiene 'ver_filtros',
+            // de lo contrario, solo cargamos a los asignados.
+            $employeeQuery = Employee::with(['employeeMonthlyWorkLogs' => function ($query) use ($month, $year) {
                 $query->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'));
             }])
-                ->whereIn('id', $assignedEmployeeIds)
                 ->with('squads') // Agregamos 'with('squads')'
-                ->select('id', 'full_name', 'employee_number', 'position')
-                ->get();
+                ->select('id', 'full_name', 'employee_number', 'position', 'department'); // Agregamos 'department'
+
+            if (!$canSeeFilters) {
+                $employeeQuery->whereIn('id', $assignedEmployeeIds);
+            }
+
+            $employees = $employeeQuery->get();
             // FIN MODIFICACIÓN
 
             $workLogsData = [];
@@ -227,17 +257,16 @@ class ApprovalController extends Controller
                 $log = $employee->employeeMonthlyWorkLogs->first();
                 if ($log && $log->daily_activities) {
                     $log->daily_activities = $this->updateDayStatusForAllActivities($log->daily_activities);
-                    $log->save();
                 }
                 if ($log) {$workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => $log->daily_activities ?? [], 'reviewed_at' => $log->reviewed_at, 'approved_at' => $log->approved_at];} else { $workLogsData[] = ['employee_id' => $employee->id, 'daily_activities' => [], 'reviewed_at' => null, 'approved_at' => null];}
             }
-            $canSeeAmounts         = \App\Helpers\PermissionHelper::hasDirectPermission('ver_montos');
-            $loadChartAssignments = LoadChartAssignment::whereIn('employee_id', $assignedEmployeeIds)->get();
-            $userPermissions       = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
+
+            // Obtenemos todas las asignaciones para poder determinar los permisos en el JS
+            $loadChartAssignments = LoadChartAssignment::all();
+            $canSeeAmounts          = PermissionHelper::hasDirectPermission('ver_montos');
+            $userPermissions        = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
             // ⚠️ La respuesta de AJAX AHORA INCLUYE LOS DATOS DEL EMPLEADO
-            // Esto es crucial para que JavaScript pueda re-renderizar la estructura de las filas.
-
             return response()->json([
                 'success' => true, 'employees' => $employees, 'workLogsData' => $workLogsData,
                 'fortnightlyConfig' => $fortnightlyConfig, 'monthlyDays' => $monthlyDays,
@@ -325,6 +354,7 @@ class ApprovalController extends Controller
             $userId     = auth()->id();
             $assignment = LoadChartAssignment::where('employee_id', $employeeId)->where(function ($query) use ($userId) {$query->where('reviewer_id', $userId)->orWhere('approver_id', $userId);})->first();
 
+            // Validación de permisos
             if (! $assignment) {return response()->json(['success' => false, 'message' => 'Acceso denegado. No tiene permisos para modificar el estado de este empleado.'], 403);}
             $isReviewer = $assignment->reviewer_id === $userId;
             $isApprover = $assignment->approver_id === $userId;
@@ -471,6 +501,7 @@ class ApprovalController extends Controller
                 $query->where('reviewer_id', $userId)->orWhere('approver_id', $userId);
             })->first();
 
+            // Validación de Permisos
             if (! $assignment) {
                 return response()->json(['success' => false, 'message' => 'Acceso denegado. No tiene permisos para modificar el estado de este empleado.'], 403);
             }
@@ -495,11 +526,11 @@ class ApprovalController extends Controller
             // 👆
 
             foreach ($changes as $change) {
-                $date               = $change['date'];
-                $itemType           = $change['item_type'];
-                $itemIndex          = $change['item_index'];
-                $newStatus          = strtolower($change['status']);
-                $rejectionReason    = ($newStatus === 'rejected') ? ($change['rejection_reason'] ?? 'Sin especificar') : null;
+                $date                 = $change['date'];
+                $itemType             = $change['item_type'];
+                $itemIndex            = $change['item_index'];
+                $newStatus            = strtolower($change['status']);
+                $rejectionReason      = ($newStatus === 'rejected') ? ($change['rejection_reason'] ?? 'Sin especificar') : null;
                 $dailyActivityIndex = array_search($date, array_column($dailyActivities, 'date'));
 
                 if ($dailyActivityIndex !== false) {
@@ -527,7 +558,7 @@ class ApprovalController extends Controller
                         if ($canUpdate && $oldStatus !== $newStatus) {
                             $dailyActivity['activity_status']  = ucfirst($newStatus);
                             $dailyActivity['rejection_reason'] = $rejectionReason;
-                            $tempUpdated                      = true;
+                            $tempUpdated                       = true;
 
                             // 👇 REGISTRAR RECHAZO PARA CORREO (Activity)
                             if ($newStatus === 'rejected') {
@@ -550,9 +581,9 @@ class ApprovalController extends Controller
                         if ($oldStatus === 'approved' && ($newStatus === 'reviewed' || $newStatus === 'under_review')) {$canUpdate = false;}
 
                         if ($canUpdate && $oldStatus !== $newStatus) {
-                            $item['status']             = ucfirst($newStatus);
-                            $item['rejection_reason']   = $rejectionReason;
-                            $tempUpdated                = true;
+                            $item['status']              = ucfirst($newStatus);
+                            $item['rejection_reason']    = $rejectionReason;
+                            $tempUpdated                 = true;
 
                             // 👇 REGISTRAR RECHAZO PARA CORREO (Sub-item)
                             if ($newStatus === 'rejected') {
@@ -594,7 +625,7 @@ class ApprovalController extends Controller
                             $balance->save();
                         }
 
-                        // ❌ SE ELIMINA LÓGICA DESCANSOS ('D')
+                        // ❌ SE ELIMINA LÓGICA DESCANSOS (D)
 
                     }
 
@@ -622,10 +653,10 @@ class ApprovalController extends Controller
             DB::commit();
 
             return response()->json([
-                'success'         => true,
-                'message'         => 'Estados actualizados correctamente.',
-                'updated'         => $updated,
-                'new_balances'    => $this->getEmployeeBalances($employeeId),
+                'success'           => true,
+                'message'           => 'Estados actualizados correctamente.',
+                'updated'           => $updated,
+                'new_balances'      => $this->getEmployeeBalances($employeeId),
                 'rejections_sent' => $rejectionOccurred, // <-- Bandera enviada al frontend
             ]);
         } catch (\Exception $e) {
@@ -696,11 +727,7 @@ class ApprovalController extends Controller
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('MAIL_RECHAZO_ERROR_CRITICO: Error al enviar correo de rechazo: ' . $e->getMessage(), [
-                'employee_id' => $employeeId,
-                'error_file'  => $e->getFile(),
-                'error_line'  => $e->getLine(),
-            ]);
+            Log::error('MAIL_RECHAZO_ERROR_CRITICO: Error al enviar correo de rechazo: ' . $e->getMessage());
         }
     }
 

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models\RecursosHumanos\LoadChart;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -53,12 +52,31 @@ class EmployeeMonthlyWorkLog extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    // Métodos auxiliares
+    // 🥇 NUEVO: Método para extraer solo los registros de 'Vacaciones' (VAC)
+    public function getVacationActivities(): array
+    {
+        $activities = $this->daily_activities ?? [];
+        $vacationDays = [];
+
+        foreach ($activities as $activity) {
+            // Buscamos si el tipo de actividad es "Vacaciones" (VAC)
+            if (isset($activity['activity_type']) && $activity['activity_type'] === 'VAC') {
+                $vacationDays[] = [
+                    'date' => $activity['date'],
+                    // Usamos 'activity_status' si existe, si no, 'day_status'. Por defecto 'under_review'.
+                    'status' => $activity['activity_status'] ?? $activity['day_status'] ?? 'under_review',
+                    'description' => $activity['activity_description'] ?? 'Vacaciones',
+                ];
+            }
+        }
+        return $vacationDays;
+    }
+
+    // Métodos auxiliares (Se mantienen)
     public function addDailyActivity($date, $activityData)
     {
         $activities = $this->daily_activities ?? [];
 
-        // Buscar si ya existe una actividad para esta fecha
         $existingIndex = null;
         foreach ($activities as $index => $activity) {
             if ($activity['date'] === $date) {
@@ -68,14 +86,11 @@ class EmployeeMonthlyWorkLog extends Model
         }
 
         if ($existingIndex !== null) {
-            // Actualizar actividad existente
             $activities[$existingIndex] = $activityData;
         } else {
-            // Agregar nueva actividad
             $activities[] = $activityData;
         }
 
-        // Ordenar por fecha
         usort($activities, function ($a, $b) {
             return strcmp($a['date'], $b['date']);
         });
@@ -126,14 +141,12 @@ class EmployeeMonthlyWorkLog extends Model
         return !is_null($this->reviewed_at);
     }
 
-    // Scope para filtrar por mes y año
     public function scopeForMonthYear($query, $month, $year)
     {
         $monthYear = sprintf('%04d-%02d', $year, $month);
         return $query->where('month_and_year', $monthYear);
     }
 
-    // Scope para filtrar por empleado
     public function scopeForEmployee($query, $employeeId)
     {
         return $query->where('employee_id', $employeeId);
