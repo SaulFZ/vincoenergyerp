@@ -9,6 +9,7 @@
     <div id="approvalView">
         <div class="approval-container">
             <div class="approval-header">
+                {{-- ... (Resto del period-navigation-container) ... --}}
                 <div class="period-navigation-container">
                     <div class="period-navigation">
                         <button class="period-btn active" id="quincena1">Quincena 1</button>
@@ -24,11 +25,11 @@
                 <div class="approval-actions">
                     {{-- NUEVO BOTÓN DE FILTROS --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
-                        <button class="back-btn" id="toggle-filters-btn">
+                        <button class="back-btn" id="toggle-filters-btn" aria-expanded="false" aria-controls="filters-container">
                             <i class="fas fa-filter"></i> Abrir Filtros
                         </button>
                     @endif
-                    {{-- Control de Cuadrillas --}}
+                    {{-- ... (Resto de botones de acción: Control de Cuadrillas, Info Servicios, Días Quincena, Volver) ... --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('control_cuadrillas'))
                         <button class="squad-btn" id="squad-control">
                             <i class="fas fa-users-cog"></i> Control de Cuadrillas
@@ -54,12 +55,13 @@
                 </div>
             </div>
 
-            {{-- INICIO: NUEVO CONTENEDOR DE FILTROS --}}
+            {{-- INICIO: NUEVO CONTENEDOR DE FILTROS (Solo si tiene permiso) --}}
             @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
                 <div class="filters-container" id="filters-container" style="display: none;">
                     <div class="filter-group">
-                        <label for="department-filter">Departamento:</label>
-                        <select id="department-filter" class="form-select filter-select">
+                        <label for="department-filter">Departamento</label>
+                        {{-- La variable $departments viene del controlador --}}
+                        <select id="department-filter" class="filter-select">
                             <option value="">Todos los Departamentos</option>
                             @foreach ($departments as $department)
                                 <option value="{{ $department }}">{{ $department }}</option>
@@ -67,8 +69,8 @@
                         </select>
                     </div>
                     <div class="filter-group filter-search-group">
-                        <label for="employee-search">Buscar Empleado:</label>
-                        <input type="text" id="employee-search" class="form-input filter-input"
+                        <label for="employee-search">Buscar Empleado</label>
+                        <input type="text" id="employee-search" class="filter-input"
                             placeholder="Nombre, # Empleado...">
                     </div>
                 </div>
