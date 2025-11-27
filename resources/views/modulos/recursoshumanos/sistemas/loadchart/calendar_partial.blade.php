@@ -517,7 +517,7 @@
                                 <div class="error-message" id="field-bonus-error">Debes seleccionar un bono de campo.
                                 </div>
                             </div>
-                            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_servicios'))
+                            @if (\App\Helpers\PermissionHelper::hasDirectPermission('realiza_servicios'))
                                 <div class="form-group">
                                     <label for="has-service-bonus">¿Bono de servicio?</label>
                                     <div class="service-bonus-options">
@@ -542,8 +542,8 @@
                     </div>
 
                     <script id="service-data" type="application/json">
-                    @json($services->toArray())
-                    </script>
+                @json($services->toArray())
+            </script>
 
                     <div class="tab-content" id="service-tab">
                         <div class="form-group">
@@ -600,24 +600,41 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" id="service-real-date-group">
+                            <label for="service-real-date">Fecha de Realización del Servicio</label>
+                            <div class="input-with-icon">
+                                <i class="far fa-calendar-alt"></i>
+                                <input type="text" id="service-real-date" class="input-custom date-selector-flat"
+                                    placeholder="Seleccionar fecha del servicio" readonly>
+                            </div>
+                            <small class="form-help">Fecha real en la que el servicio se llevó a cabo. Por defecto se
+                                carga el día seleccionado en el calendario. Cámbiala solo si el servicio fue en otra fecha anterior.
+                            </small>
+                            <div class="error-message" id="service-real-date-error" style="display:none;">Debes
+                                seleccionar la fecha real del servicio.
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="display: none;">
                             <label for="payroll-period">Periodo de Quincena del Servicio</label>
                             <select id="payroll-period" class="select-custom">
+                                <option value="current">Quincena Actual</option>
                             </select>
-                            <small class="form-help">Selecciona en caso el servicio se realizó en la quincena
-                                anterior</small>
+                            <small class="form-help">Este campo está obsoleto.</small>
                         </div>
-                    </div>
 
-                    <div class="form-actions" style="@if (isset($isForModal) && $isForModal) display: none; @endif">
-                        <button class="btn btn-outline" id="cancel-activity">
-                            <i class="fas fa-times"></i> Cancelar
-                        </button>
-                        <button class="btn btn-primary" id="save-activity">
-                            <i class="fas fa-save"></i> Guardar
-                            <div class="loading-spinner"></div>
-                        </button>
                     </div>
                 </div>
+
+                <div class="form-actions" style="@if (isset($isForModal) && $isForModal) display: none; @endif">
+                    <button class="btn btn-outline" id="cancel-activity">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="btn btn-primary" id="save-activity">
+                        <i class="fas fa-save"></i> Guardar
+                        <div class="loading-spinner"></div>
+                    </button>
+                </div>
             </div>
+        </div>
         </div>

@@ -282,7 +282,7 @@ function applyFilters() {
         squadRow.style.display = showSquadRow ? '' : 'none';
     });
 
-    // Re-aplicar el filtro de quincena para asegurar que las celdas de días se muestren correctamente
+    // 6. Re-aplicar el filtro de quincena para asegurar que las celdas de días se muestren correctamente
     if (currentView === 'quincena1') {
         showQuincena(1);
     } else if (currentView === 'quincena2') {
@@ -291,7 +291,7 @@ function applyFilters() {
         showFullMonth();
     }
 
-    // Volver a calcular totales para actualizar el resumen (aunque esto es opcional si solo se filtra visualmente)
+    // 7. Volver a calcular totales para actualizar el resumen
     calculateAndRenderTotals();
 }
 // TERMINA LÓGICA DE FILTROS
@@ -664,15 +664,17 @@ function openApprovalModal(employeeData, dailyActivity) {
         dailyActivity.services_list.forEach((service, index) => {
             const amount = canSeeAmounts ? `\$${Number(service.amount).toFixed(2)} MXN` : null;
 
-            let payrollDetail = service.payroll_period_override ?
-                `<strong>Período:</strong> ${service.payroll_period_override}` :
-                `Período: Quincena Actual`;
+            // ❌ ANTES: let payrollDetail = service.payroll_period_override ? `<strong>Período:</strong> ${service.payroll_period_override}` : `Período: Quincena Actual`;
+            // 🥇 CORRECCIÓN CLAVE: Mostrar la Fecha Real de Prestación
+            let payrollDetail = service.service_real_date
+                ? `Realizado el día: <strong>${service.service_real_date}</strong>`
+                : `Fecha no especificada`;
 
             addRowToModalTable(
                 'Servicio',
                 service.service_name,
                 service.service_identifier,
-                payrollDetail,
+                payrollDetail, // 👈🏼 AHORA MUESTRA LA FECHA REAL
                 'services_list',
                 index,
                 service.status,
@@ -2059,8 +2061,9 @@ function renderEmployeeWorkLog() {
                     if (fieldBonusCells[index]) {
                         const totalFieldBonus = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.reduce((sum, bonus) => {
                             const amount = Number(bonus.daily_amount || 0);
-                            if (bonus.currency === 'USD') {
-                                return sum + (amount * Number(bonus.usd_to_mxn_rate || 1));
+                            if (bonus.currency === 'USD' && bonus.usd_to_mxn_rate) {
+                                // Asume que la conversión de USD a MXN ya se realizó o que el monto es el que se quiere sumar.
+                                return sum + amount;
                             }
                             return sum + amount;
                         }, 0) : 0;
