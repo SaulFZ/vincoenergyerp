@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Yasumi\Yasumi;
 
 class CalendarController extends Controller
@@ -86,45 +88,15 @@ class CalendarController extends Controller
 
         $foodOptions = Meal::orderBy('meal_number')->get();
 
-        // Lógica de mapeo de Bonos de Campo (Se mantiene igual)
-        $jobTitle      = $employee->job_title;
-        $bonusMappings = [
-            'Ingeniero de Campo'                      => 'Ingeniero de Campo',
-            'Ingeniero de Campo 1'                      => 'Ingeniero de Campo',
-            'Ingeniero de Campo 2'                      => 'Ingeniero de Campo',
-            'Ingeniero de Campo 5'                      => 'Ingeniero de Campo',
-            'Ingeniero de Campo Trainee'                => 'Ingeniero de Campo',
-            'Ingeniero Especializado de Campo'          => 'Ingeniero de Campo',
-            'Ingeniera Geocientista Senior'             => 'Ingeniero Geocientista Senior',
-            'Ingeniera Geocientista'                    => 'Ingeniero Geocientista',
-            'Ingeniero Geocientista General'            => 'Ingeniero Geocientista General',
-            'Ingeniero Geocientista'                    => 'Ingeniero Geocientista',
-            'Ingeniero Geocientista Junior'             => 'Ingeniero Geocientista Junior',
-            'Ingeniero Electronico'                     => 'Ingeniero Electronico',
-            'Ingeniero Electromecanico'                 => 'Ingeniero Electromecanico',
-            'Ingeniero de Explosivos'                   => 'Ingeniero de Explosivos',
-            'Ingeniero de Logistica'                    => 'Ingeniero de Logistica',
-            'Ingeniero en Mantenimiento Electrónico'    => 'Ingeniero Electronico',
-            'ingeniero Especialista en Disparos de Producción' => 'Ingeniero de Campo',
-            'Ingeniero Especialista en Disparos TCP'    => 'Ingeniero de Campo',
-            'Ingeniero de Calidad de Servicios'         => 'Ingeniero de Campo',
-            'Operador de Campo 1'                       => 'Operador de Campo 1',
-            'Operador de Campo 2'                       => 'Operador de Campo 2',
-            'Operador de Campo 3'                       => 'Operador de Campo 3',
-            'Operador de Campo 4'                       => 'Operador de Campo 4',
-            'Operador de Campo 5'                       => 'Operador de Campo 5',
-            'Operador de Campo 6'                       => 'Operador de Campo 6',
-            'Tecnico en Suministros'                    => 'Tecnico en Suministros',
-            'Administrador de Explosivos'               => 'Administrador de Explosivos',
-            'Auxiliar de Explosivos'                    => 'Auxiliar de Explosivos',
-            'Coordinador de Suministros'                => 'Coordinador de Suministros',
-            'Supervisor de Operaciones'                 => 'Supervisor de Operaciones',
-        ];
-        $employeeBonusCategory = $bonusMappings[$jobTitle] ?? $jobTitle;
+        // 🚀 Lógica de Bonos de Campo MÁXIMAMENTE SIMPLIFICADA (SIN MAPEOS INTERMEDIOS)
+        // Se usa el nombre del puesto del empleado (job_title) directamente como la categoría de bono.
+        $employeeBonusCategory = $employee->job_title;
 
+        // FILTRADO DE BONOS POR LA CATEGORÍA CALCULADA (debe ser una coincidencia exacta en FieldBonus)
         $fieldBonuses = FieldBonus::where('employee_category', $employeeBonusCategory)
             ->orderBy('bonus_identifier')
             ->get();
+        // -----------------------------------------------------------------
 
         $fortnightlyConfig = FortnightlyConfig::where('year', $currentYear)
             ->where('month', $currentMonth)
@@ -393,236 +365,232 @@ class CalendarController extends Controller
     /**
      * Guarda una actividad diaria con los nuevos campos.
      */
-public function saveActivity(Request $request)
-{
-    DB::beginTransaction();
-    try {
-        $user = Auth::user();
-        $employee = Employee::find($user->employee_id);
-        $monthYear = Carbon::create($request->displayed_year, $request->displayed_month, 1)->format('Y-m');
+    public function saveActivity(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $user = Auth::user();
+            $employee = Employee::find($user->employee_id);
+            $monthYear = Carbon::create($request->displayed_year, $request->displayed_month, 1)->format('Y-m');
 
-        $monthlyLog = EmployeeMonthlyWorkLog::firstOrCreate(
-            ['employee_id' => $employee->id, 'month_and_year' => $monthYear],
-            ['user_id' => $user->id, 'daily_activities' => []]
-        );
+            $monthlyLog = EmployeeMonthlyWorkLog::firstOrCreate(
+                ['employee_id' => $employee->id, 'month_and_year' => $monthYear],
+                ['user_id' => $user->id, 'daily_activities' => []]
+            );
 
-        $activityData = $monthlyLog->getDailyActivity($request->date) ?? [];
+            $activityData = $monthlyLog->getDailyActivity($request->date) ?? [];
 
-        $isWellActivity = ($request->activity_type === 'P');
+            $isWellActivity = ($request->activity_type === 'P');
 
-        // Verificar estados existentes
-        $existingFoodBonus = $activityData['food_bonuses'][0] ?? null;
-        $existingFieldBonus = $activityData['field_bonuses'][0] ?? null;
-        $existingService = $activityData['services_list'][0] ?? null;
+            // Verificar estados existentes
+            $existingFoodBonus = $activityData['food_bonuses'][0] ?? null;
+            $existingFieldBonus = $activityData['field_bonuses'][0] ?? null;
+            $existingService = $activityData['services_list'][0] ?? null;
 
-        // Estados de bloqueo (solo approved y reviewed mantienen el estado)
-        $foodBonusLocked = $existingFoodBonus && in_array(strtolower($existingFoodBonus['status'] ?? ''), ['approved', 'reviewed']);
-        $fieldBonusLocked = $existingFieldBonus && in_array(strtolower($existingFieldBonus['status'] ?? ''), ['approved', 'reviewed']);
-        $serviceLocked = $existingService && in_array(strtolower($existingService['status'] ?? ''), ['approved', 'reviewed']);
+            // Estados de bloqueo (solo approved y reviewed mantienen el estado)
+            $foodBonusLocked = $existingFoodBonus && in_array(strtolower($existingFoodBonus['status'] ?? ''), ['approved', 'reviewed']);
+            $fieldBonusLocked = $existingFieldBonus && in_array(strtolower($existingFieldBonus['status'] ?? ''), ['approved', 'reviewed']);
+            $serviceLocked = $existingService && in_array(strtolower($existingService['status'] ?? ''), ['approved', 'reviewed']);
 
-        if ($request->has('activity_type')) {
-            $activityType = $request->activity_type ?? 'N';
+            if ($request->has('activity_type')) {
+                $activityType = $request->activity_type ?? 'N';
 
-            // Si cambia la actividad principal, resetear a under_review
-            if (($activityData['activity_type'] ?? '') !== $activityType) {
-                $activityData['activity_status'] = 'under_review';
-                $activityData['rejection_reason'] = null;
+                // Si cambia la actividad principal, resetear a under_review
+                if (($activityData['activity_type'] ?? '') !== $activityType) {
+                    $activityData['activity_status'] = 'under_review';
+                    $activityData['rejection_reason'] = null;
+                }
+
+                $activityData['activity_type'] = $activityType;
+                $activityData['activity_description'] = $this->getActivityDescription($activityType);
+                $activityData['commissioned_to'] = $request->commissioned_to;
+                $activityData['well_name'] = $request->well_name;
+                $activityData['has_service_bonus'] = $request->has_service_bonus;
+
+                // --- NUEVOS CAMPOS DE VIAJE ---
+                $activityData['travel_destination'] = $request->travel_destination;
+                $activityData['travel_reason'] = $request->travel_reason;
+                // --- FIN NUEVOS CAMPOS DE VIAJE ---
+
+                // Limpiar bonos/servicios si la actividad principal no es 'P' y no están bloqueados
+                if (!$isWellActivity) {
+                    $activityData['has_service_bonus'] = 'no';
+
+                    if (!$foodBonusLocked) {
+                        $activityData['food_bonuses'] = [];
+                    }
+                    if (!$fieldBonusLocked) {
+                        $activityData['field_bonuses'] = [];
+                    }
+                    if (!$serviceLocked) {
+                        $activityData['services_list'] = [];
+                    }
+                }
             }
 
-            $activityData['activity_type'] = $activityType;
-            $activityData['activity_description'] = $this->getActivityDescription($activityType);
-            $activityData['commissioned_to'] = $request->commissioned_to;
-            $activityData['well_name'] = $request->well_name;
-            $activityData['has_service_bonus'] = $request->has_service_bonus;
+            // Procesar bonos de comida
+            if ($request->has('food_bonus_number')) {
+                if ($request->filled('food_bonus_number')) {
+                    $meal = Meal::where('meal_number', $request->food_bonus_number)->first();
+                    if ($meal) {
+                        $newStatus = 'under_review';
+                        $newRejectionReason = null;
 
-            // --- NUEVOS CAMPOS DE VIAJE ---
-            $activityData['travel_destination'] = $request->travel_destination;
-            $activityData['travel_reason'] = $request->travel_reason;
-            // --- FIN NUEVOS CAMPOS DE VIAJE ---
+                        if ($foodBonusLocked && $existingFoodBonus) {
+                            $newStatus = $existingFoodBonus['status'];
+                            $newRejectionReason = $existingFoodBonus['rejection_reason'] ?? null;
+                        }
 
-            // Limpiar bonos/servicios si la actividad principal no es 'P' y no están bloqueados
-            if (!$isWellActivity) {
-                $activityData['has_service_bonus'] = 'no';
-
-                if (!$foodBonusLocked) {
+                        $activityData['food_bonuses'] = [[
+                            'bonus_type' => 'Bono de Comida',
+                            'num_daily' => (int) $meal->meal_number,
+                            'daily_amount' => (float) $meal->amount,
+                            'currency' => 'MXN',
+                            'status' => $newStatus,
+                            'rejection_reason' => $newRejectionReason,
+                        ]];
+                    }
+                } else if (!$foodBonusLocked) {
                     $activityData['food_bonuses'] = [];
                 }
-                if (!$fieldBonusLocked) {
+            }
+
+            // Procesar bono de campo
+            if ($request->has('field_bonus_identifier')) {
+                if ($request->filled('field_bonus_identifier')) {
+                    $fieldBonus = FieldBonus::where('bonus_identifier', $request->field_bonus_identifier)->first();
+                    if ($fieldBonus) {
+                        $newStatus = 'under_review';
+                        $newRejectionReason = null;
+
+                        if ($fieldBonusLocked && $existingFieldBonus) {
+                            $newStatus = $existingFieldBonus['status'];
+                            $newRejectionReason = $existingFieldBonus['rejection_reason'] ?? null;
+                        }
+
+                        $activityData['field_bonuses'] = [[
+                            'bonus_identifier' => $fieldBonus->bonus_identifier,
+                            'bonus_type' => $fieldBonus->bonus_type,
+                            'daily_amount' => (float) $fieldBonus->amount,
+                            'currency' => $fieldBonus->currency,
+                            'status' => $newStatus,
+                            'rejection_reason' => $newRejectionReason,
+                        ]];
+                    }
+                } else if (!$fieldBonusLocked) {
                     $activityData['field_bonuses'] = [];
                 }
-                if (!$serviceLocked) {
+            }
+
+            // 🥇 Procesar servicios con validación de service_real_date
+            if ($request->has('service_identifier')) {
+                $serviceIdentifierProvided = $request->filled('service_identifier');
+
+                if (($serviceIdentifierProvided && ($request->has_service_bonus === 'si')) || $serviceLocked) {
+
+                    $service = null;
+                    if ($serviceIdentifierProvided) {
+                        $service = Services::where('identifier', $request->service_identifier)->first();
+                    }
+
+                    if ($service || $serviceLocked) {
+                        $newStatus = 'under_review';
+                        $newRejectionReason = null;
+                        $realDateToSave = $request->service_real_date; // Valor por defecto del request
+
+                        $serviceDataToUse = $service ?? $existingService;
+
+                        if ($serviceLocked && $existingService) {
+                            $newStatus = $existingService['status'];
+                            $newRejectionReason = $existingService['rejection_reason'] ?? null;
+
+                            // Si está bloqueado, usamos el valor que vino del JS
+                            $realDateToSave = $request->service_real_date ?? $existingService['service_real_date'] ?? null;
+                        }
+
+                        // ====================================================================
+                        // ⚠️ NUEVA LÓGICA DE VALIDACIÓN DE NEGOCIO (service_real_date)
+                        // ====================================================================
+                        if ($request->filled('service_real_date') && !$serviceLocked) {
+                            // 1. Chequear si la fecha real es diferente a la fecha de la actividad actual
+                            $isDateChanged = $realDateToSave !== $request->date;
+
+                            // 2. Si la fecha real es diferente O si ya había un servicio existente
+                            if ($isDateChanged || $existingService) {
+
+                                // 3. Chequear si ESTA FECHA REAL YA ESTÁ USADA POR OTRA ACTIVIDAD/SERVICIO del mismo empleado.
+                                if ($this->isServiceRealDateUsedByAnotherDay($employee->id, $realDateToSave, $request->date)) {
+                                    DB::rollback();
+                                    return response()->json([
+                                        'success' => false,
+                                        'message' => "La fecha de servicio '{$realDateToSave}' ya está registrada para otro servicio. Un servicio por día.",
+                                    ], 422);
+                                }
+                            }
+                        }
+                        // ====================================================================
+
+                        if ($serviceDataToUse) {
+                            $activityData['services_list'] = [[
+                                'service_identifier' => $serviceDataToUse['identifier'] ?? $serviceDataToUse['service_identifier'],
+                                'service_performed' => $serviceDataToUse['service_performed'],
+                                'service_name' => $serviceDataToUse['service_description'] ?? $serviceDataToUse['service_name'],
+                                'amount' => (float) ($serviceDataToUse['amount']),
+                                'currency' => $serviceDataToUse['currency'],
+                                'status' => $newStatus,
+                                'rejection_reason' => $newRejectionReason,
+                                // 🥇 CAMPO ALMACENADO FINAL
+                                'service_real_date' => $realDateToSave,
+                            ]];
+                        }
+                    }
+                } else if (!$serviceLocked) {
+                    // Si no se quiere servicio y no está bloqueado, se limpia
                     $activityData['services_list'] = [];
                 }
             }
-        }
 
-        // Procesar bonos de comida
-        if ($request->has('food_bonus_number')) {
-            if ($request->filled('food_bonus_number')) {
-                $meal = Meal::where('meal_number', $request->food_bonus_number)->first();
-                if ($meal) {
-                    $newStatus = 'under_review';
-                    $newRejectionReason = null;
+            // El resto del código se mantiene igual...
 
-                    if ($foodBonusLocked && $existingFoodBonus) {
-                        $newStatus = $existingFoodBonus['status'];
-                        $newRejectionReason = $existingFoodBonus['rejection_reason'] ?? null;
-                    }
+            $isAnythingLeft = ($activityData['activity_type'] ?? 'N') !== 'N' ||
+            !empty($activityData['food_bonuses']) ||
+            !empty($activityData['field_bonuses']) ||
+            !empty($activityData['services_list']);
 
-                    $activityData['food_bonuses'] = [[
-                        'bonus_type' => 'Bono de Comida',
-                        'num_daily' => (int) $meal->meal_number,
-                        'daily_amount' => (float) $meal->amount,
-                        'currency' => 'MXN',
-                        'status' => $newStatus,
-                        'rejection_reason' => $newRejectionReason,
-                    ]];
-                }
-            } else if (!$foodBonusLocked) {
-                $activityData['food_bonuses'] = [];
+            if (!$isAnythingLeft) {
+                $monthlyLog->removeDailyActivity($request->date);
+                $monthlyLog->save();
+                DB::commit();
+                return response()->json(['success' => true, 'message' => 'Actividad eliminada.']);
             }
-        }
 
-        // Procesar bono de campo
-        if ($request->has('field_bonus_identifier')) {
-            if ($request->filled('field_bonus_identifier')) {
-                $fieldBonus = FieldBonus::where('bonus_identifier', $request->field_bonus_identifier)->first();
-                if ($fieldBonus) {
-                    $newStatus = 'under_review';
-                    $newRejectionReason = null;
-
-                    if ($fieldBonusLocked && $existingFieldBonus) {
-                        $newStatus = $existingFieldBonus['status'];
-                        $newRejectionReason = $existingFieldBonus['rejection_reason'] ?? null;
-                    }
-
-                    $activityData['field_bonuses'] = [[
-                        'bonus_identifier' => $fieldBonus->bonus_identifier,
-                        'bonus_type' => $fieldBonus->bonus_type,
-                        'daily_amount' => (float) $fieldBonus->amount,
-                        'currency' => $fieldBonus->currency,
-                        'status' => $newStatus,
-                        'rejection_reason' => $newRejectionReason,
-                    ]];
-                }
-            } else if (!$fieldBonusLocked) {
-                $activityData['field_bonuses'] = [];
+            if (empty($monthlyLog->getDailyActivity($request->date))) {
+                $activityData['date'] = $request->date;
+                $activityData['payroll_period_marker'] = $this->determinePayrollPeriodMarker($request->date, $request->displayed_month, $request->displayed_year);
             }
-        }
 
-        // 🥇 CAMBIO CLAVE: Procesar servicios con validación de service_real_date
-        if ($request->has('service_identifier')) {
-            $serviceIdentifierProvided = $request->filled('service_identifier');
+            $activityData['day_status'] = $this->recalculateDayStatus($activityData);
 
-            if (($serviceIdentifierProvided && ($request->has_service_bonus === 'si')) || $serviceLocked) {
-
-                $service = null;
-                if ($serviceIdentifierProvided) {
-                    $service = Services::where('identifier', $request->service_identifier)->first();
-                }
-
-                if ($service || $serviceLocked) {
-                    $newStatus = 'under_review';
-                    $newRejectionReason = null;
-                    $realDateToSave = $request->service_real_date; // Valor por defecto del request
-
-                    $serviceDataToUse = $service ?? $existingService;
-
-                    if ($serviceLocked && $existingService) {
-                        $newStatus = $existingService['status'];
-                        $newRejectionReason = $existingService['rejection_reason'] ?? null;
-
-                        // Si está bloqueado, usamos el valor que vino del JS
-                        $realDateToSave = $request->service_real_date ?? $existingService['service_real_date'] ?? null;
-                    }
-
-                    // ====================================================================
-                    // ⚠️ NUEVA LÓGICA DE VALIDACIÓN DE NEGOCIO (service_real_date)
-                    // ====================================================================
-                    // Solo validar si hay una fecha real y si el servicio NO estaba bloqueado.
-                    // Si el servicio ya estaba bloqueado, no permitimos que el usuario lo cambie,
-                    // por lo que no hace falta re-validar la fecha real.
-                    if ($request->filled('service_real_date') && !$serviceLocked) {
-                        // 1. Chequear si la fecha real es diferente a la fecha de la actividad actual
-                        $isDateChanged = $realDateToSave !== $request->date;
-
-                        // 2. Si la fecha real es diferente O si ya había un servicio existente
-                        // (para cubrir el caso de edición del servicio manteniendo la misma fecha real que la actividad)
-                        if ($isDateChanged || $existingService) {
-
-                            // 3. Chequear si ESTA FECHA REAL YA ESTÁ USADA POR OTRA ACTIVIDAD/SERVICIO del mismo empleado.
-                            if ($this->isServiceRealDateUsedByAnotherDay($employee->id, $realDateToSave, $request->date)) {
-                                DB::rollback();
-                                return response()->json([
-                                    'success' => false,
-                                    'message' => "La fecha de servicio '{$realDateToSave}' ya está registrada para otro servicio. Un servicio por día.",
-                                ], 422);
-                            }
-                        }
-                    }
-                    // ====================================================================
-
-                    if ($serviceDataToUse) {
-                        $activityData['services_list'] = [[
-                            'service_identifier' => $serviceDataToUse['identifier'] ?? $serviceDataToUse['service_identifier'],
-                            'service_performed' => $serviceDataToUse['service_performed'],
-                            'service_name' => $serviceDataToUse['service_description'] ?? $serviceDataToUse['service_name'],
-                            'amount' => (float) ($serviceDataToUse['amount']),
-                            'currency' => $serviceDataToUse['currency'],
-                            'status' => $newStatus,
-                            'rejection_reason' => $newRejectionReason,
-                            // 🥇 CAMPO ALMACENADO FINAL
-                            'service_real_date' => $realDateToSave,
-                        ]];
-                    }
-                }
-            } else if (!$serviceLocked) {
-                // Si no se quiere servicio y no está bloqueado, se limpia
-                $activityData['services_list'] = [];
-            }
-        }
-
-        // El resto del código se mantiene igual...
-
-        $isAnythingLeft = ($activityData['activity_type'] ?? 'N') !== 'N' ||
-        !empty($activityData['food_bonuses']) ||
-        !empty($activityData['field_bonuses']) ||
-        !empty($activityData['services_list']);
-
-        if (!$isAnythingLeft) {
-            $monthlyLog->removeDailyActivity($request->date);
+            $monthlyLog->addDailyActivity($request->date, $activityData);
             $monthlyLog->save();
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Actividad eliminada.']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Actividad guardada exitosamente',
+                'data' => $activityData,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            // 💡 Log::error mejorado para incluir más contexto del error
+            Log::error('Error al guardar actividad (saveActivity): ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Error interno del servidor. Consulte el log para más detalles.'], 500);
         }
-
-        if (empty($monthlyLog->getDailyActivity($request->date))) {
-            $activityData['date'] = $request->date;
-            $activityData['payroll_period_marker'] = $this->determinePayrollPeriodMarker($request->date, $request->displayed_month, $request->displayed_year);
-        }
-
-        $activityData['day_status'] = $this->recalculateDayStatus($activityData);
-
-        $monthlyLog->addDailyActivity($request->date, $activityData);
-        $monthlyLog->save();
-        DB::commit();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Actividad guardada exitosamente',
-            'data' => $activityData,
-        ]);
-
-    } catch (\Exception $e) {
-        DB::rollback();
-        // 💡 Log::error mejorado para incluir más contexto del error
-        Log::error('Error al guardar actividad (saveActivity): ' . $e->getMessage(), [
-            'request_data' => $request->all(),
-            'trace' => $e->getTraceAsString()
-        ]);
-        return response()->json(['success' => false, 'message' => 'Error interno del servidor. Consulte el log para más detalles.'], 500);
     }
-}
 
     /**
      * Determina el marcador de período de nómina para una fecha específica
@@ -694,7 +662,7 @@ public function saveActivity(Request $request)
             ->first();
 
         return response()->json([
-            'success'    => true,
+            'success'      => true,
             'activities' => $monthlyLog ? $monthlyLog->daily_activities : [],
         ]);
     }
