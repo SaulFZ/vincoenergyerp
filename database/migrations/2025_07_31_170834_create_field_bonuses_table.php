@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('field_bonuses', function (Blueprint $table) {
             $table->id();
 
-            $table->string('employee_category', 40)->nullable(false);
+            $table->string('employee_category', 80)->nullable(false);
             $table->string('bonus_type', 35)->nullable(false);
 
             // Campo de monto y moneda

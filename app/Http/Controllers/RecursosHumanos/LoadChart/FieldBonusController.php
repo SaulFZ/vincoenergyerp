@@ -84,7 +84,7 @@ class FieldBonusController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'employee_category' => 'required|string|max:40',
+            'employee_category' => 'required|string|max:80',
             'bonus_type' => 'required|string|max:35',
             'amount' => 'required|numeric|min:0',
             'currency' => 'required|string|max:3|in:MXN,USD',
@@ -152,7 +152,7 @@ class FieldBonusController extends Controller
             'employee_category' => [
                 'required',
                 'string',
-                'max:40',
+                'max:80',
                 Rule::unique('field_bonuses')->where(function ($query) use ($request) {
                     return $query->where('bonus_type', $request->bonus_type);
                 })->ignore($id)

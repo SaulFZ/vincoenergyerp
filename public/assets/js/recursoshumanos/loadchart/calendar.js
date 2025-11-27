@@ -105,10 +105,10 @@ function initializeModalCalendarScripts(employeeId) {
     async function updateBalanceUI(vacationDays, totalRestDaysInMonth) {
         if (vacationDaysElement) {
             vacationDaysAvailable = parseInt(vacationDays);
-            vacationDaysElement.textContent = `${vacationDaysAvailable} días`;
+            vacationDaysElement.textContent = `${vacationDaysAvailable} día(s)`;
         }
         if (restDaysElement) {
-            restDaysElement.textContent = `${totalRestDaysInMonth} días`;
+            restDaysElement.textContent = `${totalRestDaysInMonth} día(s)`;
         }
     }
 
@@ -1197,6 +1197,46 @@ function initializeModalCalendarScripts(employeeId) {
             const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
             formData.has_service_bonus = isActivityP ? hasServiceBonus : 'no';
 
+            // *** NUEVA VALIDACIÓN DE VACACIONES EN EL CLIENTE ***
+            if (activityType === 'VAC') {
+                let currentVacationDaysInMonth = 0;
+                document.querySelectorAll('.calendar td[data-date]').forEach(cell => {
+                    const activity = monthlyActivities[cell.getAttribute('data-date')];
+                    if (activity && activity.activity_type === 'VAC') {
+                        currentVacationDaysInMonth++;
+                    }
+                });
+
+                // Si el día que estamos guardando NO es el mismo día que ya estaba registrado como VAC, sumamos 1.
+                const isNewVacationDay = !(currentActivity && currentActivity.activity_type === 'VAC' && currentActivity.date === currentSelectedDate);
+
+                if (isNewVacationDay || (currentActivity && currentActivity.activity_type !== 'VAC')) {
+                     // Si cambiamos de N, B, V, etc. a VAC, o si es un día nuevo, sumamos 1.
+                     // Si cambiamos de VAC a VAC, el conteo no aumenta. El servidor lo recalcula correctamente.
+                     // Para la validación del cliente, es más simple validar el potencial +1
+                     if (!currentActivity || currentActivity.activity_type !== 'VAC') {
+                        currentVacationDaysInMonth++;
+                     }
+                }
+
+                const daysAvailable = vacationDaysAvailable;
+
+                // Si los días solicitados exceden el saldo
+                if (currentVacationDaysInMonth > daysAvailable) {
+                    document.getElementById('vacation-balance-error').style.display = 'block';
+                    isValid = false;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Límite alcanzado',
+                        text: `El límite de tus vacaciones ha sido alcanzado. Saldo disponible: ${daysAvailable} día(s).`,
+                        confirmButtonText: 'Aceptar'
+                    });
+                    return;
+                }
+            }
+            // **********************************************
+
+
             // Validaciones de campos obligatorios para la actividad
             if (!activityType) {
                 document.getElementById('activity-type-error').style.display = 'block';
@@ -1338,6 +1378,7 @@ function initializeModalCalendarScripts(employeeId) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error al guardar',
+                        // Muestra el mensaje de validación del servidor (incluyendo el de vacaciones)
                         text: data.message || 'Error desconocido.',
                         confirmButtonText: 'Aceptar'
                     });
@@ -1640,3 +1681,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
+
+
+
+
+
+
+
+
+

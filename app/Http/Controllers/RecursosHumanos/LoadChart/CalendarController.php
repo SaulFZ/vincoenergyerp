@@ -395,6 +395,34 @@ class CalendarController extends Controller
             if ($request->has('activity_type')) {
                 $activityType = $request->activity_type ?? 'N';
 
+                // *** NUEVA VALIDACIÓN DE VACACIONES EN EL SERVIDOR ***
+                if ($activityType === 'VAC') {
+                    $vacationBalance = EmployeeVacationBalance::where('employee_id', $employee->id)->first();
+                    $vacationDaysAvailable = $vacationBalance->vacation_days_available ?? 0;
+
+                    // Contar cuántos días de vacaciones (VAC) ya tiene el empleado registrados en el mes actual
+                    $daysInVacationInMonth = $this->countActivityTypeInLog($employee->id, $monthYear, 'VAC');
+
+                    // Si la actividad actual ya era VAC, no la contamos dos veces, pero sí si es un cambio a VAC
+                    $wasAlreadyVacation = ($activityData['activity_type'] ?? 'N') === 'VAC' && $activityData['date'] === $request->date;
+                    if ($wasAlreadyVacation) {
+                        // Si era VAC y sigue siendo VAC, no aumenta el contador.
+                    } else {
+                        // Si no era VAC o es un día nuevo, se cuenta como +1 día solicitado.
+                        $daysInVacationInMonth++;
+                    }
+
+                    // Si el total de días de vacaciones solicitados excede el saldo disponible
+                    if ($daysInVacationInMonth > $vacationDaysAvailable) {
+                        DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "El límite de tus vacaciones ha sido alcanzado. Saldo disponible: {$vacationDaysAvailable} día(s).",
+                        ], 422);
+                    }
+                }
+                // *************************************************
+
                 // Si cambia la actividad principal, resetear a under_review
                 if (($activityData['activity_type'] ?? '') !== $activityType) {
                     $activityData['activity_status'] = 'under_review';
@@ -619,7 +647,31 @@ class CalendarController extends Controller
         return null;
     }
 
-    // ... (el resto de las funciones auxiliares se mantienen igual) ...
+    /**
+     * Función auxiliar para contar un tipo de actividad específica en un mes.
+     * @param int $employeeId
+     * @param string $monthYear 'YYYY-MM'
+     * @param string $activityType 'VAC' o 'D'
+     * @return int
+     */
+    private function countActivityTypeInLog(int $employeeId, string $monthYear, string $activityType): int
+    {
+        $monthlyLog = EmployeeMonthlyWorkLog::where('employee_id', $employeeId)
+            ->where('month_and_year', $monthYear)
+            ->first();
+
+        if (!$monthlyLog) {
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($monthlyLog->daily_activities as $activity) {
+            if (($activity['activity_type'] ?? null) === $activityType) {
+                $count++;
+            }
+        }
+        return $count;
+    }
 
     private function getActivityDescription($activityType)
     {
@@ -876,3 +928,10 @@ class CalendarController extends Controller
         return 'under_review'; // Caso catch-all si la lógica falla o si solo hay ítems vacíos (aunque totalItems > 0)
     }
 }
+
+
+
+
+
+
+
