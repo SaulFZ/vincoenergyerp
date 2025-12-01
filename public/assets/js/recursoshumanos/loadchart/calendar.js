@@ -1,5 +1,3 @@
-// calendar.js
-
 /**
  * ⚠️ FUNCIÓN CLAVE: Inicializa todos los scripts y eventos del calendario
  * después de que el HTML parcial ha sido cargado en el modal.
@@ -1211,12 +1209,11 @@ function initializeModalCalendarScripts(employeeId) {
                 const isNewVacationDay = !(currentActivity && currentActivity.activity_type === 'VAC' && currentActivity.date === currentSelectedDate);
 
                 if (isNewVacationDay || (currentActivity && currentActivity.activity_type !== 'VAC')) {
-                     // Si cambiamos de N, B, V, etc. a VAC, o si es un día nuevo, sumamos 1.
-                     // Si cambiamos de VAC a VAC, el conteo no aumenta. El servidor lo recalcula correctamente.
-                     // Para la validación del cliente, es más simple validar el potencial +1
-                     if (!currentActivity || currentActivity.activity_type !== 'VAC') {
+                    // Si cambiamos de N, B, V, etc. a VAC, o si es un día nuevo, sumamos 1.
+                    // Si cambiamos de VAC a VAC, el conteo no aumenta. El servidor lo recalcula correctamente.
+                    if (!currentActivity || currentActivity.activity_type !== 'VAC') {
                         currentVacationDaysInMonth++;
-                     }
+                    }
                 }
 
                 const daysAvailable = vacationDaysAvailable;
@@ -1681,12 +1678,3 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
-
-
-
-
-
-
-
-
-

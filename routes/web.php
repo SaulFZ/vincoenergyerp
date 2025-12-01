@@ -45,6 +45,13 @@ Route::get('/', function () {
         : redirect()->route('login');
 });
 
+// Ruta para que JavaScript pueda "ping" y refrescar la sesión.
+// Debe estar protegida por el middleware 'auth' (o 'web' si usas rutas web)
+Route::post('/session-ping', function () {
+    // Si la petición llega aquí, Laravel ya refrescó el tiempo de la sesión.
+    return response()->json(['status' => 'Session Refreshed']);
+})->middleware('auth');
+
 // ===================================================
 // RUTAS DE INTERFAZ DE USUARIO
 // ===================================================
@@ -216,15 +223,18 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/field-bonuses/{id}/toggle-status', 'toggleStatus');
                 });
 
-                // --- RUTAS DE BALANCE DE VACACIONES (EmployeeVacationBalanceController) ---
-                Route::prefix('employee_vacation_balance')->controller(EmployeeVacationBalanceController::class)->group(function () {
-                    Route::get('/', 'index')->name('vacation_balance.index');
-                    Route::post('/', 'store');
-                    Route::get('/{id}/edit', 'edit');
-                    Route::put('/{id}', 'update');
-                    Route::delete('/{id}', 'destroy');
-                    Route::post('/force-update-years', 'forceUpdateYears');
-                });
+           // ...
+Route::prefix('employee_vacation_balance')->controller(EmployeeVacationBalanceController::class)->group(function () {
+    Route::get('/', 'index')->name('vacation_balance.index');
+    Route::post('/', 'store');
+    Route::get('/{id}/edit', 'edit');
+    Route::put('/{id}', 'update');
+    Route::delete('/{id}', 'destroy');
+    Route::post('/force-update-years', 'forceUpdateYears');
+    // 🥇 NUEVA RUTA PARA GENERAR EL REPORTE
+    Route::post('/generate-report', 'generateReport')->name('vacation_balance.generate_report');
+});
+// ...
 
                 Route::get('/stats', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.stats');

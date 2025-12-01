@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\RecursosHumanos\LoadChart;
 
 use App\Http\Controllers\Controller;
@@ -9,12 +10,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use PDF;
 
 class EmployeeVacationBalanceController extends Controller
 {
-    /**
-     * Muestra la lista de balances.
-     */
     public function index()
     {
         $vacationBalances = EmployeeVacationBalance::with(['employee' => function ($query) {
@@ -23,22 +22,19 @@ class EmployeeVacationBalanceController extends Controller
             ->orderBy('employee_id')
             ->get();
 
-        $employees = Employee::select('id', 'full_name', 'hire_date')->orderBy('full_name')->get();
+        $employees = Employee::select('id', 'full_name', 'hire_date', 'department', 'employee_number')->orderBy('full_name')->get();
+        $departments = $employees->pluck('department')->unique()->filter()->sort()->values();
 
-        // 🥇 NUEVO: Lógica para obtener y consolidar todos los días de vacaciones tomadas (VAC)
         $vacationDaysTaken = $this->getConsolidatedVacationDaysTaken();
-        // -----------------------------------------------------------------------------------
 
         return view('modulos.recursoshumanos.sistemas.loadchart.employee_vacation_balance', [
             'vacationBalances'  => $vacationBalances,
             'employees'         => $employees,
-            'vacationDaysTaken' => $vacationDaysTaken, // Pasamos el nuevo dataset
+            'departments'       => $departments,
+            'vacationDaysTaken' => $vacationDaysTaken,
         ]);
     }
 
-    /**
-     * 🥇 NUEVO: Consolida todos los días de vacaciones (VAC) tomados por empleado.
-     */
     private function getConsolidatedVacationDaysTaken(): array
     {
         $logsWithVacations = EmployeeMonthlyWorkLog::with(['employee' => function ($query) {
@@ -63,19 +59,17 @@ class EmployeeVacationBalanceController extends Controller
 
             $employeeId = $employee->id;
 
-            // Inicializar el registro si no existe
             if (! isset($consolidatedData[$employeeId])) {
                 $consolidatedData[$employeeId] = [
                     'employee_number'           => $employee->employee_number ?? 'N/A',
                     'full_name'                 => $employee->full_name,
                     'hire_date'                 => $employee->hire_date,
-                    'area'                      => $employee->department, // Usamos 'department' como 'Área'
+                    'area'                      => $employee->department,
                     'total_vacation_days_count' => 0,
                     'vacation_days_details'     => [],
                 ];
             }
 
-            // Consolidar los datos de vacaciones
             $consolidatedData[$employeeId]['total_vacation_days_count'] += count($vacationActivities);
             $consolidatedData[$employeeId]['vacation_days_details'] = array_merge(
                 $consolidatedData[$employeeId]['vacation_days_details'],
@@ -83,7 +77,6 @@ class EmployeeVacationBalanceController extends Controller
             );
         }
 
-        // Ordenar los detalles de vacaciones por fecha (importante para la vista)
         foreach ($consolidatedData as &$data) {
             usort($data['vacation_days_details'], function ($a, $b) {
                 return strcmp($a['date'], $b['date']);
@@ -94,9 +87,6 @@ class EmployeeVacationBalanceController extends Controller
         return array_values($consolidatedData);
     }
 
-    /**
-     * Almacena un nuevo balance.
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -115,17 +105,17 @@ class EmployeeVacationBalanceController extends Controller
         }
 
         try {
-            $employee       = Employee::findOrFail($request->employee_id);
+            $employee           = Employee::findOrFail($request->employee_id);
             $calculatedData = $this->calculateInitialVacationData($employee);
 
             $dataToStore = [
-                'employee_id'             => $request->employee_id,
-                'vacation_days_available' => $calculatedData['vacation_days_available'],
-                'rest_days_available'     => $request->rest_days_available,
-                'years_of_service'        => $calculatedData['years_of_service'],
-                'rest_mode'               => $request->rest_mode,
-                'work_rest_cycle_counter' => $calculatedData['work_rest_cycle_counter'],
-                'last_activity_date'      => $calculatedData['last_activity_date'],
+                'employee_id'               => $request->employee_id,
+                'vacation_days_available'   => $calculatedData['vacation_days_available'],
+                'rest_days_available'       => $request->rest_days_available,
+                'years_of_service'          => $calculatedData['years_of_service'],
+                'rest_mode'                 => $request->rest_mode,
+                'work_rest_cycle_counter'   => $calculatedData['work_rest_cycle_counter'],
+                'last_activity_date'        => $calculatedData['last_activity_date'],
             ];
 
             EmployeeVacationBalance::create($dataToStore);
@@ -137,12 +127,8 @@ class EmployeeVacationBalanceController extends Controller
         }
     }
 
-    /**
-     * Muestra los datos para edición y recalcula años de servicio.
-     */
     public function edit($id)
     {
-        // Usamos with('employee') para cargar la relación y permitir la verificación en updateYearsOfService
         $balance = EmployeeVacationBalance::with('employee')->findOrFail($id);
 
         if ($balance->employee) {
@@ -153,24 +139,20 @@ class EmployeeVacationBalanceController extends Controller
         return response()->json($balance);
     }
 
-    /**
-     * 🥇 CORRECCIÓN CLAVE: Actualiza el balance de vacaciones.
-     */
     public function update(Request $request, $id)
     {
         $balance = EmployeeVacationBalance::findOrFail($id);
 
-        // 1. Validar primero para asegurar que 'employee_id' es requerido y existe.
         $validator = Validator::make($request->all(), [
-            'employee_id'             => 'required|exists:employees,id|unique:employee_vacation_balance,employee_id,' . $id,
+            'employee_id'           => 'required|exists:employees,id|unique:employee_vacation_balance,employee_id,' . $id,
             'vacation_days_available' => 'required|integer|min:0',
             'rest_days_available'     => 'required|integer',
-            'rest_mode'               => 'required|string|max:15',
+            'rest_mode'                 => 'required|string|max:15',
         ], [
-            'employee_id.required'    => 'El ID del empleado es obligatorio.', // Mensaje que se disparaba
-            'employee_id.exists'      => 'El empleado seleccionado no existe.', // Si el ID no existe
-            'employee_id.unique'      => 'Este empleado ya tiene un balance de vacaciones registrado en otro registro.',
-            'rest_mode.required'      => 'La modalidad de descanso es obligatoria.',
+            'employee_id.required'      => 'El ID del empleado es obligatorio.',
+            'employee_id.exists'        => 'El empleado seleccionado no existe.',
+            'employee_id.unique'        => 'Este empleado ya tiene un balance de vacaciones registrado en otro registro.',
+            'rest_mode.required'        => 'La modalidad de descanso es obligatoria.',
         ]);
 
         if ($validator->fails()) {
@@ -178,19 +160,15 @@ class EmployeeVacationBalanceController extends Controller
         }
 
         try {
-            // 2. Cargar Employee SOLO después de que la validación garantice que existe
             $employee = Employee::findOrFail($request->employee_id);
-
-            // 3. Recalcular Años de Servicio
             $currentYearsOfService = Carbon::parse($employee->hire_date)->diffInYears(Carbon::now());
 
-            // 4. Actualizar
             $balance->update([
-                'employee_id'             => $request->employee_id,
+                'employee_id'               => $request->employee_id,
                 'vacation_days_available' => $request->vacation_days_available,
                 'rest_days_available'     => $request->rest_days_available,
-                'years_of_service'        => $currentYearsOfService, // Usamos el valor recalculado
-                'rest_mode'               => $request->rest_mode,
+                'years_of_service'          => $currentYearsOfService,
+                'rest_mode'                 => $request->rest_mode,
             ]);
 
             return response()->json(['success' => true, 'message' => '¡Balance de vacaciones actualizado exitosamente!']);
@@ -200,9 +178,6 @@ class EmployeeVacationBalanceController extends Controller
         }
     }
 
-    /**
-     * Elimina un balance de vacaciones.
-     */
     public function destroy($id)
     {
         try {
@@ -221,7 +196,184 @@ class EmployeeVacationBalanceController extends Controller
         }
     }
 
-    // Métodos Auxiliares
+    public function generateReport(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'report_type' => 'required|in:AVAILABLE,TAKEN',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'departments' => 'nullable|array',
+            'departments.*' => 'string',
+            'employees' => 'nullable|array',
+            'employees.*' => 'exists:employees,id',
+            'status_filter' => 'required_if:report_type,TAKEN|nullable|array',
+            'status_filter.*' => 'in:Approved,Reviewed,Under_Review,Rejected',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación en los filtros del reporte.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $reportType = $request->report_type;
+        $reportData = [];
+        $title = '';
+        $summaryByDepartment = [];
+
+        try {
+            if ($reportType === 'AVAILABLE') {
+                $title = 'Reporte de Días de Vacaciones Disponibles';
+                $query = EmployeeVacationBalance::query();
+
+                $query->when($request->filled('departments'), function ($q) use ($request) {
+                    $q->whereHas('employee', function ($q2) use ($request) {
+                        $q2->whereIn('department', $request->departments);
+                    });
+                });
+
+                $query->when($request->filled('employees'), function ($q) use ($request) {
+                    $q->whereIn('employee_id', $request->employees);
+                });
+
+                $balances = $query->with(['employee' => function ($q) {
+                    $q->select('id', 'full_name', 'employee_number', 'department');
+                }])->get();
+
+                foreach ($balances as $balance) {
+                    $department = $balance->employee->department ?? 'Sin Departamento';
+
+                    if (!isset($summaryByDepartment[$department])) {
+                        $summaryByDepartment[$department] = [
+                            'total_employees' => 0,
+                            'total_vacation_days' => 0,
+                        ];
+                    }
+
+                    $summaryByDepartment[$department]['total_employees']++;
+                    $summaryByDepartment[$department]['total_vacation_days'] += $balance->vacation_days_available;
+
+                    $reportData[] = [
+                        'employee_number' => $balance->employee->employee_number ?? 'N/A',
+                        'full_name' => $balance->employee->full_name ?? 'Empleado Desconocido',
+                        'area' => $department,
+                        'vacation_days_available' => $balance->vacation_days_available,
+                        'years_of_service' => $balance->years_of_service,
+                    ];
+                }
+
+                // Ordenar el reporte AVAILABLE por Área (Departamento)
+                usort($reportData, function ($a, $b) {
+                    return strcmp($a['area'], $b['area']);
+                });
+
+            } else {
+                $title = 'Reporte de Días de Vacaciones Tomadas';
+                $query = EmployeeMonthlyWorkLog::query()->whereNotNull('daily_activities');
+
+                $query->when($request->filled('departments') || $request->filled('employees'), function ($q) use ($request) {
+                    $q->whereHas('employee', function ($q2) use ($request) {
+                        if ($request->filled('departments')) {
+                            $q2->whereIn('department', $request->departments);
+                        }
+                        if ($request->filled('employees')) {
+                            $q2->whereIn('id', $request->employees);
+                        }
+                    });
+                });
+
+                $logs = $query->with(['employee' => function ($q) {
+                    $q->select('id', 'full_name', 'employee_number', 'department');
+                }])->get();
+
+                $startDate = $request->filled('date_from') ? Carbon::parse($request->date_from) : null;
+                $endDate = $request->filled('date_to') ? Carbon::parse($request->date_to) : null;
+                $statusFilter = $request->status_filter ?? ['Approved'];
+
+                foreach ($logs as $log) {
+                    $details = $log->getVacationActivities();
+                    $availableDays = EmployeeVacationBalance::where('employee_id', $log->employee_id)->value('vacation_days_available');
+                    $department = $log->employee->department ?? 'Sin Departamento';
+
+                    foreach ($details as $detail) {
+                        $date = Carbon::parse($detail['date']);
+
+                        if (($startDate && $date->lt($startDate)) || ($endDate && $date->gt($endDate))) {
+                            continue;
+                        }
+
+                        // Normalizar estatus para la comparación con el filtro
+                        $statusNormalized = str_replace(' ', '_', $detail['status']);
+
+                        if (in_array($statusNormalized, $statusFilter)) {
+                            if (!isset($summaryByDepartment[$department])) {
+                                $summaryByDepartment[$department] = [
+                                    'total_days' => 0,
+                                    'approved' => 0,
+                                    'reviewed' => 0,
+                                    'under_review' => 0,
+                                    'rejected' => 0
+                                ];
+                            }
+
+                            $statusKey = strtolower($statusNormalized);
+                            if (array_key_exists($statusKey, $summaryByDepartment[$department])) {
+                                $summaryByDepartment[$department][$statusKey]++;
+                            }
+
+                            $summaryByDepartment[$department]['total_days']++;
+
+                            $reportData[] = [
+                                'employee_number' => $log->employee->employee_number ?? 'N/A',
+                                'full_name' => $log->employee->full_name ?? 'Empleado Desconocido',
+                                'area' => $department,
+                                'date' => $date->format('d/m/Y'),
+                                'status' => $detail['status'],
+                                'vacation_days_available' => $availableDays ?? 'N/A',
+                            ];
+                        }
+                    }
+                }
+
+                // Ordenar los datos por departamento y luego por fecha (para el reporte TAKEN)
+                usort($reportData, function ($a, $b) {
+                    $deptCompare = strcmp($a['area'], $b['area']);
+                    if ($deptCompare !== 0) {
+                        return $deptCompare;
+                    }
+                    $dateA = Carbon::createFromFormat('d/m/Y', $a['date'])->timestamp;
+                    $dateB = Carbon::createFromFormat('d/m/Y', $b['date'])->timestamp;
+                    return $dateA - $dateB;
+                });
+            }
+
+            $data = [
+                'title' => $title,
+                'reportData' => $reportData,
+                'summaryByDepartment' => $summaryByDepartment,
+                'reportType' => $reportType,
+                'filters' => [
+                    'date_from' => $request->date_from,
+                    'date_to' => $request->date_to,
+                    'departments' => $request->departments,
+                    'employees' => $request->employees,
+                    'status_filter' => $request->status_filter,
+                ],
+                'allEmployees' => Employee::select('id', 'full_name', 'employee_number')->get()->keyBy('id')->toArray(),
+            ];
+
+            $pdf = PDF::loadView('modulos.recursoshumanos.sistemas.loadchart.reports.vacation_report_pdf', $data);
+
+            // 🌟 LÍNEA CORREGIDA: Eliminamos el tipo de reporte del nombre
+            return $pdf->download('reporte_vacaciones_' . Carbon::now()->format('Y-m-d') . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error("Error al generar reporte de vacaciones: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al generar el reporte: ' . $e->getMessage()], 500);
+        }
+    }
 
     private function updateYearsOfService(EmployeeVacationBalance $balance)
     {
@@ -233,7 +385,6 @@ class EmployeeVacationBalanceController extends Controller
         $today    = Carbon::now();
 
         $currentYearsOfService = $hireDate->diffInYears($today);
-
         $dbYearsOfService = (int) $balance->years_of_service;
 
         $isAnniversary = $hireDate->format('m-d') === $today->format('m-d');
@@ -245,9 +396,7 @@ class EmployeeVacationBalanceController extends Controller
         }
 
         if ($isAnniversary) {
-
             $mandatoryVacationDays = EmployeeVacationBalance::calculateMandatoryVacationDays($currentYearsOfService);
-
             if ($balance->vacation_days_available != $mandatoryVacationDays) {
                 $updates['vacation_days_available'] = $mandatoryVacationDays;
             }
@@ -264,15 +413,14 @@ class EmployeeVacationBalanceController extends Controller
         $today    = Carbon::now();
 
         $yearsOfService = $hireDate->diffInYears($today);
-
         $mandatoryVacationDays = EmployeeVacationBalance::calculateMandatoryVacationDays($yearsOfService);
 
         return [
-            'years_of_service'        => $yearsOfService,
+            'years_of_service'          => $yearsOfService,
             'vacation_days_available' => $mandatoryVacationDays,
-            'rest_days_available'     => 6, // Valor inicial (manual)
+            'rest_days_available'       => 6,
             'work_rest_cycle_counter' => 0,
-            'last_activity_date'      => null,
+            'last_activity_date'        => null,
         ];
     }
 }

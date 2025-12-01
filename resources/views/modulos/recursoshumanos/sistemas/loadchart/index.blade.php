@@ -73,6 +73,7 @@
 
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/index.js') }}"></script>
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/calendar.js') }}"></script>
+    <script src="{{ asset('assets/js/sessionTimer.js') }}"></script>
     @stack('scripts')
 </body>
 

@@ -90,6 +90,12 @@
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <ul class="systems-list active">
+                         @if (in_array('gerenciaminto', $userPermissions['qhse']) || empty($userPermissions['qhse']))
+                            <li class="system-item" data-route="/qhse/gerenciaminto">
+                                <i class="fas fa-exclamation-triangle system-icon"></i>
+                                <span class="system-text">Gerenciaminto</span>
+                            </li>
+                        @endif
                         @if (in_array('incidencias', $userPermissions['qhse']) || empty($userPermissions['qhse']))
                             <li class="system-item" data-route="/qhse/incidencias">
                                 <i class="fas fa-exclamation-triangle system-icon"></i>

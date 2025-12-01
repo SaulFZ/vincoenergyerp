@@ -1,17 +1,14 @@
 @extends('modulos.recursoshumanos.sistemas.loadchart.index')
 
-{{-- Asegúrate de incluir el meta tag para CSRF si usas fetch/axios para llamadas AJAX --}}
 @section('header_metadata')
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection
 
 @section('content')
     <div class="container">
-
         <div class="content-layout">
             {{-- Sección del Formulario Original - OCULTA PERMANENTEMENTE --}}
-            <div class="form-section" style="display: none;">
-            </div>
+            <div class="form-section" style="display: none;"></div>
 
             <div class="list-section" style="width: 100%;">
                 <div class="card">
@@ -25,22 +22,27 @@
                             <button type="button" class="btn btn-primary" id="openAddFormBtn" style="display: none !important;">
                                 <i class="fas fa-plus-circle"></i> Agregar Balance
                             </button>
+
                             {{-- COMIENZO DEL BUSCADOR --}}
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="searchVacation" placeholder="Buscar por empleado...">
                             </div>
-                            {{-- FIN DEL BUSCADOR --}}
+
                             {{-- BOTÓN PARA ALTERNAR VISTA --}}
                             <button type="button" class="btn btn-primary" id="toggleVacationView">
                                 <i class="fas fa-calendar-check"></i> Ver Vacaciones Tomadas
+                            </button>
+
+                            {{-- BOTÓN PARA ABRIR MODAL DE REPORTES --}}
+                            <button type="button" class="btn btn-info" id="openReportModalBtn" title="Generar Reporte PDF" style="display: none;">
+                                <i class="fas fa-file-pdf"></i> Reporte
                             </button>
                         </div>
                     </div>
 
                     <div class="card-body">
-
-                        {{-- ** INICIO: Contenedor para la vista de Balances Disponibles (Default) ** --}}
+                        {{-- Contenedor para la vista de Balances Disponibles --}}
                         <div id="balanceViewContainer">
                             <div class="table-responsive">
                                 <table class="data-table">
@@ -55,41 +57,32 @@
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="vacationTableBody">
-                                        {{-- Los datos de Balance se renderizan con JS --}}
-                                    </tbody>
+                                    <tbody id="vacationTableBody"></tbody>
                                 </table>
                             </div>
                         </div>
-                        {{-- ** FIN: Contenedor para la vista de Balances Disponibles ** --}}
 
-
-                        {{-- ** INICIO: Contenedor para la vista de Vacaciones Tomadas (Oculto) ** --}}
+                        {{-- Contenedor para la vista de Vacaciones Tomadas --}}
                         <div id="takenViewContainer" style="display: none;">
                             <div class="table-responsive">
                                 <table class="data-table">
                                     <thead>
-                                        {{-- THs ACTUALIZADOS: Sin columna de Estatus aparte --}}
                                         <tr>
                                             <th>No. Empleado</th>
                                             <th>Nombre del Empleado</th>
                                             <th>Fecha de Ingreso</th>
                                             <th>Área</th>
-                                            <th>Días Disponibles</th> {{-- CONSOLIDADO --}}
-                                            <th>Días Tomados</th>
+                                            <th>Días Disponibles</th>
+                                            <th>Últimos Días Tomados</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="takenTableBody">
-                                        {{-- Los datos de Vacaciones Tomadas se renderizan con JS --}}
-                                    </tbody>
+                                    <tbody id="takenTableBody"></tbody>
                                 </table>
                             </div>
                         </div>
-                        {{-- ** FIN: Contenedor para la vista de Vacaciones Tomadas ** --}}
 
-
-                        {{-- PAGINACIÓN Y SELECTOR --}}
+                        {{-- PAGINACIÓN --}}
                         <div class="pagination-container">
                             <div class="per-page-selector">
                                 <span>Mostrar:</span>
@@ -101,22 +94,16 @@
                                 </select>
                             </div>
                             <div class="pagination-links-container">
-                                <div class="pagination-links" id="pagination-links">
-                                    {{-- Los enlaces de paginación se renderizan con JS --}}
-                                </div>
+                                <div class="pagination-links" id="pagination-links"></div>
                             </div>
                         </div>
-                        {{-- FIN: PAGINACIÓN Y SELECTOR --}}
-
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ************************************************************************** --}}
-    {{-- MODAL FLOTANTE PARA AGREGAR/EDITAR BALANCE (NUEVO) --}}
-    {{-- ************************************************************************** --}}
+    {{-- MODAL FLOTANTE PARA AGREGAR/EDITAR BALANCE --}}
     <div class="modal" id="formModal">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
@@ -124,18 +111,14 @@
                 <button class="close-modal" id="closeFormModalBtn">&times;</button>
             </div>
             <div class="modal-body">
-                {{-- Formulario MANTENIDO Y MOVIDO AQUÍ --}}
                 <form id="vacationForm">
                     @csrf
                     <input type="hidden" id="balance_id" name="id">
-
-                    {{-- 🥇 CORRECCIÓN CLAVE: Campo oculto para asegurar que el ID del empleado se envíe --}}
                     <input type="hidden" id="employee_id_hidden" name="employee_id">
 
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="employee_id">Empleado</label>
-                            {{-- NOTA: El select ahora siempre está DISABLED, el valor se envía vía el campo HIDDEN --}}
                             <select id="employee_id" class="select-custom" required disabled>
                                 <option value="">Seleccionar empleado...</option>
                                 @foreach ($employees as $employee)
@@ -146,20 +129,17 @@
 
                         <div class="form-group">
                             <label for="vacation_days_available">Días de Vacaciones Disponibles</label>
-                            <input type="number" id="vacation_days_available" name="vacation_days_available"
-                                class="input-custom" min="0" placeholder="0" required>
+                            <input type="number" id="vacation_days_available" name="vacation_days_available" class="input-custom" min="0" placeholder="0" required>
                         </div>
 
                         <div class="form-group">
                             <label for="rest_days_available">Días de Descanso Disponibles</label>
-                            <input type="number" id="rest_days_available" name="rest_days_available" class="input-custom"
-                                min="0" placeholder="0" required>
+                            <input type="number" id="rest_days_available" name="rest_days_available" class="input-custom" min="0" placeholder="0" required>
                         </div>
 
                         <div class="form-group">
                             <label for="years_of_service">Años de Servicio</label>
-                            <input type="number" id="years_of_service" name="years_of_service" class="input-custom"
-                                min="0" placeholder="0" required readonly>
+                            <input type="number" id="years_of_service" name="years_of_service" class="input-custom" min="0" placeholder="0" required readonly>
                         </div>
 
                         <div class="form-group" style="grid-column: 1 / -1;">
@@ -172,7 +152,6 @@
                                 <option value="UNASSIGNED">No Asignado</option>
                             </select>
                         </div>
-
                     </div>
 
                     <div class="form-actions" style="border-top: none; padding-top: 0;">
@@ -187,9 +166,8 @@
             </div>
         </div>
     </div>
-    {{-- ************************************************************************** --}}
 
-    {{-- Modal de confirmación para ELIMINAR --}}
+    {{-- MODAL DE CONFIRMACIÓN PARA ELIMINAR --}}
     <div class="modal" id="confirmModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -206,9 +184,7 @@
         </div>
     </div>
 
-    {{-- ************************************************************************** --}}
     {{-- MODAL PARA VER HISTORIAL COMPLETO DE VACACIONES --}}
-    {{-- ************************************************************************** --}}
     <div class="modal" id="historyModal">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
@@ -216,9 +192,7 @@
                 <button class="close-modal" id="closeHistoryModalBtn">&times;</button>
             </div>
             <div class="modal-body">
-                {{-- Encabezado simplificado del empleado --}}
-                <div class="employee-header"
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                <div class="employee-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
                     <div>
                         <h4 id="historyEmployeeName" style="margin: 0 0 5px 0; color: #2d3748;"></h4>
                         <div style="display: flex; gap: 15px; font-size: 0.9rem; color: #4a5568;">
@@ -227,16 +201,13 @@
                             <span><strong>Ingreso:</strong> <span id="historyHireDate"></span></span>
                         </div>
                     </div>
-                    {{-- Buscador a la derecha del nombre --}}
                     <div class="search-box" style="width: 250px;">
                         <i class="fas fa-search"></i>
                         <input type="text" id="searchHistory" placeholder="Buscar por fecha o mes...">
                     </div>
                 </div>
 
-                {{-- Resumen arriba de la tabla --}}
-                <div class="history-summary"
-                    style="margin-bottom: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px;">
+                <div class="history-summary" style="margin-bottom: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px;">
                     <h5 style="margin: 0 0 10px 0; color: #2d3748;">Resumen</h5>
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
                         <div>
@@ -269,9 +240,7 @@
                                 <th>Tipo</th>
                             </tr>
                         </thead>
-                        <tbody id="historyTableBody">
-                            {{-- Los datos del historial se renderizan con JS --}}
-                        </tbody>
+                        <tbody id="historyTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -280,10 +249,135 @@
             </div>
         </div>
     </div>
-    {{-- ************************************************************************** --}}
+
+    {{-- MODAL FLOTANTE PARA GENERACIÓN DE REPORTES - MEJORADO --}}
+    <div class="modal" id="reportModal">
+        <div class="modal-content" style="max-width: 750px;">
+            <div class="modal-header" style="background-color: var(--primary-blue); color: var(--white); border-top-left-radius: 10px; border-top-right-radius: 10px;">
+                <h3 style="color: var(--white); margin: 0;"><i class="fas fa-file-pdf"></i> Generar Reporte de Vacaciones</h3>
+                <button class="close-modal" id="closeReportModalBtn" style="color: var(--white); opacity: 0.8;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-info" style="margin-bottom: 20px; padding: 10px; border-radius: 6px; background: #e8f4fd; border: 1px solid #99c2e0;">
+                    <i class="fas fa-info-circle" style="color: #4299e1;"></i> Los filtros aplicados aquí solo afectan la generación del reporte PDF, no la tabla principal.
+                </div>
+
+                <form id="reportForm">
+                    @csrf
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+
+                        {{-- TIPO DE REPORTE --}}
+                        <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 10px;">
+                            <label for="report_type"><i class="fas fa-chart-line"></i> Tipo de Reporte</label>
+                            <select id="report_type" name="report_type" class="select-custom" required>
+                                <option value="AVAILABLE">Días Disponibles (Balance Actual)</option>
+                                <option value="TAKEN">Días Tomados (Detallado)</option>
+                            </select>
+                        </div>
+
+                        {{-- RANGO DE FECHAS (Visible solo para Días Tomados) --}}
+                        <div id="date_range_group" style="display: none; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border: 1px dashed #cbd5e0; padding: 15px; border-radius: 6px;">
+                            <div class="form-group">
+                                <label for="date_from"><i class="fas fa-calendar-alt"></i> Fecha Desde</label>
+                                <input type="date" id="date_from" name="date_from" class="input-custom">
+                                <small id="date_from_error" class="text-danger" style="color: var(--danger);"></small>
+                            </div>
+                            <div class="form-group">
+                                <label for="date_to"><i class="fas fa-calendar-alt"></i> Fecha Hasta</label>
+                                <input type="date" id="date_to" name="date_to" class="input-custom">
+                                <small id="date_to_error" class="text-danger" style="color: var(--danger);"></small>
+                            </div>
+                        </div>
+
+                        {{-- FILTRO DE DEPARTAMENTO/ÁREA --}}
+                        <div class="form-group">
+                            <label for="report_department"><i class="fas fa-sitemap"></i> Departamento / Área</label>
+                            <div class="multi-select-container">
+                                <div class="select-all-container">
+                                    <label class="checkbox-label" style="font-weight: bold; color: var(--primary-blue);">
+                                        <input type="checkbox" id="select_all_departments"> Seleccionar Todo
+                                    </label>
+                                </div>
+                                <div class="checkbox-group" id="department_checkbox_group" style="max-height: 150px;">
+                                    @foreach ($departments as $department)
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="departments[]" value="{{ $department }}" checked> {{ $department }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- FILTRO DE EMPLEADO --}}
+                        <div class="form-group">
+                            <label for="report_employee_id"><i class="fas fa-user-friends"></i> Personal</label>
+                            <div class="multi-select-container">
+                                <div class="select-all-container">
+                                    <label class="checkbox-label" style="font-weight: bold; color: var(--primary-blue);">
+                                        <input type="checkbox" id="select_all_employees" checked> Seleccionar Todo
+                                    </label>
+                                    <button type="button" id="clear_employees" class="btn-clear">Limpiar</button>
+                                </div>
+                                <div class="checkbox-group" id="employee_checkbox_group" style="max-height: 150px;">
+                                    @foreach ($employees as $employee)
+                                        <label class="checkbox-label employee-option" data-department="{{ $employee->department }}" style="display: flex;">
+                                            <input type="checkbox" name="employees[]" value="{{ $employee->id }}" checked>
+                                            {{ $employee->full_name }} ({{ $employee->employee_number ?? 'N/A' }})
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- FILTRO DE ESTATUS (Opcional, solo para Días Tomados) --}}
+                        <div class="form-group" id="status_filter_group" style="grid-column: 1 / -1; display: none; border: 1px dashed #cbd5e0; padding: 15px; border-radius: 6px;">
+                            <label><i class="fas fa-info-circle"></i> Estatus de Días Tomados</label>
+                            <div class="checkbox-group" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 150px; overflow-y: auto;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="status_filter[]" value="Approved" checked> Aprobado
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="status_filter[]" value="Reviewed"> Revisado
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="status_filter[]" value="Under_Review"> Bajo Revisión
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="status_filter[]" value="Rejected"> Rechazado
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+
+                {{-- Resumen/Preview - Mejorado --}}
+                <div class="history-summary" style="margin-top: 30px; padding: 15px; background: #fffbe6; border-radius: 8px; border: 1px solid #ffe8b1;">
+                    <h5 style="margin: 0 0 10px 0; color: #744210;"><i class="fas fa-check-circle"></i> Resumen del Reporte a Generar</h5>
+                    <div id="report-summary-text" style="font-size: 0.9rem; color: #744210; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div><strong>Tipo:</strong> <span id="summary-type">Días Disponibles</span></div>
+                        <div><strong>Empleados:</strong> <span id="summary-employees">Todos</span></div>
+                        <div style="grid-column: 1 / -1;"><strong>Departamentos:</strong> <span id="summary-departments">Todos</span></div>
+                        <div id="summary-dates" style="display: none;"><strong>Período:</strong> <span id="summary-dates-text"></span></div>
+                        <div id="summary-status" style="display: none;"><strong>Estatus:</strong> <span id="summary-status-text"></span></div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="cancelReportModal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="generateReportBtn">
+                    <i class="fas fa-download"></i> Generar Reporte PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <style>
-        /* Estilos CSS (Sin cambios, mantener) */
+        /* Estilos CSS (Sin cambios en las variables base, solo añado para el modal de reportes) */
         :root {
             --dark-gray: #2d3748;
             --medium-gray: #4a5568;
@@ -375,6 +469,12 @@
             margin-bottom: 5px;
             color: var(--dark-gray);
             font-size: 0.95rem;
+            display: block;
+        }
+
+        .form-group label i {
+            margin-right: 5px;
+            color: #4299e1;
         }
 
         .input-custom,
@@ -386,6 +486,7 @@
             font-size: 1rem;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
             background-color: var(--white);
+            box-sizing: border-box; /* Asegura que padding no aumente el ancho */
         }
 
         .input-custom[readonly] {
@@ -665,6 +766,11 @@
             /* Ancho para el historial */
         }
 
+        #reportModal .modal-content {
+            max-width: 750px;
+            /* Ancho para el reporte */
+        }
+
         .modal-header {
             padding: 15px 20px;
             border-bottom: 1px solid var(--light-gray);
@@ -769,26 +875,94 @@
             font-weight: 600;
             color: var(--dark-gray);
         }
+
+        /* Estilos para los nuevos elementos del modal de reportes */
+        .multi-select-container {
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: var(--white);
+            box-sizing: border-box;
+        }
+
+        .select-all-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .checkbox-label:hover {
+            background-color: var(--background-gray);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary-blue);
+        }
+
+        .btn-clear {
+            background: none;
+            border: 1px solid var(--light-gray);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--medium-gray);
+        }
+
+        .btn-clear:hover {
+            background-color: var(--light-gray);
+        }
+
+        /* Estilos para el resumen del reporte */
+        #report-summary-text > div {
+            margin-bottom: 5px;
+        }
     </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Datos de los balances de vacaciones desde el servidor (JSON codificado)
+            // Variables y referencias existentes...
             const vacationBalancesData = @json($vacationBalances);
             const vacationDaysTakenData = @json($vacationDaysTaken);
+            const employeesData = @json($employees);
 
             let currentPage = 1;
-
-            // Obtener referencias a elementos del DOM
             const perPageSelector = document.getElementById('perPageSelector');
             let itemsPerPage = parseInt(perPageSelector.value);
-
             const searchInput = document.getElementById('searchVacation');
             const listHeader = document.getElementById('listHeader');
             const toggleVacationViewBtn = document.getElementById('toggleVacationView');
             const balanceViewContainer = document.getElementById('balanceViewContainer');
             const takenViewContainer = document.getElementById('takenViewContainer');
             const takenTableBody = document.getElementById('takenTableBody');
+            const paginationLinksContainer = document.getElementById('pagination-links');
+
+            // 🥇 Referencia al botón de reporte
+            const openReportModalBtn = document.getElementById('openReportModalBtn');
 
             // Elementos del FORMULARIO MODAL
             const formModal = document.getElementById('formModal');
@@ -797,8 +971,8 @@
             const submitBtnModal = document.getElementById('submitBtnModal');
             const cancelEditModal = document.getElementById('cancelEditModal');
             const closeFormModalBtn = document.getElementById('closeFormModalBtn');
-            const employeeIdSelect = document.getElementById('employee_id'); // El SELECT visible
-            const employeeIdHidden = document.getElementById('employee_id_hidden'); // El campo HIDDEN 🥇
+            const employeeIdSelect = document.getElementById('employee_id');
+            const employeeIdHidden = document.getElementById('employee_id_hidden');
 
             // Elementos del Modal de CONFIRMACIÓN
             const confirmModal = document.getElementById('confirmModal');
@@ -811,17 +985,43 @@
             const searchHistoryInput = document.getElementById('searchHistory');
             const historyTableBody = document.getElementById('historyTableBody');
 
-            const paginationLinksContainer = document.getElementById('pagination-links');
+            // 🥇 Elementos del Modal de REPORTES - MEJORADOS
+            const reportModal = document.getElementById('reportModal');
+            const closeReportModalBtn = document.getElementById('closeReportModalBtn');
+            const cancelReportModal = document.getElementById('cancelReportModal');
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            const reportForm = document.getElementById('reportForm');
+            const reportTypeSelect = document.getElementById('report_type');
+            const dateRangeGroup = document.getElementById('date_range_group');
+            const statusFilterGroup = document.getElementById('status_filter_group');
+            const dateFromInput = document.getElementById('date_from');
+            const dateToInput = document.getElementById('date_to');
+            const dateFromError = document.getElementById('date_from_error');
+            const dateToError = document.getElementById('date_to_error');
 
-            let currentAction = '';
-            let currentBalanceId = null;
+            // Nuevos elementos para los filtros mejorados
+            const selectAllDepartments = document.getElementById('select_all_departments');
+            const departmentCheckboxGroup = document.getElementById('department_checkbox_group');
+            const selectAllEmployees = document.getElementById('select_all_employees');
+            const clearEmployeesBtn = document.getElementById('clear_employees');
+            const employeeCheckboxGroup = document.getElementById('employee_checkbox_group');
+            const employeeOptions = document.querySelectorAll('.employee-option');
+
+            // Elementos del resumen
+            const summaryType = document.getElementById('summary-type');
+            const summaryDepartments = document.getElementById('summary-departments');
+            const summaryEmployees = document.getElementById('summary-employees');
+            const summaryDates = document.getElementById('summary-dates');
+            const summaryDatesText = document.getElementById('summary-dates-text');
+            const summaryStatus = document.getElementById('summary-status');
+            const summaryStatusText = document.getElementById('summary-status-text');
+
             let isBalanceView = true;
             let currentEmployeeHistory = null;
+            let currentBalanceId = null;
+            let currentAction = '';
 
-            // Botón para abrir el formulario
-            const openAddFormBtn = document.getElementById('openAddFormBtn');
-
-            // Función auxiliar para dar formato a la fecha (YYYY-MM-DD a DD/MM/YYYY)
+            // Funciones auxiliares existentes...
             function formatHireDate(dateString) {
                 if (!dateString || dateString === 'N/A') return 'N/A';
                 const parts = dateString.split('-');
@@ -831,7 +1031,6 @@
                 return dateString;
             }
 
-            // Función para obtener el nombre del mes
             function getMonthName(monthNumber) {
                 const months = [
                     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -840,27 +1039,14 @@
                 return months[monthNumber - 1] || 'Mes desconocido';
             }
 
-            // -------------------------------------------------------------------------
-            // FUNCIÓN CLAVE: Obtener el balance disponible del empleado (Saldo Real)
-            // -------------------------------------------------------------------------
-
-            // Nueva función para obtener el saldo disponible usando el nombre del empleado
             function getAvailableDaysForTakenView(employeeName) {
                 const normalizedName = employeeName.trim().toLowerCase();
-
-                // Buscar en la lista de balances, que debe contener el saldo actual
                 const balanceEntry = vacationBalancesData.find(item => {
                     const fullName = item.employee ? item.employee.full_name : 'Empleado no encontrado';
                     return fullName.toLowerCase() === normalizedName;
                 });
-
-                // Devolver los días de VACACIONES disponibles o 0
                 return balanceEntry ? parseInt(balanceEntry.vacation_days_available) : 0;
             }
-
-            // -------------------------------------------------------------------------
-            // LÓGICA DE TRADUCCIÓN Y COLORES (Detalles)
-            // -------------------------------------------------------------------------
 
             function translateAndStyleStatus(statusEnglish) {
                 const normalizedStatus = statusEnglish.toLowerCase().replace(/\s/g, '_');
@@ -894,13 +1080,8 @@
                 };
             }
 
-            // -------------------------------------------------------------------------
-            // LÓGICA DE FECHAS PARA "POR VENCER"
-            // -------------------------------------------------------------------------
-
             function isAnniversaryApproaching(hireDateString) {
                 if (!hireDateString || hireDateString === 'N/A') return false;
-
                 const hireDateParts = hireDateString.split('-');
                 if (hireDateParts.length !== 3) return false;
 
@@ -909,162 +1090,35 @@
                 const hireMonth = parseInt(hireDateParts[1]) - 1;
 
                 let anniversary = new Date(today.getFullYear(), hireMonth, hireDay);
-
                 if (anniversary < today) {
                     anniversary.setFullYear(today.getFullYear() + 1);
                 }
 
                 const oneDay = 24 * 60 * 60 * 1000;
                 const diffDays = Math.ceil((anniversary.getTime() - today.getTime()) / oneDay);
-
-                // La advertencia se activa si faltan 30 días o menos para el aniversario
                 return diffDays > 0 && diffDays <= 30;
             }
 
-            // -------------------------------------------------------------------------
-            // CORRECCIÓN DEL BUG: Estatus General basado en el Saldo Real
-            // -------------------------------------------------------------------------
-
             function getGeneralStatus(availableDays, hireDate) {
-                // availableDays ya es el saldo real restante
                 if (availableDays <= 0) {
                     return {
                         text: 'AGOTADO',
                         class: 'agotado'
                     };
                 }
-
                 if (isAnniversaryApproaching(hireDate)) {
                     return {
                         text: 'POR VENCER',
                         class: 'por_vencer'
                     };
                 }
-
                 return {
                     text: 'DISPONIBLE',
                     class: 'disponible'
                 };
             }
 
-            // -------------------------------------------------------------------------
-            // FUNCIONES PARA EL MODAL DE HISTORIAL
-            // -------------------------------------------------------------------------
-
-            function openHistoryModal(employeeData) {
-                currentEmployeeHistory = employeeData;
-
-                // Llenar información del empleado en el nuevo formato
-                document.getElementById('historyEmployeeName').textContent = employeeData.full_name;
-                document.getElementById('historyEmployeeNumber').textContent = employeeData.employee_number ||
-                    'N/A';
-                document.getElementById('historyEmployeeArea').textContent = employeeData.area || 'N/A';
-                document.getElementById('historyHireDate').textContent = formatHireDate(employeeData.hire_date);
-
-                // Renderizar historial
-                renderHistoryTable(employeeData.vacation_days_details);
-
-                // Mostrar modal
-                historyModal.style.display = 'flex';
-            }
-
-            function renderHistoryTable(vacationDetails) {
-                historyTableBody.innerHTML = '';
-
-                if (!vacationDetails || vacationDetails.length === 0) {
-                    historyTableBody.innerHTML = `
-                <tr>
-                    <td colspan="5" style="text-align: center; padding: 20px;">
-                        <i class="fas fa-inbox" style="font-size: 48px; color: #cbd5e0; margin-bottom: 10px;"></i>
-                        <p>No hay registros de vacaciones tomadas</p>
-                    </td>
-                </tr>
-            `;
-                    updateHistorySummary(0, 0, 0, 0);
-                    return;
-                }
-
-                // Ordenar por fecha (más recientes primero)
-                const sortedDetails = [...vacationDetails].sort((a, b) => {
-                    return new Date(b.date) - new Date(a.date);
-                });
-
-                let totalApproved = 0;
-                let totalPending = 0;
-                let totalRejected = 0;
-                let totalDays = sortedDetails.length;
-
-                sortedDetails.forEach(detail => {
-                    const date = new Date(detail.date);
-                    const day = date.getDate().toString().padStart(2, '0');
-                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                    const year = date.getFullYear();
-                    const monthName = getMonthName(date.getMonth() + 1);
-
-                    const statusInfo = translateAndStyleStatus(detail.status);
-
-                    // Contar por estatus
-                    switch (detail.status.toLowerCase()) {
-                        case 'approved':
-                            totalApproved++;
-                            break;
-                        case 'under_review':
-                        case 'reviewed':
-                            totalPending++;
-                            break;
-                        case 'rejected':
-                            totalRejected++;
-                            break;
-                    }
-
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                <td>${day}/${month}/${year}</td>
-                <td>${monthName}</td>
-                <td>${year}</td>
-                <td><span class="status-badge ${statusInfo.class}">${statusInfo.display}</span></td>
-                <td>Vacaciones</td>
-            `;
-                    historyTableBody.appendChild(row);
-                });
-
-                updateHistorySummary(totalApproved, totalPending, totalRejected, totalDays);
-            }
-
-            function updateHistorySummary(approved, pending, rejected, total) {
-                document.getElementById('totalApproved').textContent = approved;
-                document.getElementById('totalPending').textContent = pending;
-                document.getElementById('totalRejected').textContent = rejected;
-                document.getElementById('totalDays').textContent = total;
-            }
-
-            function filterHistory(searchTerm) {
-                if (!currentEmployeeHistory || !currentEmployeeHistory.vacation_days_details) return;
-
-                const filteredDetails = currentEmployeeHistory.vacation_days_details.filter(detail => {
-                    const date = new Date(detail.date);
-                    const day = date.getDate().toString().padStart(2, '0');
-                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                    const year = date.getFullYear();
-                    const monthName = getMonthName(date.getMonth() + 1).toLowerCase();
-
-                    const formattedDate = `${day}/${month}/${year}`;
-                    const statusInfo = translateAndStyleStatus(detail.status);
-                    const searchLower = searchTerm.toLowerCase();
-
-                    return formattedDate.includes(searchLower) ||
-                        monthName.includes(searchLower) ||
-                        year.toString().includes(searchLower) ||
-                        statusInfo.display.toLowerCase().includes(searchLower);
-                });
-
-                renderHistoryTable(filteredDetails);
-            }
-
-            // -------------------------------------------------------------------------
-            // INICIALIZACIÓN Y RENDERIZADO PRINCIPAL
-            // -------------------------------------------------------------------------
-
+            // Funciones de renderizado existentes...
             function initialize() {
                 renderTableAndPagination();
             }
@@ -1100,31 +1154,36 @@
                 if (isBalanceView) {
                     renderBalanceViewHeader();
                     renderBalanceTableRows(itemsToDisplay);
+                    // 🌟 Ocultar botón de reporte en vista de Balance
+                    openReportModalBtn.style.display = 'none';
                 } else {
                     renderTakenViewHeader();
                     renderTakenTableRows(itemsToDisplay);
+                    // 🌟 Mostrar botón de reporte en vista de Tomadas
+                    openReportModalBtn.style.display = 'inline-flex';
                 }
 
                 renderPagination(totalPages);
             }
 
-            // -------------------------------------------------------------------------
-            // RENDERS ESPECÍFICOS DE VISTA
-            // -------------------------------------------------------------------------
-
             function renderBalanceViewHeader() {
                 listHeader.innerHTML = `
-            <h1><i class="fas fa-list"></i> Balances de Vacaciones Registrados</h1>
-            <p>Administra los días de vacaciones y descanso disponibles para cada empleado</p>
-        `;
-                // El botón openAddFormBtn está oculto permanentemente por CSS
+                    <h1><i class="fas fa-list"></i> Balances de Vacaciones Registrados</h1>
+                    <p>Administra los días de vacaciones y descanso disponibles para cada empleado</p>
+                `;
+                toggleVacationViewBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Ver Vacaciones Tomadas';
+                toggleVacationViewBtn.classList.remove('btn-outline');
+                toggleVacationViewBtn.classList.add('btn-primary');
             }
 
             function renderTakenViewHeader() {
                 listHeader.innerHTML = `
-            <h1><i class="fas fa-calendar-alt"></i> Historial de Vacaciones Tomadas</h1>
-            <p>Detalle de los días de vacaciones y descanso que han sido consumidos</p>
-        `;
+                    <h1><i class="fas fa-calendar-alt"></i> Historial de Vacaciones Tomadas</h1>
+                    <p>Detalle de los días de vacaciones que han sido consumidos</p>
+                `;
+                toggleVacationViewBtn.innerHTML = '<i class="fas fa-balance-scale"></i> Ver Balances Disponibles';
+                toggleVacationViewBtn.classList.remove('btn-primary');
+                toggleVacationViewBtn.classList.add('btn-outline');
             }
 
             function renderBalanceTableRows(balancesToDisplay) {
@@ -1135,29 +1194,27 @@
                         const row = document.createElement('tr');
                         row.dataset.balanceId = balance.id;
 
-                        const employeeName = balance.employee ? balance.employee.full_name :
-                            'Empleado no encontrado';
-                        const hireDate = balance.employee ? formatHireDate(balance.employee.hire_date) :
-                            'N/A';
+                        const employeeName = balance.employee ? balance.employee.full_name : 'Empleado no encontrado';
+                        const hireDate = balance.employee ? formatHireDate(balance.employee.hire_date) : 'N/A';
 
                         row.innerHTML = `
-                    <td>${employeeName}</td>
-                    <td>${hireDate}</td>
-                    <td>${balance.years_of_service} años</td>
-                    <td><span class="badge">${balance.rest_mode || '5x2'}</span></td>
-                    <td><span class="badge">${balance.vacation_days_available} días</span></td>
-                    <td><span class="badge">${balance.rest_days_available} días</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-icon btn-edit" title="Editar" data-balance-id="${balance.id}">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-icon btn-delete" title="Eliminar" data-balance-id="${balance.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
+                            <td>${employeeName}</td>
+                            <td>${hireDate}</td>
+                            <td>${balance.years_of_service} años</td>
+                            <td><span class="badge">${balance.rest_mode || '5x2'}</span></td>
+                            <td><span class="badge">${balance.vacation_days_available} días</span></td>
+                            <td><span class="badge">${balance.rest_days_available} días</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-edit" title="Editar" data-balance-id="${balance.id}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-icon btn-delete" title="Eliminar" data-balance-id="${balance.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
                         vacationTableBody.appendChild(row);
                     });
                 } else {
@@ -1170,78 +1227,62 @@
                 if (itemsToDisplay.length > 0) {
                     itemsToDisplay.forEach(item => {
                         const row = document.createElement('tr');
-
-                        // OBTENER SALDO DISPONIBLE REAL
                         const availableDays = getAvailableDaysForTakenView(item.full_name);
-
-                        // Determinar el Estatus General (CORREGIDO: basado en el saldo real)
                         const generalStatus = getGeneralStatus(availableDays, item.hire_date);
 
-                        // ** MODIFICACIÓN CLAVE: Mostrar solo el ÚLTIMO día tomado **
                         const recentDetails = item.vacation_days_details ? [...item.vacation_days_details]
-                            .filter(d => d.date) // Asegurar que tenga fecha
-                            .sort((a, b) => new Date(b.date) - new Date(a.date)) // Ordenar descendente
-                            .slice(0, 1) : []; // Mostrar solo 1 día
-
+                            .filter(d => d.date)
+                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                            .slice(0, 1) : [];
 
                         const detailHtml = recentDetails.map(detail => {
                             const statusInfo = translateAndStyleStatus(detail.status);
                             const dateFormatted = formatHireDate(detail.date);
-
                             return `
-                        <li style="margin-bottom: 2px;">
-                            ${dateFormatted}:
-                            <span class="status-badge ${statusInfo.class}" title="Estatus: ${statusInfo.display}">
-                                ${statusInfo.display}
-                            </span>
-                        </li>
-                    `;
+                                <li style="margin-bottom: 2px;">
+                                    ${dateFormatted}:
+                                    <span class="status-badge ${statusInfo.class}" title="Estatus: ${statusInfo.display}">
+                                        ${statusInfo.display}
+                                    </span>
+                                </li>
+                            `;
                         }).join('');
-                        // ** FIN MODIFICACIÓN CLAVE **
 
-                        // NUEVO: Columna de Días Disponibles con estatus integrado
                         const daysAvailableWithStatus = `
-                    <div class="days-with-status">
-                        <span class="days-count">${availableDays} días</span>
-                        <span class="status-badge ${generalStatus.class}">${generalStatus.text}</span>
-                    </div>
-                `;
+                            <div class="days-with-status">
+                                <span class="days-count">${availableDays} días</span>
+                                <span class="status-badge ${generalStatus.class}">${generalStatus.text}</span>
+                            </div>
+                        `;
 
-                        // Contar el total de días tomados (sin importar el límite de visualización)
-                        const totalDaysTaken = item.vacation_days_details ? item.vacation_days_details
-                            .length : 0;
-
-                        // Mensaje de desbordamiento (solo si hay más de 1 día tomado en total)
+                        const totalDaysTaken = item.vacation_days_details ? item.vacation_days_details.length : 0;
                         const overflowMessage = totalDaysTaken > 1 ?
                             `<li style="color: var(--primary-blue); font-style: italic; font-weight: 600;">
                                 +${totalDaysTaken - 1} más...
                             </li>` : '';
 
-
                         row.innerHTML = `
-                    <td>${item.employee_number || 'N/A'}</td>
-                    <td>${item.full_name}</td>
-                    <td>${formatHireDate(item.hire_date)}</td>
-                    <td>${item.area || 'N/A'}</td>
-                    <td>
-                        ${daysAvailableWithStatus}
-                    </td>
-                    <td>
-                        ${totalDaysTaken > 0 ? `
-                                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
-                                            ${detailHtml}
-                                            ${overflowMessage}
-                                        </ul>
-                                    ` : 'No hay días tomados'}
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-icon btn-history" title="Ver Historial Completo" data-employee-id="${item.full_name}">
-                                <i class="fas fa-history"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
+                            <td>${item.employee_number || 'N/A'}</td>
+                            <td>${item.full_name}</td>
+                            <td>${formatHireDate(item.hire_date)}</td>
+                            <td>${item.area || 'N/A'}</td>
+                            <td>${daysAvailableWithStatus}</td>
+                            <td>
+                                ${totalDaysTaken > 0 ? `
+                                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9em;">
+                                        ${detailHtml}
+                                        ${overflowMessage}
+                                    </ul>
+                                ` : 'No hay días tomados'}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-history" title="Ver Historial Completo" data-employee-id="${item.full_name}">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
                         takenTableBody.appendChild(row);
                     });
                 } else {
@@ -1259,20 +1300,19 @@
                     (isBalance ? 'Comienza agregando un balance usando el formulario.' :
                         'Asegúrate de que los empleados hayan registrado días de vacaciones (VAC) en sus bitácoras.'
                     );
-
                 const colspan = isBalance ? 7 : 7;
 
                 targetBody.innerHTML = `
-            <tr>
-                <td colspan="${colspan}">
-                    <div class="empty-state" style="text-align: center; padding: 30px;">
-                        <i class="fas fa-umbrella-beach" style="font-size: 3em; color: var(--light-gray); margin-bottom: 10px;"></i>
-                        <h4>${message}</h4>
-                        <p>${detail}</p>
-                    </div>
-                </td>
-            </tr>
-        `;
+                    <tr>
+                        <td colspan="${colspan}">
+                            <div class="empty-state" style="text-align: center; padding: 30px;">
+                                <i class="fas fa-umbrella-beach" style="font-size: 3em; color: var(--light-gray); margin-bottom: 10px;"></i>
+                                <h4>${message}</h4>
+                                <p>${detail}</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
             }
 
             function renderPagination(totalPages) {
@@ -1330,39 +1370,30 @@
                 paginationLinksContainer.appendChild(nextButton);
             }
 
-            // -------------------------------------------------------------------------
-            // FUNCIONES CRUD (AJAX) - (Con correcciones de ID)
-            // -------------------------------------------------------------------------
-
+            // Funciones CRUD existentes...
             async function saveBalance() {
                 const formData = new FormData(vacationForm);
                 const balanceId = formData.get('id');
-
                 const url = balanceId ?
                     `/recursoshumanos/loadchart/employee_vacation_balance/${balanceId}` :
                     '/recursoshumanos/loadchart/employee_vacation_balance';
 
                 if (balanceId) {
                     formData.append('_method', 'PUT');
-                    // Aseguramos que el employee_id del campo oculto se use
-                    // Ya está en formData gracias a <input type="hidden" name="employee_id">
                 } else {
-                    // Si es nuevo, el employee_id del SELECT debe ser copiado al HIDDEN antes de enviar
                     employeeIdHidden.value = employeeIdSelect.value;
                 }
 
                 formData.delete('years_of_service');
-                // IMPORTANTE: Ya no necesitamos formData.delete('employee_id') porque el SELECT no tiene name
 
                 try {
                     submitBtnModal.disabled = true;
                     submitBtnModal.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
                     const response = await fetch(url, {
-                        method: 'POST', // Usamos POST porque Laravel requiere que el método PUT sea spoofed
+                        method: 'POST',
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .getAttribute('content'),
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                             'Accept': 'application/json'
                         },
                         body: formData
@@ -1382,7 +1413,7 @@
                         } else {
                             alert('¡Éxito! ' + data.message);
                         }
-                        closeFormModal(); // Cerrar modal al guardar
+                        closeFormModal();
                         location.reload();
                     } else if (response.status === 422 && data.errors) {
                         let errorMessages = '';
@@ -1398,17 +1429,14 @@
                                 confirmButtonText: 'Corregir'
                             });
                         } else {
-                            alert('¡Revisa los Datos!:\n' + errorMessages.replace(/<\/?li>/g, '').replace(
-                                /<\/?ul>/g, ''));
+                            alert('¡Revisa los Datos!:\n' + errorMessages.replace(/<\/?li>/g, '').replace(/<\/?ul>/g, ''));
                         }
-
                     } else {
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error Inesperado',
-                                text: data.message ||
-                                    'Ocurrió un error al procesar la solicitud. Inténtalo de nuevo.',
+                                text: data.message || 'Ocurrió un error al procesar la solicitud. Inténtalo de nuevo.',
                                 confirmButtonText: 'Aceptar'
                             });
                         } else {
@@ -1436,31 +1464,22 @@
 
             async function editBalance(balanceId) {
                 try {
-                    const response = await fetch(
-                        `/recursoshumanos/loadchart/employee_vacation_balance/${balanceId}/edit`);
+                    const response = await fetch(`/recursoshumanos/loadchart/employee_vacation_balance/${balanceId}/edit`);
                     const balance = await response.json();
 
-                    // Llenar formulario en el modal
-                    const employeeId = balance.employee_id;
-
                     document.getElementById('balance_id').value = balance.id;
-                    employeeIdSelect.value = employeeId; // Llenar el SELECT visible (disabled)
-
-                    // 🥇 CORRECCIÓN CLAVE: Llenar el campo oculto para que el ID se envíe
-                    employeeIdHidden.value = employeeId;
-
+                    employeeIdSelect.value = balance.employee_id;
+                    employeeIdHidden.value = balance.employee_id;
                     document.getElementById('vacation_days_available').value = balance.vacation_days_available;
                     document.getElementById('rest_days_available').value = balance.rest_days_available;
                     document.getElementById('years_of_service').value = balance.years_of_service;
                     document.getElementById('rest_mode').value = balance.rest_mode || '5x2';
 
-                    // Configurar el modal para edición
-                    // employeeIdSelect.disabled = true; // Ya está deshabilitado en el HTML
                     formTitleModal.innerHTML = '<i class="fas fa-edit"></i> Editar Balance de Vacaciones';
                     submitBtnModal.innerHTML = '<i class="fas fa-save"></i> Actualizar Balance';
 
-                    currentBalanceId = balanceId;
-                    formModal.style.display = 'flex'; // Mostrar el modal
+                    currentBalanceId = balance.id;
+                    formModal.style.display = 'flex';
                 } catch (error) {
                     alert('No se pudo cargar el balance para editar');
                 }
@@ -1469,10 +1488,8 @@
             function confirmDelete(balanceId) {
                 currentBalanceId = balanceId;
                 currentAction = 'delete';
-                document.getElementById('modalTitle').innerHTML =
-                    '<i class="fas fa-trash"></i> Confirmar Eliminación';
-                document.getElementById('confirmMessage').textContent =
-                    '¿Estás seguro de que deseas eliminar este balance de vacaciones? Esta acción no se puede deshacer.';
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-trash"></i> Confirmar Eliminación';
+                document.getElementById('confirmMessage').textContent = '¿Estás seguro de que deseas eliminar este balance de vacaciones? Esta acción no se puede deshacer.';
                 confirmActionBtn.classList.remove('btn-primary');
                 confirmActionBtn.classList.add('btn-danger');
                 confirmModal.style.display = 'flex';
@@ -1480,13 +1497,11 @@
 
             async function deleteBalance(balanceId) {
                 try {
-                    const url =
-                        `/recursoshumanos/loadchart/employee_vacation_balance/${balanceId}`;
+                    const url = `/recursoshumanos/loadchart/employee_vacation_balance/${balanceId}`;
                     const response = await fetch(url, {
                         method: 'DELETE',
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector(
-                                'meta[name="csrf-token"]').getAttribute('content'),
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                             'Accept': 'application/json'
                         },
                     });
@@ -1531,13 +1546,11 @@
                 }
             }
 
-            // Función para resetear el formulario y cerrar el modal
             function resetForm() {
                 vacationForm.reset();
                 currentBalanceId = null;
-                // employeeIdSelect.disabled = false; // Ya no es necesario
                 employeeIdSelect.value = '';
-                employeeIdHidden.value = ''; // Limpiar el campo oculto
+                employeeIdHidden.value = '';
                 formTitleModal.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Balance';
                 submitBtnModal.innerHTML = '<i class="fas fa-save"></i> Guardar Balance';
                 document.getElementById('balance_id').value = '';
@@ -1550,61 +1563,531 @@
                 resetForm();
             }
 
+            // Funciones del modal de historial...
+            function openHistoryModal(employeeData) {
+                currentEmployeeHistory = employeeData;
+                document.getElementById('historyEmployeeName').textContent = employeeData.full_name;
+                document.getElementById('historyEmployeeNumber').textContent = employeeData.employee_number || 'N/A';
+                document.getElementById('historyEmployeeArea').textContent = employeeData.area || 'N/A';
+                document.getElementById('historyHireDate').textContent = formatHireDate(employeeData.hire_date);
+                renderHistoryTable(employeeData.vacation_days_details);
+                historyModal.style.display = 'flex';
+            }
+
+            function renderHistoryTable(vacationDetails) {
+                historyTableBody.innerHTML = '';
+
+                if (!vacationDetails || vacationDetails.length === 0) {
+                    historyTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px;">
+                                <i class="fas fa-inbox" style="font-size: 48px; color: #cbd5e0; margin-bottom: 10px;"></i>
+                                <p>No hay registros de vacaciones tomadas</p>
+                            </td>
+                        </tr>
+                    `;
+                    updateHistorySummary(0, 0, 0, 0);
+                    return;
+                }
+
+                const sortedDetails = [...vacationDetails].sort((a, b) => {
+                    return new Date(b.date) - new Date(a.date);
+                });
+
+                let totalApproved = 0;
+                let totalPending = 0;
+                let totalRejected = 0;
+                let totalDays = sortedDetails.length;
+
+                sortedDetails.forEach(detail => {
+                    const date = new Date(detail.date);
+                    const day = date.getDate().toString().padStart(2, '0');
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const year = date.getFullYear();
+                    const monthName = getMonthName(date.getMonth() + 1);
+
+                    const statusInfo = translateAndStyleStatus(detail.status);
+
+                    switch (detail.status.toLowerCase().replace(/\s/g, '_')) {
+                        case 'approved':
+                            totalApproved++;
+                            break;
+                        case 'under_review':
+                        case 'reviewed':
+                            totalPending++;
+                            break;
+                        case 'rejected':
+                            totalRejected++;
+                            break;
+                    }
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${day}/${month}/${year}</td>
+                        <td>${monthName}</td>
+                        <td>${year}</td>
+                        <td><span class="status-badge ${statusInfo.class}">${statusInfo.display}</span></td>
+                        <td>Vacaciones</td>
+                    `;
+                    historyTableBody.appendChild(row);
+                });
+
+                updateHistorySummary(totalApproved, totalPending, totalRejected, totalDays);
+            }
+
+            function updateHistorySummary(approved, pending, rejected, total) {
+                document.getElementById('totalApproved').textContent = approved;
+                document.getElementById('totalPending').textContent = pending;
+                document.getElementById('totalRejected').textContent = rejected;
+                document.getElementById('totalDays').textContent = total;
+            }
+
+            function filterHistory(searchTerm) {
+                if (!currentEmployeeHistory || !currentEmployeeHistory.vacation_days_details) return;
+
+                const searchLower = searchTerm.toLowerCase();
+
+                const filteredDetails = currentEmployeeHistory.vacation_days_details.filter(detail => {
+                    const date = new Date(detail.date);
+                    const day = date.getDate().toString().padStart(2, '0');
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const year = date.getFullYear();
+                    const monthName = getMonthName(date.getMonth() + 1).toLowerCase();
+
+                    const formattedDate = `${day}/${month}/${year}`;
+                    const statusInfo = translateAndStyleStatus(detail.status);
+
+                    return formattedDate.includes(searchLower) ||
+                        monthName.includes(searchLower) ||
+                        year.toString().includes(searchLower) ||
+                        statusInfo.display.toLowerCase().includes(searchLower);
+                });
+
+                renderHistoryTable(filteredDetails);
+            }
+
             function closeHistoryModalFunc() {
                 historyModal.style.display = 'none';
                 currentEmployeeHistory = null;
                 searchHistoryInput.value = '';
             }
 
-            // -------------------------------------------------------------------------
-            // MANEJADORES DE EVENTOS
-            // -------------------------------------------------------------------------
+            // ******************************************************************
+            // 🥇 FUNCIONES MEJORADAS PARA EL MODAL DE REPORTES
+            // ******************************************************************
 
-            // MANEJADOR: Abrir modal en modo Agregar (el botón está oculto, pero mantenemos la lógica)
-            openAddFormBtn.addEventListener('click', function() {
+            function toggleReportFilters() {
+                const reportType = reportTypeSelect.value;
+                const isTakenReport = reportType === 'TAKEN';
+
+                dateRangeGroup.style.display = isTakenReport ? 'grid' : 'none';
+                statusFilterGroup.style.display = isTakenReport ? 'block' : 'none';
+
+                // Limpiar errores al cambiar de tipo de reporte
+                dateFromError.textContent = '';
+                dateToError.textContent = '';
+
+                // Si cambiamos a AVAILABLE, forzamos la selección de todos los empleados
+                if (!isTakenReport) {
+                    toggleAllEmployees(true);
+                    selectAllEmployees.checked = true;
+                    selectAllEmployees.indeterminate = false;
+                }
+
+                updateReportSummary();
+            }
+
+            function updateReportSummary() {
+                const reportType = reportTypeSelect.value;
+                const selectedDepartments = getSelectedDepartments();
+                const selectedEmployees = getSelectedEmployees();
+                const dateFrom = dateFromInput.value;
+                const dateTo = dateToInput.value;
+                const selectedStatuses = getSelectedStatuses().map(s => translateAndStyleStatus(s).display); // Usar la traducción
+
+                // Actualizar tipo de reporte
+                summaryType.textContent = reportType === 'AVAILABLE' ? 'Días Disponibles' : 'Días Tomados';
+
+                // Actualizar departamentos
+                const totalDepartments = document.querySelectorAll('#department_checkbox_group input[type="checkbox"]').length;
+                if (selectedDepartments.length === 0) {
+                    summaryDepartments.textContent = 'Ninguno';
+                } else if (selectedDepartments.length === totalDepartments) {
+                    summaryDepartments.textContent = 'Todos';
+                } else {
+                    summaryDepartments.textContent = selectedDepartments.join(', ');
+                }
+
+                // Actualizar empleados
+                const visibleEmployeeCheckboxes = document.querySelectorAll('.employee-option[style*="display: flex"] input[type="checkbox"]').length;
+                if (selectedEmployees.length === 0) {
+                    summaryEmployees.textContent = 'Ninguno';
+                } else if (selectedEmployees.length === employeesData.length) {
+                    summaryEmployees.textContent = 'Todos';
+                } else if (selectedEmployees.length === visibleEmployeeCheckboxes && selectedDepartments.length < totalDepartments) {
+                    summaryEmployees.textContent = `Todos en ${selectedDepartments.length} Deptos.`;
+                } else {
+                    summaryEmployees.textContent = `${selectedEmployees.length} empleado(s) seleccionado(s)`;
+                }
+
+                // Actualizar fechas
+                if (reportType === 'TAKEN') {
+                    summaryDates.style.display = 'block';
+                    const fromText = dateFrom ? formatDateForDisplay(dateFrom) : 'Inicio';
+                    const toText = dateTo ? formatDateForDisplay(dateTo) : 'Fin';
+                    summaryDatesText.textContent = `${fromText} a ${toText}`;
+                } else {
+                    summaryDates.style.display = 'none';
+                }
+
+                // Actualizar estatus
+                if (reportType === 'TAKEN') {
+                    summaryStatus.style.display = 'block';
+                    if (selectedStatuses.length === 0) {
+                        summaryStatusText.textContent = 'Ninguno';
+                    } else {
+                        summaryStatusText.textContent = selectedStatuses.join(', ');
+                    }
+                } else {
+                    summaryStatus.style.display = 'none';
+                }
+            }
+
+            function formatDateForDisplay(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString + 'T00:00:00'); // Añadir T00:00:00 para evitar problemas de zona horaria
+                return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            }
+
+            function getSelectedDepartments() {
+                const selected = [];
+                document.querySelectorAll('#department_checkbox_group input[type="checkbox"]:checked').forEach(checkbox => {
+                    selected.push(checkbox.value);
+                });
+                return selected;
+            }
+
+            function getSelectedEmployees() {
+                const selected = [];
+                document.querySelectorAll('#employee_checkbox_group input[type="checkbox"]:checked').forEach(checkbox => {
+                    selected.push(checkbox.value);
+                });
+                return selected;
+            }
+
+            function getSelectedStatuses() {
+                const selected = [];
+                document.querySelectorAll('#status_filter_group input[type="checkbox"]:checked').forEach(checkbox => {
+                    selected.push(checkbox.value);
+                });
+                return selected;
+            }
+
+            function filterEmployeesByDepartment() {
+                const selectedDepartments = getSelectedDepartments();
+                const employeeOptions = document.querySelectorAll('.employee-option');
+                const isAllDepartmentsChecked = document.querySelectorAll('#department_checkbox_group input[type="checkbox"]').length === selectedDepartments.length;
+
+                employeeOptions.forEach(option => {
+                    const department = option.getAttribute('data-department');
+                    const checkbox = option.querySelector('input[type="checkbox"]');
+
+                    if (selectedDepartments.length === 0) {
+                        // Si no hay departamentos seleccionados, ocultar todos.
+                        option.style.display = 'none';
+                        checkbox.checked = false;
+                    } else if (selectedDepartments.includes(department)) {
+                        option.style.display = 'flex';
+                        // Mantener el estado de checked si ya estaba marcado antes de la selección inicial
+                        if (isAllDepartmentsChecked) {
+                            checkbox.checked = true;
+                        }
+                    } else {
+                        option.style.display = 'none';
+                        checkbox.checked = false;
+                    }
+                });
+
+                updateEmployeeSelectAllState();
+                updateReportSummary();
+            }
+
+            function updateDepartmentSelectAllState() {
+                const checkboxes = document.querySelectorAll('#department_checkbox_group input[type="checkbox"]');
+                const checkedCount = document.querySelectorAll('#department_checkbox_group input[type="checkbox"]:checked').length;
+
+                if (checkboxes.length === 0) return;
+
+                if (checkedCount === 0) {
+                    selectAllDepartments.checked = false;
+                    selectAllDepartments.indeterminate = false;
+                } else if (checkedCount === checkboxes.length) {
+                    selectAllDepartments.checked = true;
+                    selectAllDepartments.indeterminate = false;
+                } else {
+                    selectAllDepartments.checked = false;
+                    selectAllDepartments.indeterminate = true;
+                }
+            }
+
+            function updateEmployeeSelectAllState() {
+                const visibleCheckboxes = document.querySelectorAll('.employee-option[style*="display: flex"] input[type="checkbox"]');
+                const checkedCount = document.querySelectorAll('.employee-option[style*="display: flex"] input[type="checkbox"]:checked').length;
+
+                if (visibleCheckboxes.length === 0) {
+                    selectAllEmployees.disabled = true;
+                    selectAllEmployees.checked = false;
+                    selectAllEmployees.indeterminate = false;
+                } else {
+                    selectAllEmployees.disabled = false;
+                    if (checkedCount === 0) {
+                        selectAllEmployees.checked = false;
+                        selectAllEmployees.indeterminate = false;
+                    } else if (checkedCount === visibleCheckboxes.length) {
+                        selectAllEmployees.checked = true;
+                        selectAllEmployees.indeterminate = false;
+                    } else {
+                        selectAllEmployees.checked = false;
+                        selectAllEmployees.indeterminate = true;
+                    }
+                }
+            }
+
+            function toggleAllDepartments(checked) {
+                document.querySelectorAll('#department_checkbox_group input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = checked;
+                });
+                selectAllDepartments.indeterminate = false;
+                filterEmployeesByDepartment();
+            }
+
+            function toggleAllEmployees(checked) {
+                document.querySelectorAll('.employee-option[style*="display: flex"] input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = checked;
+                });
+                selectAllEmployees.indeterminate = false;
+                updateReportSummary();
+            }
+
+            function clearAllEmployees() {
+                document.querySelectorAll('#employee_checkbox_group input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateEmployeeSelectAllState();
+                updateReportSummary();
+            }
+
+            function validateReportForm() {
+                let isValid = true;
+                const reportType = reportTypeSelect.value;
+                const dateFrom = dateFromInput.value;
+                const dateTo = dateToInput.value;
+
+                dateFromError.textContent = '';
+                dateToError.textContent = '';
+
+                if (reportType === 'TAKEN') {
+                    if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
+                        dateToError.textContent = 'La fecha hasta debe ser igual o posterior a la fecha desde.';
+                        isValid = false;
+                    }
+                    if (getSelectedStatuses().length === 0) {
+                        // Opcional: Mostrar un mensaje de advertencia si no hay estatus seleccionado para TAKEN
+                        // Se puede omitir la validación dura y dejar que el backend maneje el caso de "sin datos".
+                    }
+                }
+
+                if (getSelectedDepartments().length === 0) {
+                    // Si no hay departamentos seleccionados, el reporte no tendrá datos.
+                    // Podrías agregar una alerta visual, pero no es una validación de envío estricta si el backend acepta arrays vacíos.
+                }
+
+                return isValid;
+            }
+
+            function getReportFormData() {
+                const data = {};
+                const formData = new FormData(reportForm);
+
+                for (let [key, value] of formData.entries()) {
+                    if (key.endsWith('[]')) {
+                        const cleanKey = key.slice(0, -2);
+                        if (!data[cleanKey]) {
+                            data[cleanKey] = [];
+                        }
+                        data[cleanKey].push(value);
+                    } else if (key !== '_token') {
+                        data[key] = value;
+                    }
+                }
+
+                data.departments = data.departments || [];
+                data.employees = data.employees || [];
+
+                if (data.report_type !== 'TAKEN') {
+                    data.date_from = null;
+                    data.date_to = null;
+                    data.status_filter = ['Approved', 'Reviewed', 'Under_Review', 'Rejected']; // Se envía todo, pero el backend lo ignora para AVAILABLE.
+                } else {
+                    data.status_filter = data.status_filter && data.status_filter.length > 0 ? data.status_filter : ['Approved'];
+                }
+
+                return data;
+            }
+
+            async function generateReport() {
+                if (!validateReportForm()) {
+                    return;
+                }
+
+                const reportData = getReportFormData();
+
+                generateReportBtn.disabled = true;
+                generateReportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+
+                const params = new URLSearchParams();
+                for (const key in reportData) {
+                    if (Array.isArray(reportData[key])) {
+                        reportData[key].forEach(val => params.append(key + '[]', val));
+                    } else if (reportData[key] !== null) {
+                        params.append(key, reportData[key]);
+                    }
+                }
+                params.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+                try {
+                    const response = await fetch('/recursoshumanos/loadchart/employee_vacation_balance/generate-report', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: params
+                    });
+
+                    if (response.headers.get('content-type') && response.headers.get('content-type').includes('application/json')) {
+                        const data = await response.json();
+                        let errorMessages = '';
+                        if (response.status === 422 && data.errors) {
+                            for (const field in data.errors) {
+                                errorMessages += `<li>${data.errors[field][0]}</li>`;
+                                if (field.includes('date_from')) dateFromError.textContent = data.errors[field][0];
+                                if (field.includes('date_to')) dateToError.textContent = data.errors[field][0];
+                            }
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: '¡Revisa los Filtros!',
+                                    html: `<ul>${errorMessages}</ul>`,
+                                    confirmButtonText: 'Corregir'
+                                });
+                            }
+                        } else {
+                            const message = data.message || 'Error desconocido al generar el reporte.';
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error Inesperado',
+                                    text: message,
+                                    confirmButtonText: 'Aceptar'
+                                });
+                            }
+                        }
+                    } else if (response.ok) {
+                        const blob = await response.blob();
+                        const disposition = response.headers.get('Content-Disposition');
+                        let filename = 'reporte_vacaciones.pdf';
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                            const matches = filenameRegex.exec(disposition);
+                            if (matches != null && matches[1]) {
+                                filename = matches[1].replace(/['"]/g, '');
+                            }
+                        }
+
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Reporte Generado!',
+                                text: `El archivo ${filename} se ha descargado exitosamente.`,
+                                timer: 3000,
+                                showConfirmButton: false
+                            });
+                        }
+
+                        closeReportModalFunc();
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error HTTP ' + response.status,
+                                text: 'Ocurrió un error en el servidor al generar el reporte.',
+                                confirmButtonText: 'Aceptar'
+                            });
+                        }
+                    }
+                } catch (error) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de Conexión',
+                            text: 'No se pudo conectar con el servidor para generar el reporte. Verifica tu red.',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                } finally {
+                    generateReportBtn.disabled = false;
+                    generateReportBtn.innerHTML = '<i class="fas fa-download"></i> Generar Reporte PDF';
+                }
+            }
+
+            function closeReportModalFunc() {
+                reportModal.style.display = 'none';
+                dateFromError.textContent = '';
+                dateToError.textContent = '';
+                // Opcional: Reestablecer a valores por defecto o mantener la última selección.
+                // reportTypeSelect.value = 'AVAILABLE';
+                // toggleReportFilters();
+            }
+
+            // ******************************************************************
+            // MANEJADORES DE EVENTOS - MEJORADOS
+            // ******************************************************************
+
+            // Eventos existentes...
+            document.getElementById('openAddFormBtn').addEventListener('click', function() {
                 if (isBalanceView) {
                     resetForm();
-                    // Para agregar, el SELECT debe ser el que contenga el name, no el hidden
-                    // Por simplicidad, si el botón estuviera visible, deberíamos habilitar el SELECT
-                    // y quitar el 'name' al HIDDEN, pero como está oculto, mantenemos la configuración actual
-                    // y la lógica de `saveBalance` se encarga de transferir el valor en modo agregar.
                     formModal.style.display = 'flex';
                 }
             });
 
-            // MANEJADOR: Enviar Formulario (dentro del modal)
             vacationForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 saveBalance();
             });
 
-            // MANEJADOR: Cancelar Edición/Agregar (dentro del modal)
             cancelEditModal.addEventListener('click', function() {
                 closeFormModal();
             });
 
-            // MANEJADOR: Cerrar modal de Formulario con la X
             closeFormModalBtn.addEventListener('click', function() {
                 closeFormModal();
             });
 
-            // MANEJADOR: Alternar vista
             toggleVacationViewBtn.addEventListener('click', function() {
                 isBalanceView = !isBalanceView;
                 currentPage = 1;
                 searchInput.value = '';
-
-                if (isBalanceView) {
-                    toggleVacationViewBtn.innerHTML =
-                        '<i class="fas fa-calendar-check"></i> Ver Vacaciones Tomadas';
-                    toggleVacationViewBtn.classList.remove('btn-outline');
-                    toggleVacationViewBtn.classList.add('btn-primary');
-                } else {
-                    toggleVacationViewBtn.innerHTML =
-                        '<i class="fas fa-balance-scale"></i> Ver Balances Disponibles';
-                    toggleVacationViewBtn.classList.remove('btn-primary');
-                    toggleVacationViewBtn.classList.add('btn-outline');
-                }
 
                 renderTableAndPagination();
             });
@@ -1620,12 +2103,10 @@
                 renderTableAndPagination();
             });
 
-            // Buscador en el modal de historial
             searchHistoryInput.addEventListener('input', function() {
                 filterHistory(this.value);
             });
 
-            // Delegación de eventos para botones de tabla (Editar/Eliminar/Historial)
             document.addEventListener('click', function(e) {
                 if (isBalanceView) {
                     if (e.target.closest('.btn-edit')) {
@@ -1639,10 +2120,7 @@
                 } else {
                     if (e.target.closest('.btn-history')) {
                         const employeeName = e.target.closest('.btn-history').dataset.employeeId;
-                        // Buscar los datos del empleado
-                        const employeeData = vacationDaysTakenData.find(item =>
-                            item.full_name === employeeName
-                        );
+                        const employeeData = vacationDaysTakenData.find(item => item.full_name === employeeName);
                         if (employeeData) {
                             openHistoryModal(employeeData);
                         }
@@ -1650,7 +2128,6 @@
                 }
             });
 
-            // MANEJADOR: Botón de confirmación en el Modal
             confirmActionBtn.addEventListener('click', async function() {
                 if (currentAction === 'delete' && currentBalanceId) {
                     await deleteBalance(currentBalanceId);
@@ -1659,7 +2136,6 @@
                 }
             });
 
-            // MANEJADOR: Botones de cerrar el Modal de confirmación
             document.getElementById('cancelConfirm').addEventListener('click', function() {
                 confirmModal.style.display = 'none';
             });
@@ -1668,11 +2144,58 @@
                 confirmModal.style.display = 'none';
             });
 
-            // MANEJADOR: Cerrar modal de historial
             closeHistoryModalBtn.addEventListener('click', closeHistoryModalFunc);
             closeHistoryModal.addEventListener('click', closeHistoryModalFunc);
 
-            // MANEJADOR: Cerrar modales haciendo clic fuera
+            // 🥇 NUEVOS EVENTOS PARA EL MODAL DE REPORTES MEJORADO
+            openReportModalBtn.addEventListener('click', function() {
+                reportModal.style.display = 'flex';
+                toggleReportFilters();
+                updateReportSummary();
+            });
+
+            closeReportModalBtn.addEventListener('click', closeReportModalFunc);
+            cancelReportModal.addEventListener('click', closeReportModalFunc);
+
+            reportTypeSelect.addEventListener('change', toggleReportFilters);
+
+            dateFromInput.addEventListener('change', function() {
+                validateReportForm();
+                updateReportSummary();
+            });
+
+            dateToInput.addEventListener('change', function() {
+                validateReportForm();
+                updateReportSummary();
+            });
+
+            generateReportBtn.addEventListener('click', generateReport);
+
+            // Eventos para los nuevos filtros mejorados
+            selectAllDepartments.addEventListener('change', function() {
+                toggleAllDepartments(this.checked);
+            });
+
+            departmentCheckboxGroup.addEventListener('change', function() {
+                updateDepartmentSelectAllState();
+                filterEmployeesByDepartment();
+            });
+
+            selectAllEmployees.addEventListener('change', function() {
+                toggleAllEmployees(this.checked);
+            });
+
+            employeeCheckboxGroup.addEventListener('change', function() {
+                updateEmployeeSelectAllState();
+                updateReportSummary();
+            });
+
+            clearEmployeesBtn.addEventListener('click', clearAllEmployees);
+
+            // Eventos para actualizar el resumen cuando cambian los checkboxes de estatus
+            statusFilterGroup.addEventListener('change', updateReportSummary);
+
+            // Cerrar modales haciendo clic fuera
             window.addEventListener('click', function(event) {
                 if (event.target === confirmModal) {
                     confirmModal.style.display = 'none';
@@ -1683,10 +2206,17 @@
                 if (event.target === historyModal) {
                     closeHistoryModalFunc();
                 }
+                if (event.target === reportModal) {
+                    closeReportModalFunc();
+                }
             });
 
-            // Iniciar la aplicación
+            // Inicializar la aplicación
             initialize();
+
+            // Inicializar estados de los selectores múltiples
+            updateDepartmentSelectAllState();
+            updateEmployeeSelectAllState();
         });
     </script>
 @endsection

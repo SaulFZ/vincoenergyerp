@@ -510,11 +510,13 @@
                                     <option value="">Seleccionar bono de campo...</option>
                                     @foreach ($fieldBonuses as $bonus)
                                         <option value="{{ $bonus->bonus_identifier }}">
+                                            {{-- Se muestra SOLAMENTE el tipo de bono --}}
                                             {{ $bonus->bonus_type }}
                                         </option>
                                     @endforeach
                                 </select>
-                                <div class="error-message" id="field-bonus-error">Debes seleccionar un bono de campo.
+                                <div class="error-message" id="field-bonus-error">
+                                    Debes seleccionar un bono de campo.
                                 </div>
                             </div>
                             @if (\App\Helpers\PermissionHelper::hasDirectPermission('realiza_servicios'))
@@ -608,7 +610,8 @@
                                     placeholder="Seleccionar fecha del servicio" readonly>
                             </div>
                             <small class="form-help">Fecha real en la que el servicio se llevó a cabo. Por defecto se
-                                carga el día seleccionado en el calendario. Cámbiala solo si el servicio fue en otra fecha anterior.
+                                carga el día seleccionado en el calendario. Cámbiala solo si el servicio fue en otra
+                                fecha anterior.
                             </small>
                             <div class="error-message" id="service-real-date-error" style="display:none;">Debes
                                 seleccionar la fecha real del servicio.
