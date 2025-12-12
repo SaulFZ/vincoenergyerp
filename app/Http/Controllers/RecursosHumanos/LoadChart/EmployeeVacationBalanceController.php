@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 
+
 class EmployeeVacationBalanceController extends Controller
 {
     public function index()
@@ -364,7 +365,7 @@ class EmployeeVacationBalanceController extends Controller
                 'allEmployees' => Employee::select('id', 'full_name', 'employee_number')->get()->keyBy('id')->toArray(),
             ];
 
-            $pdf = PDF::loadView('modulos.recursoshumanos.sistemas.loadchart.reports.vacation_report_pdf', $data);
+            $pdf = Pdf::loadView('modulos.recursoshumanos.sistemas.loadchart.reports.vacation_report_pdf', $data);
 
             // 🌟 LÍNEA CORREGIDA: Eliminamos el tipo de reporte del nombre
             return $pdf->download('reporte_vacaciones_' . Carbon::now()->format('Y-m-d') . '.pdf');
