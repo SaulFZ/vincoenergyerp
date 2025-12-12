@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class EmployeeVacationBalanceController extends Controller
 {
