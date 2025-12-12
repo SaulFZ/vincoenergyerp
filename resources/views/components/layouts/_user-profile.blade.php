@@ -74,8 +74,9 @@
         position: relative;
     }
 
-    /* --- Icono de Notificación --- */
-    .notification-icon {
+    /* --- Icono de Notificación / Icono de Inicio --- */
+    .notification-icon,
+    .home-icon { /* ✅ Nuevo estilo para el botón de Inicio */
         width: 44px;
         height: 44px;
         border-radius: 50%;
@@ -91,7 +92,8 @@
         box-shadow: var(--sombra);
     }
 
-    .notification-icon:hover {
+    .notification-icon:hover,
+    .home-icon:hover { /* ✅ Nuevo hover para el botón de Inicio */
         background: var(--color-light);
         color: var(--color-dark);
         transform: scale(1.05);
@@ -919,7 +921,8 @@
             font-size: 1rem;
         }
 
-        .notification-icon {
+        .notification-icon,
+        .home-icon { /* ✅ Ajuste responsive */
             width: 40px;
             height: 40px;
         }
@@ -938,6 +941,11 @@
     }
 </style>
 <div class="user-actions" data-gender="{{ $userGender }}">
+    {{-- ✅ NUEVO BOTÓN DE INICIO: Sacado del dropdown --}}
+    <a href="{{ route('home') }}" class="home-icon" title="Ir a Inicio">
+        <i class="fas fa-home"></i>
+    </a>
+
     <div class="notification-icon" style="display: none;">
         <i class="fas fa-bell"></i>
         @if ($notificationCount > 0)
@@ -1000,10 +1008,11 @@
             <i class="fas fa-user-circle"></i>
             Mi perfil
         </a>
-        <a class="dropdown-item" href="{{ route('home') }}">
+        {{-- 🚫 ELEMENTO ELIMINADO: El botón de Inicio se movió al nivel de .user-actions --}}
+        {{-- <a class="dropdown-item" href="{{ route('home') }}">
             <i class="fas fa-home"></i>
             Inicio
-        </a>
+        </a> --}}
 
         <form action="{{ route('logout') }}" method="POST" class="logout-form">
             @csrf
@@ -1396,3 +1405,4 @@
         document.body.style.overflow = '';
     };
 </script>
+

@@ -58,6 +58,15 @@
             {{-- INICIO: NUEVO CONTENEDOR DE FILTROS (Solo si tiene permiso) --}}
             @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
                 <div class="filters-container" id="filters-container" style="display: none;">
+                    {{-- ⭐ NUEVO FILTRO DE ASIGNACIÓN --}}
+                    <div class="filter-group">
+                        <label for="assignment-filter">Asignación</label>
+                        <select id="assignment-filter" class="filter-select">
+                            <option value="all">Todos los Empleados</option>
+                            <option value="assigned" selected>Solo Asignados (Yo)</option>
+                        </select>
+                    </div>
+                    {{-- FILTRO DE DEPARTAMENTO EXISTENTE --}}
                     <div class="filter-group">
                         <label for="department-filter">Departamento</label>
                         {{-- La variable $departments viene del controlador --}}
@@ -68,6 +77,7 @@
                             @endforeach
                         </select>
                     </div>
+                    {{-- FILTRO DE BÚSQUEDA EXISTENTE --}}
                     <div class="filter-group filter-search-group">
                         <label for="employee-search">Buscar Empleado</label>
                         <input type="text" id="employee-search" class="filter-input"
@@ -121,6 +131,10 @@
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: var(--absence);">A</div>
                     <span>Ausencia</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--absence);">N</div>
+                    <span>No Aplica/Sin Act.</span>
                 </div>
                 <div class="legend-divider"></div>
                 {{-- ➡️ Indicadores de Aprobación --}}
@@ -204,7 +218,7 @@
                                         ? 'squad-group-row-active'
                                         : 'squad-group-row-none';
                                 @endphp
-                                <tr class="squad-group-row {{ $squadClass }}">
+                                <tr class="squad-group-row {{ $squadClass }}" data-squad-number="{{ $squadNumber }}">
                                     <td colspan="{{ $colspanValue }}" class="squad-group-label">
                                         {{ $squadLabel }}
                                     </td>

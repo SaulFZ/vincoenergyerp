@@ -56,11 +56,24 @@ function initializeApprovalTable() {
         // 🆕 Inicializar la lista de filas para el filtrado
         allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
         allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
+
+        // ⭐ LÓGICA DE FILTRO POR DEFECTO:
+        // Si tiene permiso de filtros, aplicar el filtro por defecto "assigned"
+        if (canSeeFilters) {
+            // Asegurarse de que el valor por defecto sea 'assigned'
+            const assignmentFilter = document.getElementById('assignment-filter');
+            if (assignmentFilter) {
+                assignmentFilter.value = 'assigned';
+            }
+            applyFilters();
+        }
     });
 
     // 🆕 Inicializar Event Listeners de Filtro
     if (canSeeFilters) {
         document.getElementById('toggle-filters-btn').addEventListener('click', toggleFilters);
+        // ⭐ NUEVO LISTENER: Asignación
+        document.getElementById('assignment-filter').addEventListener('change', applyFilters);
         document.getElementById('department-filter').addEventListener('change', applyFilters);
         document.getElementById('employee-search').addEventListener('input', applyFilters);
     }
@@ -203,7 +216,7 @@ function toggleFilters() {
 
 
 /**
- * Aplica los filtros de departamento y búsqueda.
+ * Aplica los filtros de departamento, asignación y búsqueda.
  */
 function applyFilters() {
     // Solo aplica los filtros si el usuario tiene el permiso
@@ -211,16 +224,25 @@ function applyFilters() {
         return;
     }
 
+    // ⭐ OBTENER NUEVO VALOR DE FILTRO DE ASIGNACIÓN
+    const assignmentFilter = document.getElementById('assignment-filter').value;
     const departmentFilter = document.getElementById('department-filter').value;
     const searchFilter = document.getElementById('employee-search').value.toLowerCase().trim();
 
     allEmployeeRows.forEach(row => {
         const department = row.getAttribute('data-department');
-        const employeeName = row.querySelector('.employee-info-cell').textContent.trim().toLowerCase();
-
-        // Buscar info del empleado en la lista global para obtener el número
         const employeeId = row.getAttribute('data-employee-id');
+
+        // Buscar info de la asignación del empleado
+        const employeeAssignment = loadChartAssignments.find(a => a.employee_id.toString() === employeeId);
+        const isReviewerForEmployee = employeeAssignment && employeeAssignment.reviewer_id === currentUserId;
+        const isApproverForEmployee = employeeAssignment && employeeAssignment.approver_id === currentUserId;
+        // ⭐ NUEVA LÓGICA DE FILTRO POR ASIGNACIÓN
+        const isAssigned = isReviewerForEmployee || isApproverForEmployee;
+
+        // Buscar info del empleado en la lista global
         const employeeData = employees.find(e => e.id.toString() === employeeId);
+        const employeeName = employeeData ? employeeData.full_name.toLowerCase().trim() : '';
         const employeeNumber = employeeData ? employeeData.employee_number.toString().toLowerCase() : '';
 
 
@@ -230,11 +252,15 @@ function applyFilters() {
         // 2. Filtrar por Búsqueda (Nombre o Número de Empleado)
         const matchesSearch = !searchFilter || employeeName.includes(searchFilter) || employeeNumber.includes(searchFilter);
 
-        // 3. Aplicar visibilidad a las filas principales (employee-row)
-        const isVisible = matchesDepartment && matchesSearch;
+        // ⭐ 3. Filtrar por Asignación
+        const matchesAssignment = assignmentFilter === 'all' || (assignmentFilter === 'assigned' && isAssigned);
+
+
+        // 4. Aplicar visibilidad a las filas principales (employee-row)
+        const isVisible = matchesDepartment && matchesSearch && matchesAssignment; // ⭐ SE COMBINA EL NUEVO FILTRO
         row.style.display = isVisible ? '' : 'none';
 
-        // 4. Ocultar filas de detalle asociadas al empleado si la fila principal no es visible
+        // 5. Ocultar filas de detalle asociadas al empleado si la fila principal no es visible
         let nextRow = row.nextElementSibling;
         while (nextRow && nextRow.classList.contains('activity-row') && nextRow.getAttribute('data-employee-id') === row.getAttribute('data-employee-id')) {
             // Si la fila de empleado principal se oculta, también se ocultan sus detalles
@@ -258,7 +284,7 @@ function applyFilters() {
         }
     });
 
-    // 5. Recalcular la visibilidad de las filas de cuadrilla (squad-group-row)
+    // 6. Recalcular la visibilidad de las filas de cuadrilla (squad-group-row)
     allSquadRows.forEach(squadRow => {
         const nextRow = squadRow.nextElementSibling;
         let showSquadRow = false;
@@ -282,7 +308,7 @@ function applyFilters() {
         squadRow.style.display = showSquadRow ? '' : 'none';
     });
 
-    // 6. Re-aplicar el filtro de quincena para asegurar que las celdas de días se muestren correctamente
+    // 7. Re-aplicar el filtro de quincena para asegurar que las celdas de días se muestren correctamente
     if (currentView === 'quincena1') {
         showQuincena(1);
     } else if (currentView === 'quincena2') {
@@ -291,7 +317,7 @@ function applyFilters() {
         showFullMonth();
     }
 
-    // 7. Volver a calcular totales para actualizar el resumen
+    // 8. Volver a calcular totales para actualizar el resumen
     calculateAndRenderTotals();
 }
 // TERMINA LÓGICA DE FILTROS

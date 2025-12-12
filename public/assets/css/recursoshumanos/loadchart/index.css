@@ -120,9 +120,8 @@ body {
 }
 
 .logo-img {
-    width: 90px;
+    width: 100px;
     /* Tamaño por defecto para desktop/tablet */
-    height: 35px;
     display: flex;
     align-items: center;
     justify-content: center;

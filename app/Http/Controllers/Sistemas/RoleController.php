@@ -10,6 +10,7 @@ use App\Models\Sistemas\UserPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\File; // Necesario para manipular archivos
 
 class RoleController extends Controller
 {
@@ -35,8 +36,8 @@ class RoleController extends Controller
                         'status'             => $user->status ?? 'inactive',
                         'employee_id'        => $user->employee_id,
                         'employee_name'      => $user->employee
-                        ? $user->employee->full_name
-                        : null,
+                            ? $user->employee->full_name
+                            : null,
                         'employee_photo'     => $user->employee ? $user->employee->photo : null,
                         'role_id'            => $user->role_id,
                         'role_name'          => $user->role ? $user->role->name : null,
@@ -89,7 +90,7 @@ class RoleController extends Controller
         $employees = Employee::query()
             ->where('full_name', 'like', '%' . $query . '%')
             ->limit(10)
-            ->get(['id', 'full_name']);
+            ->get(['id', 'full_name', 'photo']);
 
         return response()->json($employees);
     }
@@ -124,6 +125,7 @@ class RoleController extends Controller
             'permissions'          => 'required|array',
             'direct_permissions'   => 'sometimes|array',
             'direct_permissions.*' => 'exists:permissions,id',
+            'photo'                => 'nullable|string', // Para la foto en base64
         ])->validate();
 
         DB::beginTransaction();
@@ -138,14 +140,29 @@ class RoleController extends Controller
                 'role_id'     => $validated['role_id'],
             ]);
 
+            $employee = null;
+            // Manejar la foto al CREAR usuario
+            if ($user->employee_id && isset($validated['photo'])) {
+                $employee = Employee::find($user->employee_id);
+                if ($employee) {
+                    $photoPath = $this->processPhoto($validated['photo'], $employee->photo);
+                    if ($photoPath) {
+                        $employee->photo = $photoPath;
+                        $employee->save();
+                    }
+                }
+            }
+
             $formattedPermissions = $this->formatPermissionsForStorage(
                 $validated['permissions']
             );
             UserPermission::updatePermissions($user->id, $formattedPermissions);
 
-            // Sincronizar permisos directos - ESTA ES LA PARTE CLAVE
+            // Sincronizar permisos directos
             if (! empty($validated['direct_permissions'])) {
                 $user->directPermissions()->sync($validated['direct_permissions']);
+            } else {
+                $user->directPermissions()->detach();
             }
 
             DB::commit();
@@ -154,6 +171,7 @@ class RoleController extends Controller
                 'success' => true,
                 'message' => 'Usuario y permisos guardados correctamente',
                 'user'    => $user,
+                'employee_photo' => $employee->photo ?? null,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -221,14 +239,18 @@ class RoleController extends Controller
             $user->save();
 
             // Actualizar foto del empleado si existe
-            if ($user->employee_id && isset($validatedData['photo'])) {
+            $employee = null;
+            if ($user->employee_id) {
                 $employee = Employee::find($user->employee_id);
-                if ($employee) {
+                if ($employee && isset($validatedData['photo'])) {
                     $photoPath = $this->processPhoto($validatedData['photo'], $employee->photo);
-                    if ($photoPath) {
+
+                    if (is_null($photoPath) && $validatedData['photo'] === '') {
+                         $employee->photo = null;
+                    } elseif ($photoPath) {
                         $employee->photo = $photoPath;
-                        $employee->save();
                     }
+                    $employee->save();
                 }
             }
 
@@ -238,6 +260,7 @@ class RoleController extends Controller
             if (isset($validatedData['direct_permissions'])) {
                 $user->directPermissions()->sync($validatedData['direct_permissions']);
             } else {
+                // Si no se envían permisos directos, desvincular TODOS.
                 $user->directPermissions()->detach();
             }
 
@@ -317,7 +340,9 @@ class RoleController extends Controller
         return $formattedPermissions;
     }
 
-    // Agrega este método al RoleController
+    /**
+     * Obtiene los permisos disponibles
+     */
     public function getPermissions()
     {
         $permissions = Permission::all()->map(function ($permission) {
@@ -335,31 +360,59 @@ class RoleController extends Controller
         ]);
     }
 
-    // Método para procesar la foto
+    /**
+     * Método para procesar la foto - Incluye la lógica para eliminar la foto
+     */
     private function processPhoto($base64Photo, $currentPhoto = null)
     {
+        // Caso 1: La foto se ha borrado (el cliente envía una cadena vacía)
+        if (empty($base64Photo)) {
+            if ($currentPhoto) {
+                 // Eliminar físicamente la foto anterior
+                $oldPhotoPath = public_path($currentPhoto);
+                if (File::exists($oldPhotoPath)) {
+                    File::delete($oldPhotoPath);
+                }
+            }
+            return null; // Devolver null para guardar en DB
+        }
+
+        // Caso 2: Se sube una nueva foto (base64)
         if (strpos($base64Photo, 'base64') !== false) {
-            // Eliminar la foto anterior si existe
+
+            // Eliminar la foto anterior antes de subir la nueva
             if ($currentPhoto) {
                 $oldPhotoPath = public_path($currentPhoto);
-                if (file_exists($oldPhotoPath)) {
-                    unlink($oldPhotoPath);
+                if (File::exists($oldPhotoPath)) {
+                    File::delete($oldPhotoPath);
                 }
             }
 
-            // Procesar nueva foto
-            $image     = explode(',', $base64Photo)[1];
-            $imageData = base64_decode($image);
-            $fileName  = 'employee_' . time() . '.png';
-            $path      = 'assets/img/employees/' . $fileName;
+            // Procesar y guardar nueva foto
+            try {
+                $image     = explode(',', $base64Photo)[1];
+                $imageData = base64_decode($image);
 
-            // Guardar la imagen en el servidor
-            file_put_contents(public_path($path), $imageData);
+                // Asegurar que la carpeta exista
+                $dirPath = public_path('assets/img/employees');
+                if (!File::exists($dirPath)) {
+                    File::makeDirectory($dirPath, 0777, true, true);
+                }
 
-            return $path;
+                $fileName  = 'employee_' . time() . '.png';
+                $path      = 'assets/img/employees/' . $fileName;
+
+                File::put(public_path($path), $imageData);
+
+                return $path;
+            } catch (\Exception $e) {
+                \Log::error("Error al procesar foto: " . $e->getMessage());
+                return $currentPhoto; // Si falla, mantener la foto antigua
+            }
         }
 
-        return $currentPhoto; // Si no es una nueva foto, mantener la existente
+        // Caso 3: Es la URL de la foto existente y se mantiene (no hacer nada)
+        return $currentPhoto;
     }
 
     /**

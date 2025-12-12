@@ -90,10 +90,11 @@
                         <i class="fas fa-chevron-right"></i>
                     </div>
                     <ul class="systems-list active">
-                         @if (in_array('gerenciaminto', $userPermissions['qhse']) || empty($userPermissions['qhse']))
-                            <li class="system-item" data-route="/qhse/gerenciaminto">
-                                <i class="fas fa-exclamation-triangle system-icon"></i>
-                                <span class="system-text">Gerenciaminto</span>
+                        @if (in_array('gerenciamiento', $userPermissions['qhse']) || empty($userPermissions['qhse']))
+                            <li class="system-item" data-route="/qhse/gerenciamiento">
+                                {{-- Ícono cambiado a fas fa-tachometer-alt (Tablero/Gestión) --}}
+                                <i class="fas fa-solid fa-road system-icon"></i>
+                                <span class="system-text">Gerenciamiento</span>
                             </li>
                         @endif
                         @if (in_array('incidencias', $userPermissions['qhse']) || empty($userPermissions['qhse']))

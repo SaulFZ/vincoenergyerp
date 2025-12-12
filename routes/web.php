@@ -45,12 +45,17 @@ Route::get('/', function () {
         : redirect()->route('login');
 });
 
-// Ruta para que JavaScript pueda "ping" y refrescar la sesión.
-// Debe estar protegida por el middleware 'auth' (o 'web' si usas rutas web)
+// En routes/web.php
 Route::post('/session-ping', function () {
-    // Si la petición llega aquí, Laravel ya refrescó el tiempo de la sesión.
-    return response()->json(['status' => 'Session Refreshed']);
-})->middleware('auth');
+    // Esto refresca automáticamente la sesión de Laravel
+    request()->session()->put('last_activity', now());
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Session Refreshed',
+        'timestamp' => now()->toDateTimeString()
+    ]);
+})->middleware(['auth', 'web']); // Asegúrate de usar los middlewares correctos
 
 // ===================================================
 // RUTAS DE INTERFAZ DE USUARIO
@@ -79,36 +84,60 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:administracion')
         ->name('modulo.administracion');
 
-    // ===================================================
-    // MÓDULO: QHSE Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('qhse')
-        ->middleware('check.permission:qhse')
-        ->group(function () {
-            // Página principal QHSE
+// ===================================================
+// MÓDULO: QHSE Y SUBSISTEMAS
+// ===================================================
+Route::prefix('qhse')
+    ->middleware('check.permission:qhse')
+    ->group(function () {
+
+        // Página principal QHSE
+        Route::get('/', function () {
+            return view('modulos.qhse.qhsehome');
+        })->name('modulo.qhse');
+
+        // ===================================================
+        // GRUPO GERENCIAMIENTO 🏆
+        // Prefijo: /qhse/gerenciamiento
+        // ===================================================
+        Route::prefix('gerenciamiento')->group(function () {
+
+            // Ruta principal del subsistema Gerenciamiento
             Route::get('/', function () {
-                return view('modulos.qhse.qhsehome');
-            })->name('modulo.qhse');
-
-            // Subsistemas de QHSE
-            Route::get('/vescap', function () {
-                return view('modulos.qhse.sistemas.vescap.index');
+                return view('modulos.qhse.sistemas.gerenciamiento.index');
             })
-                ->middleware('check.permission:qhse,vescap')
-                ->name('qhse.vescap');
+                ->middleware('check.permission:qhse,gerenciamiento')
+                ->name('qhse.gerenciamiento');
 
-            Route::get('/incidencias', function () {
-                return view('modulos.qhse.sistemas.incidencias.index');
-            })
-                ->middleware('check.permission:qhse,incidencias')
-                ->name('qhse.incidencias');
-
-            Route::get('/auditorias', function () {
-                return view('modulos.qhse.sistemas.auditorias.index');
-            })
-                ->middleware('check.permission:qhse,auditorias')
-                ->name('qhse.auditorias');
+            // Si en el futuro añades un DashboardController::class o algo similar:
+            /*
+            Route::controller(DashboardController::class)->group(function () {
+                Route::get('/dashboard', 'index')->name('gerenciamiento.dashboard');
+                // ... otras rutas específicas de Gerenciamiento ...
+            });
+            */
         });
+
+        // Subsistemas de QHSE (mantienen la estructura simple ya que no tienen rutas anidadas)
+        Route::get('/vescap', function () {
+            return view('modulos.qhse.sistemas.vescap.index');
+        })
+            ->middleware('check.permission:qhse,vescap')
+            ->name('qhse.vescap');
+
+        Route::get('/incidencias', function () {
+            return view('modulos.qhse.sistemas.incidencias.index');
+        })
+            ->middleware('check.permission:qhse,incidencias')
+            ->name('qhse.incidencias');
+
+        Route::get('/auditorias', function () {
+            return view('modulos.qhse.sistemas.auditorias.index');
+        })
+            ->middleware('check.permission:qhse,auditorias')
+            ->name('qhse.auditorias');
+    });
+
 
 // ===================================================
 // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
@@ -223,25 +252,22 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/field-bonuses/{id}/toggle-status', 'toggleStatus');
                 });
 
-           // ...
-Route::prefix('employee_vacation_balance')->controller(EmployeeVacationBalanceController::class)->group(function () {
-    Route::get('/', 'index')->name('vacation_balance.index');
-    Route::post('/', 'store');
-    Route::get('/{id}/edit', 'edit');
-    Route::put('/{id}', 'update');
-    Route::delete('/{id}', 'destroy');
-    Route::post('/force-update-years', 'forceUpdateYears');
-    // 🥇 NUEVA RUTA PARA GENERAR EL REPORTE
-    Route::post('/generate-report', 'generateReport')->name('vacation_balance.generate_report');
-});
-// ...
+                Route::prefix('employee_vacation_balance')->controller(EmployeeVacationBalanceController::class)->group(function () {
+                    Route::get('/', 'index')->name('vacation_balance.index');
+                    Route::post('/', 'store');
+                    Route::get('/{id}/edit', 'edit');
+                    Route::put('/{id}', 'update');
+                    Route::delete('/{id}', 'destroy');
+                    Route::post('/force-update-years', 'forceUpdateYears');
+                    // 🥇 NUEVA RUTA PARA GENERAR EL REPORTE
+                    Route::post('/generate-report', 'generateReport')->name('vacation_balance.generate_report');
+                });
 
                 Route::get('/stats', function () {
                     return view('modulos.recursoshumanos.sistemas.loadchart.stats');
                 })->name('loadchart.stats');
             });
         });
-// El cierre del paréntesis final (}); ya no es necesario aquí si se incluye en el archivo principal.
 
 // ===================================================
 // MÓDULO: SISTEMAS Y SUBSISTEMAS

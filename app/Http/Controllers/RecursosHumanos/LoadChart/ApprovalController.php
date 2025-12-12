@@ -120,7 +120,7 @@ class ApprovalController extends Controller
 
         $fortnightlyConfig = FortnightlyConfig::where('year', $currentYear)->where('month', $currentMonth)->first();
         if (! $fortnightlyConfig) {$fortnightlyConfig = $this->createDefaultFortnightlyConfig($currentYear, $currentMonth);}
-        $monthlyDays          = $this->getMonthlyDaysWithFortnights($currentYear, $currentMonth, $fortnightlyConfig);
+        $monthlyDays           = $this->getMonthlyDaysWithFortnights($currentYear, $currentMonth, $fortnightlyConfig);
         $assignedEmployeeIds = $this->getAssignedEmployeeIds();
         $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
 
@@ -187,8 +187,8 @@ class ApprovalController extends Controller
             $isQuincena2      = $date >= $q2Start && $date <= $q2End;
             $isCurrentMonth = $date->month == $month;
             $monthlyDays[]    = [
-                'day'                 => $date->day, 'date' => $date->copy()->format('Y-m-d'), 'day_name' => $date->locale('es')->shortDayName,
-                'is_quincena_1'       => $isQuincena1, 'is_quincena_2' => $isQuincena2, 'is_working_day' => $isQuincena1 || $isQuincena2,
+                'day'                => $date->day, 'date' => $date->copy()->format('Y-m-d'), 'day_name' => $date->locale('es')->shortDayName,
+                'is_quincena_1'      => $isQuincena1, 'is_quincena_2' => $isQuincena2, 'is_working_day' => $isQuincena1 || $isQuincena2,
                 'is_current_month' => $isCurrentMonth, 'month' => $date->month,
             ];
         }
@@ -233,7 +233,7 @@ class ApprovalController extends Controller
             if ($year < 2020 || $year > 2030 || $month < 1 || $month > 12) {return response()->json(['error' => 'Año o mes inválido'], 400);}
             $fortnightlyConfig = FortnightlyConfig::where('year', $year)->where('month', $month)->first();
             if (! $fortnightlyConfig) {$fortnightlyConfig = $this->createDefaultFortnightlyConfig($year, $month);}
-            $monthlyDays          = $this->getMonthlyDaysWithFortnights($year, $month, $fortnightlyConfig);
+            $monthlyDays           = $this->getMonthlyDaysWithFortnights($year, $month, $fortnightlyConfig);
             $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
             $assignedEmployeeIds = $this->getAssignedEmployeeIds();
 
@@ -581,9 +581,9 @@ class ApprovalController extends Controller
                         if ($oldStatus === 'approved' && ($newStatus === 'reviewed' || $newStatus === 'under_review')) {$canUpdate = false;}
 
                         if ($canUpdate && $oldStatus !== $newStatus) {
-                            $item['status']              = ucfirst($newStatus);
-                            $item['rejection_reason']    = $rejectionReason;
-                            $tempUpdated                 = true;
+                            $item['status']             = ucfirst($newStatus);
+                            $item['rejection_reason']   = $rejectionReason;
+                            $tempUpdated                = true;
 
                             // 👇 REGISTRAR RECHAZO PARA CORREO (Sub-item)
                             if ($newStatus === 'rejected') {
@@ -791,9 +791,9 @@ class ApprovalController extends Controller
                 $activityType = $dailyActivity['activity_type'] ?? 'N';
 
                 // AJUSTE 1: Unimos la descripción a la etiqueta principal para mayor cohesión.
-                $activityDesc                        = $this->getActivityTypeDescription($activityType);
-                $detailedItem['type']                = 'Actividad: ' . $activityDesc;
-                $detailedItem['description']         = null; // Eliminamos la descripción separada
+                $activityDesc                                = $this->getActivityTypeDescription($activityType);
+                $detailedItem['type']                        = 'Actividad: ' . $activityDesc;
+                $detailedItem['description']                 = null; // Eliminamos la descripción separada
 
                 // Los detalles adicionales (proyecto, work_description) van en 'details'
                 $simpleActivities = ['D', 'VAC', 'M', 'PE', 'A', 'N'];
@@ -813,7 +813,7 @@ class ApprovalController extends Controller
                 // CORRECCIÓN CLAVE: Extraer solo el detalle del bono y usar solo 'Bono: ' como prefijo.
                 if (isset($rejectedItemInfo['label'])) {
                     $itemLabel = $rejectedItemInfo['label'];
-                    $baseFood  = $this->getItemTypeLabel('food_bonuses');  // 'Bono de Comida'
+                    $baseFood  = $this->getItemTypeLabel('food_bonuses');   // 'Bono de Comida'
                     $baseField = $this->getItemTypeLabel('field_bonuses'); // 'Bono de Campo'
 
                     $detalle = $itemLabel;

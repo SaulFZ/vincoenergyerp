@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vinco - Login</title>
-        <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://use.fontawesome.com/releases/v5.0.1/js/all.js"></script>
@@ -62,7 +62,29 @@
     <script>
         $(document).ready(function() {
             let userEmail = '';
-            let userName = ''; // Nueva variable para almacenar el nombre del usuario
+            let userName = '';
+
+            // 🛑 NUEVA LÓGICA DE RECARGA AL VOLVER 🛑
+            // Registra si la pestaña ha estado oculta
+            let wasHidden = false;
+
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    // La pestaña se ocultó (minimizó o se cambió de pestaña)
+                    wasHidden = true;
+                    console.log("Pestaña oculta. Se marcará para recarga al volver.");
+                } else {
+                    // La pestaña se hizo visible
+                    if (wasHidden) {
+                        console.log("⚠️ Pestaña visible de nuevo. Recargando inmediatamente para actualizar el token CSRF.");
+                        // Recargar la página de login inmediatamente
+                        window.location.reload();
+                    }
+                    // Restablecer la bandera si no se recargó (o después de la recarga)
+                    wasHidden = false;
+                }
+            });
+            // 🛑 FIN NUEVA LÓGICA 🛑
 
             $('.toggle-password').on('click', function() {
                 const passwordInput = $('#password');
@@ -72,7 +94,7 @@
                 eyeIcon.removeClass('fa-eye fa-eye-slash').addClass(isPasswordVisible ? 'fa-eye-slash' : 'fa-eye');
             });
 
-            // Animaciones de entrada
+            // Animaciones de entrada (sin cambios)
             (function() {
                 setTimeout(function() {
                     $(".logoCont").transition({ scale: 1 }, 700, "ease");
@@ -129,7 +151,7 @@
                 });
             });
 
-            // PASO 1: Solicitar nombre de usuario
+            // PASO 1: Solicitar nombre de usuario (sin cambios)
             $('#forgotPasswordLink').on('click', function(e) {
                 e.preventDefault();
                 Swal.fire({
@@ -170,13 +192,13 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         userEmail = result.value.email;
-                        userName = result.value.userName; // Almacenar el nombre de usuario
+                        userName = result.value.userName;
                         showSendCodeStep(result.value.maskedEmail);
                     }
                 });
             });
 
-            // PASO 2: Mostrar correo y enviar código (Diseño mejorado con clases CSS)
+            // PASO 2: Mostrar correo y enviar código (sin cambios)
             function showSendCodeStep(maskedEmail) {
                 Swal.fire({
                     title: 'Confirmar Correo',
@@ -211,7 +233,6 @@
                             data: {
                                 _token: "{{ csrf_token() }}",
                                 email: userEmail,
-                                // userName: userName // No es necesario enviar el nombre del usuario de vuelta, ya se obtuvo el email.
                             },
                             dataType: 'json'
                         }).catch(error => {
@@ -227,7 +248,7 @@
                 });
             }
 
-            // PASO 3: Ingresar código de 6 dígitos
+            // PASO 3: Ingresar código de 6 dígitos (sin cambios)
             function showVerifyCodeStep() {
                 Swal.fire({
                     title: 'Ingresa el Código de Verificación',
@@ -316,7 +337,7 @@
                 });
             }
 
-            // Manejo de mensajes de sesión existentes (Laravel Flash Messages)
+            // Manejo de mensajes de sesión existentes (Laravel Flash Messages - sin cambios)
             @if(session('success'))
                 Swal.fire({
                     icon: 'success',
