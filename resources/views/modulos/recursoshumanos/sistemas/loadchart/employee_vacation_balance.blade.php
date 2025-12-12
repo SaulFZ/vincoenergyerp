@@ -1956,15 +1956,17 @@
                 params.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
                 try {
-                    const response = await fetch('/recursoshumanos/loadchart/employee_vacation_balance/generate-report', {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: params
-                    });
-
+    const response = await fetch('/recursoshumanos/loadchart/employee_vacation_balance/generate-report', {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            // 💡 SOLUCIÓN: Agrega este encabezado para que Laravel reconozca los datos POST
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        // 💡 SOLUCIÓN: Convierte 'params' a una cadena de URL
+        body: params.toString()
+    });
                     if (response.headers.get('content-type') && response.headers.get('content-type').includes('application/json')) {
                         const data = await response.json();
                         let errorMessages = '';
