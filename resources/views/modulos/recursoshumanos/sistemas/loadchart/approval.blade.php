@@ -300,6 +300,10 @@
                     </tbody>
                 </table>
             </div>
+
+            <button class="save-btn" onclick="guardarDatos()">
+                <i class="fas fa-save"></i> Guardar Cambios
+            </button>
         </div>
 
         <script>
