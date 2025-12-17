@@ -7,7 +7,7 @@
     "require": {
         "php": "^8.2",
         "azuyalabs/yasumi": "^2.8",
-        "barryvdh/laravel-dompdf": "^3.1",
+        "barryvdh/laravel-dompdf": "*",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.9",
         "maatwebsite/excel": "^1.1",
