@@ -2,6 +2,7 @@
     /* Colores Principales Mantenidos */
     --primary-blue: #334c95;
     --primary-orange: #d67e29;
+    --orange-dark: #d67d29b6;
     --dark-gray: #2d3748;
     --medium-gray: #4a5568;
     --light-gray: #e2e8f0;
@@ -17,34 +18,19 @@
     --accent-green: #4caf50;
     --accent-red: #f44336;
     --border-gray: #cccccc;
-    /* Un gris más claro para bordes generales */
 
     /* 🌟 Nueva Paleta de Colores de Estado de Estadísticas (Similar al esquema de estados de tabla) */
-    /* El objetivo es dar a las tarjetas un fondo muy claro y un color de texto/icono distintivo */
-
-    /* Activos (Azul/Cian para movimiento/curso) */
     --stat-active-bg: #e1f5fe;
-    /* Fondo Azul Claro */
     --stat-active-color: #0277bd;
-    /* Texto/Icono Cian Oscuro */
-
     /* Pendientes (Naranja/Ámbar para atención/espera) */
     --stat-pending-bg: #fff3e0;
-    /* Fondo Ámbar Claro */
     --stat-pending-color: #ef6c00;
-    /* Texto/Icono Naranja Oscuro */
-
     /* Completados (Verde para éxito/finalizado) */
     --stat-completed-bg: #e8f5e9;
-    /* Fondo Verde Claro */
     --stat-completed-color: #2e7d32;
-    /* Texto/Icono Verde Oscuro */
-
     /* Unidades Disponibles (Gris/Azul suave para inventario/stock) */
     --stat-available-bg: #f5f5f5;
-    /* Fondo Gris Suave */
     --stat-available-color: #607d8b;
-    /* Texto/Icono Gris Azulado */
 
     /* Sombra para las tarjetas (más sutil y profesional) */
     --shadow-light: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
@@ -93,7 +79,6 @@ body {
     display: flex;
     flex-direction: column;
     font-size: 14px;
-
 }
 
 .swal2-container {
@@ -236,9 +221,9 @@ body {
     background: var(--white);
     border-radius: 12px;
     margin-bottom: 16px;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-light);
     overflow: hidden;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-gray);
     transition: all 0.3s ease;
 }
 
@@ -277,8 +262,6 @@ body {
     position: relative;
     z-index: 2;
 }
-
-
 
 .travel-title {
     font-size: 2.2rem;
@@ -463,7 +446,6 @@ body {
     white-space: nowrap;
 }
 
-
 .btn-clear-filters {
     background-color: var(--light-gray);
     color: var(--dark-gray);
@@ -508,13 +490,12 @@ body {
     }
 }
 
-
 /* TABLA DASHBOARD MEJORADA */
 .table-dashboard-container {
     background: var(--white);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 2px 15px var(--shadow-color);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
     margin-bottom: 25px;
     overflow-x: auto;
     /* Permite scroll horizontal si la tabla es muy ancha */
@@ -630,9 +611,6 @@ body {
     text-align: center;
 }
 
-/* Acc */
-
-
 .badge-status {
     padding: 6px 14px;
     border-radius: 20px;
@@ -695,7 +673,6 @@ body {
     color: var(--riesgo-alto-color);
     border: 1px solid #ffcdd2;
 }
-
 
 .btn-action-small {
     padding: 8px 14px;
@@ -774,6 +751,16 @@ body {
     opacity: 1;
 }
 
+/* 🔑 CORRECCIÓN: Aumentar z-index de modales internos */
+#modalInspeccion,
+#modalPreConvoy {
+    z-index: 2100;
+}
+
+#modalInspeccion .modal-content,
+#modalPreConvoy .modal-content {
+    z-index: 2101;
+}
 
 /* Cuerpo del formulario */
 .form-body {
@@ -787,12 +774,6 @@ body {
     padding: 20px;
     background: var(--white);
 }
-
-
-
-
-
-
 
 /* Header del modal */
 .form-header-modal {
@@ -896,17 +877,6 @@ body {
     font-size: 13px;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 .form-section-title {
     color: var(--primary-blue);
     font-size: 18px;
@@ -928,6 +898,34 @@ body {
     font-size: 14px;
 }
 
+/* 🔑 CORRECCIÓN: Asegurar que el botón Pre-Convoy se mantenga en su lugar */
+.form-section-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.form-section-title h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.form-section-title .unidades-count {
+    margin-left: 10px;
+}
+
+.form-section-title #label-tipo-unidad {
+    margin-right: auto;
+}
+
+.form-section-title #btnReunionPreConvoy {
+    margin-left: auto;
+    order: 3;
+}
+
 /* 🚀 NUEVO ESTILO SOLICITADO: Label del tipo de unidad 🚀 */
 .unidades-label {
     font-size: 14px;
@@ -947,7 +945,6 @@ body {
 }
 
 /* FIN NUEVO ESTILO SOLICITADO */
-
 
 .form-grid {
     display: grid;
@@ -994,7 +991,6 @@ body {
     }
 }
 
-
 @media (max-width: 992px) {
     .trayecto-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -1027,8 +1023,17 @@ body {
     .form-code-document {
         padding-left: 0;
     }
-}
 
+    .form-section-title {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .form-section-title #btnReunionPreConvoy {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+}
 
 .form-group.full-width {
     grid-column: 1 / -1;
@@ -1220,7 +1225,6 @@ body {
     min-width: 70px;
 }
 
-
 /* Estilos para agrupar 3 inputs en vertical en una sola celda (Horas de Conducción) */
 .hour-inputs-group-combined-vertical {
     display: flex;
@@ -1237,7 +1241,6 @@ body {
 }
 
 /* FIN AJUSTES SOLICITADOS */
-
 
 .unidades-table td {
     padding: 8px 10px;
@@ -1311,7 +1314,6 @@ body {
     max-width: 180px;
     margin: 0 auto;
 }
-
 
 .table-input[type="number"]::-webkit-outer-spin-button,
 .table-input[type="number"]::-webkit-inner-spin-button {
@@ -1413,7 +1415,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 3px;
-    text-align: left;
     margin-bottom: 8px;
     align-items: flex-start;
     width: 100%;
@@ -1445,7 +1446,6 @@ body {
 .hour-input-group .table-input.small {
     max-width: 80px;
 }
-
 
 .hour-input-result {
     background: var(--light-gray);
@@ -1625,7 +1625,7 @@ body {
 
 .btn-accion:hover {
     transform: scale(1.05);
-    box-shadow: 0 3px 8px var(--shadow-color);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-accion.eliminar:hover {
@@ -1669,7 +1669,8 @@ body {
 /* ======================================================= */
 /* MODAL DE INSPECCIÓN VEHICULAR */
 /* ======================================================= */
-#modalInspeccion .modal-content {
+#modalInspeccion .modal-content,
+#modalPreConvoy .modal-content {
     max-width: 800px;
 }
 
@@ -1691,8 +1692,32 @@ body {
     border-bottom: 1px solid var(--border-gray);
 }
 
-.inspeccion-item:last-child {
+.inspeccion-item:nth-child(2n) {
+    /* Si el grid tiene 2 columnas, el borde inferior solo debe ir en los impares */
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.inspeccion-item:nth-last-child(-n + 2) {
+    /* Quitar borde en las últimas dos filas (funciona para 2 y 1 columna) */
     border-bottom: none;
+}
+
+/* Ajuste específico para dispositivos móviles (1 columna) */
+@media (max-width: 600px) {
+    .inspeccion-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inspeccion-item {
+        border-bottom: 1px solid var(--border-gray) !important;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .inspeccion-item:last-child {
+        border-bottom: none !important;
+    }
 }
 
 .inspeccion-item-label {
@@ -1771,7 +1796,6 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
@@ -1810,6 +1834,77 @@ body {
     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
 }
 
+/* ============================================================
+   ESTADOS DEL BOTÓN REUNIÓN PRE-CONVOY
+   ============================================================ */
+
+/* 1. ESTADO INACTIVO (Deshabilitado / Gris) */
+.btn-secondary-convoy:disabled {
+    background: var(--light-gray);
+    color: var(--medium-gray);
+    border: 1px solid var(--border-gray);
+    font-weight: 700;
+    padding: 6px 16px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    cursor: not-allowed;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+/* 2. ESTADO ACTIVO (Naranja / Para hacer clic) */
+.btn-secondary-convoy {
+    background: var(--primary-orange);
+    color: var(--white);
+    border: 1px solid var(--primary-orange);
+    font-weight: 700;
+    padding: 6px 16px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary-convoy i {
+    color: var(--white) !important; /* Icono blanco */
+    background: transparent !important;
+    margin-right: 8px;
+    font-weight: normal;
+}
+
+.btn-secondary-convoy:hover:not(:disabled) {
+    background: var(--orange-dark);
+    border-color: var(--orange-dark);
+    transform: translateY(-1px);
+}
+
+/* 3. ESTADO COMPLETADO (Blanco / Letras e Icono Verdes) */
+.btn-secondary-convoy-completed {
+    background: var(--white) !important;
+    color: var(--accent-green) !important; /* Letras verdes */
+    border: 1px solid var(--white) !important; /* Borde blanco */
+    font-weight: 700;
+    padding: 6px 16px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    cursor: default;
+    pointer-events: none; /* No clickable */
+}
+
+.btn-secondary-convoy-completed i {
+    color: var(--accent-green) !important; /* Icono verde */
+    background: transparent !important; /* Sin fondo */
+    margin-right: 8px;
+    font-weight: normal;
+}
 /* ======================================================= */
 /* FOOTER */
 /* ======================================================= */
