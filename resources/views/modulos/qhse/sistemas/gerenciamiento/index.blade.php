@@ -14,8 +14,1749 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="{{ asset('assets/css/qhse/gerenciamiento/index.css') }}" rel="stylesheet">
 
+<style>
+    :root {
+        /* Colores Principales Mantenidos */
+        --primary-blue: #334c95;
+        --primary-orange: #d67e29;
+        --orange-dark: #d67d29b6;
+        --dark-gray: #2d3748;
+        --medium-gray: #4a5568;
+        --light-gray: #e2e8f0;
+        --background-gray: #f7fafc;
+        --secondary-blue: #34495e;
+        --white: #ffffff;
+        --blue-dark: #263a74;
+        --blue-darker: #1a2853;
+        --blue-light: #4a67b0;
+        --blue-lighter: #6f85c6;
+        --blue-very-light: #a2b0dc;
+        --blue-pale: #d8deef;
+        --accent-green: #4caf50;
+        --accent-red: #f44336;
+        --border-gray: #cccccc;
 
-    @stack('styles')
+        /* 🌟 Nueva Paleta de Colores de Estado de Estadísticas */
+        --stat-active-bg: #e1f5fe;
+        --stat-active-color: #0277bd;
+        --stat-pending-bg: #fff3e0;
+        --stat-pending-color: #ef6c00;
+        --stat-completed-bg: #e8f5e9;
+        --stat-completed-color: #2e7d32;
+        --stat-available-bg: #f5f5f5;
+        --stat-available-color: #607d8b;
+
+        /* Sombra para las tarjetas */
+        --shadow-light: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
+
+        /* Colores de estado de tabla */
+        --status-aprobado-bg: #e8f5e9;
+        --status-aprobado-color: #2e7d32;
+        --status-pendiente-bg: #fff3e0;
+        --status-pendiente-color: #ef6c00;
+        --status-encurso-bg: #e3f2fd;
+        --status-encurso-color: #1565c0;
+        --status-cancelado-bg: #ffebee;
+        --status-cancelado-color: #c62828;
+
+        /* 🚨 NUEVOS COLORES DE RIESGO 🚨 */
+        --riesgo-bajo-bg: #e8f5e9;
+        --riesgo-bajo-color: #2e7d32;
+        --riesgo-medio-bg: #fff3e0;
+        --riesgo-medio-color: #ff9800;
+        --riesgo-alto-bg: #ffebee;
+        --riesgo-alto-color: #d32f2f;
+    }
+
+    /* ======================================================= */
+    /* ESTILOS GENERALES */
+    /* ======================================================= */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+        background-color: var(--background-gray);
+        color: var(--dark-gray);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        font-size: 14px;
+    }
+
+    .swal2-container {
+        z-index: 3000 !important;
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--primary-blue);
+        border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background-color: var(--light-gray);
+    }
+
+    .container-viajes {
+        flex: 1;
+        padding: 25px;
+        margin: 0 auto;
+        width: 100%;
+        max-width: 1800px;
+    }
+
+    /* ======================================================= */
+    /* HEADER */
+    /* ======================================================= */
+    .header-viajes {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--blue-dark) 100%);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 8px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .logo-container-viajes {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .logo-img-viajes {
+        width: 100px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        padding: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .logo-img-viajes img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        filter: brightness(0) invert(1);
+    }
+
+    .form-header-modal .logo-img-viajes img {
+        max-height: 35px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+    }
+
+    .nav-viajes {
+        display: flex;
+        gap: 8px;
+    }
+
+    .nav-link-viajes {
+        text-decoration: none;
+        color: var(--white);
+        background: rgba(255, 255, 255, 0.1);
+        font-weight: 500;
+        font-size: 13px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .nav-link-viajes:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .nav-link-viajes.active {
+        background: var(--white);
+        color: var(--primary-blue);
+        border-color: var(--white);
+        font-weight: 600;
+    }
+
+    /* ======================================================= */
+    /* DASHBOARD MEJORADO */
+    /* ======================================================= */
+    .card-base {
+        background: var(--white);
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow-light);
+        overflow: hidden;
+        border: 1px solid var(--border-gray);
+        transition: all 0.3s ease;
+    }
+
+    .card-base:hover {
+        box-shadow: var(--shadow-hover);
+    }
+
+    .compact-header {
+        padding: 20px 24px;
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--blue-dark) 100%);
+        color: var(--white);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .compact-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 200px;
+        background: rgba(253, 253, 253, 0.425);
+        border-radius: 50%;
+        transform: translate(30%, -30%);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .travel-title {
+        font-size: 2.2rem;
+        color: var(--white);
+        margin: 0 0 5px 0;
+        font-weight: 700;
+    }
+
+    .travel-title i {
+        color: var(--white);
+        margin-right: 10px;
+    }
+
+    .travel-subtitle {
+        font-size: 1rem;
+        color: var(--blue-pale);
+        margin: 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .stat-card {
+        background-color: var(--white);
+        padding: 15px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid var(--border-gray);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+    }
+
+    .stat-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        margin-right: 15px;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--medium-gray);
+        margin-top: 3px;
+        white-space: nowrap;
+    }
+
+    .stat-active {
+        background-color: var(--stat-active-bg);
+        color: var(--stat-active-color);
+    }
+
+    .stat-active-icon {
+        background-color: var(--stat-active-color);
+        color: var(--white);
+    }
+
+    .stat-pending {
+        background-color: var(--stat-pending-bg);
+        color: var(--stat-pending-color);
+    }
+
+    .stat-pending-icon {
+        background-color: var(--stat-pending-color);
+        color: var(--white);
+    }
+
+    .stat-completed {
+        background-color: var(--stat-completed-bg);
+        color: var(--stat-completed-color);
+    }
+
+    .stat-completed-icon {
+        background-color: var(--stat-completed-color);
+        color: var(--white);
+    }
+
+    .stat-available {
+        background-color: var(--stat-available-bg);
+        color: var(--stat-available-color);
+    }
+
+    .stat-available-icon {
+        background-color: var(--stat-available-color);
+        color: var(--white);
+    }
+
+    /* ======================================================= */
+    /* 🛠️ CORRECCIÓN DE FILTROS AQUÍ 🛠️ */
+    /* ======================================================= */
+    .filters-section {
+        /* Se agregó padding lateral de 25px para despegarlo del borde */
+        padding: 20px 25px;
+        border-top: 1px solid var(--light-gray);
+        margin-top: 20px;
+        background-color: var(--white); /* Asegurar fondo blanco */
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-group label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--dark-gray);
+        margin-bottom: 8px;
+    }
+
+    .filter-group label i {
+        color: var(--primary-blue);
+        margin-right: 5px;
+    }
+
+    .form-control {
+        padding: 10px 12px;
+        border: 1px solid var(--border-gray);
+        border-radius: 6px;
+        font-size: 1rem;
+        color: var(--medium-gray);
+        background-color: var(--white);
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        width: 100%; /* Asegura que ocupe el ancho del grid */
+    }
+
+    .form-control:focus {
+        border-color: var(--blue-light);
+        outline: none;
+        box-shadow: 0 0 0 2px var(--blue-pale);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-clear-filters {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+        white-space: nowrap;
+        background-color: var(--light-gray);
+        color: var(--dark-gray);
+        border: 1px solid var(--border-gray);
+        width: 100%; /* Botón ocupa todo el ancho disponible en su celda */
+    }
+
+    .btn-clear-filters:hover {
+        background-color: var(--medium-gray);
+        color: var(--white);
+    }
+
+    .btn-clear-filters i {
+        margin-right: 5px;
+    }
+
+    /* TABLA DASHBOARD MEJORADA */
+    .table-dashboard-container {
+        background: var(--white);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 25px;
+        overflow-x: auto;
+    }
+
+    .table-header {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--blue-dark) 100%);
+        color: var(--white);
+        padding: 18px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .table-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .table-viajes {
+        width: 100%;
+        min-width: 1000px;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-viajes th {
+        background: var(--blue-pale);
+        color: var(--primary-blue);
+        font-weight: 700;
+        padding: 15px 12px;
+        text-align: left;
+        border-bottom: 3px solid var(--primary-blue);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .table-viajes td {
+        padding: 15px 12px;
+        border-bottom: 1px solid var(--light-gray);
+        transition: background-color 0.2s ease;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .table-viajes tbody tr:hover td {
+        background-color: rgba(51, 76, 149, 0.05);
+    }
+
+    .badge-status {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-block;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .status-aprobado {
+        background: linear-gradient(135deg, var(--status-aprobado-bg) 0%, #c8e6c9 100%);
+        color: var(--status-aprobado-color);
+        border: 1px solid #81c784;
+    }
+
+    .status-pendiente {
+        background: linear-gradient(135deg, var(--status-pendiente-bg) 0%, #ffe0b2 100%);
+        color: var(--status-pendiente-color);
+        border: 1px solid #ffb74d;
+    }
+
+    .status-encurso {
+        background: linear-gradient(135deg, var(--status-encurso-bg) 0%, #bbdefb 100%);
+        color: var(--status-encurso-color);
+        border: 1px solid #64b5f6;
+    }
+
+    .status-cancelado {
+        background: linear-gradient(135deg, var(--status-cancelado-bg) 0%, #ffcdd2 100%);
+        color: var(--status-cancelado-color);
+        border: 1px solid #e57373;
+    }
+
+    .badge-riesgo {
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-block;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .status-riesgo-bajo {
+        background-color: var(--riesgo-bajo-bg);
+        color: var(--riesgo-bajo-color);
+        border: 1px solid #c8e6c9;
+    }
+
+    .status-riesgo-medio {
+        background-color: var(--riesgo-medio-bg);
+        color: var(--riesgo-medio-color);
+        border: 1px solid #ffe0b2;
+    }
+
+    .status-riesgo-alto {
+        background-color: var(--riesgo-alto-bg);
+        color: var(--riesgo-alto-color);
+        border: 1px solid #ffcdd2;
+    }
+
+    .btn-action-small {
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-view {
+        background: var(--blue-pale);
+        color: var(--primary-blue);
+    }
+
+    .btn-view:hover {
+        background: var(--blue-very-light);
+        transform: translateY(-1px);
+    }
+
+    .btn-edit {
+        background: var(--primary-orange);
+        color: var(--white);
+    }
+
+    .btn-edit:hover {
+        background: #e68900;
+        transform: translateY(-1px);
+    }
+
+    /* ======================================================= */
+    /* MODAL FORMULARIO */
+    /* ======================================================= */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(3px);
+        z-index: 2000;
+        overflow-y: auto;
+        padding: 20px;
+        transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .modal-content {
+        background: var(--white);
+        border-radius: 15px;
+        width: 100%;
+        max-width: 1600px;
+        margin: 20px auto;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+        transform: scale(0.98);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .modal-overlay.active .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    #modalInspeccion,
+    #modalPreConvoy {
+        z-index: 2100;
+    }
+
+    #modalInspeccion .modal-content,
+    #modalPreConvoy .modal-content {
+        z-index: 2101;
+    }
+
+    .form-body {
+        padding: 30px;
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+        border: 1px solid var(--blue-pale);
+        border-radius: 10px;
+        padding: 20px;
+        background: var(--white);
+    }
+
+    .form-header-modal {
+        background: linear-gradient(90deg, var(--primary-blue) 0%, var(--blue-dark) 100%);
+        padding: 12px 20px;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--white);
+        border-bottom: 2px solid var(--primary-orange);
+    }
+
+    .form-header-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-header-modal .logo-img-viajes {
+        width: 60px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-header-title h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: 0.5px;
+    }
+
+    .form-header-title p {
+        font-size: 11px;
+        margin: 0;
+        font-weight: 400;
+        opacity: 0.8;
+    }
+
+    .header-right-group {
+        display: flex;
+        align-items: stretch;
+        gap: 15px;
+        height: 100%;
+    }
+
+    .form-document-detail {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        padding: 2px 0;
+    }
+
+    .form-document-detail label {
+        font-size: 10px;
+        font-weight: 500;
+        opacity: 0.7;
+        margin: 0;
+        padding: 1px 4px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 3px;
+        white-space: nowrap;
+        line-height: 1;
+    }
+
+    .form-document-detail span:not(.form-code-value) {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: var(--white);
+        font-size: 13px;
+    }
+
+    .request-date {
+        border-right: 1px dashed rgba(255, 255, 255, 0.4);
+        padding-right: 15px;
+    }
+
+    .form-code-value {
+        font-weight: 700;
+        letter-spacing: 1px;
+        background: var(--primary-orange);
+        padding: 3px 6px;
+        border-radius: 4px;
+        display: inline-block;
+        font-size: 13px;
+    }
+
+    .form-section-title {
+        color: var(--primary-blue);
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 3px solid var(--blue-pale);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: relative;
+    }
+
+    .form-section-title i {
+        background: var(--primary-blue);
+        color: var(--white);
+        padding: 8px;
+        border-radius: 50%;
+        font-size: 14px;
+    }
+
+    .form-section-title {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .form-section-title h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .form-section-title .unidades-count {
+        margin-left: 10px;
+    }
+
+    .form-section-title #label-tipo-unidad {
+        margin-right: auto;
+    }
+
+    .form-section-title #btnReunionPreConvoy {
+        margin-left: auto;
+        order: 3;
+    }
+
+    .unidades-label {
+        font-size: 14px;
+        font-weight: 600;
+        margin-left: 5px;
+        color: var(--medium-gray);
+        transition: color 0.3s ease;
+    }
+
+    .unidades-label.convoy {
+        color: var(--primary-orange);
+    }
+
+    .swal2-convoy .swal2-title {
+        color: var(--primary-orange) !important;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .trayecto-grid {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    @media (max-width: 1400px) {
+        .trayecto-grid {
+            grid-template-columns: 2fr 1fr 1fr;
+        }
+
+        .trayecto-grid .form-group:nth-child(1),
+        .trayecto-grid .form-group:nth-child(2) {
+            grid-column: span 1;
+        }
+
+        .trayecto-grid .form-group:nth-child(3) {
+            grid-column: span 1;
+        }
+
+        .trayecto-grid .form-group:nth-child(4) {
+            grid-column: 1 / 2;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .trayecto-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .trayecto-grid .form-group {
+            grid-column: span 1 !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .trayecto-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .header-right-group {
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .form-date-document {
+            border-right: none;
+            padding-right: 0;
+        }
+
+        .form-code-document {
+            padding-left: 0;
+        }
+
+        .form-section-title {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .form-section-title #btnReunionPreConvoy {
+            margin-left: 0;
+            align-self: flex-end;
+        }
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        color: var(--blue-dark);
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .form-group label .required {
+        color: var(--accent-red);
+        margin-left: 2px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 10px 15px;
+        border: 1px solid var(--border-gray);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 4px rgba(51, 76, 149, 0.15);
+    }
+
+    .form-group input[readonly] {
+        background: var(--light-gray);
+        color: var(--medium-gray);
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    .datetime-input-wrapper {
+        position: relative;
+    }
+
+    .datetime-input-wrapper i {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary-blue);
+        pointer-events: none;
+    }
+
+    .datetime-input-wrapper input {
+        padding-right: 35px;
+        width: 100%;
+    }
+
+    /* Unidades - TABLA MEJORADA */
+    .unidades-container {
+        border-radius: 10px;
+        overflow-x: auto;
+        border: 1px solid var(--border-gray);
+    }
+
+    .unidades-table {
+        width: 100%;
+        min-width: 1250px;
+        border-collapse: collapse;
+        border-spacing: 0;
+        font-size: 13px;
+    }
+
+    .unidades-table th {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--blue-dark) 100%);
+        color: var(--white);
+        font-weight: 600;
+        padding: 10px 8px;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        white-space: nowrap;
+        z-index: 10;
+    }
+
+    .unidades-table th .column-title {
+        font-size: 12px;
+        text-transform: capitalize;
+        letter-spacing: 0.5px;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .unidades-table th.th-conductor-completo {
+        min-width: 180px;
+    }
+
+    .unidades-table th.th-vigencia {
+        min-width: 180px;
+    }
+
+    .unidades-table th.th-hrs-sueno {
+        min-width: 160px;
+    }
+
+    .unidades-table th.th-horas-conduccion {
+        min-width: 180px;
+    }
+
+    .unidades-table th.th-pasajeros {
+        min-width: 220px;
+    }
+
+    .unidades-table th.th-vehiculo {
+        min-width: 150px;
+    }
+
+    .unidades-table th.th-inspeccion {
+        min-width: 80px;
+    }
+
+    .unidades-table th.th-acciones {
+        min-width: 70px;
+    }
+
+    .unidades-table td:nth-child(1) {
+        min-width: 180px;
+        text-align: center;
+    }
+
+    .unidades-table td:nth-child(2) {
+        min-width: 180px;
+    }
+
+    .unidades-table td:nth-child(3) {
+        min-width: 160px;
+    }
+
+    .unidades-table td:nth-child(4) {
+        min-width: 180px;
+    }
+
+    .unidades-table td:nth-child(5) {
+        min-width: 220px;
+    }
+
+    .unidades-table td:nth-child(6) {
+        min-width: 150px;
+    }
+
+    .unidades-table td:nth-child(7) {
+        min-width: 80px;
+    }
+
+    .unidades-table td:nth-child(8) {
+        min-width: 70px;
+    }
+
+    .hour-inputs-group-combined-vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 5px;
+    }
+
+    .hour-inputs-group-combined-vertical .hour-input-group {
+        margin: 0;
+        padding: 0;
+        align-items: center;
+    }
+
+    .unidades-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border-gray);
+        border-right: 1px solid var(--border-gray);
+        vertical-align: middle;
+        background: var(--white);
+        text-align: center;
+    }
+
+    .unidades-table tr:nth-child(even) td {
+        background: var(--background-gray);
+    }
+
+    .unidades-table td:last-child {
+        border-right: none;
+    }
+
+    .unidades-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .unidades-table tr:hover td {
+        background: rgba(51, 76, 149, 0.08);
+    }
+
+    .table-input {
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid var(--border-gray);
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: inherit;
+        background: var(--white);
+        text-align: center;
+    }
+
+    .table-input[readonly] {
+        background: var(--light-gray);
+        color: var(--dark-gray);
+        cursor: default;
+        box-shadow: none;
+    }
+
+    .table-input:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 2px rgba(51, 76, 149, 0.1);
+    }
+
+    .table-input.small {
+        max-width: 80px;
+        margin: 0 auto;
+    }
+
+    .unidad-alcoholimetria {
+        max-width: 80px;
+        margin: 0 auto;
+    }
+
+    .table-input.medium {
+        max-width: 150px;
+        margin: 0 auto;
+    }
+
+    .table-input.large {
+        max-width: 180px;
+        margin: 0 auto;
+    }
+
+    .table-input[type="number"]::-webkit-outer-spin-button,
+    .table-input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .conductor-completo-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+        padding: 5px 0;
+        width: 100%;
+    }
+
+    .conductor-completo-group .hour-input-group:first-of-type {
+        margin-bottom: 12px;
+    }
+
+    .conductor-completo-group .hour-input-group:nth-of-type(2) {
+        display: none;
+    }
+
+    .conductor-completo-group .hour-input-group:nth-of-type(3) {
+        display: none;
+    }
+
+    .conductor-completo-group .hour-input-group:nth-of-type(4) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 12px;
+    }
+
+    .conductor-completo-group .hour-input-group label,
+    .unidades-table td .hour-input-group label {
+        color: var(--blue-dark);
+        font-weight: 600;
+        font-size: 11px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .conductor-completo-group .hour-input-group:not(:first-of-type):not(:last-of-type) {
+        display: none;
+    }
+
+    .conductor-input-group {
+        position: relative;
+        flex-grow: 1;
+        width: 90%;
+        margin: 0 auto;
+    }
+
+    .autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: var(--white);
+        border: 1px solid var(--border-gray);
+        border-top: none;
+        border-radius: 0 0 6px 6px;
+        max-height: 150px;
+        overflow-y: auto;
+        text-align: left;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .autocomplete-item {
+        padding: 8px 10px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--dark-gray);
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.selected {
+        background: var(--blue-pale);
+        color: var(--primary-blue);
+        font-weight: 600;
+    }
+
+    .hour-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-bottom: 8px;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .unidades-table td:nth-child(2) .hour-input-group,
+    .unidades-table td:nth-child(3) .hour-input-group,
+    .unidades-table td:nth-child(4) .hour-input-group {
+        align-items: center;
+        text-align: center;
+    }
+
+    .unidades-table td .hour-input-group label {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .hour-input-group:last-of-type {
+        margin-bottom: 0;
+    }
+
+    .hour-input-group .table-input {
+        padding: 4px 6px;
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .hour-input-group .table-input.small {
+        max-width: 80px;
+    }
+
+    .hour-input-result {
+        background: var(--light-gray);
+        font-weight: 600;
+        color: var(--blue-dark);
+        border-width: 2px;
+    }
+
+    .pasajero-container {
+        display: flex;
+        flex-direction: column;
+        max-height: 150px;
+        overflow-y: auto;
+        padding-right: 5px;
+        padding-top: 5px;
+    }
+
+    .pasajero-input-group {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-add-pasajero,
+    .btn-remove-pasajero {
+        border: none;
+        border-radius: 6px;
+        padding: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-add-pasajero {
+        background: var(--accent-green);
+        color: var(--white);
+    }
+
+    .btn-add-pasajero:hover:not(:disabled) {
+        background: #3d8b40;
+        transform: scale(1.05);
+    }
+
+    .btn-add-pasajero:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-remove-pasajero {
+        background: var(--accent-red);
+        color: var(--white);
+    }
+
+    .btn-remove-pasajero:hover {
+        background: #d32f2f;
+        transform: scale(1.05);
+    }
+
+    .btn-inspeccion {
+        background: var(--primary-orange);
+        color: var(--white);
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: all 0.3s ease;
+        border: 1px solid #c27025;
+        width: 40px;
+        height: 40px;
+        margin: 0 auto;
+        text-decoration: none;
+    }
+
+    .btn-inspeccion i {
+        font-size: 18px;
+    }
+
+    .btn-inspeccion:hover {
+        background: #e68900;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(214, 126, 41, 0.4);
+    }
+
+    .btn-submit.btn-inspeccion-aprobado {
+        background: linear-gradient(135deg, var(--accent-green) 0%, #3d8b40 100%);
+        border: 1px solid #2e7d32;
+        padding: 8px;
+        width: 40px;
+        height: 40px;
+        margin: 0 auto;
+    }
+
+    .btn-submit.btn-inspeccion-aprobado i {
+        font-size: 18px;
+    }
+
+    .btn-inspeccion span {
+        display: none;
+    }
+
+    .btn-add-unidad {
+        width: 100%;
+        padding: 12px;
+        background: var(--blue-pale);
+        color: var(--primary-blue);
+        border: 2px dashed var(--blue-light);
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+        box-shadow: 0 3px 10px rgba(51, 76, 149, 0.1);
+    }
+
+    .btn-add-unidad:hover:not(:disabled) {
+        background: var(--blue-very-light);
+        border-color: var(--primary-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(51, 76, 149, 0.2);
+    }
+
+    .btn-add-unidad:disabled {
+        background: var(--light-gray);
+        color: var(--medium-gray);
+        border: 2px dashed var(--border-gray);
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .acciones-td {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        min-height: 200px;
+    }
+
+    .btn-accion {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-gray);
+        background: var(--white);
+        color: var(--medium-gray);
+    }
+
+    .btn-accion:hover {
+        transform: scale(1.05);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-accion.eliminar:hover {
+        background: rgba(244, 67, 54, 0.1);
+        color: var(--accent-red);
+        border-color: var(--accent-red);
+    }
+
+    .unidades-count {
+        display: inline-block;
+        background: var(--primary-orange);
+        color: var(--white);
+        font-size: 13px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 12px;
+        margin-left: 10px;
+    }
+
+    #tipoViajeTexto {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--blue-dark);
+        margin-right: 10px;
+    }
+
+    .form-footer {
+        background: var(--background-gray);
+        padding: 20px 30px;
+        border-radius: 0 0 15px 15px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        border-top: 1px solid var(--border-gray);
+    }
+
+    #modalInspeccion .modal-content,
+    #modalPreConvoy .modal-content {
+        max-width: 800px;
+    }
+
+    .modal-inspeccion-body {
+        padding: 30px;
+    }
+
+    .inspeccion-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .inspeccion-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid var(--border-gray);
+    }
+
+    .inspeccion-item:nth-child(2n) {
+        border-bottom: 1px solid var(--border-gray);
+    }
+
+    .inspeccion-item:nth-last-child(-n + 2) {
+        border-bottom: none;
+    }
+
+    @media (max-width: 600px) {
+        .inspeccion-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .inspeccion-item {
+            border-bottom: 1px solid var(--border-gray) !important;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .inspeccion-item:last-child {
+            border-bottom: none !important;
+        }
+    }
+
+    .inspeccion-item-label {
+        font-weight: 500;
+        color: var(--blue-dark);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .inspeccion-radio-group {
+        display: flex;
+        gap: 15px;
+    }
+
+    .inspeccion-radio-group label {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 400;
+    }
+
+    .inspeccion-radio-group input[type="radio"] {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--medium-gray);
+        border-radius: 50%;
+        transition: all 0.2s;
+        position: relative;
+        top: 0;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .inspeccion-radio-group input[type="radio"]:checked {
+        border-color: var(--primary-blue);
+        background-color: var(--primary-blue);
+        border-width: 5px;
+    }
+
+    .inspeccion-radio-group label.si input[type="radio"]:checked {
+        border-color: var(--accent-green);
+        background-color: var(--accent-green);
+    }
+
+    .inspeccion-radio-group label.no input[type="radio"]:checked {
+        border-color: var(--accent-red);
+        background-color: var(--accent-red);
+    }
+
+    .inspeccion-modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--primary-blue);
+        margin-bottom: 20px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid var(--primary-orange);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-viajes {
+        padding: 10px 22px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--blue-light) 100%);
+        color: var(--white);
+        border: 1px solid var(--blue-dark);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, var(--blue-dark) 0%, var(--primary-blue) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(51, 76, 149, 0.3);
+    }
+
+    .btn-secondary {
+        background: var(--white);
+        color: var(--primary-blue);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-cancel {
+        background: var(--white);
+        color: var(--medium-gray);
+        border: 1px solid var(--border-gray);
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, var(--accent-green) 0%, #3d8b40 100%);
+        color: var(--white);
+        border: 1px solid #2e7d32;
+    }
+
+    .btn-submit:hover {
+        background: linear-gradient(135deg, #3d8b40 0%, var(--accent-green) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-secondary-convoy:disabled {
+        background: var(--light-gray);
+        color: var(--medium-gray);
+        border: 1px solid var(--border-gray);
+        font-weight: 700;
+        padding: 6px 16px;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        cursor: not-allowed;
+        opacity: 0.7;
+        display: flex;
+        align-items: center;
+        margin-left: auto;
+    }
+
+    .btn-secondary-convoy {
+        background: var(--primary-orange);
+        color: var(--white);
+        border: 1px solid var(--primary-orange);
+        font-weight: 700;
+        padding: 6px 16px;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        margin-left: auto;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary-convoy i {
+        color: var(--white) !important;
+        background: transparent !important;
+        margin-right: 8px;
+        font-weight: normal;
+    }
+
+    .btn-secondary-convoy:hover:not(:disabled) {
+        background: var(--orange-dark);
+        border-color: var(--orange-dark);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary-convoy-completed {
+        background: var(--white) !important;
+        color: var(--accent-green) !important;
+        border: 1px solid var(--white) !important;
+        font-weight: 700;
+        padding: 6px 16px;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .btn-secondary-convoy-completed i {
+        color: var(--accent-green) !important;
+        background: transparent !important;
+        margin-right: 8px;
+        font-weight: normal;
+    }
+
+    .footer-viajes {
+        background: var(--blue-dark);
+        color: var(--white);
+        padding: 15px 25px;
+        text-align: center;
+        font-size: 13px;
+        border-top: 3px solid var(--primary-orange);
+        flex-shrink: 0;
+    }
+
+    .footer-viajes p {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .container-viajes {
+            padding: 15px;
+        }
+
+        .header-viajes {
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        .nav-viajes {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .table-header {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-content {
+            margin: 10px;
+        }
+
+        .form-body {
+            padding: 15px;
+        }
+
+        .form-footer {
+            flex-direction: column;
+        }
+
+        .btn-viajes {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* 🚀 NUEVOS ESTILOS PARA TIPO DE VEHÍCULO (LIGERA/PESADA) 🚀 */
+    .tipo-vehiculo-text {
+        display: block;
+        text-align: center;
+        font-size: 11px;
+        margin-top: 4px;
+        font-weight: 600;
+    }
+
+    .tipo-ligera {
+        color: var(--primary-blue);
+    }
+
+    .tipo-pesada {
+        color: var(--primary-orange);
+    }
+</style>
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
@@ -307,7 +2048,7 @@
                         <div class="form-group">
                             <label>
                                 <i class="fas fa-user-tie"></i>
-                                Solicitante (Creador de GM) <span class="required">*</span>
+                                Conductor (Creador de GV) <span class="required">*</span>
                             </label>
                             <input type="text" name="solicitante" id="solicitante" readonly required>
                         </div>
@@ -592,7 +2333,7 @@
 
         // Almacenamiento temporal
         const datosInspeccion = {};
-        // 🔑 NUEVO: Almacenamiento temporal para la reunión de convoy 🔑q
+        // 🔑 Almacenamiento temporal para la reunión de convoy 🔑
         let datosReunionConvoy = {}; // Para guardar los datos del checklist
 
         // Datos de ejemplo
@@ -607,6 +2348,19 @@
             "Retroexcavadora"
         ];
 
+        // 🚀 NUEVA CLASIFICACIÓN DE VEHÍCULOS 🚀
+        const clasificacionVehiculos = {
+            "Camioneta Pick-up": "Unidad Ligera",
+            "SUV Ejecutivo": "Unidad Ligera",
+            "Vehículo de Servicio": "Unidad Ligera",
+            "Camión de Carga 3.5T": "Unidad Pesada",
+            "Camión de Carga 5T": "Unidad Pesada",
+            "Grúa": "Unidad Pesada",
+            "Motoniveladora": "Unidad Pesada",
+            "Retroexcavadora": "Unidad Pesada"
+        };
+
+
         // Lugares predefinidos para el nuevo selector
         const lugaresDestino = [
             "Coatzacoalcos, Veracruz",
@@ -616,9 +2370,6 @@
         ];
 
 
-        // ***************************************************************
-        // MODIFICACIÓN 1: Usar nombre completo y añadir campo 'manDefVigencia'
-        // ***************************************************************
         const datosConductores = {
             "Juan Pérez González": {
                 vigencia: "2026-05-10",
@@ -699,7 +2450,7 @@
             }
         ];
 
-        // 🔑 NUEVO: Ítems del Checklist de Reunión Pre-Convoy 🔑
+        // 🔑 Ítems del Checklist de Reunión Pre-Convoy 🔑
         const checklistPreConvoy = [{
                 label: "Todos los conductores comprenden donde serán los puntos de parada o reporte?",
                 name: "puntos_parada",
@@ -731,7 +2482,6 @@
                 icon: "fas fa-users-line"
             }
         ];
-        // 🔑 FIN NUEVO 🔑
 
 
         // Nueva configuración para la hora con selector visual AM/PM
@@ -787,7 +2537,6 @@
             // Formato para el input hidden (YYYY-MM-DD)
             const fechaHidden = hoy.toISOString().split('T')[0];
 
-            // **CORRECCIÓN:** Actualizar los IDs correctos: fechaSolicitudDisplay y fechaSolicitudHidden
             document.getElementById('fechaSolicitudDisplay').textContent = fechaDisplay;
             document.getElementById('fechaSolicitudHidden').value = fechaHidden;
 
@@ -847,7 +2596,7 @@
         });
 
         // ====================================================================
-        // Funciones de Autocompletado y Docs del Conductor - MEJORADAS
+        // Funciones de Autocompletado y Docs del Conductor
         // ====================================================================
         function inicializarAutocompleteConductor(unidadNumero) {
             const input = document.getElementById(`conductor-${unidadNumero}`);
@@ -879,7 +2628,12 @@
                         const item = document.createElement('div');
                         item.classList.add('autocomplete-item');
                         item.innerHTML = c;
-                        item.addEventListener('click', function(e) {
+
+                        // 🔑 CORRECCIÓN CRÍTICA PARA TOUCHPAD/CLIC 🔑
+                        // Usamos 'mousedown' en lugar de 'click' porque 'mousedown' ocurre antes de que el input pierda el foco (blur).
+                        // e.preventDefault() evita que el input pierda el foco inmediatamente.
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault(); // Evita que el input pierda el foco
                             input.value = c;
                             input.dataset.conductorSeleccionado = c; // Marcar como seleccionado
                             listContainer.innerHTML = '';
@@ -887,6 +2641,7 @@
                             // 🔑 NUEVO: Verificar el estado del botón Reunión al seleccionar un conductor 🔑
                             actualizarBotonReunionConvoy();
                         });
+
                         listContainer.appendChild(item);
                     });
                 }
@@ -929,7 +2684,15 @@
                 } else if (e.key === "Enter" || e.key === "Tab") {
                     if (currentFocus > -1) {
                         e.preventDefault();
-                        listContainer.querySelectorAll('.autocomplete-item')[currentFocus].click();
+                        // Simulamos mousedown para mantener consistencia
+                        const selectedItem = listContainer.querySelectorAll('.autocomplete-item')[
+                            currentFocus];
+                        const event = new MouseEvent('mousedown', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        selectedItem.dispatchEvent(event);
                     } else if (e.key === "Enter") {
                         const exactMatch = conductores.find(c => c.toUpperCase() === input.value.toUpperCase());
                         if (exactMatch) {
@@ -948,24 +2711,23 @@
             });
 
             input.addEventListener('blur', function() {
+                // Pequeño timeout para permitir que otros eventos se procesen si es necesario,
+                // pero la lógica principal ahora está en mousedown.
                 setTimeout(() => {
                     listContainer.innerHTML = '';
-                    const exactMatch = conductores.find(c => c.toUpperCase() === input.value.toUpperCase());
+                    const exactMatch = conductores.find(c => c.toUpperCase() === input.value
+                        .toUpperCase());
                     // Si no hay un match exacto con el valor, o si no se ha seleccionado previamente, limpiar la vigencia
                     if (!exactMatch || input.dataset.conductorSeleccionado !== input.value) {
                         actualizarDatosConductor(unidadNumero, '');
                         // 🔑 NUEVO: Verificar el estado del botón Reunión al perder el foco 🔑
                         actualizarBotonReunionConvoy();
                     }
-                    delete input.dataset.conductorSeleccionado;
+                    // No borramos dataset inmediatamente aqui para permitir re-seleccion si es el mismo texto
                 }, 150);
             });
         }
 
-        /**
-         * Modificada para actualizar solo los campos de vigencia con los datos del conductor.
-         * El campo de Man. Def. ahora toma la fecha predefinida y se hace de solo lectura.
-         */
         function actualizarDatosConductor(unidadNumero, nombreConductor) {
             const inputVigenciaLic = document.getElementById(`vigencia-lic-${unidadNumero}`);
             const inputVigenciaMan = document.getElementById(`vigencia-man-${unidadNumero}`);
@@ -976,9 +2738,7 @@
                 // Vigencia Licencia (sigue igual)
                 inputVigenciaLic.value = data.vigencia;
 
-                // ***************************************************************
-                // MODIFICACIÓN 2: Llenar Vigencia Man. Def. con fecha predefinida y hacerlo de solo lectura
-                // ***************************************************************
+                // Llenar Vigencia Man. Def. con fecha predefinida y hacerlo de solo lectura
                 inputVigenciaMan.value = data.manDefVigencia; // Usar la fecha del objeto de datos
                 inputVigenciaMan.readOnly = true; // Forzar a solo lectura para evitar modificación
             } else {
@@ -989,7 +2749,7 @@
         }
 
         // ====================================================================
-        // Funciones de Cálculo de Horas - MODIFICADAS PARA ACEPTAR SOLO TEXTO
+        // Funciones de Cálculo de Horas
         // ====================================================================
         function parseTimeForCalculation(timeStr) {
             if (!timeStr) return null;
@@ -1044,9 +2804,6 @@
             } else {
                 totalDormidasInput.value = '0.0';
             }
-
-            // La columna 4 ahora es solo texto, no hay cálculo automático con la columna 3.
-            // La función calcularTotalHoras ya no será llamada aquí.
         }
 
         function calcularTotalHoras(unidadNumero) {
@@ -1634,7 +3391,6 @@
             document.getElementById('contadorUnidades').textContent = contadorUnidades;
         }
 
-        // 🚀 NUEVA FUNCIÓN SOLICITADA 🚀
         function actualizarLabelTipoUnidad() {
             const labelElement = document.getElementById('label-tipo-unidad');
             if (!labelElement) return;
@@ -1663,6 +3419,26 @@
             }
         }
 
+        // 🚀 NUEVA FUNCIÓN SOLICITADA 🚀
+        function actualizarTipoVehiculo(unidadNumero) {
+            const select = document.querySelector(`#unidad-${unidadNumero} .unidad-vehiculo`);
+            const label = document.getElementById(`tipo-vehiculo-${unidadNumero}`);
+            if (!select || !label) return;
+
+            const vehiculo = select.value;
+            const tipo = clasificacionVehiculos[vehiculo] || "";
+
+            label.textContent = tipo;
+            // Limpiar clases anteriores
+            label.className = "tipo-vehiculo-text";
+
+            if (tipo === "Unidad Ligera") {
+                label.classList.add("tipo-ligera");
+            } else if (tipo === "Unidad Pesada") {
+                label.classList.add("tipo-pesada");
+            }
+        }
+
         function agregarUnidad() {
             if (contadorUnidades >= MAX_UNIDADES) {
                 Swal.fire({
@@ -1680,7 +3456,6 @@
 
             datosInspeccion[numeroUnidad] = {};
 
-            // 🚀 NUEVA LÓGICA SOLICITADA: Alerta de Convoy 🚀
             if (numeroUnidad === 2) {
                 Swal.fire({
                     title: '¡Convoy de Unidades!',
@@ -1688,12 +3463,10 @@
                     icon: 'info',
                     confirmButtonColor: 'var(--primary-blue)',
                     customClass: {
-                        popup: 'swal2-convoy' // Clase CSS personalizada
+                        popup: 'swal2-convoy'
                     }
                 });
             }
-            // 🚀 FIN NUEVA LÓGICA SOLICITADA 🚀
-
 
             const nuevaFila = document.createElement('tr');
             nuevaFila.id = filaId;
@@ -1780,10 +3553,11 @@
         </td>
 
         <td>
-            <select class="table-input large unidad-vehiculo" name="unidad[${numeroUnidad}][vehiculo]" required onchange="actualizarNombreVehiculoInspeccion(${numeroUnidad}); actualizarBotonReunionConvoy()">
+            <select class="table-input large unidad-vehiculo" name="unidad[${numeroUnidad}][vehiculo]" required onchange="actualizarNombreVehiculoInspeccion(${numeroUnidad}); actualizarBotonReunionConvoy(); actualizarTipoVehiculo(${numeroUnidad})">
                 <option value="">Seleccionar Vehículo</option>
                 ${vehiculos.map(v => `<option value="${v}">${v}</option>`).join('')}
             </select>
+            <div id="tipo-vehiculo-${numeroUnidad}" class="tipo-vehiculo-text"></div>
         </td>
 
         <td>
@@ -1801,46 +3575,37 @@
 
             document.getElementById('cuerpoTablaUnidades').appendChild(nuevaFila);
             actualizarContadorUnidades();
-            actualizarLabelTipoUnidad(); // Actualizar label
+            actualizarLabelTipoUnidad();
             actualizarBotonAgregar();
             inicializarAutocompleteConductor(numeroUnidad);
 
-            // Inicializar Flatpickr con la nueva configuración visual de hora (AM/PM)
             flatpickr(nuevaFila.querySelector('.unidad-hora-dormir'), configHoraVisual);
             flatpickr(nuevaFila.querySelector('.unidad-hora-levantar'), configHoraVisual);
 
-            // Re-agregar listeners de cambio para cálculo de Horas Sueño (sigue siendo automático)
             nuevaFila.querySelector('.unidad-hora-dormir').addEventListener('change', function() {
                 calcularHorasDormidas(numeroUnidad);
-                // 🔑 NUEVO: Verificar el estado del botón Reunión al cambiar horas 🔑
                 actualizarBotonReunionConvoy();
             });
 
             nuevaFila.querySelector('.unidad-hora-levantar').addEventListener('change', function() {
                 calcularHorasDormidas(numeroUnidad);
-                // 🔑 NUEVO: Verificar el estado del botón Reunión al cambiar horas 🔑
                 actualizarBotonReunionConvoy();
             });
 
-            // 🔑 NUEVO: Listener de cambio para Alcoholimetría 🔑
             nuevaFila.querySelector('.unidad-alcoholimetria').addEventListener('change', function() {
                 actualizarBotonReunionConvoy();
             });
 
-
-            // Los campos de Horas de Conducción son de texto, el cálculo debe hacerse manualmente o con una función que parsee.
-            // Los listeners se re-asignan para fines de ejemplo de cálculo, aunque el input sea de texto.
             nuevaFila.querySelector(`#horas-despierto-${numeroUnidad}`).addEventListener('change', function() {
                 calcularTotalHoras(numeroUnidad);
+                actualizarBotonReunionConvoy();
             });
             nuevaFila.querySelector(`#horas-viaje-${numeroUnidad}`).addEventListener('change', function() {
                 calcularTotalHoras(numeroUnidad);
+                actualizarBotonReunionConvoy();
             });
 
-            // Agrega el primer pasajero
             agregarPasajero(numeroUnidad);
-
-            // 🔑 NUEVO: Actualizar el estado del botón de Reunión 🔑
             actualizarBotonReunionConvoy();
         }
 
@@ -1863,10 +3628,9 @@
 
                     contadorUnidades--;
                     actualizarContadorUnidades();
-                    actualizarLabelTipoUnidad(); // Actualizar label
+                    actualizarLabelTipoUnidad();
                     actualizarBotonAgregar();
                     reordenarNumerosUnidades();
-                    // 🔑 NUEVO: Actualizar el estado del botón de Reunión 🔑
                     actualizarBotonReunionConvoy();
                 }
             });
@@ -1879,6 +3643,8 @@
                 document.getElementById('inspeccionUnidadNombre').textContent = nombreVehiculo;
             }
         }
+
+
 
         function reordenarNumerosUnidades() {
             const filas = document.querySelectorAll('#cuerpoTablaUnidades tr');
@@ -1898,7 +3664,6 @@
                     delete datosInspeccion[numeroAnterior];
                 }
 
-                // Actualizar IDs para campos de Vigencia
                 const oldLicenciaNum = fila.querySelector(`#licencia-num-${numeroAnterior}`);
                 const oldVigenciaLic = fila.querySelector(`#vigencia-lic-${numeroAnterior}`);
                 const oldVigenciaMan = fila.querySelector(`#vigencia-man-${numeroAnterior}`);
@@ -1910,7 +3675,6 @@
                 fila.querySelector('.unidad-conductor').id = `conductor-${nuevoNumero}`;
                 fila.querySelector('#autocomplete-list-' + numeroAnterior).id = `autocomplete-list-${nuevoNumero}`;
 
-                // Reinicializar autocompletado es necesario, ya que los IDs cambiaron
                 inicializarAutocompleteConductor(nuevoNumero);
 
                 const btnEliminar = fila.querySelector('.btn-accion.eliminar');
@@ -1929,13 +3693,15 @@
                     }
                 }
 
-                // Actualizar IDs de Horas
                 const oldDormir = document.getElementById(`dormir-${numeroAnterior}`);
                 const oldLevantar = document.getElementById(`levantar-${numeroAnterior}`);
                 const oldTotalDormidas = document.getElementById(`total-hrs-dormidas-${numeroAnterior}`);
                 const oldHrsDespierto = document.getElementById(`horas-despierto-${numeroAnterior}`);
                 const oldHrsViaje = document.getElementById(`horas-viaje-${numeroAnterior}`);
                 const oldTotalFinalizar = document.getElementById(`total-hrs-finalizar-${numeroAnterior}`);
+                const tipoVehiculoDiv = document.getElementById(`tipo-vehiculo-${numeroAnterior}`);
+                const selectVehiculo = fila.querySelector('.unidad-vehiculo');
+
 
                 if (oldDormir) oldDormir.id = `dormir-${nuevoNumero}`;
                 if (oldLevantar) oldLevantar.id = `levantar-${nuevoNumero}`;
@@ -1943,8 +3709,10 @@
                 if (oldHrsDespierto) oldHrsDespierto.id = `horas-despierto-${nuevoNumero}`;
                 if (oldHrsViaje) oldHrsViaje.id = `horas-viaje-${nuevoNumero}`;
                 if (oldTotalFinalizar) oldTotalFinalizar.id = `total-hrs-finalizar-${nuevoNumero}`;
+                if (tipoVehiculoDiv) tipoVehiculoDiv.id = `tipo-vehiculo-${nuevoNumero}`;
 
-                // Re-agregar listeners de cambio para cálculo de horas (Horas Sueño)
+
+                // Actualizar eventos
                 fila.querySelector('.unidad-hora-dormir').addEventListener('change', function() {
                     calcularHorasDormidas(nuevoNumero);
                     actualizarBotonReunionConvoy();
@@ -1955,12 +3723,10 @@
                     actualizarBotonReunionConvoy();
                 });
 
-                // Re-agregar listener de cambio para Alcoholimetría
                 fila.querySelector('.unidad-alcoholimetria').addEventListener('change', function() {
                     actualizarBotonReunionConvoy();
                 });
 
-                // Re-asignar onchange para Horas de Conducción
                 fila.querySelector(`#horas-despierto-${nuevoNumero}`).addEventListener('change', function() {
                     calcularTotalHoras(nuevoNumero);
                     actualizarBotonReunionConvoy();
@@ -1969,6 +3735,11 @@
                     calcularTotalHoras(nuevoNumero);
                     actualizarBotonReunionConvoy();
                 });
+                if (selectVehiculo) {
+                    selectVehiculo.setAttribute('onchange',
+                        `actualizarNombreVehiculoInspeccion(${nuevoNumero}); actualizarBotonReunionConvoy(); actualizarTipoVehiculo(${nuevoNumero})`
+                    );
+                }
 
 
                 const pasajeroContainer = fila.querySelector('.pasajero-container');
@@ -2122,7 +3893,7 @@
                 return;
             }
 
-            // 🔑 NUEVO: Validar Reunión Pre-Convoy si hay más de una unidad 🔑
+            // Validar Reunión Pre-Convoy si hay más de una unidad
             if (contadorUnidades > 1 && !reunionPreConvoyGuardada) {
                 Swal.fire({
                     title: 'Reunión Pre-Convoy Requerida',

@@ -1,48 +1,31 @@
 (function () {
-    // ====== VERIFICACIÓN INICIAL - NO ejecutar en login/password reset ======
+    // ====== VERIFICACIÓN INICIAL ======
     const currentPath = window.location.pathname.toLowerCase();
-
-    // Lista de rutas/páginas donde NO debe ejecutarse el timeout
-    const excludedPaths = [
-        '/login',
-        '/logout',
-        '/password',
-        '/reset',
-        '/register',
-        '/verify-email'
-    ];
-
-    // También verificar por elementos específicos de la página de login
+    const excludedPaths = ['/login', '/logout', '/password', '/reset', '/register', '/verify-email'];
     const hasLoginElements = document.querySelector('#loginForm') !== null ||
                              document.querySelector('#forgotPasswordLink') !== null ||
                              document.querySelector('.toggle-password') !== null;
 
-    // Si estamos en una ruta excluida O tiene elementos de login, NO ejecutar
     const shouldSkip = excludedPaths.some(path => currentPath.includes(path)) || hasLoginElements;
 
-    if (shouldSkip) {
-        console.log(`🔒 Script de timeout desactivado (ruta: ${currentPath})`);
-        return; // Salir inmediatamente - NO ejecutar el timeout
-    }
+    if (shouldSkip) return;
 
-    // ====== CONFIGURACIÓN DEL TIMEOUT (solo para usuarios autenticados) ======
+    // ====== CONFIGURACIÓN ======
     const SESSION_TIMEOUT_MINUTES = 10;
-    const ALERT_BEFORE_EXPIRY_MINUTES = 1;
+    const WARNING_TIME_MINUTES = 1;
+
     const EXPIRY_TIME_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
-    const ALERT_TIME_MS = (SESSION_TIMEOUT_MINUTES - ALERT_BEFORE_EXPIRY_MINUTES) * 60 * 1000;
-    const PING_INTERVAL_MS = 5 * 60 * 1000;
+    const ALERT_THRESHOLD_MS = (SESSION_TIMEOUT_MINUTES - WARNING_TIME_MINUTES) * 60 * 1000;
+    const FINAL_ALERT_DURATION_MS = 5000;
+    const EXTEND_GRACE_PERIOD_MS = 10000; // 10 segundos de "gracia" tras dar a continuar
 
     let lastActivityTime = Date.now();
     let isWarningShown = false;
-    let intervalChecker = null;
-    let pingInterval = null;
-    let isChecking = true;
-    let currentSessionAlert = null;
+    let isFinalAlertShown = false;
+    let lastExtendClickTime = 0; // Para evitar que el modal reaparezca instantáneamente
 
-    // ====== FUNCIONES DEL TIMEOUT ======
-    function isTabActive() {
-        return !document.hidden;
-    }
+    // ====== FUNCIONES AUXILIARES ======
+    function isTabActive() { return !document.hidden; }
 
     function getCsrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
@@ -51,11 +34,7 @@
 
     async function pingSession() {
         const csrf = getCsrfToken();
-        if (!csrf) {
-            console.warn("Token CSRF no encontrado");
-            return false;
-        }
-
+        if (!csrf) return false;
         try {
             const resp = await fetch('/session-ping', {
                 method: 'POST',
@@ -63,235 +42,155 @@
                     'X-CSRF-TOKEN': csrf,
                     'X-Requested-With': 'XMLHttpRequest',
                     'Content-Type': 'application/json'
-                },
-                credentials: 'same-origin'
-            });
-
-            if (resp.status === 419 || resp.status === 401) {
-                return false;
-            }
-            return resp.ok;
-        } catch (error) {
-            console.warn("Error en ping:", error.message);
-            return false;
-        }
-    }
-
-    function closeSessionAlert() {
-        if (currentSessionAlert && typeof Swal !== 'undefined') {
-            const allAlerts = document.querySelectorAll('.swal2-container');
-            let ourAlertActive = false;
-
-            allAlerts.forEach(alert => {
-                if (alert.contains(document.getElementById('sessionTimer'))) {
-                    ourAlertActive = true;
                 }
             });
-
-            if (ourAlertActive) {
-                Swal.close();
-            }
-        }
-        currentSessionAlert = null;
-        isWarningShown = false;
+            return resp.ok;
+        } catch (e) { return false; }
     }
 
     function resetActivity() {
-        if (!isTabActive()) return;
-
+        // Si el modal está visible, no reseteamos por movimiento externo (queremos que den clic al botón)
+        if (isWarningShown || isFinalAlertShown) return;
         lastActivityTime = Date.now();
-
-        if (isWarningShown) {
-            closeSessionAlert();
-        }
     }
 
     async function extendSession() {
-        const success = await pingSession();
-        if (success) {
-            lastActivityTime = Date.now();
-            closeSessionAlert();
-            console.log("✅ Sesión extendida manualmente");
-            return true;
-        }
-        return false;
+        console.log("🔄 Extendiendo sesión local...");
+
+        // 1. Reiniciar tiempos inmediatamente
+        lastActivityTime = Date.now();
+        lastExtendClickTime = Date.now(); // Marca el momento del clic
+        isWarningShown = false;
+
+        // 2. Cerrar alerta
+        Swal.close();
+
+        // 3. Avisar al servidor en segundo plano
+        pingSession().then(success => {
+            if (success) console.log("✅ Servidor sincronizado");
+        });
     }
 
+    // ====== MODALES ======
+
     function showTimeoutWarning() {
-        if (isWarningShown || !isTabActive() || typeof Swal === 'undefined') return;
-
-        const existingAlerts = document.querySelectorAll('.swal2-container');
-        if (existingAlerts.length > 0) {
-            let hasOurAlert = false;
-            existingAlerts.forEach(alert => {
-                if (alert.querySelector('#sessionTimer')) {
-                    hasOurAlert = true;
-                }
-            });
-
-            if (!hasOurAlert) {
-                console.log("⚠️ Hay otra alerta activa, posponiendo alerta de sesión");
-                setTimeout(() => {
-                    if (isTabActive() && !isWarningShown) {
-                        showTimeoutWarning();
-                    }
-                }, 5000);
-                return;
-            }
-        }
+        // NO mostrar si ya está visible, si la sesión ya acabó, o si acabamos de dar clic a "Continuar"
+        const timeSinceLastExtend = Date.now() - lastExtendClickTime;
+        if (isWarningShown || isFinalAlertShown || timeSinceLastExtend < EXTEND_GRACE_PERIOD_MS) return;
 
         isWarningShown = true;
 
-        currentSessionAlert = Swal.fire({
-            title: "⚠️ Sesión a punto de expirar",
+        Swal.fire({
+            title: "¿Sigues ahí?",
             html: `
                 <div style="text-align: center; padding: 10px;">
-                    <p>Tu sesión expirará en <strong style="color: #d63031; font-size: 1.2em;" id="sessionTimer">60</strong> segundos</p>
-                    <p><small>Presiona "Continuar" para mantenerte conectado</small></p>
+                    <p>Tu sesión expirará por inactividad.</p>
+                    <p>Tiempo restante: <strong style="color: #d63031; font-size: 1.5em;" id="sessionTimer">--</strong></p>
+                    <p>Haz clic en el botón para continuar.</p>
                 </div>
             `,
             icon: "warning",
             showCancelButton: false,
-            confirmButtonText: "Continuar sesión",
+            confirmButtonText: "SÍ, CONTINUAR TRABAJANDO",
             confirmButtonColor: "#3085d6",
-            // Los siguientes parámetros aseguran que solo el botón o el temporizador cierren la alerta.
-            allowOutsideClick: false, // 🛑 Mantiene la alerta abierta si se hace clic fuera.
-            allowEscapeKey: false,    // 🛑 Mantiene la alerta abierta si se presiona Escape.
+            allowOutsideClick: false,
+            allowEscapeKey: false,
             allowEnterKey: true,
-            timer: 60000,
-            timerProgressBar: true,
-            backdrop: true,
-            customClass: {
-                popup: 'session-timeout-alert',
-                container: 'session-alert-container'
-            },
-            didOpen: (modal) => {
-                modal.setAttribute('data-alert-type', 'session-timeout');
+            didOpen: () => {
                 const timerEl = document.getElementById("sessionTimer");
-                if (!timerEl) return;
+                const timerInt = setInterval(() => {
+                    const now = Date.now();
+                    const timeLeft = Math.max(0, Math.ceil((EXPIRY_TIME_MS - (now - lastActivityTime)) / 1000));
 
+                    if (timerEl) timerEl.textContent = `${timeLeft}s`;
+
+                    // Si el usuario da clic o el tiempo se agota, matamos este intervalo
+                    if (!isWarningShown || timeLeft <= 0 || isFinalAlertShown) {
+                        clearInterval(timerInt);
+                    }
+                }, 1000);
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                extendSession();
+            }
+        });
+    }
+
+    function showFinalAlert() {
+        if (isFinalAlertShown) return;
+
+        isFinalAlertShown = true;
+        isWarningShown = false;
+
+        Swal.close();
+
+        Swal.fire({
+            title: "🔴 Sesión Agotada",
+            html: `
+                <div style="text-align: center; padding: 10px;">
+                    <p><strong style="color: #d63031;">Tu tiempo de inactividad ha superado el límite.</strong></p>
+                    <p>Redirigiendo al login en <strong id="finalTimer">5</strong>...</p>
+                </div>
+            `,
+            icon: "error",
+            timer: FINAL_ALERT_DURATION_MS,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                const timerEl = document.getElementById("finalTimer");
                 const interval = setInterval(() => {
                     const left = Swal.getTimerLeft();
-                    if (!left || left <= 0) {
-                        clearInterval(interval);
-                        return;
-                    }
-                    timerEl.textContent = Math.ceil(left / 1000);
-                }, 200);
+                    if (timerEl && left) timerEl.textContent = Math.ceil(left / 1000);
+                    if (!left) clearInterval(interval);
+                }, 100);
             }
-        }).then(async (result) => {
-            isWarningShown = false;
-            currentSessionAlert = null;
-
-            if (result.isConfirmed) {
-                const extended = await extendSession();
-                if (!extended) {
-                    forceLogout();
-                }
-            } else if (result.dismiss === 'timer') {
-                forceLogout();
-            }
+        }).then(() => {
+            window.location.href = '/login';
         });
     }
 
-    function checkStateOnReturn() {
-        if (!isTabActive()) return;
-
-        const inactive = Date.now() - lastActivityTime;
-
-        if (inactive >= EXPIRY_TIME_MS) {
-            forceLogout();
-            return;
-        }
-
-        if (inactive >= ALERT_TIME_MS && inactive < EXPIRY_TIME_MS) {
-            setTimeout(() => {
-                if (isTabActive() && !isWarningShown) {
-                    showTimeoutWarning();
-                }
-            }, 1000);
-            return;
-        }
-
-        pingSession();
-    }
-
-    function forceLogout() {
-        if (!isChecking) return;
-
-        isChecking = false;
-        clearInterval(intervalChecker);
-        if (pingInterval) clearInterval(pingInterval);
-
-        closeSessionAlert();
-
-        setTimeout(() => {
-            window.location.href = '/login';
-        }, 100);
-    }
-
+    // ====== MONITOR DE INACTIVIDAD ======
     function checkInactivity() {
-        if (!isTabActive()) return;
+        const now = Date.now();
+        const inactiveTime = now - lastActivityTime;
 
-        const inactive = Date.now() - lastActivityTime;
-
-        if (!isWarningShown && inactive >= ALERT_TIME_MS && inactive < EXPIRY_TIME_MS) {
+        // Si ya expiró el tiempo total
+        if (inactiveTime >= EXPIRY_TIME_MS) {
+            showFinalAlert();
+        }
+        // Si entró en el rango de alerta y NO estamos en periodo de gracia
+        else if (inactiveTime >= ALERT_THRESHOLD_MS && !isWarningShown) {
             showTimeoutWarning();
         }
-
-        if (inactive >= EXPIRY_TIME_MS) {
-            forceLogout();
-        }
     }
 
-    // ====== INICIALIZACIÓN ======
-    function initSessionTimeout() {
-        console.log("✅ Controlador de timeout activado para usuarios autenticados");
+    function init() {
+        const events = ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'];
+        events.forEach(e => document.addEventListener(e, resetActivity, { passive: true }));
 
-        const activityEvents = ['click', 'mousemove', 'keydown', 'scroll', 'touchstart', 'mousedown', 'input'];
+        setInterval(checkInactivity, 1000);
 
-        activityEvents.forEach(event => {
-            document.addEventListener(event, resetActivity, { passive: true });
-        });
-
-        intervalChecker = setInterval(checkInactivity, 1000);
-
-        pingInterval = setInterval(() => {
-            if (isTabActive()) {
+        // Ping de mantenimiento cada 5 min (siempre que el usuario sea activo)
+        setInterval(() => {
+            if (isTabActive() && !isWarningShown && !isFinalAlertShown) {
                 pingSession();
             }
-        }, PING_INTERVAL_MS);
+        }, 300000);
 
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                setTimeout(checkStateOnReturn, 300);
-            } else {
-                closeSessionAlert();
-            }
-        });
-
-        lastActivityTime = Date.now();
-
-        setTimeout(() => pingSession(), 2000);
+        console.log("✅ Sistema de sesión robusto con periodo de gracia activado.");
     }
 
-    // ====== VERIFICAR SI SWEETALERT ESTÁ DISPONIBLE ======
     if (typeof Swal === 'undefined') {
-        let checkSwalCount = 0;
-        const checkSwalInterval = setInterval(() => {
-            checkSwalCount++;
+        const checkSwal = setInterval(() => {
             if (typeof Swal !== 'undefined') {
-                clearInterval(checkSwalInterval);
-                initSessionTimeout();
-            } else if (checkSwalCount > 10) {
-                clearInterval(checkSwalInterval);
-                console.warn("SweetAlert no cargado, iniciando sin él");
-                // Si Swal no carga, el timeout se inicia, pero sin la alerta interactiva
-                initSessionTimeout();
+                clearInterval(checkSwal);
+                init();
             }
         }, 500);
     } else {
-        initSessionTimeout();
+        init();
     }
-
 })();
