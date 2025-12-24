@@ -5,7 +5,7 @@
  */
 function initializeModalCalendarScripts(employeeId) {
 
-    // --- MANEJO DE LA CARGA DE DATOS SEGURO (CORRECCIÓN) ---
+    // --- MANEJO DE LA CARGA DE DATOS SEGURO ---
     const serviceDataScript = document.getElementById('service-data');
     if (!serviceDataScript) {
         console.error('Error: Elemento #service-data no encontrado. La carga de datos de servicio falló.');
@@ -20,7 +20,7 @@ function initializeModalCalendarScripts(employeeId) {
     }
     // --------------------------------------------------------
 
-    // --- DEFINICIÓN DE CONSTANTES (COMIENZO) ---
+    // --- DEFINICIÓN DE CONSTANTES ---
     const modal = document.getElementById('activityModal');
     const closeModalBtn = document.querySelector('.close-modal');
     const cancelBtn = document.getElementById('cancel-activity');
@@ -131,6 +131,7 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
+    // ✅ MODIFICADO: Lógica precisa para ocultar solo el bono de comida en C y V
     function handleActivityTypeChange(activityType) {
         const wellNameField = document.getElementById('well-name-field');
         const wellNameInput = document.getElementById('well-name');
@@ -138,8 +139,13 @@ function initializeModalCalendarScripts(employeeId) {
         const commissionedSelect = document.getElementById('commissioned-select');
         const vacationError = document.getElementById('vacation-balance-error');
         const hasServiceBonusSelect = document.querySelector('input[name="has_service_bonus"]:checked');
+
         const foodBonusSelect = document.getElementById('food-bonus');
         const fieldBonusSelect = document.getElementById('field-bonus');
+        // Identificamos los contenedores padres (form-group) para ocultarlos limpiamente
+        const foodBonusContainer = foodBonusSelect ? foodBonusSelect.closest('.form-group') : null;
+        const fieldBonusContainer = fieldBonusSelect ? fieldBonusSelect.closest('.form-group') : null;
+
 
         // Mostrar/Ocultar error de Vacaciones
         if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
@@ -148,73 +154,110 @@ function initializeModalCalendarScripts(employeeId) {
             vacationError.style.display = 'none';
         }
 
-        // Resetear campos de viaje antes de re-evaluar
+        // Resetear campos antes de re-evaluar
         travelDestinationField.style.display = 'none';
-        travelDestinationInput.value = '';
         travelReasonField.style.display = 'none';
-        travelReasonInput.value = '';
-
-        // Resetear campos específicos de Pozo y Comisionado
         wellNameField.style.display = 'none';
         commissionedField.style.display = 'none';
 
-
         // --- Lógica de campos condicionales por Tipo de Actividad ---
-        if (activityType === 'P') { // Trabajo en Pozo
-            wellNameField.style.display = 'block';
-            conditionalFields.style.display = 'block'; // Mostrar bonos/servicio
-            handleServiceBonusChange(hasServiceBonusSelect?.value); // Re-evaluar pestaña de servicio
 
-        } else if (activityType === 'C') { // Comisionado
+        if (activityType === 'P') { // ✅ Trabajo en Pozo: TODO VISIBLE
+            wellNameField.style.display = 'block';
+            conditionalFields.style.display = 'block';
+
+            // Mostrar ambos bonos
+            if (foodBonusContainer) foodBonusContainer.style.display = 'block';
+            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+
+            handleServiceBonusChange(hasServiceBonusSelect?.value);
+
+        } else if (activityType === 'C') { // ✅ Comisionado: SOLO BONO DE CAMPO
             commissionedField.style.display = 'block';
-            conditionalFields.style.display = 'none'; // Ocultar bonos/servicio para Comisionado
-            // Limpiar campos específicos de Pozo
+            conditionalFields.style.display = 'block';
+
+            // 👁️ OCULTAR BONO DE COMIDA, MOSTRAR BONO DE CAMPO
+            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
+            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+
+            // Limpiar valores innecesarios
+            if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
             wellNameInput.value = '';
-            // Forzar que no tenga bono de servicio (solo si no está bloqueado)
+
+            // Forzar NO servicio
+            const radioNo = document.getElementById('service-bonus-no');
+            const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+            const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+
+            if (radioNo && optionNo && optionSi) {
+                radioNo.checked = true;
+                optionNo.classList.add('selected');
+                optionSi.classList.remove('selected');
+                handleServiceBonusChange('no');
+            }
             const serviceStatus = getFieldStatus(currentActivity, 'service');
             if (!statusesToBlockField.includes(serviceStatus)) {
-                const radioNo = document.getElementById('service-bonus-no');
-                const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
-                const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+                resetServiceForm();
+            }
 
-                if (radioNo && optionNo && optionSi) {
-                    radioNo.checked = true;
-                    optionNo.classList.add('selected');
-                    optionSi.classList.remove('selected');
-                    handleServiceBonusChange('no'); // Ocultar pestaña de servicio
-                }
+        } else if (activityType === 'V') { // ✅ Viaje: SOLO BONO DE CAMPO
+            travelDestinationField.style.display = 'block';
+            travelReasonField.style.display = 'block';
+            conditionalFields.style.display = 'block';
+
+            // 👁️ OCULTAR BONO DE COMIDA, MOSTRAR BONO DE CAMPO
+            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
+            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+
+            // Limpiar valores innecesarios
+            if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
+            wellNameInput.value = '';
+            commissionedSelect.selectedIndex = 0;
+
+            // Forzar NO servicio
+            const radioNo = document.getElementById('service-bonus-no');
+            const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+            const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+
+            if (radioNo && optionNo && optionSi) {
+                radioNo.checked = true;
+                optionNo.classList.add('selected');
+                optionSi.classList.remove('selected');
+                handleServiceBonusChange('no');
+            }
+            const serviceStatus = getFieldStatus(currentActivity, 'service');
+            if (!statusesToBlockField.includes(serviceStatus)) {
                 resetServiceForm();
             }
 
         } else {
-            // ✅ PARA TODAS LAS OTRAS ACTIVIDADES (B, TC, V, D, VAC, E, M, A, PE, N)
-            // Limpiar campos específicos de Pozo
+            // ✅ OTRAS ACTIVIDADES: OCULTAR TODO
             wellNameInput.value = '';
-
-            // Limpiar campos de Comisionado
+            travelDestinationInput.value = '';
+            travelReasonInput.value = '';
             commissionedSelect.selectedIndex = 0;
 
-            // ✅ SOLO LIMPIAR BONOS si NO están BLOQUEADOS (aprobados/revisados)
+            // SOLO LIMPIAR BONOS si NO están BLOQUEADOS
             const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
             const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
 
-            // Si el bono de comida NO está bloqueado (puede ser rejected o under_review), limpiarlo
             if (!statusesToBlockField.includes(foodBonusStatus)) {
                 if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
             }
 
-            // Si el bono de campo NO está bloqueado (puede ser rejected o under_review), limpiarlo
             if (!statusesToBlockField.includes(fieldBonusStatus)) {
                 if (fieldBonusSelect) fieldBonusSelect.selectedIndex = 0;
             }
 
-            // Ocultar sección de bonos (pero mantener los valores si están bloqueados)
+            // Ocultar sección de bonos completa
             conditionalFields.style.display = 'none';
 
-            // Forzar que no tenga bono de servicio (solo si no está bloqueado)
+            // Resetear visibilidad interna por si acaso
+            if (foodBonusContainer) foodBonusContainer.style.display = 'block';
+            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+
             const serviceStatus = getFieldStatus(currentActivity, 'service');
             if (!statusesToBlockField.includes(serviceStatus)) {
-
                 const radioNo = document.getElementById('service-bonus-no');
                 const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
                 const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
@@ -223,17 +266,10 @@ function initializeModalCalendarScripts(employeeId) {
                     radioNo.checked = true;
                     optionNo.classList.add('selected');
                     optionSi.classList.remove('selected');
-                    handleServiceBonusChange('no'); // Ocultar pestaña de servicio
+                    handleServiceBonusChange('no');
                 }
-                // ✅ Limpiar servicios solo si no están bloqueados
                 resetServiceForm();
             }
-        }
-
-        // Manejo específico para Viaje
-        if (activityType === 'V') {
-            travelDestinationField.style.display = 'block';
-            travelReasonField.style.display = 'block';
         }
     }
 
@@ -245,8 +281,6 @@ function initializeModalCalendarScripts(employeeId) {
 
         if (hasServiceBonus === 'si' && isActivityP) {
             serviceTabBtn.style.display = 'block';
-            // Si el usuario acaba de seleccionar "Sí" al servicio, inicializamos la fecha con la del día seleccionado
-            // 🥇 LÓGICA DE INICIALIZACIÓN/ACTUALIZACIÓN
             if (serviceRealDateInput.value === '' && currentSelectedDate) {
                  serviceRealDateInput.value = currentSelectedDate;
             }
@@ -255,29 +289,23 @@ function initializeModalCalendarScripts(employeeId) {
             if (serviceTab.classList.contains('active')) {
                 activityTabBtn.click();
             }
-            // Asegúrate de resetear el estado interno del radio si se oculta
             if (hasServiceBonus === 'no' || !isActivityP) {
                 document.getElementById('service-bonus-no').checked = true;
                 document.querySelector('.service-bonus-option[data-value="no"]').classList.add('selected');
                 document.querySelector('.service-bonus-option[data-value="si"]').classList.remove('selected');
             }
-            // NOTA: resetServiceForm ya no limpia serviceRealDateInput
             resetServiceForm();
         }
     }
-
-    // ❌ ELIMINADA: function populatePayrollPeriodOptions()
 
     function showRejectionMessages(activity) {
         clearRejectionMessages();
         if (!activity) return;
 
-        // Mensaje de rechazo general de actividad
         if (activity.rejection_reason && activity.activity_status && activity.activity_status.toLowerCase() === 'rejected') {
             showRejectionMessage('activity-type-select', activity.rejection_reason);
         }
 
-        // Mensaje de rechazo de servicio
         if (activity.services_list && activity.services_list.length > 0) {
             activity.services_list.forEach(service => {
                 if (service.status && service.status.toLowerCase() === 'rejected' && service.rejection_reason) {
@@ -286,7 +314,6 @@ function initializeModalCalendarScripts(employeeId) {
             });
         }
 
-        // Mensaje de rechazo de bono de comida
         if (activity.food_bonuses && activity.food_bonuses.length > 0) {
             activity.food_bonuses.forEach(bonus => {
                 if (bonus.status && bonus.status.toLowerCase() === 'rejected' && bonus.rejection_reason) {
@@ -295,7 +322,6 @@ function initializeModalCalendarScripts(employeeId) {
             });
         }
 
-        // Mensaje de rechazo de bono de campo
         if (activity.field_bonuses && activity.field_bonuses.length > 0) {
             activity.field_bonuses.forEach(bonus => {
                 if (bonus.status && bonus.status.toLowerCase() === 'rejected' && bonus.rejection_reason) {
@@ -352,7 +378,6 @@ function initializeModalCalendarScripts(employeeId) {
             document.getElementById('service-type'), document.getElementById('service-performed'),
             document.getElementById('service'), document.getElementById('payroll-period'),
             document.getElementById('service-amount'),
-            // 🥇 NUEVO CAMPO DE FECHA REAL
             serviceRealDateInput
         ];
 
@@ -526,9 +551,6 @@ function initializeModalCalendarScripts(employeeId) {
         toggleFieldLock(travelDestinationInput, isActivityLocked, activityStatus);
         toggleFieldLock(travelReasonInput, isActivityLocked, activityStatus);
 
-        // ----------------------------------------------------
-        // LÓGICA CLAVE: ESTADO DEL BOTÓN "¿BONO DE SERVICIO?"
-        // ----------------------------------------------------
         const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
         const serviceStatus = getFieldStatus(activity, 'service');
 
@@ -543,9 +565,6 @@ function initializeModalCalendarScripts(employeeId) {
         const isServiceBonusLocked = statusesToBlockField.includes(statusForServiceBonus);
 
         serviceBonusOptions.forEach(option => toggleFieldLock(option, isServiceBonusLocked, statusForServiceBonus));
-        // ----------------------------------------------------
-        // FIN LÓGICA CLAVE
-        // ----------------------------------------------------
 
 
         // --- Bonos ---
@@ -568,7 +587,6 @@ function initializeModalCalendarScripts(employeeId) {
         const payrollPeriodSelect = document.getElementById('payroll-period');
         const serviceAmountInput = document.getElementById('service-amount');
 
-        // 🥇 BLOQUEAR NUEVO CAMPO DE FECHA REAL
         toggleFieldLock(serviceRealDateInput, isServiceLocked, serviceStatus);
 
         workTypeOptions.forEach(option => toggleFieldLock(option, isServiceLocked, serviceStatus));
@@ -584,7 +602,6 @@ function initializeModalCalendarScripts(employeeId) {
     function populateModalWithActivity(activity) {
         currentActivity = activity;
         resetActivityOptions();
-        // NOTA: resetServiceForm se mantiene aquí, pero ahora NO borra serviceRealDateInput
         resetServiceForm();
         resetAdditionalForms();
         resetBonusFields();
@@ -595,10 +612,10 @@ function initializeModalCalendarScripts(employeeId) {
         const vacationError = document.getElementById('vacation-balance-error');
         const isActivityP = activity.activity_type === 'P';
 
-        // Mostrar/Ocultar campos condicionales
-        conditionalFields.style.display = isActivityP ? 'block' : 'none';
+        // Mostrar campos condicionales (Bonos) si es P, C o V
+        const activityTypesWithBonuses = ['P', 'C', 'V'];
+        conditionalFields.style.display = activityTypesWithBonuses.includes(activity.activity_type) ? 'block' : 'none';
 
-        // Mostrar/Ocultar error de Vacaciones si aplica
         if (activity.activity_type === 'VAC' && vacationDaysAvailable <= 0) {
             vacationError.style.display = 'block';
         } else {
@@ -656,22 +673,16 @@ function initializeModalCalendarScripts(employeeId) {
             document.getElementById('well-name').value = activity.well_name;
         }
 
-        // --- RELLENAR CAMPOS DE VIAJE ---
         if (activity.activity_type === 'V') {
             travelDestinationField.style.display = 'block';
             travelReasonField.style.display = 'block';
             document.getElementById('travel-destination').value = activity.travel_destination || '';
             document.getElementById('travel-reason').value = activity.travel_reason || '';
         }
-        // ---------------------------------------
 
         if (hasService) {
-            // Si tiene servicio, populateServiceData lo carga (incluida la fecha real guardada).
             populateServiceData(activity.services_list[0]);
         }
-        // 🥇 CASO CLAVE: Si ya tiene una actividad pero no servicio (o la actividad es de pozo)
-        // La fecha real DEBE SER LA FECHA SELECCIONADA DEL CALENDARIO.
-        // Si no hay servicio guardado, forzamos la fecha seleccionada.
         else {
             serviceRealDateInput.value = currentSelectedDate;
         }
@@ -698,17 +709,13 @@ function initializeModalCalendarScripts(employeeId) {
     }
 
     // =========================================================================
-    // FUNCIONES AUXILIARES REQUERIDAS PARA EL REPOBLADO EN CASCADA
+    // FUNCIONES AUXILIARES
     // =========================================================================
 
-    /**
-     * Rellena las opciones del selector de 'Servicio Realizado' (Nivel 2)
-     */
     function updateServicePerformedOptions(workType, serviceTypeFormatted, selectedPerformedId = null) {
         const servicePerformedSelect = document.getElementById('service-performed');
         const serviceSelect = document.getElementById('service');
 
-        // Limpiar niveles inferiores
         servicePerformedSelect.innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
         serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
         document.getElementById('service').disabled = true;
@@ -735,9 +742,6 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
-    /**
-     * Rellena las opciones del selector de 'Servicio' (Nivel 3)
-     */
     function updateServiceOptions(workType, serviceTypeFormatted, servicePerformedFormatted, selectedServiceId = null) {
         const serviceSelect = document.getElementById('service');
         serviceSelect.innerHTML = '<option value="">Seleccionar servicio...</option>';
@@ -780,10 +784,6 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
-
-    // =========================================================================
-    // FUNCIÓN CORREGIDA: populateServiceData (Ahora maneja service_real_date)
-    // =========================================================================
     function populateServiceData(service) {
         let operationType = null;
         let fullServiceData = null;
@@ -795,10 +795,8 @@ function initializeModalCalendarScripts(employeeId) {
         document.getElementById('service-amount').value = '';
         serviceAmountGroup.style.display = 'none';
 
-        // 🥇 CORRECCIÓN CLAVE: Mantiene la fecha guardada del servicio o usa la seleccionada si no hay guardada
         serviceRealDateInput.value = service.service_real_date || currentSelectedDate;
 
-        // Buscar la data completa del servicio
         for (const [opType, services] of Object.entries(serviceData)) {
             if (Array.isArray(services)) {
                 fullServiceData = services.find(s => s.identifier === service.service_identifier);
@@ -810,7 +808,6 @@ function initializeModalCalendarScripts(employeeId) {
         }
 
         if (operationType && fullServiceData) {
-            // 1. Tipo de Trabajo (Radio Buttons)
             let workTypeValue = operationType;
             const workTypeOption = document.querySelector(`.work-type-option[data-value="${workTypeValue}"]`);
             if (workTypeOption) {
@@ -823,20 +820,15 @@ function initializeModalCalendarScripts(employeeId) {
             const servicePerformedFormatted = fullServiceData.service_performed.toLowerCase().replace(/\s+/g, '_');
             const serviceIdentifier = service.service_identifier;
 
-            // 2. Tipo de Servicio (Select)
             serviceTypeSelect.disabled = false;
             updateServiceTypes(workTypeValue);
             serviceTypeSelect.value = serviceTypeFormatted;
 
-            // 3. Servicio Realizado (Select)
             servicePerformedSelect.disabled = false;
             updateServicePerformedOptions(workTypeValue, serviceTypeFormatted, servicePerformedFormatted, servicePerformedFormatted);
 
-            // 4. Servicio (Select)
             serviceSelect.disabled = false;
             updateServiceOptions(workTypeValue, serviceTypeFormatted, servicePerformedFormatted, serviceIdentifier);
-
-            // ❌ ELIMINADA: Lógica de Período de Nómina.
         }
     }
 
@@ -847,10 +839,9 @@ function initializeModalCalendarScripts(employeeId) {
             document.getElementById('activity-date').value = displayDate;
             const existingActivity = monthlyActivities[processedDate];
 
-            // 1. Resetear formularios
             currentActivity = null;
             resetActivityOptions();
-            resetServiceForm(); // 👈 Ya no borra serviceRealDateInput
+            resetServiceForm();
             resetAdditionalForms();
             resetBonusFields();
             clearAllBlocksAndMessages();
@@ -859,17 +850,12 @@ function initializeModalCalendarScripts(employeeId) {
             conditionalFields.style.display = 'none';
             serviceTabBtn.style.display = 'none';
 
-            // 2. 🥇 CARGAR FECHA SELECCIONADA DEL CALENDARIO SIEMPRE
-            // Esta es la fecha por defecto que el usuario seleccionó.
             serviceRealDateInput.value = processedDate;
 
 
             if (existingActivity) {
-                // 3. Si hay actividad existente, el resto del modal se carga desde la actividad.
-                // Esta llamada internamente actualizará serviceRealDateInput si el servicio existe.
                 populateModalWithActivity(existingActivity);
             } else {
-                // 4. Si no hay actividad existente, se queda con la fecha cargada en el paso 2.
                 const radioNo = document.getElementById('service-bonus-no');
                 const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
                 const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
@@ -889,7 +875,6 @@ function initializeModalCalendarScripts(employeeId) {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
         resetActivityOptions();
-        // NOTA: resetServiceForm se mantiene aquí, pero ahora NO borra serviceRealDateInput
         resetServiceForm();
         resetAdditionalForms();
         resetBonusFields();
@@ -944,14 +929,12 @@ function initializeModalCalendarScripts(employeeId) {
         document.getElementById('service-performed').innerHTML = '<option value="">Seleccionar servicio realizado...</option>';
         document.getElementById('service').disabled = true;
         document.getElementById('service').innerHTML = '<option value="">Seleccionar servicio...</option>';
-        document.getElementById('payroll-period').selectedIndex = 0; // Se mantiene solo para resetear el select oculto
+        document.getElementById('payroll-period').selectedIndex = 0;
         document.querySelectorAll('.error-message').forEach(el => {
             el.style.display = 'none';
         });
         document.getElementById('service-amount').value = '';
         document.getElementById('service-amount-group').style.display = 'none';
-        // ❌ CORRECCIÓN CLAVE: ELIMINAR EL RESET DEL CAMPO DE FECHA REAL
-        // serviceRealDateInput.value = '';
     }
 
     closeModalBtn.addEventListener('click', closeModal);
@@ -961,7 +944,6 @@ function initializeModalCalendarScripts(employeeId) {
             closeModal();
         }
     });
-    // ... (Eventos de actividad y servicio se mantienen igual) ...
 
     const activityOptions = document.querySelectorAll('.activity-option');
     const activityTypeHeader = document.getElementById('activity-type-header');
@@ -1180,7 +1162,6 @@ function initializeModalCalendarScripts(employeeId) {
             displayed_year: document.querySelector('.month-navigation span').getAttribute('data-year'),
         };
 
-        // 1. Procesar la Pestaña de Actividad
         const activityStatus = getFieldStatus(currentActivity, 'activity');
         if (!statusesToBlockField.includes(activityStatus)) {
             const activityType = document.getElementById('activity-type').value;
@@ -1195,7 +1176,6 @@ function initializeModalCalendarScripts(employeeId) {
             const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
             formData.has_service_bonus = isActivityP ? hasServiceBonus : 'no';
 
-            // *** NUEVA VALIDACIÓN DE VACACIONES EN EL CLIENTE ***
             if (activityType === 'VAC') {
                 let currentVacationDaysInMonth = 0;
                 document.querySelectorAll('.calendar td[data-date]').forEach(cell => {
@@ -1205,12 +1185,9 @@ function initializeModalCalendarScripts(employeeId) {
                     }
                 });
 
-                // Si el día que estamos guardando NO es el mismo día que ya estaba registrado como VAC, sumamos 1.
                 const isNewVacationDay = !(currentActivity && currentActivity.activity_type === 'VAC' && currentActivity.date === currentSelectedDate);
 
                 if (isNewVacationDay || (currentActivity && currentActivity.activity_type !== 'VAC')) {
-                    // Si cambiamos de N, B, V, etc. a VAC, o si es un día nuevo, sumamos 1.
-                    // Si cambiamos de VAC a VAC, el conteo no aumenta. El servidor lo recalcula correctamente.
                     if (!currentActivity || currentActivity.activity_type !== 'VAC') {
                         currentVacationDaysInMonth++;
                     }
@@ -1218,7 +1195,6 @@ function initializeModalCalendarScripts(employeeId) {
 
                 const daysAvailable = vacationDaysAvailable;
 
-                // Si los días solicitados exceden el saldo
                 if (currentVacationDaysInMonth > daysAvailable) {
                     document.getElementById('vacation-balance-error').style.display = 'block';
                     isValid = false;
@@ -1231,10 +1207,7 @@ function initializeModalCalendarScripts(employeeId) {
                     return;
                 }
             }
-            // **********************************************
 
-
-            // Validaciones de campos obligatorios para la actividad
             if (!activityType) {
                 document.getElementById('activity-type-error').style.display = 'block';
                 isValid = false;
@@ -1258,18 +1231,19 @@ function initializeModalCalendarScripts(employeeId) {
             }
         }
 
-        // 2. Procesar Bonos (solo si la actividad es 'P' o 'N' con bonos)
+        // 2. Procesar Bonos (CORREGIDO PARA C Y V)
         const currentActivityType = document.getElementById('activity-type').value;
 
-        if (currentActivityType === 'P' || currentActivityType === 'N' || !currentActivityType) {
-
-            // Bono de Comida
+        // ✅ REGLA: Bono de Comida SOLO para P o N (No para C ni V)
+        if (['P', 'N'].includes(currentActivityType) || !currentActivityType) {
             const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
             if (!statusesToBlockField.includes(foodBonusStatus)) {
                 formData.food_bonus_number = document.getElementById('food-bonus').value || null;
             }
+        }
 
-            // Bono de Campo
+        // ✅ REGLA: Bono de Campo para P, N, C, V
+        if (['P', 'N', 'C', 'V'].includes(currentActivityType) || !currentActivityType) {
             const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
             if (!statusesToBlockField.includes(fieldBonusStatus)) {
                 formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;
@@ -1282,7 +1256,6 @@ function initializeModalCalendarScripts(employeeId) {
         const wantsService = document.querySelector('input[name="has_service_bonus"]:checked')?.value === 'si';
         const isActivityP = document.getElementById('activity-type').value === 'P';
 
-        // 🥇 CAMBIO CLAVE: Capturar la fecha real
         const realDate = serviceRealDateInput.value;
 
         if (wantsService && isActivityP && !statusesToBlockField.includes(serviceStatus)) {
@@ -1290,10 +1263,8 @@ function initializeModalCalendarScripts(employeeId) {
             const serviceValue = document.getElementById('service').value;
 
             formData.service_identifier = serviceValue || null;
-            // 🥇 NUEVO: Usar la fecha real para la imputación
             formData.service_real_date = realDate;
 
-            // Validaciones para la sección de servicio
             if (!workTypeSelected) {
                 document.getElementById('work-type-error').style.display = 'block';
                 isValid = false;
@@ -1314,22 +1285,17 @@ function initializeModalCalendarScripts(employeeId) {
                 isValid = false;
                 document.querySelector('.tab-btn[data-tab="service"]').click();
             }
-            // 🥇 NUEVA VALIDACIÓN PARA LA FECHA REAL
             if (!formData.service_real_date) {
                 document.getElementById('service-real-date-error').style.display = 'block';
                 isValid = false;
                 document.querySelector('.tab-btn[data-tab="service"]').click();
             }
         } else if (wantsService && isActivityP && statusesToBlockField.includes(serviceStatus)) {
-            // Si el servicio está bloqueado, mantenemos los valores guardados
             formData.service_identifier = currentActivity?.services_list[0]?.service_identifier;
-            // 🥇 MANTENER LA FECHA REAL BLOQUEADA
             formData.service_real_date = currentActivity?.services_list[0]?.service_real_date;
         } else {
-            // Si no se quiere servicio o no es actividad 'P' y la sección no está bloqueada
             if (!statusesToBlockField.includes(serviceStatus)) {
                 formData.service_identifier = null;
-                // 🥇 LIMPIAR CAMPO DE FECHA REAL (solo si no se necesita)
                 formData.service_real_date = null;
             }
         }
@@ -1375,7 +1341,6 @@ function initializeModalCalendarScripts(employeeId) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error al guardar',
-                        // Muestra el mensaje de validación del servidor (incluyendo el de vacaciones)
                         text: data.message || 'Error desconocido.',
                         confirmButtonText: 'Aceptar'
                     });
@@ -1395,8 +1360,6 @@ function initializeModalCalendarScripts(employeeId) {
                 loadingSpinner.style.display = 'none';
             });
     });
-
-    // ... (isDayInPayrollPeriod, attachDayClickEvents, updateCalendar, etc., se mantienen igual) ...
 
     function isDayInPayrollPeriod(dateStr) {
         if (!currentPayrollDates.q1_start && !currentPayrollDates.q2_start) {
@@ -1422,7 +1385,6 @@ function initializeModalCalendarScripts(employeeId) {
     }
 
     function attachDayClickEvents() {
-        // ... (se mantiene igual) ...
         document.querySelectorAll('.calendar td').forEach(day => {
             const dayNumberEl = day.querySelector('.day-number');
             const dateAttribute = day.getAttribute('data-date');
@@ -1649,11 +1611,9 @@ function initializeModalCalendarScripts(employeeId) {
 
     updateCalendar(initialMonth, initialYear);
 
-    // 🥇 NUEVA INICIALIZACIÓN DE FLATPCIKR
     if (typeof flatpickr !== 'undefined' && serviceRealDateInput) {
         flatpickr(serviceRealDateInput, {
             dateFormat: "Y-m-d",
-            // Permite seleccionar cualquier fecha pasada, sin restricción de hoy.
             disableMobile: true
         });
     } else {
