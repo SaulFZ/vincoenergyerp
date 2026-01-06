@@ -1,3 +1,5 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 @php
     // Ejemplo de cómo podrías pasar el conteo de notificaciones desde el backend
     $notificationCount = 3;
@@ -38,8 +40,8 @@
 @endphp
 <style>
     /* ==========================================================================
-      ESTILOS BASE Y UTILITARIOS
-    ========================================================================== */
+       ESTILOS BASE Y UTILITARIOS
+     ========================================================================== */
     :root {
         /* Colores Primarios Intensos */
         --color-primary-male: #0f5db6;
@@ -76,7 +78,8 @@
 
     /* --- Icono de Notificación / Icono de Inicio --- */
     .notification-icon,
-    .home-icon { /* ✅ Nuevo estilo para el botón de Inicio */
+    .home-icon {
+        /* ✅ Nuevo estilo para el botón de Inicio */
         width: 44px;
         height: 44px;
         border-radius: 50%;
@@ -93,7 +96,8 @@
     }
 
     .notification-icon:hover,
-    .home-icon:hover { /* ✅ Nuevo hover para el botón de Inicio */
+    .home-icon:hover {
+        /* ✅ Nuevo hover para el botón de Inicio */
         background: var(--color-light);
         color: var(--color-dark);
         transform: scale(1.05);
@@ -317,8 +321,8 @@
     }
 
     /* ==========================================================================
-      MODAL DE PERFIL DE EMPLEADO
-    ========================================================================== */
+       MODAL DE PERFIL DE EMPLEADO
+     ========================================================================== */
     /* 🐛 FIX: Modificar el comportamiento de la clase .profile-modal para usar display: flex solo cuando está activo */
     .profile-modal {
         position: fixed;
@@ -441,18 +445,19 @@
         width: 100%;
     }
 
-/* Logo sin contenedor circular */
-.company-logo {
-    width: 45px;
-    height: 45px;
-    object-fit: contain;
-    border-radius: 0;
-    padding: 0;
-    flex-shrink: 0;
+    /* Logo sin contenedor circular */
+    .company-logo {
+        width: 45px;
+        height: 45px;
+        object-fit: contain;
+        border-radius: 0;
+        padding: 0;
+        flex-shrink: 0;
 
-    /* ✅ MODIFICACIÓN CSS: Aplicar filtro para invertir o forzar el color blanco */
-    filter: brightness(0) invert(1); /* Convierte colores oscuros a blanco */
-}
+        /* ✅ MODIFICACIÓN CSS: Aplicar filtro para invertir o forzar el color blanco */
+        filter: brightness(0) invert(1);
+        /* Convierte colores oscuros a blanco */
+    }
 
     .company-name {
         font-size: 1.1rem;
@@ -716,8 +721,8 @@
     }
 
     /* ==========================================================================
-      MODAL DE FOTO AMPLIADA
-    ========================================================================== */
+       MODAL DE FOTO AMPLIADA
+     ========================================================================== */
     /* 🐛 FIX: Modificar el comportamiento de la clase .photo-modal para usar display: flex solo cuando está activo */
     .photo-modal {
         position: fixed;
@@ -801,8 +806,8 @@
     }
 
     /* ==========================================================================
-      ANIMACIONES Y RESPONSIVE
-    ========================================================================== */
+       ANIMACIONES Y RESPONSIVE
+     ========================================================================== */
     @keyframes pulse {
         0% {
             transform: scale(1);
@@ -922,7 +927,8 @@
         }
 
         .notification-icon,
-        .home-icon { /* ✅ Ajuste responsive */
+        .home-icon {
+            /* ✅ Ajuste responsive */
             width: 40px;
             height: 40px;
         }
@@ -1008,13 +1014,9 @@
             <i class="fas fa-user-circle"></i>
             Mi perfil
         </a>
-        {{-- 🚫 ELEMENTO ELIMINADO: El botón de Inicio se movió al nivel de .user-actions --}}
-        {{-- <a class="dropdown-item" href="{{ route('home') }}">
-            <i class="fas fa-home"></i>
-            Inicio
-        </a> --}}
 
-        <form action="{{ route('logout') }}" method="POST" class="logout-form">
+        {{-- ✅ FORMULARIO DE LOGOUT CON ID PARA SWEETALERT --}}
+        <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="logout-form">
             @csrf
             <button type="submit" class="dropdown-item logout">
                 <i class="fas fa-sign-out-alt"></i>
@@ -1285,6 +1287,34 @@
             });
         }
 
+        // ✅ NUEVA LÓGICA: ALERTA DE CERRAR SESIÓN
+        const logoutForm = document.getElementById('logoutForm');
+        if (logoutForm) {
+            logoutForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Detener el envío automático
+
+                // Usar SweetAlert2
+                Swal.fire({
+                    title: 'Cerrando sesión...',
+                    html: 'Por favor espere un momento.',
+                    icon: 'info',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading(); // Mostrar spinner
+                        // Simulamos un pequeño retardo y enviamos
+                        setTimeout(() => {
+                            logoutForm.submit();
+                        }, 1000);
+                    }
+                });
+            });
+        }
+
+
         // Abrir modal de perfil
         function openProfileModal() {
             if (userDropdown) userDropdown.classList.remove('active');
@@ -1405,4 +1435,3 @@
         document.body.style.overflow = '';
     };
 </script>
-
