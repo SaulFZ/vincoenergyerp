@@ -18,13 +18,18 @@
         }
 
         body {
-            background-color: var(--blanco);
+
+            background: url('/assets/img/fondo3.jpg');
+            background-size: cover;
+            /* Color de respaldo si la imagen falla */
             font-family: 'Montserrat', sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             color: var(--texto);
+            margin: 0;
+            padding: 20px;
         }
 
         .login-wrapper {
