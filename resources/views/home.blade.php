@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ERP Vinco Energy</title>
+    <title>vinco Energy</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="{{ asset('assets/css/home.css') }}" rel="stylesheet">
     @stack('styles')
