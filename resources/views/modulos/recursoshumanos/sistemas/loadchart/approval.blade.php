@@ -25,7 +25,8 @@
                 <div class="approval-actions">
                     {{-- NUEVO BOTÓN DE FILTROS --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
-                        <button class="back-btn" id="toggle-filters-btn" aria-expanded="false" aria-controls="filters-container">
+                        <button class="back-btn" id="toggle-filters-btn" aria-expanded="false"
+                            aria-controls="filters-container">
                             <i class="fas fa-filter"></i> Abrir Filtros
                         </button>
                     @endif
@@ -63,13 +64,13 @@
                         <label for="assignment-filter">Asignación</label>
                         <select id="assignment-filter" class="filter-select">
                             <option value="all">Todos los Empleados</option>
-                            <option value="assigned" selected>Solo Asignados (Yo)</option>
+                            <option value="assigned" selected>Ver Solo Personal Asignados</option>
                         </select>
                     </div>
-                    {{-- FILTRO DE DEPARTAMENTO EXISTENTE --}}
+                    {{-- DENTRO DEL CONTENEDOR DE FILTROS --}}
                     <div class="filter-group">
                         <label for="department-filter">Departamento</label>
-                        {{-- La variable $departments viene del controlador --}}
+                        {{-- Se mantiene tu select original --}}
                         <select id="department-filter" class="filter-select">
                             <option value="">Todos los Departamentos</option>
                             @foreach ($departments as $department)
@@ -77,11 +78,19 @@
                             @endforeach
                         </select>
                     </div>
+
+                    {{-- ⭐ NUEVO FILTRO DE CARGO ⭐ --}}
+                    <div class="filter-group">
+                        <label for="position-filter">Cargo</label>
+                        <select id="position-filter" class="filter-select">
+                            <option value="">Todos los Cargos</option>
+                            {{-- Las opciones se llenarán con JS --}}
+                        </select>
+                    </div>
                     {{-- FILTRO DE BÚSQUEDA EXISTENTE --}}
                     <div class="filter-group filter-search-group">
                         <label for="employee-search">Buscar Empleado</label>
-                        <input type="text" id="employee-search" class="filter-input"
-                            placeholder="Nombre, # Empleado...">
+                        <input type="text" id="employee-search" class="filter-input" placeholder="Nombre, # Empleado...">
                     </div>
                 </div>
             @endif
@@ -196,27 +205,26 @@
                             });
 
                             // 2. Ordenar y agrupar por número de cuadrilla
-                            $groupedEmployees = $employeesWithSquad
-                                ->sortBy('squad_number')
-                                ->groupBy('squad_number');
+                            $groupedEmployees = $employeesWithSquad->sortBy('squad_number')->groupBy('squad_number');
 
-                            $showSquadGrouping = \App\Helpers\PermissionHelper::hasDirectPermission('control_cuadrillas');
+                            $showSquadGrouping = \App\Helpers\PermissionHelper::hasDirectPermission(
+                                'control_cuadrillas',
+                            );
                             // Colspan = 1 (Nombre) + 1 (KPI) + Días + 1 (Total) + 1 (Vac) + 1 (Desc) + 1 (Utiliz) + 1 (Aprob) = 6 + count($monthlyDays)
                             $colspanValue = 6 + count($monthlyDays);
                             $currentUserId = auth()->id();
                         @endphp
 
                         @foreach ($groupedEmployees as $squadNumber => $squadEmployees)
-
                             {{-- INICIO: Fila de Encabezado de Cuadrilla (Solo si tiene permiso) --}}
                             @if ($showSquadGrouping)
                                 @php
-                                    $squadLabel = $squadNumber !== 999
-                                        ? 'Cuadrilla-' . str_pad($squadNumber, 2, '0', STR_PAD_LEFT)
-                                        : 'Sin Cuadrilla Asignada';
-                                    $squadClass = $squadNumber !== 999
-                                        ? 'squad-group-row-active'
-                                        : 'squad-group-row-none';
+                                    $squadLabel =
+                                        $squadNumber !== 999
+                                            ? 'Cuadrilla-' . str_pad($squadNumber, 2, '0', STR_PAD_LEFT)
+                                            : 'Sin Cuadrilla Asignada';
+                                    $squadClass =
+                                        $squadNumber !== 999 ? 'squad-group-row-active' : 'squad-group-row-none';
                                 @endphp
                                 <tr class="squad-group-row {{ $squadClass }}" data-squad-number="{{ $squadNumber }}">
                                     <td colspan="{{ $colspanValue }}" class="squad-group-label">
@@ -229,13 +237,19 @@
                             @foreach ($squadEmployees as $employee)
                                 {{-- LÓGICA DE PERMISOS PARA LOS BOTONES --}}
                                 @php
-                                    $employeeAssignment = $loadChartAssignments->firstWhere('employee_id', $employee->id);
-                                    $isReviewerForEmployee = $employeeAssignment && $employeeAssignment->reviewer_id === $currentUserId;
-                                    $isApproverForEmployee = $employeeAssignment && $employeeAssignment->approver_id === $currentUserId;
+                                    $employeeAssignment = $loadChartAssignments->firstWhere(
+                                        'employee_id',
+                                        $employee->id,
+                                    );
+                                    $isReviewerForEmployee =
+                                        $employeeAssignment && $employeeAssignment->reviewer_id === $currentUserId;
+                                    $isApproverForEmployee =
+                                        $employeeAssignment && $employeeAssignment->approver_id === $currentUserId;
                                 @endphp
 
                                 {{-- Fila Principal (Actividad) --}}
-                                <tr class="employee-row" data-employee-id="{{ $employee->id }}" data-department="{{ $employee->department }}">
+                                <tr class="employee-row" data-employee-id="{{ $employee->id }}"
+                                    data-department="{{ $employee->department }}">
                                     <td rowspan="4" class="employee-info-cell" data-icon="bx bx-calendar"
                                         data-text="ver calendario">
                                         {{ $employee->full_name }}
@@ -286,13 +300,16 @@
                                 {{-- Filas de Detalle --}}
                                 @php $rowTypes = ['Comida', 'Bono', 'Servicio']; @endphp
                                 @foreach ($rowTypes as $rowType)
-                                    <tr class="activity-row hidden" data-employee-id="{{ $employee->id }}" data-department="{{ $employee->department }}">
+                                    <tr class="activity-row hidden" data-employee-id="{{ $employee->id }}"
+                                        data-department="{{ $employee->department }}">
                                         <td class="activity-label-cell">{{ $rowType }}</td>
                                         @foreach ($monthlyDays as $dayInfo)
                                             <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
-                                                data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}">0</td>
+                                                data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}">0
+                                            </td>
                                         @endforeach
-                                        <td class="data-cell total-{{ strtolower(str_replace(' ', '-', $rowType)) }}">0</td>
+                                        <td class="data-cell total-{{ strtolower(str_replace(' ', '-', $rowType)) }}">0
+                                        </td>
                                     </tr>
                                 @endforeach
                             @endforeach
@@ -374,7 +391,8 @@
                     <button class="tab-btn active tab-services" data-tab="services-tab">Servicios</button>
                     <button class="tab-btn tab-bonuses" data-tab="bonuses-tab">Bonos</button>
                     <div class="search-container">
-                        <input type="text" id="service-search" placeholder="Buscar por ID, Operación, o Descripción..." class="search-input">
+                        <input type="text" id="service-search"
+                            placeholder="Buscar por ID, Operación, o Descripción..." class="search-input">
                     </div>
                 </div>
 

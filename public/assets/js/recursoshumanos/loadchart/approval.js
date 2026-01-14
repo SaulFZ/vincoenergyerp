@@ -53,28 +53,42 @@ function initializeApprovalTable() {
         showQuincena(1);
         setActiveButton("quincena1");
         updatePeriodInfo();
-        // 🆕 Inicializar la lista de filas para el filtrado
+
+        // Inicializar la lista de filas para el filtrado
         allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
         allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
 
-        // ⭐ LÓGICA DE FILTRO POR DEFECTO:
-        // Si tiene permiso de filtros, aplicar el filtro por defecto "assigned"
-        if (canSeeFilters) {
-            // Asegurarse de que el valor por defecto sea 'assigned'
+        // LÓGICA DE FILTRO POR DEFECTO:
+        if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
             const assignmentFilter = document.getElementById('assignment-filter');
             if (assignmentFilter) {
                 assignmentFilter.value = 'assigned';
             }
+
+            // ⭐ INICIALIZAR CARGOS: Llenar el select de cargos por primera vez
+            populatePositionFilter();
+
             applyFilters();
         }
     });
 
-    // 🆕 Inicializar Event Listeners de Filtro
-    if (canSeeFilters) {
+    // Inicializar Event Listeners de Filtro
+    if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
         document.getElementById('toggle-filters-btn').addEventListener('click', toggleFilters);
-        // ⭐ NUEVO LISTENER: Asignación
+
+        // Asignación
         document.getElementById('assignment-filter').addEventListener('change', applyFilters);
-        document.getElementById('department-filter').addEventListener('change', applyFilters);
+
+        // ⭐ DEPARTAMENTO: Al cambiar, primero repoblar cargos, luego aplicar filtros
+        document.getElementById('department-filter').addEventListener('change', function() {
+            populatePositionFilter(); // 1. Actualizar lista de cargos dependiente
+            applyFilters();           // 2. Filtrar tabla
+        });
+
+        // ⭐ CARGO: Al cambiar, aplicar filtros
+        document.getElementById('position-filter').addEventListener('change', applyFilters);
+
+        // Búsqueda
         document.getElementById('employee-search').addEventListener('input', applyFilters);
     }
 }
@@ -216,64 +230,117 @@ function toggleFilters() {
 
 
 /**
- * Aplica los filtros de departamento, asignación y búsqueda.
+ * ⭐ NUEVA FUNCIÓN: Llena el select de cargos dinámicamente.
+ * Filtra los cargos disponibles basándose en el departamento seleccionado.
+ */
+function populatePositionFilter() {
+    const departmentFilter = document.getElementById('department-filter');
+    const positionFilter = document.getElementById('position-filter');
+
+    if (!departmentFilter || !positionFilter) return;
+
+    // 1. Guardar el valor actual del cargo (si existe) para intentar mantenerlo
+    // si sigue siendo válido después del cambio de departamento.
+    const currentPosition = positionFilter.value;
+    const selectedDepartment = departmentFilter.value;
+
+    // 2. Obtener cargos únicos basados en el departamento seleccionado
+    // Usamos la variable global 'employees' que ya tienes cargada
+    const uniquePositions = new Set();
+
+    employees.forEach(employee => {
+        // Si no hay departamento seleccionado (Ver todos) O el departamento coincide
+        if (!selectedDepartment || employee.department === selectedDepartment) {
+            if (employee.position) {
+                uniquePositions.add(employee.position);
+            }
+        }
+    });
+
+    // 3. Convertir a array y ordenar alfabéticamente
+    const sortedPositions = Array.from(uniquePositions).sort();
+
+    // 4. Limpiar y reconstruir el select
+    positionFilter.innerHTML = '<option value="">Todos los Cargos</option>';
+
+    sortedPositions.forEach(position => {
+        const option = document.createElement('option');
+        option.value = position;
+        option.textContent = position;
+        positionFilter.appendChild(option);
+    });
+
+    // 5. Intentar restaurar la selección anterior si aún existe en la nueva lista,
+    // de lo contrario, se queda en "Todos los Cargos" (valor "")
+    if (currentPosition && uniquePositions.has(currentPosition)) {
+        positionFilter.value = currentPosition;
+    } else {
+        positionFilter.value = "";
+    }
+}
+/**
+ * Aplica los filtros de departamento, CARGO, asignación y búsqueda.
  */
 function applyFilters() {
     // Solo aplica los filtros si el usuario tiene el permiso
-    if (!canSeeFilters) {
+    if (typeof canSeeFilters !== 'undefined' && !canSeeFilters) {
         return;
     }
 
-    // ⭐ OBTENER NUEVO VALOR DE FILTRO DE ASIGNACIÓN
-    const assignmentFilter = document.getElementById('assignment-filter').value;
+    // Obtener valores de los filtros
+    const assignmentFilter = document.getElementById('assignment-filter') ? document.getElementById('assignment-filter').value : 'all';
     const departmentFilter = document.getElementById('department-filter').value;
+    const positionFilter = document.getElementById('position-filter').value; // ⭐ NUEVO VALOR
     const searchFilter = document.getElementById('employee-search').value.toLowerCase().trim();
 
     allEmployeeRows.forEach(row => {
         const department = row.getAttribute('data-department');
         const employeeId = row.getAttribute('data-employee-id');
 
-        // Buscar info de la asignación del empleado
+        // Buscar info del empleado en la lista global para obtener su Cargo (Position) y Asignación
+        const employeeData = employees.find(e => e.id.toString() === employeeId);
+
+        // Datos para filtrado
+        const employeeName = employeeData ? employeeData.full_name.toLowerCase().trim() : '';
+        const employeeNumber = employeeData ? employeeData.employee_number.toString().toLowerCase() : '';
+        const employeePosition = employeeData ? employeeData.position : ''; // ⭐ OBTENER CARGO
+
+        // Lógica de Asignación
         const employeeAssignment = loadChartAssignments.find(a => a.employee_id.toString() === employeeId);
         const isReviewerForEmployee = employeeAssignment && employeeAssignment.reviewer_id === currentUserId;
         const isApproverForEmployee = employeeAssignment && employeeAssignment.approver_id === currentUserId;
-        // ⭐ NUEVA LÓGICA DE FILTRO POR ASIGNACIÓN
         const isAssigned = isReviewerForEmployee || isApproverForEmployee;
 
-        // Buscar info del empleado en la lista global
-        const employeeData = employees.find(e => e.id.toString() === employeeId);
-        const employeeName = employeeData ? employeeData.full_name.toLowerCase().trim() : '';
-        const employeeNumber = employeeData ? employeeData.employee_number.toString().toLowerCase() : '';
+        // --- APLICACIÓN DE REGLAS ---
 
-
-        // 1. Filtrar por Departamento (DEBE coincidir con el valor EXACTO o ser vacío "Todos")
+        // 1. Filtrar por Departamento
         const matchesDepartment = !departmentFilter || department === departmentFilter;
 
-        // 2. Filtrar por Búsqueda (Nombre o Número de Empleado)
+        // 2. ⭐ Filtrar por Cargo (Position)
+        const matchesPosition = !positionFilter || employeePosition === positionFilter;
+
+        // 3. Filtrar por Búsqueda
         const matchesSearch = !searchFilter || employeeName.includes(searchFilter) || employeeNumber.includes(searchFilter);
 
-        // ⭐ 3. Filtrar por Asignación
+        // 4. Filtrar por Asignación
         const matchesAssignment = assignmentFilter === 'all' || (assignmentFilter === 'assigned' && isAssigned);
 
+        // --- RESULTADO FINAL ---
+        const isVisible = matchesDepartment && matchesPosition && matchesSearch && matchesAssignment;
 
-        // 4. Aplicar visibilidad a las filas principales (employee-row)
-        const isVisible = matchesDepartment && matchesSearch && matchesAssignment; // ⭐ SE COMBINA EL NUEVO FILTRO
+        // Aplicar visibilidad a la fila principal
         row.style.display = isVisible ? '' : 'none';
 
-        // 5. Ocultar filas de detalle asociadas al empleado si la fila principal no es visible
+        // Ocultar/Mostrar filas de detalle asociadas
         let nextRow = row.nextElementSibling;
         while (nextRow && nextRow.classList.contains('activity-row') && nextRow.getAttribute('data-employee-id') === row.getAttribute('data-employee-id')) {
-            // Si la fila de empleado principal se oculta, también se ocultan sus detalles
             if (!isVisible) {
                 nextRow.style.display = 'none';
             } else {
-                // Si la fila de empleado principal es visible, restaurar/mantener la visibilidad
-                // definida por el renderizador (si tiene ítems o está colapsada/expandida).
-                // Mantenemos el estado de la clase 'hidden' y la visibilidad de ítems del render.
+                // Restaurar visibilidad basada en si tiene ítems (lógica existente)
                 const isHiddenByToggle = nextRow.classList.contains('hidden');
-                const isHiddenByRender = nextRow.getAttribute('data-has-items') === 'false'; // Suponiendo que el renderizador añade este atributo para filas sin ítems
+                const isHiddenByRender = nextRow.getAttribute('data-has-items') === 'false';
 
-                // Mantenemos la visibilidad por defecto del renderizador
                 if (isHiddenByToggle || isHiddenByRender) {
                     nextRow.style.display = 'none';
                 } else {
@@ -284,40 +351,36 @@ function applyFilters() {
         }
     });
 
-    // 6. Recalcular la visibilidad de las filas de cuadrilla (squad-group-row)
-    allSquadRows.forEach(squadRow => {
-        const nextRow = squadRow.nextElementSibling;
-        let showSquadRow = false;
-        let currentRow = nextRow;
+    // Recalcular visibilidad de las filas de cuadrilla
+    if (typeof allSquadRows !== 'undefined') {
+        allSquadRows.forEach(squadRow => {
+            const nextRow = squadRow.nextElementSibling;
+            let showSquadRow = false;
+            let currentRow = nextRow;
 
-        // Iterar sobre las filas de empleados hasta encontrar la siguiente fila de cuadrilla
-        while (currentRow && !currentRow.classList.contains('squad-group-row')) {
-            // Verificar si la fila es de empleado y es visible por los filtros
-            if (currentRow.classList.contains('employee-row') && currentRow.style.display !== 'none') {
-                showSquadRow = true;
-                break;
-            }
-            // Saltar las filas de actividad (detalle)
-            if (currentRow.classList.contains('activity-row')) {
+            while (currentRow && !currentRow.classList.contains('squad-group-row')) {
+                if (currentRow.classList.contains('employee-row') && currentRow.style.display !== 'none') {
+                    showSquadRow = true;
+                    break;
+                }
+                if (currentRow.classList.contains('activity-row')) {
+                    currentRow = currentRow.nextElementSibling;
+                    continue;
+                }
                 currentRow = currentRow.nextElementSibling;
-                continue;
             }
-            currentRow = currentRow.nextElementSibling;
-        }
-
-        squadRow.style.display = showSquadRow ? '' : 'none';
-    });
-
-    // 7. Re-aplicar el filtro de quincena para asegurar que las celdas de días se muestren correctamente
-    if (currentView === 'quincena1') {
-        showQuincena(1);
-    } else if (currentView === 'quincena2') {
-        showQuincena(2);
-    } else {
-        showFullMonth();
+            squadRow.style.display = showSquadRow ? '' : 'none';
+        });
     }
 
-    // 8. Volver a calcular totales para actualizar el resumen
+    // Re-aplicar vista de quincena/mes
+    if (typeof currentView !== 'undefined') {
+        if (currentView === 'quincena1') showQuincena(1);
+        else if (currentView === 'quincena2') showQuincena(2);
+        else showFullMonth();
+    }
+
+    // Recalcular totales
     calculateAndRenderTotals();
 }
 // TERMINA LÓGICA DE FILTROS
@@ -1388,22 +1451,20 @@ async function loadMonthData(isRefresh = false) {
             throw new Error(data.error || 'Error al cargar los datos');
         }
 
-        // 👈🏼 CRITICAL: Actualizar variables globales con los datos del backend
+        // Actualizar variables globales
         workLogsData = data.workLogsData;
         fortnightlyConfig = data.fortnightlyConfig;
         loadChartAssignments = data.loadChartAssignments;
-        canSeeAmounts = data.canSeeAmounts; // 👈🏼 CRÍTICO: canSeeAmounts se actualiza aquí
+        canSeeAmounts = data.canSeeAmounts;
         userPermissions = data.userPermissions;
-        monthlyDays = data.monthlyDays; // 👈🏼 CRÍTICO: Guardar los días para la renderización
-        employees = data.employees; // 👈🏼 CRÍTICO: Guardar los empleados para la renderización
+        monthlyDays = data.monthlyDays;
+        employees = data.employees; // Actualización crítica de empleados
 
-        // 1. Si es la primera carga o si la estructura de días cambió, se actualiza toda la tabla
+        // 1. Reconstruir tabla
         updateTableStructure(data.monthlyDays, data.employees);
-
-
         updatePeriodInfo();
 
-        // 2. Se vuelve a mostrar la vista actual para aplicar los filtros de visibilidad correctos.
+        // 2. Restaurar vista (Quincena 1, 2 o Mes)
         if (currentView === 'quincena1') {
             showQuincena(1);
         } else if (currentView === 'quincena2') {
@@ -1412,24 +1473,22 @@ async function loadMonthData(isRefresh = false) {
             showFullMonth();
         }
 
-        // 🆕 Aplicar filtros inmediatamente después de la recarga
-        // Esto es CRÍTICO para los usuarios con permiso de filtro
+        // 3. ⭐ CRÍTICO: Actualizar filas para filtro y REPOBLAR CARGOS con los nuevos datos
         allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
         allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
 
-        if (canSeeFilters) {
+        if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
+            // Llenamos de nuevo el filtro porque los empleados cambiaron
+            populatePositionFilter();
             applyFilters();
         }
 
-        // 3. Setup listeners *después* de que la vista se ha actualizado
         setupEmployeeRowListeners();
 
-        // Si es una navegación, ocultar el estado de carga
         if (!isRefresh) {
             hideLoadingState();
         }
 
-        // Actualizar el tiempo de la última actualización y reiniciar el refresco
         lastUpdateTime = new Date();
         initializeAutoRefresh();
 
