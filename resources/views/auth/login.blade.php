@@ -69,8 +69,15 @@
     <script>
         $(document).ready(function() {
 
+            // --- 0. RECARGA AUTOMÁTICA POR EXPIRACIÓN (NUEVO) ---
+            // Si la sesión dura 10 minutos (600,000 ms), recargamos la página
+            // automáticamente al pasar ese tiempo para renovar el token.
+            setTimeout(function() {
+                window.location.reload();
+            }, 600000); // 10 minutos
+
+
             // --- 1. AÑO AUTOMÁTICO ---
-            // Esto obtiene el año actual del sistema y lo pone en el span
             $('#yearSpan').text(new Date().getFullYear());
 
 
@@ -97,24 +104,22 @@
             });
 
 
-            // --- 4. VER / OCULTAR CONTRASEÑA (CORREGIDO) ---
+            // --- 4. VER / OCULTAR CONTRASEÑA ---
             $('#eyeIcon').on('click', function() {
                 let input = $('#password');
                 let icon = $(this);
 
                 if (input.attr('type') === 'password') {
-                    // Mostrar
                     input.attr('type', 'text');
-                    icon.removeClass('fa-eye-slash').addClass('fa-eye'); // Cambia a ojo abierto
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
                 } else {
-                    // Ocultar
                     input.attr('type', 'password');
-                    icon.removeClass('fa-eye').addClass('fa-eye-slash'); // Cambia a ojo tachado
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
                 }
             });
 
 
-            // --- 5. LOGIN AJAX ---
+            // --- 5. LOGIN AJAX (SILENCIOSO) ---
             $('#loginForm').on('submit', function(e) {
                 e.preventDefault();
                 let btn = $('.btn-login');
@@ -126,14 +131,23 @@
                     data: $(this).serialize(),
                     dataType: 'json',
                     success: function(resp) {
-                        if (resp.success) window.location.href = "{{ route('splash') }}";
-                        else showError(resp.message);
+                        if (resp.success) {
+                            window.location.href = "{{ route('splash') }}";
+                        } else {
+                            showError(resp.message);
+                            btn.removeClass('loading').prop('disabled', false);
+                        }
                     },
-                    error: function() {
-                        showError('Sin conexión al servidor.');
-                    },
-                    complete: function() {
-                        btn.removeClass('loading').prop('disabled', false);
+                    error: function(xhr, status, error) {
+                        // SI ES ERROR 419 (Token Vencido), RECARGAMOS SIN AVISAR
+                        if (xhr.status === 419) {
+                            window.location.reload();
+                        } else {
+                            // Si es otro error (internet, servidor 500), mostramos mensaje
+                            console.error(error);
+                            showError('Sin conexión al servidor.');
+                            btn.removeClass('loading').prop('disabled', false);
+                        }
                     }
                 });
             });
