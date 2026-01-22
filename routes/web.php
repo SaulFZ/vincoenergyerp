@@ -1,7 +1,10 @@
 <?php
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
+/* CONTROLADORES DE RECURSOS QHSE */
+use App\Http\Controllers\Qhse\Gerenciamiento\JourneyController;
+
 /* CONTROLADORES DE RECURSOS HUMANOS */
+use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\CalendarController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\EmployeeVacationBalanceController;
@@ -51,9 +54,9 @@ Route::post('/session-ping', function () {
     request()->session()->put('last_activity', now());
 
     return response()->json([
-        'status' => 'success',
-        'message' => 'Session Refreshed',
-        'timestamp' => now()->toDateTimeString()
+        'status'    => 'success',
+        'message'   => 'Session Refreshed',
+        'timestamp' => now()->toDateTimeString(),
     ]);
 })->middleware(['auth', 'web']); // Asegúrate de usar los middlewares correctos
 
@@ -84,60 +87,33 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:administracion')
         ->name('modulo.administracion');
 
-// ===================================================
-// MÓDULO: QHSE Y SUBSISTEMAS
-// ===================================================
-Route::prefix('qhse')
-    ->middleware('check.permission:qhse')
-    ->group(function () {
+    Route::prefix('qhse')
+        ->middleware('check.permission:qhse')
+        ->group(function () {
 
-        // Página principal QHSE
-        Route::get('/', function () {
-            return view('modulos.qhse.qhsehome');
-        })->name('modulo.qhse');
+            // ===================================================
+            // GRUPO GERENCIAMIENTO DE VIAJES
+            // Prefijo: /qhse/gerenciamiento
+            // ===================================================
+            Route::prefix('gerenciamiento')->group(function () {
 
-        // ===================================================
-        // GRUPO GERENCIAMIENTO 🏆
-        // Prefijo: /qhse/gerenciamiento
-        // ===================================================
-        Route::prefix('gerenciamiento')->group(function () {
+                // 1. Redirigir la ruta principal al Dashboard
+                Route::get('/', function () {
+                    return redirect()->route('gerenciamiento.gerenciamiento');
+                })
+                    ->name('qhse.gerenciamiento')
+                    ->middleware('check.permission:qhse,gerenciamiento');
 
-            // Ruta principal del subsistema Gerenciamiento
-            Route::get('/', function () {
-                return view('modulos.qhse.sistemas.gerenciamiento.index');
-            })
-                ->middleware('check.permission:qhse,gerenciamiento')
-                ->name('qhse.gerenciamiento');
+                // --- RUTAS PRINCIPALES (GerenciamientoController) ---
+                Route::controller(JourneyController::class)->group(function () {
+                    // Vistas principales (Navegación)
+                    Route::get('/gerenciamiento', 'index')->name('gerenciamiento.gerenciamiento');
 
-            // Si en el futuro añades un DashboardController::class o algo similar:
-            /*
-            Route::controller(DashboardController::class)->group(function () {
-                Route::get('/dashboard', 'index')->name('gerenciamiento.dashboard');
-                // ... otras rutas específicas de Gerenciamiento ...
+                    // Nueva ruta para obtener empleados
+                    Route::get('/employees', 'getEmployees')->name('gerenciamiento.empleados');
+                });
             });
-            */
         });
-
-        // Subsistemas de QHSE (mantienen la estructura simple ya que no tienen rutas anidadas)
-        Route::get('/vescap', function () {
-            return view('modulos.qhse.sistemas.vescap.index');
-        })
-            ->middleware('check.permission:qhse,vescap')
-            ->name('qhse.vescap');
-
-        Route::get('/incidencias', function () {
-            return view('modulos.qhse.sistemas.incidencias.index');
-        })
-            ->middleware('check.permission:qhse,incidencias')
-            ->name('qhse.incidencias');
-
-        Route::get('/auditorias', function () {
-            return view('modulos.qhse.sistemas.auditorias.index');
-        })
-            ->middleware('check.permission:qhse,auditorias')
-            ->name('qhse.auditorias');
-    });
-
 
 // ===================================================
 // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
@@ -145,12 +121,6 @@ Route::prefix('qhse')
     Route::prefix('recursoshumanos')
         ->middleware('check.permission:recursoshumanos')
         ->group(function () {
-            // Subsistemas de RRHH (Rutas que no son de LoadChart)
-            Route::get('/altasempleados', function () {
-                return view('modulos.recursoshumanos.sistemas.altasempleados.index');
-            })
-                ->middleware('check.permission:recursoshumanos,altasempleados')
-                ->name('recursoshumanos.altasempleados');
 
             // ===================================================
             // GRUPO LOADCHART
@@ -267,6 +237,13 @@ Route::prefix('qhse')
                     return view('modulos.recursoshumanos.sistemas.loadchart.stats');
                 })->name('loadchart.stats');
             });
+
+            // Subsistemas de RRHH (Rutas que no son de LoadChart)
+            Route::get('/altasempleados', function () {
+                return view('modulos.recursoshumanos.sistemas.altasempleados.index');
+            })
+                ->middleware('check.permission:recursoshumanos,altasempleados')
+                ->name('recursoshumanos.altasempleados');
         });
 
 // ===================================================

@@ -17,6 +17,11 @@
 
 <body>
 
+    <video autoplay muted loop playsinline id="video-bg">
+        <source src="/assets/vid/fondov1.mp4" type="video/mp4">
+    </video>
+
+
     <div class="login-wrapper">
 
         <div class="logo-container">

@@ -79,7 +79,7 @@
                         </select>
                     </div>
 
-                    {{-- ⭐ NUEVO FILTRO DE CARGO ⭐ --}}
+                    {{--NUEVO FILTRO DE CARGO--}}
                     <div class="filter-group">
                         <label for="position-filter">Cargo</label>
                         <select id="position-filter" class="filter-select">
