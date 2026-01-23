@@ -104,7 +104,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                     ->name('qhse.gerenciamiento')
                     ->middleware('check.permission:qhse,gerenciamiento');
 
-                // --- RUTAS PRINCIPALES (GerenciamientoController) ---
+                // --- RUTAS PRINCIPALES (JourneyController) ---
                 Route::controller(JourneyController::class)->group(function () {
                     // Vistas principales (Navegación)
                     Route::get('/gerenciamiento', 'index')->name('gerenciamiento.gerenciamiento');
