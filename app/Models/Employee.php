@@ -61,7 +61,11 @@ class Employee extends Model
     {
         return $this->hasMany(\App\Models\RecursosHumanos\LoadChart\Squad::class, 'employee_id');
     }
-
+    public function license()
+{
+    // Laravel busca automáticamente 'employee_id' en la tabla 'employee_licenses'
+    return $this->hasOne(EmployeeLicense::class);
+}
     /**
      * Accessor para obtener el email para el envío del correo.
      * Retorna el email del empleado o el email del usuario asociado.
