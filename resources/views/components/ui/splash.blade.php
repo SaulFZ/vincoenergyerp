@@ -4,222 +4,231 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vinco - Cargando</title>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"
-        integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Vinco - Iniciando...</title>
+    <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
     <style>
+        /* --- VARIABLES --- */
         :root {
-            --naranja: #d67e29;
-            --naranja-claro: #fa9333;
-            --naranja-oscuro: #b96520;
+            --azul-oscuro: #1a2a5f;
             --azul: #334c95;
-            --azul-oscuro: #263671;
-            --azul-claro: #4b56cc;
-            --blanco: #fff;
-            --gris-muy-claro: #f8f9fa;
-            --gris-claro: #eaedf2;
-            --gris-medio: #a0a8c0;
-            --gris-texto: #4a4b57;
-            --shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            --transition: all 0.3s ease;
+            --naranja: #d67e29;
+            --naranja-claro: #ff9d42;
+            --blanco: #ffffff;
+            --texto: #334155;
+            --texto-claro: #64748b;
         }
 
-        body,
-        html {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body, html {
             height: 100%;
-            margin: 0;
-            padding: 0;
-            background-color: var(--blanco);
-            font-family: 'Inter', sans-serif;
+            width: 100%;
+            font-family: 'Montserrat', sans-serif;
             overflow: hidden;
-            color: var(--gris-texto);
+            background-color: var(--blanco);
         }
 
-        .splash-container {
+        .splash-wrapper {
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
-            background: var(--blanco);
+            background-color: var(--blanco);
         }
 
-        .header-accent {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, var(--azul) 0%, var(--azul-claro) 100%);
-            z-index: 10;
-        }
-
-        .content {
-            z-index: 2;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 340px;
-            padding: 40px 20px;
-            transform: translateY(0);
-            opacity: 0;
-            animation: fadeIn 0.8s forwards ease-out 0.2s;
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
-        }
-
+        /* --- ELEMENTOS (Inicialmente ocultos y desplazados para la animación) --- */
         .logo-container {
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .logo {
-            width: 130px;
-            height: auto;
-        }
-
-        .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 260px;
-            margin-top: 15px;
-        }
-
-        .loading-bar {
-            width: 100%;
-            height: 4px;
-            background-color: var(--gris-claro);
-            border-radius: 2px;
-            position: relative;
-            overflow: hidden;
+            margin-bottom: 50px;
+            /* Estado inicial para GSAP */
             opacity: 0;
-            animation: fadeIn 0.5s forwards 0.8s;
+            transform: translateY(30px) scale(0.9);
         }
 
-        .loading-progress {
-            position: absolute;
+        .logo-img {
+            width: 220px; /* Tamaño grande solicitado */
+            height: auto;
+            display: block;
+        }
+
+        .loader-wrapper {
+            width: 360px; /* Ancho grande solicitado */
+            text-align: center;
+            /* Estado inicial para GSAP */
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background-color: #f1f5f9; /* Un gris muy sutil */
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, var(--azul) 0%, var(--naranja) 100%);
-            border-radius: 2px;
-            animation: progressAnimation 2s forwards cubic-bezier(0.1, 0.8, 0.2, 1) 1s;
+            border-radius: 10px;
+            position: relative;
         }
 
-        @keyframes progressAnimation {
-            to {
-                width: 100%;
-            }
-        }
-
-        .loading-text {
-            font-size: 13px;
-            color: var(--gris-medio);
-            margin-top: 12px;
-            opacity: 0;
-            animation: fadeIn 0.5s forwards 0.9s;
-            font-weight: 400;
-            letter-spacing: 0.3px;
-        }
-
-        .welcome-message {
-            margin-top: 40px;
-            font-size: 22px;
-            font-weight: 600;
-            color: var(--azul);
-            opacity: 0;
-            animation: fadeIn 0.6s forwards 1.5s;
-        }
-
-        .subtitle {
-            font-size: 14px;
-            color: var(--gris-texto);
-            margin-top: 8px;
-            opacity: 0;
-            animation: fadeIn 0.6s forwards 1.7s;
-            max-width: 280px;
-            line-height: 1.5;
-        }
-
-        .company-info {
+        .progress-fill::after {
+            content: '';
             position: absolute;
-            bottom: 20px;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+            transform: translateX(-100%);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+        .text-container {
+            height: 50px; /* Altura fija para evitar saltos */
+        }
+
+        .status-text {
+            font-size: 16px;
+            font-weight: 700; /* Más bold como los títulos del login */
+            color: var(--azul-oscuro);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .sub-status {
+            font-size: 13px;
+            color: var(--texto-claro);
+            font-weight: 500;
+        }
+
+        .splash-footer {
+            position: absolute;
+            bottom: 30px;
             font-size: 12px;
-            color: var(--gris-medio);
+            font-weight: 600;
+            color: #cbd5e1;
             opacity: 0;
-            animation: fadeIn 0.5s forwards 2s;
         }
 
-        @media (max-width: 480px) {
-            .content {
-                padding: 30px 15px;
-            }
-
-            .logo {
-                width: 90px;
-            }
-
-            .welcome-message {
-                font-size: 20px;
-            }
-
-            .subtitle {
-                font-size: 13px;
-            }
-        }
     </style>
 </head>
 
 <body>
-    <div class="splash-container">
-        <div class="header-accent"></div>
 
-        <div class="content">
-            <div class="logo-container">
-                <img class="logo" src="{{ asset('assets/img/logovinco1.png') }}" alt="Logo Vinco" />
-            </div>
-
-            <div class="loading-container">
-                <div class="loading-bar">
-                    <div class="loading-progress"></div>
-                </div>
-                <div class="loading-text">Iniciando sesión...</div>
-            </div>
-
-            <div class="welcome-message">Bienvenido a Vinco</div>
-            <div class="subtitle">Estamos preparando todo para brindarte la mejor experiencia</div>
+    <div class="splash-wrapper">
+        <div class="logo-container">
+            <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Vinco Energy" class="logo-img">
         </div>
 
-        <div class="company-info">© Vinco Energy Service</div>
+        <div class="loader-wrapper">
+            <div class="progress-track">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="text-container">
+                <span class="status-text" id="mainText">Iniciando sistema</span>
+                <span class="sub-status">Cargando configuraciones...</span>
+            </div>
+        </div>
+
+        <div class="splash-footer">VINCO ENERGY SERVICES &copy; {{ date('Y') }}</div>
     </div>
 
     <script>
         $(document).ready(function() {
-            // Obtener datos del usuario autenticado
-            var userName = "{{ Auth::check() ? Auth::user()->name : 'Usuario' }}";
+            const userName = "{{ Auth::check() ? Auth::user()->name : 'Usuario' }}";
+            const homeRoute = "{{ route('home') }}";
 
-            // Actualizar el mensaje de bienvenida con el nombre del usuario
-            setTimeout(function() {
-                $(".welcome-message").text("Bienvenido, " + userName);
+            const tl = gsap.timeline();
 
-                // Redireccionar después de que las animaciones terminen
-                setTimeout(function() {
-                    window.location.href = "{{ route('home') }}";
-                }, 2500);
-            }, 1600);
+            // --- 1. ENTRADA SINCRONIZADA CON EL LOGIN ---
+            // Usamos 'power3.out' y movimiento en Y, igual que tu Login.
+
+            // A. El Logo entra primero
+            tl.to(".logo-container", {
+                duration: 1,
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                ease: "back.out(1.2)" // Sutil, no elástico exagerado
+            })
+            // B. La barra y textos entran justo después (stagger)
+            .to(".loader-wrapper", {
+                duration: 0.8,
+                opacity: 1,
+                y: 0,
+                ease: "power3.out"
+            }, "-=0.6")
+            // C. Footer al final
+            .to(".splash-footer", {
+                duration: 1,
+                opacity: 1,
+                ease: "power2.out"
+            }, "-=0.4");
+
+
+            // --- 2. PROGRESO DE CARGA ---
+            tl.to(".progress-fill", {
+                duration: 2.2,
+                width: "100%",
+                ease: "power1.inOut", // Carga suave, empieza lento, acelera, termina lento
+                onUpdate: function() {
+                    // Cambio de texto sincronizado
+                    if (this.progress() > 0.5 && this.progress() < 0.52) {
+                        gsap.to(".sub-status", {
+                            opacity: 0,
+                            duration: 0.2,
+                            onComplete: () => {
+                                $(".sub-status").text("Autenticación exitosa...");
+                                gsap.to(".sub-status", { opacity: 1, duration: 0.2 });
+                            }
+                        });
+                    }
+                }
+            });
+
+            // --- 3. TRANSICIÓN FINAL (SALUDO) ---
+            tl.to("#mainText", {
+                duration: 0.3,
+                y: -10,
+                opacity: 0,
+                ease: "power2.in",
+                onComplete: () => {
+                    $("#mainText").text("¡Bienvenido, " + userName + "!");
+                    $("#mainText").css("color", "var(--azul)");
+                    $(".sub-status").text("Accediendo al panel principal");
+                }
+            })
+            .to("#mainText", {
+                duration: 0.5,
+                y: 0,
+                opacity: 1,
+                ease: "back.out(1.5)"
+            });
+
+            // --- 4. SALIDA HACIA EL HOME ---
+            // Esta animación simula "entrar" en la pantalla (Scale up + Fade out)
+            tl.to(".splash-wrapper", {
+                duration: 0.8,
+                opacity: 0,
+                scale: 1.05, // Efecto sutil de zoom hacia adentro
+                ease: "power2.inOut",
+                delay: 0.5,
+                onComplete: () => {
+                    window.location.href = homeRoute;
+                }
+            });
         });
     </script>
 </body>
-
 </html>
