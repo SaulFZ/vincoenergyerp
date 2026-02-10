@@ -232,7 +232,7 @@
             <div class="form-header-modal">
                 <div class="form-header-info">
                     <div class="logo-img-viajes">
-                        <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Vinco Energy">
+                        <img src="{{ asset('assets/img/logovinco1.png') }}" alt="Vinco Energy">
                     </div>
                     <div class="form-header-title">
                         <h2>Solicitud de Gerenciamiento</h2>
@@ -266,7 +266,8 @@
                                 <i class="fas fa-user-tie"></i>
                                 Conductor (Creador de GV) <span class="required">*</span>
                             </label>
-                            <input type="text" name="solicitante" id="solicitante" readonly required>
+                            <input type="text" name="solicitante" id="solicitante"
+                                value="{{ $userData['nombre'] ?? '' }}" readonly required>
                         </div>
 
                         <div class="form-group">
@@ -274,59 +275,28 @@
                                 <i class="fas fa-building"></i>
                                 Departamento <span class="required">*</span>
                             </label>
-                            <input type="text" name="departamento" id="departamento" readonly required>
+                            <input type="text" name="departamento" id="departamento"
+                                value="{{ $userData['departamento'] ?? '' }}" readonly required>
                         </div>
 
                         <div class="form-group">
                             <label>
-                                <i class="fas fa-map-marker-alt"></i>
-                                Destino del Viaje <span class="required">*</span>
+                                <i class="fas fa-map-marker-alt"></i> Destino del Viaje <span class="required">*</span>
                             </label>
-                            <select name="destino_predefinido" id="destinoPredefinido" class="form-control" required>
-                                <option value="">Seleccione un lugar de la lista</option>
 
-                                <optgroup label="Tabasco">
-                                    <option value="Balancán, Tabasco">Balancán, Tabasco</option>
-                                    <option value="Cárdenas, Tabasco">Cárdenas, Tabasco</option>
-                                    <option value="Centla, Tabasco">Centla, Tabasco</option>
-                                    <option value="Centro, Tabasco">Centro (Villahermosa), Tabasco</option>
-                                    <option value="Comalcalco, Tabasco">Comalcalco, Tabasco</option>
-                                    <option value="Cunduacán, Tabasco">Cunduacán, Tabasco</option>
-                                    <option value="Emiliano Zapata, Tabasco">Emiliano Zapata, Tabasco</option>
-                                    <option value="Huimanguillo, Tabasco">Huimanguillo, Tabasco</option>
-                                    <option value="Jalapa, Tabasco">Jalapa, Tabasco</option>
-                                    <option value="Jalpa de Méndez, Tabasco">Jalpa de Méndez, Tabasco</option>
-                                    <option value="Jonuta, Tabasco">Jonuta, Tabasco</option>
-                                    <option value="Macuspana, Tabasco">Macuspana, Tabasco</option>
-                                    <option value="Nacajuca, Tabasco">Nacajuca, Tabasco</option>
-                                    <option value="Paraíso, Tabasco">Paraíso, Tabasco</option>
-                                    <option value="Tacotalpa, Tabasco">Tacotalpa, Tabasco</option>
-                                    <option value="Teapa, Tabasco">Teapa, Tabasco</option>
-                                    <option value="Tenosique, Tabasco">Tenosique, Tabasco</option>
-                                </optgroup>
+                            <div class="custom-select-wrapper" id="wrapperDestino">
 
-                                <optgroup label="Campeche">
-                                    <option value="Ciudad del Carmen, Campeche">Ciudad del Carmen, Campeche</option>
-                                    <option value="Campeche, Campeche">Campeche, Campeche</option>
-                                </optgroup>
+                                <div class="custom-select-trigger" onclick="toggleMenuDestino()">
+                                    <span id="labelDestinoSeleccionado">Seleccione un destino...</span>
+                                    <i class="fas fa-chevron-down" style="font-size: 0.8em; color: #6c757d;"></i>
+                                </div>
 
-                                <optgroup label="Veracruz">
-                                    <option value="Coatzacoalcos, Veracruz">Coatzacoalcos, Veracruz</option>
-                                    <option value="Veracruz, Veracruz">Veracruz, Veracruz</option>
-                                    <option value="Poza Rica, Veracruz">Poza Rica, Veracruz</option>
-                                    <option value="Boca del Río, Veracruz">Boca del Río, Veracruz</option>
-                                </optgroup>
+                                <div class="custom-options" id="listaOpcionesDestino">
+                                    <div style="padding:10px; color: #6c757d;">Cargando...</div>
+                                </div>
 
-                                <optgroup label="Chiapas">
-                                    <option value="Reforma, Chiapas">Reforma, Chiapas</option>
-                                </optgroup>
-
-                                <optgroup label="Baja California">
-                                    <option value="Mexicali, Baja California">Mexicali, Baja California</option>
-                                </optgroup>
-
-                                <option value="Otro">Otro</option>
-                            </select>
+                                <input type="hidden" name="destino_predefinido" id="inputDestinoHidden" required>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -414,6 +384,8 @@
                                     required>
                                 <i class="fas fa-clock"></i>
                             </div>
+
+
                         </div>
 
                         <div class="form-group">
@@ -437,6 +409,8 @@
                     </div>
                 </div>
 
+
+
                 <div class="form-section">
                     <h3 class="form-section-title">
                         <i class="fas fa-truck-moving"></i>
@@ -454,34 +428,27 @@
                         <table class="unidades-table" id="tablaUnidades">
                             <thead>
                                 <tr>
-                                    <th class="th-conductor-completo">
-                                        <span class="column-title">Conductor</span>
-                                    </th>
-
-                                    <th class="th-vigencia">
-                                        <span class="column-title">Vigencias</span>
-                                    </th>
-
-                                    <th class="th-hrs-sueno">
-                                        <span class="column-title">Hrs Sueño</span>
-                                    </th>
-
-                                    <th class="th-horas-conduccion">
-                                        <span class="column-title">Hrs Conducción</span>
-                                    </th>
-
-                                    <th class="th-pasajeros">
-                                        <span class="column-title">Pasajeros</span>
-                                    </th>
-
                                     <th class="th-vehiculo">
                                         <span class="column-title">Vehículo</span>
                                     </th>
-
-                                    <th class="th-inspeccion">
-                                        <span class="column-title">Insp.</span>
+                                    <th class="th-conductor-completo">
+                                        <span class="column-title">Conductor</span>
                                     </th>
-
+                                    <th class="th-aptitud-fisica">
+                                        <span class="column-title">Aptitud Física</span>
+                                    </th>
+                                    <th class="th-vigencia">
+                                        <span class="column-title">Vigencias</span>
+                                    </th>
+                                    <th class="th-hrs-sueno">
+                                        <span class="column-title">Hrs Sueño</span>
+                                    </th>
+                                    <th class="th-horas-conduccion">
+                                        <span class="column-title">Hrs Conducción</span>
+                                    </th>
+                                    <th class="th-pasajeros">
+                                        <span class="column-title">Pasajeros</span>
+                                    </th>
                                     <th class="th-acciones">
                                         <span class="column-title">Acciones</span>
                                     </th>
@@ -658,6 +625,52 @@
                                         value="15"> Se sabe de alta actividad de riesgo</label>
                             </div>
                         </div>
+
+                        <div class="evaluacion-item">
+                            <div class="evaluacion-titulo">11. Viaje incluye material radiactivo</div>
+                            <div class="evaluacion-subtitulo">(No aplica para clasificación UN2911-PNN / Co 60)</div>
+                            <div class="evaluacion-opciones">
+                                <label class="evaluacion-radio">
+                                    <input type="radio" name="ev_radiactivo" required>
+                                    No aplica
+                                </label>
+                                <label class="evaluacion-radio">
+                                    <input type="radio" name="ev_radiactivo" required>
+                                    Transporte de equipo y maquinaria industrial
+                                </label>
+                                <label class="evaluacion-radio">
+                                    <input type="radio" name="ev_radiactivo">
+                                    Lleva material radiactivo y explosivo
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="evaluacion-item evaluacion-full-width">
+                            <div class="evaluacion-titulo">Factores Adicionales de Riesgo</div>
+                            <div class="evaluacion-factores">
+                                <label class="factor-check">
+                                    <input type="checkbox" name="ev_horario_nocturno">
+                                    <span>Todo viaje después de las 21:00 hrs hasta la media noche</span>
+                                </label>
+
+                                <label class="factor-check">
+                                    <input type="checkbox" name="ev_horas_dormidas">
+                                    <span>Todo viaje con personal = o < 6 hrs dormidas</span>
+                                </label>
+
+                                <label class="factor-check">
+                                    <input type="checkbox" name="ev_rebase_medianoche">
+                                    <span>Toda continuidad de viaje que rebase la media noche</span>
+                                </label>
+
+                                <label class="factor-check">
+                                    <input type="checkbox" name="ev_16hrs_despierto">
+                                    <span>Conductor(es) con más de 16 hrs despierto(s)</span>
+                                </label>
+                            </div>
+                        </div>
+
+
                     </div>
                 </form>
             </div>
@@ -814,6 +827,8 @@
                             </label>
                         </div>
                     </div>
+
+
                 </div>
             </form>
 
@@ -826,7 +841,7 @@
         </div>
     </div>
 
-  {{-- MODAL DE INSPECCIÓN PARA UNIDADES LIGERAS --}}
+    {{-- MODAL DE INSPECCIÓN PARA UNIDADES LIGERAS --}}
     <div class="modal-overlay" id="modalInspeccionLigera">
         <div class="modal-content">
             <div class="form-header-modal">
@@ -932,8 +947,8 @@
                                     class="fas fa-tachometer-alt"></i></label>
                             <input type="number" name="kilometraje" class="form-control input-highlight" required>
                         </div>
-                         <div class="form-group"></div>
-                         <div class="form-group"></div>
+                        <div class="form-group"></div>
+                        <div class="form-group"></div>
                     </div>
                 </div>
 
@@ -1046,14 +1061,15 @@
                             <label class="no"><input type="radio" name="vis_cables" value="no"> No</label>
                         </div>
                     </div>
-                     <div class="inspeccion-item">
+                    <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
                             <i class="fas fa-toolbox"></i> <span>Kit de herramientas básicas</span>
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_herramientas" value="si" required>
                                 Sí</label>
-                            <label class="no"><input type="radio" name="vis_herramientas" value="no"> No</label>
+                            <label class="no"><input type="radio" name="vis_herramientas" value="no">
+                                No</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1083,8 +1099,8 @@
                             <i class="fas fa-compact-disc"></i> <span>Llanta de refacción</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="vis_refaccion" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="vis_refaccion" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="vis_refaccion" value="no">
                                 No</label>
                         </div>
@@ -1094,19 +1110,19 @@
                             <i class="fas fa-truck-monster"></i> <span>Neumáticos en buen estado</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="vis_neumaticos" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="vis_neumaticos" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="vis_neumaticos" value="no">
                                 No</label>
                         </div>
                     </div>
-                     <div class="inspeccion-item">
+                    <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
                             <i class="fas fa-spray-can"></i> <span>Laminación y pintura</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="vis_pintura" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="vis_pintura" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="vis_pintura" value="no">
                                 No</label>
                         </div>
@@ -1122,7 +1138,7 @@
                                 No</label>
                         </div>
                     </div>
-                     <div class="inspeccion-item">
+                    <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
                             <i class="fas fa-minus-square"></i> <span>Defensas</span>
                         </div>
@@ -1138,19 +1154,19 @@
                             <i class="fas fa-lightbulb"></i> <span>Luces (Altas, Bajas, Direccionales)</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="vis_luces_gral" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="vis_luces_gral" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="vis_luces_gral" value="no">
                                 No</label>
                         </div>
                     </div>
-                     <div class="inspeccion-item">
+                    <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
                             <i class="fas fa-traffic-light"></i> <span>Luces de Stop y Reversa</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="vis_luces_stop" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="vis_luces_stop" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="vis_luces_stop" value="no">
                                 No</label>
                         </div>
@@ -1202,8 +1218,8 @@
                             <i class="fas fa-user-shield"></i> <span>Cinturones de seguridad</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="vis_cinturones" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="vis_cinturones" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="vis_cinturones" value="no">
                                 No</label>
                         </div>
@@ -1220,19 +1236,19 @@
                             <i class="fas fa-calendar-check"></i> <span>Fecha/Km último mantenimiento</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="mant_fecha_km" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="mant_fecha_km" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="mant_fecha_km" value="no">
                                 No</label>
                         </div>
                     </div>
-                     <div class="inspeccion-item">
+                    <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
                             <i class="fas fa-water"></i> <span>Revisión de fugas</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="mant_fugas" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="mant_fugas" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="mant_fugas" value="no">
                                 No</label>
                         </div>
@@ -1242,8 +1258,8 @@
                             <i class="fas fa-oil-can"></i> <span>Niveles (Aceite, frenos, agua)</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="mant_niveles" value="si"
-                                    required> Sí</label>
+                            <label class="si"><input type="radio" name="mant_niveles" value="si" required>
+                                Sí</label>
                             <label class="no"><input type="radio" name="mant_niveles" value="no">
                                 No</label>
                         </div>
