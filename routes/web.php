@@ -1,8 +1,8 @@
 <?php
-
 use App\Http\Controllers\Auth\LoginController;
 /* CONTROLADORES DE RECURSOS QHSE */
 use App\Http\Controllers\Qhse\Gerenciamiento\JourneyController;
+
 /* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
@@ -13,6 +13,7 @@ use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\HistoryController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
+
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
 use Illuminate\Support\Facades\Route;
@@ -53,8 +54,8 @@ Route::post('/session-ping', function () {
     request()->session()->put('last_activity', now());
 
     return response()->json([
-        'status' => 'success',
-        'message' => 'Session Refreshed',
+        'status'    => 'success',
+        'message'   => 'Session Refreshed',
         'timestamp' => now()->toDateTimeString(),
     ]);
 })->middleware(['auth', 'web']); // Asegúrate de usar los middlewares correctos
@@ -86,7 +87,6 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:administracion')
         ->name('modulo.administracion');
 
-    // routes/web.php (o en tu archivo de rutas específico)
     Route::prefix('qhse')
         ->middleware('check.permission:qhse')
         ->group(function () {
@@ -111,22 +111,13 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                     // Nueva ruta para obtener empleados
                     Route::get('/employees', 'getEmployees')->name('gerenciamiento.empleados');
-
-
-                    Route::get('/get-destinations', 'getDestinations')->name('gerenciamiento.destinations');
-
-                    // Ruta para obtener conductores (autocomplete)
-                    Route::get('/conductores', 'getConductores')->name('gerenciamiento.conductores');
-
-                    // Nueva ruta para obtener vehículos (clasificados)
-                    Route::get('/vehicles', 'getVehicles')->name('gerenciamiento.vehicles');
-
                 });
             });
         });
-    // ===================================================
-    // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
-    // ===================================================
+
+// ===================================================
+// MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
+// ===================================================
     Route::prefix('recursoshumanos')
         ->middleware('check.permission:recursoshumanos')
         ->group(function () {
@@ -255,9 +246,9 @@ Route::middleware(['web', 'auth'])->group(function () {
                 ->name('recursoshumanos.altasempleados');
         });
 
-    // ===================================================
-    // MÓDULO: SISTEMAS Y SUBSISTEMAS
-    // ===================================================
+// ===================================================
+// MÓDULO: SISTEMAS Y SUBSISTEMAS
+// ===================================================
     Route::prefix('sistemas')
         ->middleware('check.permission:sistemas')
         ->group(function () {
@@ -270,11 +261,11 @@ Route::middleware(['web', 'auth'])->group(function () {
             Route::resource('roles', RoleController::class)
                 ->except(['show'])
                 ->names([
-                    'index' => 'sistemas.roles.index',
-                    'create' => 'sistemas.roles.create',
-                    'store' => 'sistemas.roles.store',
-                    'edit' => 'sistemas.roles.edit',
-                    'update' => 'sistemas.roles.update',
+                    'index'   => 'sistemas.roles.index',
+                    'create'  => 'sistemas.roles.create',
+                    'store'   => 'sistemas.roles.store',
+                    'edit'    => 'sistemas.roles.edit',
+                    'update'  => 'sistemas.roles.update',
                     'destroy' => 'sistemas.roles.destroy',
                 ]);
 
@@ -290,9 +281,9 @@ Route::middleware(['web', 'auth'])->group(function () {
             ]);
         });
 
-    // ===================================================
-    // MÓDULO: VENTAS Y SUBSISTEMAS
-    // ===================================================
+// ===================================================
+// MÓDULO: VENTAS Y SUBSISTEMAS
+// ===================================================
     Route::prefix('ventas')
         ->middleware('check.permission:ventas')
         ->group(function () {
@@ -321,36 +312,36 @@ Route::middleware(['web', 'auth'])->group(function () {
                 ->name('ventas.oportunidades');
         });
 
-    // ===================================================
-    // MÓDULO: SUMINISTRO
-    // ===================================================
+// ===================================================
+// MÓDULO: SUMINISTRO
+// ===================================================
     Route::get('/suministro', function () {
         return view('modulos.suministros.suministroshome');
     })
         ->middleware('check.permission:suministro')
         ->name('modulo.suministro');
 
-    // ===================================================
-    // MÓDULO: OPERACIONES
-    // ===================================================
+// ===================================================
+// MÓDULO: OPERACIONES
+// ===================================================
     Route::get('/operaciones', function () {
         return view('modulos.operaciones.operacioneshome');
     })
         ->middleware('check.permission:operaciones')
         ->name('modulo.operaciones');
 
-    // ===================================================
-    // MÓDULO: ALMACÉN
-    // ===================================================
+// ===================================================
+// MÓDULO: ALMACÉN
+// ===================================================
     Route::get('/almacen', function () {
         return view('modulos.almacen.index');
     })
         ->middleware('check.permission:almacen')
         ->name('modulo.almacen');
 
-    // ===================================================
-    // MÓDULO: GEOCIENCIAS Y SUBSISTEMAS
-    // ===================================================
+// ===================================================
+// MÓDULO: GEOCIENCIAS Y SUBSISTEMAS
+// ===================================================
     Route::prefix('geociencias')
         ->middleware('check.permission:geociencias')
         ->group(function () {
