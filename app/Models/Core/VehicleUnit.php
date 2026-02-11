@@ -29,6 +29,7 @@ class VehicleUnit extends Model
         'serial_number',
         'plate_number',
         'owner_name',
+        'ownership',       // <--- Nuevo campo agregado
     ];
 
     /**

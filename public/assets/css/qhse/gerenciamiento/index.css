@@ -2551,10 +2551,9 @@ body {
     justify-content: center;
     gap: 10px;
 }
-
 .evidence-container {
-    background-color: var(--background-gray);
-    border: 1px dashed var(--blue-light);
+    background-color: var(--background-gray, #f8f9fa);
+    border: 1px dashed var(--blue-light, #cce5ff);
     border-radius: 8px;
     padding: 20px;
     margin-top: 20px;
@@ -2564,46 +2563,88 @@ body {
     margin-top: 15px;
 }
 
-.evidence-label {
-    display: block;
+.evidence-actions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.evidence-label {
+    margin-bottom: 0;
     font-weight: 600;
-    color: var(--blue-dark);
+    color: var(--blue-dark, #003366);
     font-size: 14px;
 }
 
-.file-upload-box {
-    position: relative;
-    border: 2px dashed var(--border-gray);
-    border-radius: 8px;
-    background: var(--white);
-    transition: all 0.3s ease;
-    height: 100px;
+.evidence-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* Botón para adjuntar fotos */
+.btn-attach {
+    background: var(--primary-blue, #0056b3) !important;
+    color: white !important;
+    border: none !important;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    overflow: hidden;
+    gap: 5px;
+    transition: all 0.2s;
 }
 
-.file-upload-box:hover {
-    border-color: var(--primary-blue);
-    background-color: #f0f7ff;
+.btn-attach:hover {
+    background: #004494 !important;
 }
 
-.input-file-evidence {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    opacity: 0;
+/* Botón para usar cámara */
+.btn-camera {
+    background: var(--primary-orange, #fd7e14) !important;
+    color: white !important;
+    border: none !important;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 4px;
     cursor: pointer;
-    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+
+.btn-camera:hover {
+    background: var(--primary-orange-dark, #e86e04) !important;
+}
+
+/* Contenedor Unificado (Carga + Vista Previa) */
+.file-upload-box.unified-box {
+    position: relative;
+    border: 2px dashed var(--border-gray, #ccc);
+    border-radius: 8px;
+    background: var(--white, #ffffff);
+    transition: all 0.3s ease;
+    min-height: 120px; /* Altura mínima para que crezca con las fotos */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ocultamos el input de archivos real para que no se dispare al dar clic en la caja */
+.input-file-evidence {
+    display: none;
 }
 
 .upload-placeholder {
     text-align: center;
-    color: var(--medium-gray);
+    color: var(--medium-gray, #6c757d);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2611,38 +2652,274 @@ body {
 }
 
 .upload-placeholder i {
-    font-size: 24px;
-    color: var(--primary-blue);
-    margin-bottom: 8px;
+    font-size: 32px;
+    color: var(--primary-blue, #0056b3);
+    margin-bottom: 12px;
 }
 
 .upload-placeholder span {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
 }
 
 .upload-placeholder small {
-    font-size: 11px;
+    font-size: 12px;
     color: #888;
+    margin-top: 5px;
 }
 
+/* ================================================ */
+/* ESTILOS PARA LA VISTA PREVIA DE FOTOS */
+/* ================================================ */
+
+.preview-content {
+    width: 100%;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.preview-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-blue, #0056b3);
+}
+
+.btn-clear-all {
+    background: #fff;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 4px 10px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-clear-all:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+}
+
+.preview-item {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    aspect-ratio: 1;
+    background: #f8f9fa;
+}
+
+.preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.preview-item:hover .preview-overlay {
+    opacity: 1;
+}
+
+.preview-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-preview-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: white;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.btn-preview-action:hover {
+    transform: scale(1.1);
+}
+
+.btn-preview-view:hover {
+    background: var(--primary-blue, #0056b3);
+    color: white;
+}
+
+.btn-preview-delete:hover {
+    background: #dc3545;
+    color: white;
+}
+
+.preview-file-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--primary-blue, #0056b3);
+}
+
+.preview-file-icon i {
+    font-size: 32px;
+    margin-bottom: 5px;
+}
+
+.preview-file-icon span {
+    font-size: 11px;
+    text-align: center;
+    word-break: break-all;
+    padding: 0 5px;
+}
+
+/* Elementos restantes (Cámara, Compromiso, etc.) se mantienen igual... */
 .driver-commitment {
     margin-top: 20px;
     padding: 15px;
     background: #fff3e0;
-    border-left: 4px solid var(--primary-orange);
+    border-left: 4px solid var(--primary-orange, #fd7e14);
     border-radius: 4px;
     font-size: 12px;
-    color: var(--dark-gray);
+    color: var(--dark-gray, #333);
     line-height: 1.5;
     text-align: justify;
 }
 
 .driver-commitment i {
-    color: var(--primary-orange);
+    color: var(--primary-orange, #fd7e14);
     margin-right: 5px;
 }
 
+.modal-camara {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-camara.active {
+    display: flex;
+}
+
+.camara-container {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    overflow: hidden;
+}
+
+.camara-header {
+    background: var(--primary-blue, #0056b3);
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.camara-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.camara-body {
+    padding: 20px;
+    text-align: center;
+}
+
+#videoCamara {
+    width: 100%;
+    max-height: 400px;
+    background: #000;
+    border-radius: 5px;
+}
+
+.camara-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-capturar {
+    background: var(--accent-green, #28a745);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-capturar:hover {
+    background: #218838;
+}
+
+.btn-cerrar-camara {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-cerrar-camara:hover {
+    background: #5a6268;
+}
+
+@media (max-width: 768px) {
+    .preview-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+    .camara-container {
+        width: 95%;
+        margin: 10px;
+    }
+}
 /* ======================================================= */
 /* === CABECERA DE DATOS (NUEVO) === */
 /* ======================================================= */

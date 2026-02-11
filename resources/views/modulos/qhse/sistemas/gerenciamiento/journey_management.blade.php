@@ -1290,17 +1290,44 @@
                     </div>
 
                     <div class="evidence-upload-wrapper">
-                        <label class="evidence-label">
-                            <i class="fas fa-cloud-upload-alt"></i> Cargar Evidencia Fotográfica (Si hay anomalías)
-                        </label>
-                        <div class="file-upload-box">
-                            <input type="file" id="evidenciaInspeccionLigera" name="evidencia[]" multiple
-                                accept="image/*, .pdf" class="input-file-evidence">
-                            <div class="upload-placeholder">
-                                <i class="fas fa-images"></i>
-                                <span>Arrastra tus fotos aquí o haz clic para seleccionar</span>
-                                <small>Formatos: JPG, PNG, PDF</small>
+                        <div class="evidence-actions-header">
+                            <label class="evidence-label">
+                                <i class="fas fa-cloud-upload-alt"></i> Evidencia Fotográfica (Máx. 6 fotos)
+                            </label>
+                            <div class="evidence-buttons">
+                                <button type="button" class="btn-attach"
+                                    onclick="document.getElementById('evidenciaInspeccionLigera').click()">
+                                    <i class="fas fa-paperclip"></i> Adjuntar Fotos
+                                </button>
+                                <button type="button" class="btn-camera" onclick="abrirCamara('ligera')">
+                                    <i class="fas fa-camera"></i> Usar Cámara
+                                </button>
                             </div>
+                        </div>
+
+                        <input type="file" id="evidenciaInspeccionLigera" name="evidencia[]" multiple
+                            accept="image/*, .pdf" class="input-file-evidence" data-max-files="6"
+                            data-tipo="ligera">
+
+                        <div class="file-upload-box unified-box" id="dropZoneLigera">
+
+                            <div class="upload-placeholder" id="placeholderLigera">
+                                <i class="fas fa-images"></i>
+                                <span>Arrastra tus fotos aquí</span>
+                                <small>Formatos: JPG, PNG, PDF - Máximo 6 archivos</small>
+                            </div>
+
+                            <div id="previewContainerLigera" class="preview-content" style="display: none;">
+                                <div class="preview-header">
+                                    <span class="preview-count" id="previewCountLigera">0 fotos seleccionadas</span>
+                                    <button type="button" class="btn-clear-all" onclick="limpiarFotos('ligera')">
+                                        <i class="fas fa-trash"></i> Eliminar todas
+                                    </button>
+                                </div>
+                                <div id="previewGridLigera" class="preview-grid">
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -1325,7 +1352,29 @@
             </div>
         </div>
     </div>
-
+    {{-- MODAL PARA USAR CÁMARA --}}
+    <div class="modal-camara" id="modalCamara">
+        <div class="camara-container">
+            <div class="camara-header">
+                <h3><i class="fas fa-camera"></i> Tomar Foto con Cámara</h3>
+                <button type="button" class="btn-cerrar-camara" onclick="cerrarCamara()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="camara-body">
+                <video id="videoCamara" autoplay playsinline></video>
+                <canvas id="canvasCamara" style="display:none;"></canvas>
+                <div class="camara-controls">
+                    <button type="button" class="btn-capturar" onclick="capturarFoto()">
+                        <i class="fas fa-camera"></i> Tomar Foto
+                    </button>
+                    <button type="button" class="btn-cerrar-camara" onclick="cerrarCamara()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     {{-- MODAL DE INSPECCIÓN PARA UNIDADES PESADAS --}}
     <div class="modal-overlay" id="modalInspeccionPesada">
         <div class="modal-content">
@@ -1998,29 +2047,47 @@
                     </div>
 
                     <div class="evidence-upload-wrapper">
-                        <label class="evidence-label">
-                            <i class="fas fa-cloud-upload-alt"></i> Cargar Evidencia Fotográfica (Si hay anomalías)
-                        </label>
-                        <div class="file-upload-box">
-                            <input type="file" id="evidenciaInspeccionPesada" name="evidencia[]" multiple
-                                accept="image/*, .pdf" class="input-file-evidence">
-                            <div class="upload-placeholder">
-                                <i class="fas fa-images"></i>
-                                <span>Arrastra tus fotos aquí o haz clic para seleccionar</span>
-                                <small>Formatos: JPG, PNG, PDF</small>
+                        <div class="evidence-actions-header">
+                            <label class="evidence-label">
+                                <i class="fas fa-cloud-upload-alt"></i> Evidencia Fotográfica (Máx. 6 fotos)
+                            </label>
+                            <div class="evidence-buttons">
+                                <button type="button" class="btn-attach"
+                                    onclick="document.getElementById('evidenciaInspeccionPesada').click()">
+                                    <i class="fas fa-paperclip"></i> Adjuntar Fotos
+                                </button>
+                                <button type="button" class="btn-camera" onclick="abrirCamara('pesada')">
+                                    <i class="fas fa-camera"></i> Usar Cámara
+                                </button>
                             </div>
+                        </div>
+
+                        <input type="file" id="evidenciaInspeccionPesada" name="evidencia[]" multiple
+                            accept="image/*, .pdf" class="input-file-evidence" data-max-files="6"
+                            data-tipo="pesada">
+
+                        <div class="file-upload-box unified-box" id="dropZonePesada">
+
+                            <div class="upload-placeholder" id="placeholderPesada">
+                                <i class="fas fa-images"></i>
+                                <span>Arrastra tus fotos aquí</span>
+                                <small>Formatos: JPG, PNG, PDF - Máximo 6 archivos</small>
+                            </div>
+
+                            <div id="previewContainerPesada" class="preview-content" style="display: none;">
+                                <div class="preview-header">
+                                    <span class="preview-count" id="previewCountPesada">0 fotos seleccionadas</span>
+                                    <button type="button" class="btn-clear-all" onclick="limpiarFotos('pesada')">
+                                        <i class="fas fa-trash"></i> Eliminar todas
+                                    </button>
+                                </div>
+                                <div id="previewGridPesada" class="preview-grid">
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
-
-                <div class="driver-commitment">
-                    <p>
-                        <i class="fas fa-user-check"></i>
-                        Yo conductor me comprometo a realizar a conciencia la inspección de la unidad vehicular
-                        con la finalidad de asegurar que está en condiciones de realizar un viaje seguro.
-                    </p>
-                </div>
-
             </form>
 
             <div class="form-footer">

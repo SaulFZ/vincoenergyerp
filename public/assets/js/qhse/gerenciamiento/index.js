@@ -786,53 +786,44 @@ async function cargarConductoresDesdeBD() {
 }
 
 // ====================================================================
-// FUNCIÓN PARA CARGAR VEHÍCULOS DESDE LA BASE DE DATOS (Sin cambios, pero agregamos un chequeo global)
+// FUNCIÓN PARA CARGAR VEHÍCULOS DESDE LA BASE DE DATOS (Sin Caché)
 // ====================================================================
 async function cargarVehiculosDesdeBD() {
-    const CACHE_KEY = "vehiculos_cache_v1";
-    const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 Horas en milisegundos
-    // 1. INTENTAR CARGAR DE LOCALSTORAGE (Carga Instantánea)
-    const cachedData = localStorage.getItem(CACHE_KEY);
-    if (cachedData) {
-        const parsed = JSON.parse(cachedData);
-        const now = new Date().getTime();
-        // Si el caché existe y no ha expirado (menos de 24h)
-        if (now - parsed.timestamp < CACHE_DURATION) {
-            procesarDatosVehiculos(parsed.data);
-            return; // ¡TERMINAMOS AQUÍ! No tocamos el servidor.
-        }
-    }
-    // 2. SI NO HAY CACHÉ O EXPIRÓ, PEDIMOS AL SERVIDOR
+    // 1. Limpiamos cualquier caché antiguo que haya quedado en el navegador
+    localStorage.removeItem("vehiculos_cache_v1");
+
+    // 2. Pedimos los datos frescos directamente al servidor
     try {
-        console.log("🌐 Descargando lista de vehículos del servidor...");
         const response = await fetch("/qhse/gerenciamiento/vehicles");
+
         if (!response.ok) throw new Error("Error al cargar vehículos");
+
         const data = await response.json();
+
         if (data.success) {
-            // Guardamos en LocalStorage con fecha de hoy
-            const cacheObject = {
-                timestamp: new Date().getTime(),
-                data: data,
-            };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-            // Procesamos los datos
+            // Procesamos los datos recibidos
             procesarDatosVehiculos(data);
         } else {
             throw new Error(data.message || "Error del servidor");
         }
     } catch (error) {
         console.error("Error cargando vehículos:", error);
-        // Si falla la red, intentar usar caché viejo si existe como respaldo de emergencia
-        if (cachedData) {
-            console.warn("⚠️ Usando caché expirado por falta de conexión.");
-            procesarDatosVehiculos(JSON.parse(cachedData).data);
-        } else {
-            vehiculosLigeros = [];
-            vehiculosPesados = [];
-        }
+
+        // Vaciamos las variables globales de vehículos para evitar inconsistencias
+        vehiculosLigeros = [];
+        vehiculosPesados = [];
+        clasificacionVehiculos = {};
+        optionsLigeras = "";
+        optionsPesadas = "";
+
+        Swal.fire({
+            title: "Error de Conexión",
+            text: "No se pudieron cargar los vehículos desde la base de datos. Por favor, recargue la página o verifique su conexión.",
+            icon: "error",
+            timer: 5000,
+        });
     }
 }
-
 // Función auxiliar para no repetir código (limpieza y orden)
 function procesarDatosVehiculos(data) {
     vehiculosLigeros = data.ligeras || [];
@@ -845,10 +836,6 @@ function procesarDatosVehiculos(data) {
     optionsPesadas = vehiculosPesados
         .map((v) => `<option value="${v}">${v}</option>`)
         .join("");
-    console.log(
-        "Total vehículos cargados:",
-        vehiculosLigeros.length + vehiculosPesados.length,
-    );
 }
 
 // ====================================================================
@@ -1649,11 +1636,444 @@ function abrirInspeccion(unidadNumero) {
         });
     }
 }
+
+
+
+
+
+
+
+
+
+
+// ====================================================================
+// GESTIÓN DE FOTOS Y CÁMARA
+// ====================================================================
+
+// Variables globales para la cámara
+let streamCamara = null;
+let tipoActualCamara = null; // 'ligera' o 'pesada'
+let fotosSubidas = {
+    ligera: [],
+    pesada: []
+};
+
+// Inicializar eventos de carga de fotos
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarInputsFotos();
+});
+
+function inicializarInputsFotos() {
+    // Para unidades ligeras
+    const inputLigera = document.getElementById('evidenciaInspeccionLigera');
+    const dropZoneLigera = document.getElementById('dropZoneLigera');
+
+    if (inputLigera && dropZoneLigera) {
+        inputLigera.addEventListener('change', function(e) {
+            manejarSeleccionArchivos(e, 'ligera');
+        });
+
+        // Soporte para arrastrar y soltar en el contenedor único
+        dropZoneLigera.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--primary-blue, #0056b3)';
+            this.style.backgroundColor = '#f0f7ff';
+        });
+
+        dropZoneLigera.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-gray, #ccc)';
+            this.style.backgroundColor = 'var(--white, #ffffff)';
+        });
+
+        dropZoneLigera.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-gray, #ccc)';
+            this.style.backgroundColor = 'var(--white, #ffffff)';
+
+            if (e.dataTransfer.files.length > 0) {
+                inputLigera.files = e.dataTransfer.files;
+                manejarSeleccionArchivos({ target: inputLigera }, 'ligera');
+            }
+        });
+    }
+
+    // Para unidades pesadas
+    const inputPesada = document.getElementById('evidenciaInspeccionPesada');
+    const dropZonePesada = document.getElementById('dropZonePesada');
+
+    if (inputPesada && dropZonePesada) {
+        inputPesada.addEventListener('change', function(e) {
+            manejarSeleccionArchivos(e, 'pesada');
+        });
+
+        // Soporte para arrastrar y soltar en el contenedor único
+        dropZonePesada.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--primary-blue, #0056b3)';
+            this.style.backgroundColor = '#f0f7ff';
+        });
+
+        dropZonePesada.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-gray, #ccc)';
+            this.style.backgroundColor = 'var(--white, #ffffff)';
+        });
+
+        dropZonePesada.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--border-gray, #ccc)';
+            this.style.backgroundColor = 'var(--white, #ffffff)';
+
+            if (e.dataTransfer.files.length > 0) {
+                inputPesada.files = e.dataTransfer.files;
+                manejarSeleccionArchivos({ target: inputPesada }, 'pesada');
+            }
+        });
+    }
+}
+
+function manejarSeleccionArchivos(event, tipo) {
+    const input = event.target;
+    const maxFiles = parseInt(input.dataset.maxFiles) || 6;
+    const files = Array.from(input.files);
+
+    // Validar cantidad máxima
+    if (files.length > maxFiles) {
+        Swal.fire({
+            title: 'Demasiadas fotos',
+            text: `Solo puedes subir un máximo de ${maxFiles} fotos. Se seleccionarán las primeras ${maxFiles}.`,
+            icon: 'warning',
+            confirmButtonColor: 'var(--primary-blue, #0056b3)'
+        });
+        files.splice(maxFiles);
+    }
+
+    // Validar tipos de archivo
+    const archivosValidos = [];
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+
+    files.forEach(file => {
+        if (tiposPermitidos.includes(file.type) || file.name.toLowerCase().endsWith('.pdf')) {
+            archivosValidos.push(file);
+        } else {
+            console.warn(`Archivo no soportado: ${file.name} (${file.type})`);
+        }
+    });
+
+    if (archivosValidos.length === 0) {
+        Swal.fire({
+            title: 'Formato no válido',
+            text: 'Solo se permiten archivos JPG, PNG o PDF.',
+            icon: 'error',
+            confirmButtonColor: 'var(--primary-blue, #0056b3)'
+        });
+        input.value = '';
+        return;
+    }
+
+    // Agregar archivos a la lista
+    archivosValidos.forEach(file => {
+        agregarFotoALista(file, tipo);
+    });
+
+    // Actualizar vista previa
+    actualizarVistaPrevia(tipo);
+}
+
+function agregarFotoALista(file, tipo) {
+    // Verificar si ya existe una foto con el mismo nombre
+    const existe = fotosSubidas[tipo].some(foto => foto.name === file.name && foto.size === file.size);
+
+    if (!existe) {
+        // Verificar límite de 6 fotos
+        if (fotosSubidas[tipo].length >= 6) {
+            Swal.fire({
+                title: 'Límite alcanzado',
+                text: 'Ya tienes 6 fotos. Elimina alguna antes de agregar más.',
+                icon: 'warning',
+                confirmButtonColor: 'var(--primary-blue, #0056b3)'
+            });
+            return;
+        }
+
+        // Crear objeto foto con ID único
+        const fotoObj = {
+            id: Date.now() + Math.random().toString(36).substr(2, 9),
+            file: file,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            url: URL.createObjectURL(file)
+        };
+
+        fotosSubidas[tipo].push(fotoObj);
+    }
+}
+
+function eliminarFoto(id, tipo) {
+    fotosSubidas[tipo] = fotosSubidas[tipo].filter(foto => foto.id !== id);
+    actualizarVistaPrevia(tipo);
+}
+
+function actualizarVistaPrevia(tipo) {
+    // Referencias a los elementos que cambian
+    const container = document.getElementById(`previewContainer${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    const placeholder = document.getElementById(`placeholder${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    const grid = document.getElementById(`previewGrid${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    const countSpan = document.getElementById(`previewCount${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+    const input = document.getElementById(`evidenciaInspeccion${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+
+    if (!grid || !countSpan) return;
+
+    // Lógica para alternar la vista dentro del mismo contenedor
+    if (fotosSubidas[tipo].length > 0) {
+        container.style.display = 'block'; // Mostrar vista previa
+        if(placeholder) placeholder.style.display = 'none'; // Ocultar instrucciones
+    } else {
+        container.style.display = 'none'; // Ocultar vista previa
+        if(placeholder) placeholder.style.display = 'flex'; // Mostrar instrucciones
+    }
+
+    // Actualizar contador
+    countSpan.textContent = `${fotosSubidas[tipo].length} ${fotosSubidas[tipo].length === 1 ? 'foto' : 'fotos'} seleccionada${fotosSubidas[tipo].length === 1 ? '' : 's'}`;
+
+    // Limpiar grid
+    grid.innerHTML = '';
+
+    // Agregar miniaturas
+    fotosSubidas[tipo].forEach(foto => {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        item.dataset.id = foto.id;
+
+        if (foto.type === 'application/pdf' || foto.name.toLowerCase().endsWith('.pdf')) {
+            item.innerHTML = `
+                <div class="preview-file-icon">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>${foto.name.length > 15 ? foto.name.substring(0, 12) + '...' : foto.name}</span>
+                </div>
+                <div class="preview-overlay">
+                    <div class="preview-actions">
+                        <button type="button" class="btn-preview-action btn-preview-view" onclick="verArchivo('${tipo}', '${foto.id}')" title="Ver PDF">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" class="btn-preview-action btn-preview-delete" onclick="eliminarFoto('${foto.id}', '${tipo}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            item.innerHTML = `
+                <img src="${foto.url}" alt="${foto.name}" class="preview-image">
+                <div class="preview-overlay">
+                    <div class="preview-actions">
+                        <button type="button" class="btn-preview-action btn-preview-view" onclick="verArchivo('${tipo}', '${foto.id}')" title="Ver imagen">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" class="btn-preview-action btn-preview-delete" onclick="eliminarFoto('${foto.id}', '${tipo}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        grid.appendChild(item);
+    });
+
+    // Crear un nuevo DataTransfer para el input file
+    const dataTransfer = new DataTransfer();
+    fotosSubidas[tipo].forEach(foto => {
+        dataTransfer.items.add(foto.file);
+    });
+    input.files = dataTransfer.files;
+}
+
+function limpiarFotos(tipo) {
+    Swal.fire({
+        title: '¿Eliminar todas las fotos?',
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: 'var(--accent-red, #dc3545)',
+        cancelButtonColor: 'var(--primary-blue, #0056b3)'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fotosSubidas[tipo] = [];
+            const input = document.getElementById(`evidenciaInspeccion${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+            if (input) input.value = '';
+            actualizarVistaPrevia(tipo);
+        }
+    });
+}
+
+function verArchivo(tipo, id) {
+    const foto = fotosSubidas[tipo].find(f => f.id === id);
+    if (!foto) return;
+
+    if (foto.type === 'application/pdf' || foto.name.toLowerCase().endsWith('.pdf')) {
+        window.open(foto.url, '_blank');
+    } else {
+        Swal.fire({
+            imageUrl: foto.url,
+            imageAlt: foto.name,
+            showConfirmButton: false,
+            showCloseButton: true,
+            width: '80%',
+            padding: '0'
+        });
+    }
+}
+
+// ====================================================================
+// FUNCIONALIDAD DE CÁMARA
+// ====================================================================
+
+function abrirCamara(tipo) {
+    tipoActualCamara = tipo;
+    const modal = document.getElementById('modalCamara');
+    const video = document.getElementById('videoCamara');
+
+    if (!modal || !video) return;
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    // Solicitar acceso a la cámara
+    navigator.mediaDevices.getUserMedia({
+        video: {
+            facingMode: 'environment', // Preferir cámara trasera
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+        },
+        audio: false
+    })
+    .then(function(stream) {
+        streamCamara = stream;
+        video.srcObject = stream;
+        video.play();
+    })
+    .catch(function(error) {
+        console.error('Error al acceder a la cámara:', error);
+        Swal.fire({
+            title: 'Error de cámara',
+            text: 'No se pudo acceder a la cámara. Asegúrate de dar permisos y que la cámara esté funcionando.',
+            icon: 'error',
+            confirmButtonColor: 'var(--primary-blue, #0056b3)'
+        }).then(() => {
+            cerrarCamara();
+        });
+    });
+}
+
+function cerrarCamara() {
+    const modal = document.getElementById('modalCamara');
+    const video = document.getElementById('videoCamara');
+
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+
+    // Detener stream de cámara
+    if (streamCamara) {
+        streamCamara.getTracks().forEach(track => track.stop());
+        streamCamara = null;
+    }
+
+    if (video) {
+        video.srcObject = null;
+    }
+
+    tipoActualCamara = null;
+}
+
+function capturarFoto() {
+    const video = document.getElementById('videoCamara');
+    const canvas = document.getElementById('canvasCamara');
+
+    if (!video || !canvas || !tipoActualCamara) return;
+
+    // Configurar canvas con las dimensiones del video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Dibujar el fotograma actual en el canvas
+    const context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convertir a blob
+    canvas.toBlob(function(blob) {
+        if (!blob) return;
+
+        // Crear archivo a partir del blob
+        const fileName = `foto_camara_${Date.now()}.jpg`;
+        const file = new File([blob], fileName, {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+        });
+
+        // Agregar a la lista de fotos
+        agregarFotoALista(file, tipoActualCamara);
+        actualizarVistaPrevia(tipoActualCamara);
+
+        // Mostrar confirmación
+        Swal.fire({
+            title: '¡Foto tomada!',
+            text: 'La foto se ha agregado a la lista.',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+        });
+
+    }, 'image/jpeg', 0.9); // Calidad al 90%
+}
+
+// Cerrar cámara al presionar Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarCamara();
+    }
+});
+
+
+// ====================================================================
+// MODIFICACIONES A LAS FUNCIONES DE GUARDADO DE INSPECCIÓN
+// ====================================================================
 function guardarInspeccionLigera() {
+    // Validar que haya al menos una foto si hay comentarios
+    const comentarios = document.getElementById('comentariosInspeccionLigera')?.value.trim() || '';
+
+    if (comentarios && fotosSubidas.ligera.length === 0) {
+        Swal.fire({
+            title: '¿Sin evidencia fotográfica?',
+            text: 'Has reportado anomalías pero no has agregado fotos. ¿Deseas continuar sin evidencia?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Continuar sin fotos',
+            cancelButtonText: 'Agregar fotos',
+            confirmButtonColor: 'var(--primary-blue)',
+            cancelButtonColor: 'var(--accent-red)'
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            } else {
+                procederGuardadoLigera(comentarios);
+            }
+        });
+    } else {
+        procederGuardadoLigera(comentarios);
+    }
+}
+
+function procederGuardadoLigera(comentarios) {
     const form = document.getElementById("formInspeccionLigera");
     const unidadNumero = parseInt(
         document.getElementById("inspeccionUnidadIndexLigera")?.value,
     );
+
     // Validar que todos los campos estén completos
     const items = [
         "docs",
@@ -1665,6 +2085,7 @@ function guardarInspeccionLigera() {
         "fluidos",
         "frenos",
     ];
+
     let formValido = true;
     items.forEach((item) => {
         const checked = form.querySelector(
@@ -1674,6 +2095,7 @@ function guardarInspeccionLigera() {
             formValido = false;
         }
     });
+
     if (!formValido) {
         Swal.fire({
             title: "Inspección Incompleta",
@@ -1683,6 +2105,7 @@ function guardarInspeccionLigera() {
         });
         return;
     }
+
     const data = {};
     let todoAprobado = true;
     items.forEach((item) => {
@@ -1694,7 +2117,18 @@ function guardarInspeccionLigera() {
             todoAprobado = false;
         }
     });
+
+    // Agregar datos de fotos y comentarios
+    data.comentarios = comentarios;
+    data.fotos = fotosSubidas.ligera.length;
+    data.fotosArray = fotosSubidas.ligera.map(foto => ({
+        nombre: foto.name,
+        tamaño: foto.size,
+        tipo: foto.type
+    }));
+
     datosInspeccionLigera[unidadNumero] = data;
+
     const btnInspeccion = document.getElementById(
         `btn-inspeccion-${unidadNumero}`,
     );
@@ -1720,9 +2154,11 @@ function guardarInspeccionLigera() {
             btnInspeccion.title = "Revisar Inspección";
         }
     }
+
     Swal.fire({
         title: "Inspección Guardada",
-        text: `La inspección para la Unidad ${unidadNumero} ha sido registrada.`,
+        html: `La inspección para la Unidad ${unidadNumero} ha sido registrada.<br>
+               <small>Fotos adjuntas: ${fotosSubidas.ligera.length} | Comentarios: ${comentarios ? 'Sí' : 'No'}</small>`,
         icon: "success",
         confirmButtonColor: "var(--primary-blue)",
     }).then(() => {
@@ -1731,11 +2167,39 @@ function guardarInspeccionLigera() {
         actualizarBotonEvaluacion();
     });
 }
+
 function guardarInspeccionPesada() {
+    // Validar que haya al menos una foto si hay comentarios
+    const comentarios = document.getElementById('comentariosInspeccionPesada')?.value.trim() || '';
+
+    if (comentarios && fotosSubidas.pesada.length === 0) {
+        Swal.fire({
+            title: '¿Sin evidencia fotográfica?',
+            text: 'Has reportado anomalías pero no has agregado fotos. ¿Deseas continuar sin evidencia?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Continuar sin fotos',
+            cancelButtonText: 'Agregar fotos',
+            confirmButtonColor: 'var(--primary-blue)',
+            cancelButtonColor: 'var(--accent-red)'
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            } else {
+                procederGuardadoPesada(comentarios);
+            }
+        });
+    } else {
+        procederGuardadoPesada(comentarios);
+    }
+}
+
+function procederGuardadoPesada(comentarios) {
     const form = document.getElementById("formInspeccionPesada");
     const unidadNumero = parseInt(
         document.getElementById("inspeccionUnidadIndexPesada")?.value,
     );
+
     // Validar que todos los campos estén completos
     const items = [
         "docs_p",
@@ -1749,6 +2213,7 @@ function guardarInspeccionPesada() {
         "acople_p",
         "senalizacion_p",
     ];
+
     let formValido = true;
     items.forEach((item) => {
         const checked = form.querySelector(
@@ -1758,6 +2223,7 @@ function guardarInspeccionPesada() {
             formValido = false;
         }
     });
+
     if (!formValido) {
         Swal.fire({
             title: "Inspección Incompleta",
@@ -1767,6 +2233,7 @@ function guardarInspeccionPesada() {
         });
         return;
     }
+
     const data = {};
     let todoAprobado = true;
     items.forEach((item) => {
@@ -1778,7 +2245,18 @@ function guardarInspeccionPesada() {
             todoAprobado = false;
         }
     });
+
+    // Agregar datos de fotos y comentarios
+    data.comentarios = comentarios;
+    data.fotos = fotosSubidas.pesada.length;
+    data.fotosArray = fotosSubidas.pesada.map(foto => ({
+        nombre: foto.name,
+        tamaño: foto.size,
+        tipo: foto.type
+    }));
+
     datosInspeccionPesada[unidadNumero] = data;
+
     const btnInspeccion = document.getElementById(
         `btn-inspeccion-${unidadNumero}`,
     );
@@ -1804,9 +2282,11 @@ function guardarInspeccionPesada() {
             btnInspeccion.title = "Revisar Inspección";
         }
     }
+
     Swal.fire({
         title: "Inspección Guardada",
-        text: `La inspección para la Unidad ${unidadNumero} ha sido registrada.`,
+        html: `La inspección para la Unidad ${unidadNumero} ha sido registrada.<br>
+               <small>Fotos adjuntas: ${fotosSubidas.pesada.length} | Comentarios: ${comentarios ? 'Sí' : 'No'}</small>`,
         icon: "success",
         confirmButtonColor: "var(--primary-blue)",
     }).then(() => {
@@ -1815,6 +2295,196 @@ function guardarInspeccionPesada() {
         actualizarBotonEvaluacion();
     });
 }
+
+// ====================================================================
+// FUNCIÓN PARA LIMPIAR DATOS AL CERRAR MODALES
+// ====================================================================
+
+function limpiarFotosAlCerrarModal(tipo) {
+    // Esta función se llamará cuando se cierre el modal sin guardar
+    Swal.fire({
+        title: '¿Desea guardar las fotos?',
+        text: 'Las fotos no se han guardado aún. ¿Desea conservarlas o eliminarlas?',
+        icon: 'question',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar y salir',
+        denyButtonText: 'Eliminar y salir',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isDenied) {
+            // Eliminar fotos
+            fotosSubidas[tipo] = [];
+            const input = document.getElementById(`evidenciaInspeccion${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`);
+            if (input) input.value = '';
+            actualizarVistaPrevia(tipo);
+
+            if (tipo === 'ligera') {
+                gestionarModalInspeccionLigera(false);
+            } else {
+                gestionarModalInspeccionPesada(false);
+            }
+        } else if (result.isConfirmed) {
+            // Mantener fotos y salir
+            if (tipo === 'ligera') {
+                gestionarModalInspeccionLigera(false);
+            } else {
+                gestionarModalInspeccionPesada(false);
+            }
+        }
+    });
+}
+
+// ====================================================================
+// MODIFICAR LAS FUNCIONES DE CERRAR MODALES
+// ====================================================================
+
+function gestionarModalInspeccionLigera(abrir, unidadNumero = null) {
+    const modal = document.getElementById("modalInspeccionLigera");
+
+    if (abrir && unidadNumero !== null) {
+        unidadEnInspeccion = unidadNumero;
+        tipoVehiculoInspeccion = "ligera";
+
+        // Restablecer vista previa
+        fotosSubidas.ligera = [];
+        actualizarVistaPrevia('ligera');
+
+        // Cargar datos del vehículo
+        const hiddenInput = document.getElementById(
+            `vehicle-hidden-${unidadNumero}`,
+        );
+        const nombreVehiculo = hiddenInput
+            ? hiddenInput.value
+            : "Unidad " + unidadNumero;
+        const inputNoEconomicoLigera = document.getElementById(
+            "inputNoEconomicoLigera",
+        );
+        if (inputNoEconomicoLigera)
+            inputNoEconomicoLigera.value = nombreVehiculo;
+
+        const inspeccionUnidadIndexLigera = document.getElementById(
+            "inspeccionUnidadIndexLigera",
+        );
+        if (inspeccionUnidadIndexLigera)
+            inspeccionUnidadIndexLigera.value = unidadNumero;
+
+        // Cargar datos guardados si existen
+        const savedData = datosInspeccionLigera[unidadNumero] || {};
+
+        // Cargar radio buttons
+        const items = ["docs", "llantas", "luces", "extintor", "botiquin", "kit", "fluidos", "frenos"];
+        items.forEach(item => {
+            const radio = document.querySelector(
+                `input[name="inspeccion_${item}"][value="${savedData[item]}"]`,
+            );
+            if (radio) {
+                radio.checked = true;
+            }
+        });
+
+        // Cargar comentarios
+        const comentariosInput = document.getElementById("comentariosInspeccionLigera");
+        if (comentariosInput && savedData.comentarios) {
+            comentariosInput.value = savedData.comentarios;
+        }
+
+        // Cargar fotos si existen (esto es más complejo, generalmente se maneja en el backend)
+
+        if (modal) modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+
+    } else if (!abrir) {
+        // Verificar si hay cambios sin guardar
+        const comentarios = document.getElementById('comentariosInspeccionLigera')?.value.trim() || '';
+        const hayFotos = fotosSubidas.ligera.length > 0;
+
+        if (comentarios || hayFotos) {
+            limpiarFotosAlCerrarModal('ligera');
+        } else {
+            if (modal) modal.classList.remove("active");
+            document.body.style.overflow = "auto";
+            unidadEnInspeccion = null;
+            tipoVehiculoInspeccion = null;
+        }
+    }
+}
+
+function gestionarModalInspeccionPesada(abrir, unidadNumero = null) {
+    const modal = document.getElementById("modalInspeccionPesada");
+
+    if (abrir && unidadNumero !== null) {
+        unidadEnInspeccion = unidadNumero;
+        tipoVehiculoInspeccion = "pesada";
+
+        // Restablecer vista previa
+        fotosSubidas.pesada = [];
+        actualizarVistaPrevia('pesada');
+
+        // Cargar datos del vehículo
+        const hiddenInput = document.getElementById(
+            `vehicle-hidden-${unidadNumero}`,
+        );
+        const nombreVehiculo = hiddenInput
+            ? hiddenInput.value
+            : "Unidad " + unidadNumero;
+        const inputNoEconomicoPesada = document.getElementById(
+            "inputNoEconomicoPesada",
+        );
+        if (inputNoEconomicoPesada)
+            inputNoEconomicoPesada.value = nombreVehiculo;
+
+        const inspeccionUnidadIndexPesada = document.getElementById(
+            "inspeccionUnidadIndexPesada",
+        );
+        if (inspeccionUnidadIndexPesada)
+            inspeccionUnidadIndexPesada.value = unidadNumero;
+
+        // Cargar datos guardados si existen
+        const savedData = datosInspeccionPesada[unidadNumero] || {};
+
+        // Cargar radio buttons
+        const items = ["docs_p", "llantas_p", "luces_p", "extintor_p", "botiquin_p", "kit_p", "fluidos_p", "frenos_p", "acople_p", "senalizacion_p"];
+        items.forEach(item => {
+            const radio = document.querySelector(
+                `input[name="inspeccion_${item}"][value="${savedData[item]}"]`,
+            );
+            if (radio) {
+                radio.checked = true;
+            }
+        });
+
+        // Cargar comentarios
+        const comentariosInput = document.getElementById("comentariosInspeccionPesada");
+        if (comentariosInput && savedData.comentarios) {
+            comentariosInput.value = savedData.comentarios;
+        }
+
+        if (modal) modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+
+    } else if (!abrir) {
+        // Verificar si hay cambios sin guardar
+        const comentarios = document.getElementById('comentariosInspeccionPesada')?.value.trim() || '';
+        const hayFotos = fotosSubidas.pesada.length > 0;
+
+        if (comentarios || hayFotos) {
+            limpiarFotosAlCerrarModal('pesada');
+        } else {
+            if (modal) modal.classList.remove("active");
+            document.body.style.overflow = "auto";
+            unidadEnInspeccion = null;
+            tipoVehiculoInspeccion = null;
+        }
+    }
+}
+
+
+
+
+
+
+
 
 // ====================================================================
 // EVALUACIÓN DE RIESGO
@@ -1965,9 +2635,11 @@ function guardarEvaluacion() {
 // ====================================================================
 // REUNIÓN PRE-CONVOY
 // ====================================================================
+
 function actualizarBotonReunionConvoy() {
     const btn = document.getElementById("btnReunionPreConvoy");
     if (!btn) return;
+
     if (contadorUnidades < 2) {
         btn.disabled = true;
         btn.classList.remove("btn-submit", "btn-secondary-convoy-completed");
@@ -1976,6 +2648,7 @@ function actualizarBotonReunionConvoy() {
         btn.innerHTML = '<i class="fas fa-handshake"></i> Reunión Pre-convoy';
         return;
     }
+
     let unidadesCompletas = true;
     for (let i = 1; i <= contadorUnidades; i++) {
         const fila = document.getElementById(`unidad-${i}`);
@@ -1983,6 +2656,7 @@ function actualizarBotonReunionConvoy() {
             unidadesCompletas = false;
             break;
         }
+
         const requiredSelectors = [
             `.unidad-conductor`,
             `#vigencia-lic-${i}`,
@@ -1992,6 +2666,7 @@ function actualizarBotonReunionConvoy() {
             `#levantar-${i}`,
             `.unidad-vehiculo`,
         ];
+
         for (const selector of requiredSelectors) {
             const input = fila.querySelector(selector);
             if (input && input.value.trim() === "") {
@@ -2000,6 +2675,7 @@ function actualizarBotonReunionConvoy() {
             }
         }
         if (!unidadesCompletas) break;
+
         const pasajeros = fila.querySelectorAll(".pasajero-input-group input");
         for (const input of pasajeros) {
             if (input.value.trim() === "") {
@@ -2009,6 +2685,7 @@ function actualizarBotonReunionConvoy() {
         }
         if (!unidadesCompletas) break;
     }
+
     if (unidadesCompletas) {
         btn.disabled = false;
         btn.title = "Realizar o ver la reunión antes de enviar la solicitud.";
@@ -2037,9 +2714,11 @@ function actualizarBotonReunionConvoy() {
     }
     actualizarBotonEnviarSolicitud();
 }
+
 function gestionarModalPreConvoy(abrir) {
     const modal = document.getElementById("modalPreConvoy");
     const liderSelect = document.getElementById("liderConvoy");
+
     if (abrir) {
         const conductoresDisponibles = obtenerConductoresUnidades();
         if (liderSelect) {
@@ -2055,6 +2734,7 @@ function gestionarModalPreConvoy(abrir) {
                 liderSelect.appendChild(option);
             });
         }
+
         // Cargar datos guardados del checklist
         const checklistItems = [
             "puntos_parada",
@@ -2064,6 +2744,7 @@ function gestionarModalPreConvoy(abrir) {
             "contactos_emerg",
             "compromiso_lider",
         ];
+
         checklistItems.forEach((item) => {
             const savedValue = datosReunionConvoy[item];
             if (savedValue) {
@@ -2082,6 +2763,7 @@ function gestionarModalPreConvoy(abrir) {
         document.body.style.overflow = "auto";
     }
 }
+
 function obtenerConductoresUnidades() {
     const conductoresList = [];
     for (let i = 1; i <= contadorUnidades; i++) {
@@ -2092,9 +2774,11 @@ function obtenerConductoresUnidades() {
     }
     return conductoresList;
 }
+
 function guardarPreConvoy() {
     const form = document.getElementById("formPreConvoy");
     const liderSelect = document.getElementById("liderConvoy");
+
     if (liderSelect && liderSelect.value.trim() === "") {
         Swal.fire({
             title: "Líder No Seleccionado",
@@ -2104,6 +2788,7 @@ function guardarPreConvoy() {
         });
         return;
     }
+
     const checklistItems = [
         "puntos_parada",
         "ruptura_convoy",
@@ -2112,10 +2797,22 @@ function guardarPreConvoy() {
         "contactos_emerg",
         "compromiso_lider",
     ];
+
+    // Nombres legibles para la alerta
+    const nombresChecklist = {
+        "puntos_parada": "Puntos de parada acordados",
+        "ruptura_convoy": "Procedimiento por ruptura de convoy",
+        "doc_vigente": "Documentación vigente",
+        "prevencion_acc": "Prevención de accidentes",
+        "contactos_emerg": "Contactos de emergencia",
+        "compromiso_lider": "Compromiso del líder"
+    };
+
     let checklistCompleto = true;
     const data = {
         lider_convoy: liderSelect.value,
     };
+
     checklistItems.forEach((item) => {
         const checked = form.querySelector(
             `input[name="checklist_${item}"]:checked`,
@@ -2126,6 +2823,7 @@ function guardarPreConvoy() {
             data[item] = checked.value;
         }
     });
+
     if (!checklistCompleto) {
         Swal.fire({
             title: "Checklist Incompleto",
@@ -2135,25 +2833,29 @@ function guardarPreConvoy() {
         });
         return;
     }
+
     let noAprobado = false;
-    let noItems = [];
+    let noItemsHTML = "";
+
     for (const key in data) {
         if (key !== "lider_convoy" && data[key] === "no") {
             noAprobado = true;
-            noItems.push(key);
+            noItemsHTML += `<li>${nombresChecklist[key] || key}</li>`;
         }
     }
+
     if (noAprobado) {
         Swal.fire({
-            title: "¡Advertencia de Seguridad!",
-            html: `Se encontraron puntos de seguridad no confirmados (NO) en el checklist.<br><br>
-                    Si continúa, el viaje será marcado con **ALTO RIESGO** y requerirá una aprobación superior.`,
-            icon: "error",
+            title: "Puntos sin confirmar",
+            html: `Se marcaron con <strong>NO</strong> los siguientes puntos:<br><br>
+                   <ul style="text-align: left; display: inline-block;">${noItemsHTML}</ul><br><br>
+                   ¿Estás de acuerdo con esto? Recomendamos verificar nuevamente los puntos.`,
+            icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Guardar y Continuar (Alto Riesgo)",
-            cancelButtonText: "Corregir Checklist (Recomendado)",
-            confirmButtonColor: "var(--accent-red)",
-            cancelButtonColor: "var(--primary-blue)",
+            confirmButtonText: "Sí, estoy de acuerdo",
+            cancelButtonText: "Verificar nuevamente",
+            confirmButtonColor: "var(--primary-blue)",
+            cancelButtonColor: "#6c757d", // Un color gris o secundario para cancelar
         }).then((result) => {
             if (result.isConfirmed) {
                 finalizarGuardadoPreConvoy(data, false);
@@ -2163,19 +2865,23 @@ function guardarPreConvoy() {
         finalizarGuardadoPreConvoy(data, true);
     }
 }
+
 function finalizarGuardadoPreConvoy(data, todoAprobado) {
     datosReunionConvoy = data;
     reunionPreConvoyGuardada = true;
     gestionarModalPreConvoy(false);
     actualizarBotonReunionConvoy();
+
     let title = "Reunión Confirmada";
-    let text = `La Reunión Pre-convoy ha sido registrada. La solicitud está lista para ser enviada.`;
+    let text = "La Reunión Pre-convoy ha sido registrada. La solicitud está lista para ser enviada.";
     let icon = "success";
+
     if (!todoAprobado) {
-        title = "Reunión Guardada con Advertencias";
-        text = `La Reunión Pre-convoy ha sido registrada con **NOs**. El viaje será marcado como **ALTO RIESGO**.`;
-        icon = "warning";
+        title = "Reunión Guardada con Observaciones";
+        text = "La Reunión Pre-convoy ha sido registrada con algunos puntos marcados en 'NO'.";
+        icon = "info";
     }
+
     Swal.fire({
         title: title,
         text: text,
@@ -2183,6 +2889,7 @@ function finalizarGuardadoPreConvoy(data, todoAprobado) {
         confirmButtonColor: "var(--primary-blue)",
     });
 }
+
 function actualizarBotonEnviarSolicitud() {
     const btnEnviar = document.getElementById("btnEnviarSolicitud");
     if (!btnEnviar) return;

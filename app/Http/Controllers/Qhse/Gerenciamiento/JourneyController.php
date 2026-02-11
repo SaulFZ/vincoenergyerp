@@ -174,44 +174,39 @@ class JourneyController extends Controller
     public function getVehicles()
     {
         try {
-            // USAR CACHÉ: Recordar esta consulta por 3600 segundos (1 hora)
-            // Si tienes muchos usuarios, esto reduce la carga a la BD drásticamente.
-            $data = Cache::remember('api_vehicles_list', 3600, function () {
-                // OPTIMIZACIÓN SQL:
-                // 1. Usamos select() para traer SOLO lo necesario.
-                // 2. Usamos get() simple.
-                $vehicles = VehicleUnit::select('economic_number', 'unit_type')
-                    ->orderBy('economic_number', 'asc')  // Ordenar desde la BD es más rápido
-                    ->get();
+            // Consulta directa a la base de datos sin usar caché
+            $vehicles = VehicleUnit::select('economic_number', 'unit_type')
+                ->orderBy('economic_number', 'asc')
+                ->get();
 
-                $ligeras = [];
-                $pesadas = [];
-                $clasificacion = [];
+            $ligeras = [];
+            $pesadas = [];
+            $clasificacion = [];
 
-                foreach ($vehicles as $vehicle) {
-                    $econ = $vehicle->economic_number;
-                    $type = $vehicle->unit_type;
+            foreach ($vehicles as $vehicle) {
+                $econ = $vehicle->economic_number;
+                $type = $vehicle->unit_type;
 
-                    $clasificacion[$econ] = $type;
+                $clasificacion[$econ] = $type;
 
-                    // stripos es más rápido que str_contains + strtolower
-                    if (stripos($type, 'ligera') !== false) {
-                        $ligeras[] = $econ;
-                    } elseif (stripos($type, 'pesada') !== false) {
-                        $pesadas[] = $econ;
-                    }
+                // stripos es más rápido que str_contains + strtolower
+                if (stripos($type, 'ligera') !== false) {
+                    $ligeras[] = $econ;
+                } elseif (stripos($type, 'pesada') !== false) {
+                    $pesadas[] = $econ;
                 }
+            }
 
-                return [
-                    'success' => true,
-                    'ligeras' => $ligeras,
-                    'pesadas' => $pesadas,
-                    'clasificacion' => $clasificacion,
-                    'total' => count($ligeras) + count($pesadas),
-                ];
-            });
+            $data = [
+                'success' => true,
+                'ligeras' => $ligeras,
+                'pesadas' => $pesadas,
+                'clasificacion' => $clasificacion,
+                'total' => count($ligeras) + count($pesadas),
+            ];
 
             return response()->json($data);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

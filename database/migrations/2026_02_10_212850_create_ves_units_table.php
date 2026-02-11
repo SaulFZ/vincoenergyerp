@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -35,6 +34,8 @@ return new class extends Migration
             $table->string('plate_number')->nullable();
             // TARJETA DE CIRCULACION A NOMBRE
             $table->string('owner_name')->nullable();
+            // PROPIEDAD (Propia, Arrendada, etc.)
+            $table->string('ownership')->nullable();
             $table->timestamps();
 
         });
