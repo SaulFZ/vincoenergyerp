@@ -53,8 +53,8 @@ Route::post('/session-ping', function () {
     request()->session()->put('last_activity', now());
 
     return response()->json([
-        'status' => 'success',
-        'message' => 'Session Refreshed',
+        'status'    => 'success',
+        'message'   => 'Session Refreshed',
         'timestamp' => now()->toDateTimeString(),
     ]);
 })->middleware(['auth', 'web']); // Asegúrate de usar los middlewares correctos
@@ -86,7 +86,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:administracion')
         ->name('modulo.administracion');
 
-    // routes/web.php (o en tu archivo de rutas específico)
+    // routes/web.php
     Route::prefix('qhse')
         ->middleware('check.permission:qhse')
         ->group(function () {
@@ -97,30 +97,24 @@ Route::middleware(['web', 'auth'])->group(function () {
             // ===================================================
             Route::prefix('gerenciamiento')->group(function () {
 
-                // 1. Redirigir la ruta principal al Dashboard
+                // 1. Redirección automática:
+                // Si el usuario escribe /qhse/gerenciamiento,
+                // lo mandamos forzosamente a /qhse/gerenciamiento/journey
                 Route::get('/', function () {
-                    return redirect()->route('gerenciamiento.gerenciamiento');
-                })
-                    ->name('qhse.gerenciamiento')
-                    ->middleware('check.permission:qhse,gerenciamiento');
+                    return redirect()->route('gerenciamiento.journey');
+                })->name('qhse.gerenciamiento');
 
                 // --- RUTAS PRINCIPALES (JourneyController) ---
                 Route::controller(JourneyController::class)->group(function () {
-                    // Vistas principales (Navegación)
-                    Route::get('/gerenciamiento', 'index')->name('gerenciamiento.gerenciamiento');
 
-                    // Nueva ruta para obtener empleados
+                    // Definimos 'journey' como el segmento final de la URL
+                    Route::get('/journey', 'index')->name('gerenciamiento.journey');
+
+                    // Rutas auxiliares
                     Route::get('/employees', 'getEmployees')->name('gerenciamiento.empleados');
-
-
                     Route::get('/get-destinations', 'getDestinations')->name('gerenciamiento.destinations');
-
-                    // Ruta para obtener conductores (autocomplete)
                     Route::get('/conductores', 'getConductores')->name('gerenciamiento.conductores');
-
-                    // Nueva ruta para obtener vehículos (clasificados)
                     Route::get('/vehicles', 'getVehicles')->name('gerenciamiento.vehicles');
-
                 });
             });
         });
@@ -270,11 +264,11 @@ Route::middleware(['web', 'auth'])->group(function () {
             Route::resource('roles', RoleController::class)
                 ->except(['show'])
                 ->names([
-                    'index' => 'sistemas.roles.index',
-                    'create' => 'sistemas.roles.create',
-                    'store' => 'sistemas.roles.store',
-                    'edit' => 'sistemas.roles.edit',
-                    'update' => 'sistemas.roles.update',
+                    'index'   => 'sistemas.roles.index',
+                    'create'  => 'sistemas.roles.create',
+                    'store'   => 'sistemas.roles.store',
+                    'edit'    => 'sistemas.roles.edit',
+                    'update'  => 'sistemas.roles.update',
                     'destroy' => 'sistemas.roles.destroy',
                 ]);
 

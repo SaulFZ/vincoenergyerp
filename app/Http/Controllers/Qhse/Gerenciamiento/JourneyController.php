@@ -168,45 +168,53 @@ class JourneyController extends Controller
         }
     }
 
-    /**
-     * Obtener todos los vehículos desde la tabla ves_units
+/**
+     * Obtener todos los vehículos desde la tabla ves_units incluyendo ownership (string)
      */
     public function getVehicles()
-    {
-        try {
-            // Consulta directa a la base de datos sin usar caché
-            $vehicles = VehicleUnit::select('economic_number', 'unit_type')
-                ->orderBy('economic_number', 'asc')
-                ->get();
+{
+    try {
+        // 1. AGREGAMOS 'brand' AL SELECT
+        $vehicles = VehicleUnit::select('economic_number', 'unit_type', 'ownership', 'brand')
+            ->orderBy('economic_number', 'asc')
+            ->get();
 
-            $ligeras = [];
-            $pesadas = [];
-            $clasificacion = [];
+        $ligeras = [];
+        $pesadas = [];
+        $clasificacion = [];
 
-            foreach ($vehicles as $vehicle) {
-                $econ = $vehicle->economic_number;
-                $type = $vehicle->unit_type;
+        // 2. NUEVA VARIABLE PARA DETALLES
+        $detallesVehiculo = [];
 
-                $clasificacion[$econ] = $type;
+        foreach ($vehicles as $vehicle) {
+            $econ = $vehicle->economic_number;
+            $type = $vehicle->unit_type;
+            $owner = (string) ($vehicle->ownership ?? '');
+            $marca = (string) ($vehicle->brand ?? 'Sin Marca'); // Obtenemos la marca
 
-                // stripos es más rápido que str_contains + strtolower
-                if (stripos($type, 'ligera') !== false) {
-                    $ligeras[] = $econ;
-                } elseif (stripos($type, 'pesada') !== false) {
-                    $pesadas[] = $econ;
-                }
-            }
+            $clasificacion[$econ] = $type;
 
-            $data = [
-                'success' => true,
-                'ligeras' => $ligeras,
-                'pesadas' => $pesadas,
-                'clasificacion' => $clasificacion,
-                'total' => count($ligeras) + count($pesadas),
+            // Guardamos marca y propiedad en un objeto detallado indexado por el número económico
+            $detallesVehiculo[$econ] = [
+                'propiedad' => $owner,
+                'marca' => $marca
             ];
 
-            return response()->json($data);
+            if (stripos($type, 'ligera') !== false) {
+                $ligeras[] = $econ;
+            } elseif (stripos($type, 'pesada') !== false) {
+                $pesadas[] = $econ;
+            }
+        }
 
+        return response()->json([
+            'success' => true,
+            'ligeras' => $ligeras,
+            'pesadas' => $pesadas,
+            'clasificacion' => $clasificacion,
+            'detalles' => $detallesVehiculo, // 3. RETORNAMOS LOS DETALLES
+            'total' => count($ligeras) + count($pesadas),
+        ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -214,6 +222,7 @@ class JourneyController extends Controller
                 'ligeras' => [],
                 'pesadas' => [],
                 'clasificacion' => [],
+                'ownership' => [],
             ], 500);
         }
     }

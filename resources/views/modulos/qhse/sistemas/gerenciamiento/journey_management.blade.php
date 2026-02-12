@@ -408,9 +408,6 @@
                         </button>
                     </div>
                 </div>
-
-
-
                 <div class="form-section">
                     <h3 class="form-section-title">
                         <i class="fas fa-truck-moving"></i>
@@ -851,27 +848,36 @@
                     </div>
                 </div>
 
-                {{-- ZONA DERECHA: INSPECTOR, FECHA Y BOTÓN CERRAR --}}
+                {{-- ZONA DERECHA: ÚLTIMA INSPECCIÓN, FECHA Y BOTÓN CERRAR --}}
                 <div style="display: flex; align-items: center; gap: 15px;">
 
-                    {{-- Bloque de información (Inspector y Fecha) --}}
                     <div class="header-meta-info"
-                        style="display: flex; align-items: center; gap: 15px; color: white; font-size: 13px;">
+                        style="display: flex; align-items: center; color: white; font-size: 13px;">
 
-                        {{-- 1. Nombre del Inspector --}}
+                        {{-- 1. NUEVO: Bloque Última Inspección (A la izquierda de la fecha) --}}
                         <div
-                            style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 6px;">
-                            <i class="fas fa-user-tie" style="color: #ffcc80;"></i>
-                            <span style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"
-                                id="headerNombreConductorLigera">
-                                Nombre Conductor
+                            style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 15px; padding-right: 15px; border-right: 1px solid rgba(255,255,255,0.3);">
+                            {{-- Título pequeñito --}}
+                            <span
+                                style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
+                                Última Inspección
+                            </span>
+                            {{-- El dato (Usamos un ID nuevo para llenarlo con JS) --}}
+                            <span id="headerUltimaInspeccionLigera" style="font-weight: 700; font-size: 13px;">
+                                --/--/----
                             </span>
                         </div>
 
-                        {{-- 2. Fecha de Inspección --}}
-                        <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
-                            <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
-                            <span>{{ date('d/m/Y') }}</span>
+                        {{-- 2. Fecha de Inspección (La de hoy) --}}
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                            <span
+                                style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
+                                Fecha Actual
+                            </span>
+                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                                <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
+                                <span>{{ date('d/m/Y') }}</span>
+                            </div>
                         </div>
 
                     </div>
@@ -888,18 +894,24 @@
                         </button>
                     </div>
                 </div>
+
+
             </div>
 
             <form id="formInspeccionLigera" class="modal-inspeccion-body" enctype="multipart/form-data">
                 <input type="hidden" id="inspeccionUnidadIndexLigera" name="unidad_index">
-                {{-- Input hidden para el conductor --}}
-                <input type="hidden" id="inputNombreConductorLigera" name="nombre_conductor_hidden">
 
                 {{-- CABECERA DE DATOS GENERALES --}}
                 <div class="header-inspeccion-section">
                     <h4 class="section-subtitle-small">DATOS GENERALES DE LA UNIDAD</h4>
 
                     <div class="header-inspeccion-grid">
+                        <div class="form-group">
+                            <label>Nombre del Conductor</label>
+                            <input type="text" id="inputNombreConductorLigera" name="nombre_conductor"
+                                class="form-control" placeholder="Nombre completo" readonly>
+                        </div>
+
                         {{-- 1. No Economico --}}
                         <div class="form-group">
                             <label>No. Económico</label>
@@ -915,17 +927,7 @@
                         {{-- 3. VES / Rentada --}}
                         <div class="form-group">
                             <label>VES / Rentada</label>
-                            <select id="selectEsRentadaLigera" class="form-control" disabled>
-                                <option value="">Seleccione</option>
-                                <option value="no">Propia VES</option>
-                                <option value="si">Rentada</option>
-                            </select>
-                        </div>
-
-                        {{-- 4. Fecha última inspección --}}
-                        <div class="form-group">
-                            <label>Fecha última insp.</label>
-                            <input type="text" id="inputUltimaInspeccionLigera" class="form-control" readonly>
+                            <input type="text" id="inputVesRentadaLigera" class="form-control" readonly>
                         </div>
 
                         {{-- 5. Tanque de Gasolina --}}
@@ -947,8 +949,7 @@
                                     class="fas fa-tachometer-alt"></i></label>
                             <input type="number" name="kilometraje" class="form-control input-highlight" required>
                         </div>
-                        <div class="form-group"></div>
-                        <div class="form-group"></div>
+
                     </div>
                 </div>
 
@@ -1352,29 +1353,6 @@
             </div>
         </div>
     </div>
-    {{-- MODAL PARA USAR CÁMARA --}}
-    <div class="modal-camara" id="modalCamara">
-        <div class="camara-container">
-            <div class="camara-header">
-                <h3><i class="fas fa-camera"></i> Tomar Foto con Cámara</h3>
-                <button type="button" class="btn-cerrar-camara" onclick="cerrarCamara()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="camara-body">
-                <video id="videoCamara" autoplay playsinline></video>
-                <canvas id="canvasCamara" style="display:none;"></canvas>
-                <div class="camara-controls">
-                    <button type="button" class="btn-capturar" onclick="capturarFoto()">
-                        <i class="fas fa-camera"></i> Tomar Foto
-                    </button>
-                    <button type="button" class="btn-cerrar-camara" onclick="cerrarCamara()">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
     {{-- MODAL DE INSPECCIÓN PARA UNIDADES PESADAS --}}
     <div class="modal-overlay" id="modalInspeccionPesada">
         <div class="modal-content">
@@ -1385,27 +1363,38 @@
                     </div>
                 </div>
 
-                {{-- ZONA DERECHA: INSPECTOR, FECHA Y BOTÓN CERRAR (TODO EN UNA FILA) --}}
+                {{-- ZONA DERECHA: ÚLTIMA INSPECCIÓN, FECHA Y BOTÓN CERRAR --}}
                 <div style="display: flex; align-items: center; gap: 15px;">
 
                     {{-- Bloque de información (Inspector y Fecha) --}}
                     <div class="header-meta-info"
-                        style="display: flex; align-items: center; gap: 15px; color: white; font-size: 13px;">
+                        style="display: flex; align-items: center; color: white; font-size: 13px;">
 
-                        {{-- 1. Nombre del Inspector --}}
+                        {{-- 1. NUEVO: Bloque Última Inspección (A la izquierda de la fecha) --}}
                         <div
-                            style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); padding: 5px 10px; border-radius: 6px;">
-                            <i class="fas fa-user-tie" style="color: #ffcc80;"></i>
-                            <span style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"
-                                id="headerNombreConductorPesada">
-                                Nombre Conductor
+                            style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 15px; padding-right: 15px; border-right: 1px solid rgba(255,255,255,0.3);">
+                            {{-- Título pequeñito --}}
+                            <span
+                                style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
+                                Última Inspección
+                            </span>
+                            {{-- El dato (ID ESPECÍFICO PARA PESADA) --}}
+                            <span id="headerUltimaInspeccionPesada" style="font-weight: 700; font-size: 13px;">
+                                --/--/----
                             </span>
                         </div>
 
-                        {{-- 2. Fecha de Inspección --}}
-                        <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
-                            <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
-                            <span>{{ date('d/m/Y') }}</span>
+                        {{-- 2. Fecha de Inspección (La de hoy) --}}
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                            {{-- Título pequeñito --}}
+                            <span
+                                style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
+                                Fecha Actual
+                            </span>
+                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                                <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
+                                <span>{{ date('d/m/Y') }}</span>
+                            </div>
                         </div>
 
                     </div>
@@ -1426,14 +1415,16 @@
 
             <form id="formInspeccionPesada" class="modal-inspeccion-body" enctype="multipart/form-data">
                 <input type="hidden" id="inspeccionUnidadIndexPesada" name="unidad_index">
-                {{-- Input hidden para el conductor --}}
-                <input type="hidden" id="inputNombreConductorPesada" name="nombre_conductor_hidden">
 
                 {{-- CABECERA DE DATOS GENERALES --}}
                 <div class="header-inspeccion-section">
                     <h4 class="section-subtitle-small">DATOS GENERALES DE LA UNIDAD</h4>
-
                     <div class="header-inspeccion-grid">
+                        <div class="form-group">
+                            <label>Nombre del Conductor</label>
+                            <input type="text" id="inputNombreConductorPesada" name="nombre_conductor"
+                                class="form-control" placeholder="Nombre completo" readonly>
+                        </div>
                         {{-- 1. No Economico --}}
                         <div class="form-group">
                             <label>No. Económico</label>
@@ -1449,19 +1440,7 @@
                         {{-- 3. VES / Rentada --}}
                         <div class="form-group">
                             <label>VES / Rentada</label>
-                            <select id="selectEsRentadaPesada" class="form-control" disabled>
-                                <option value="">Seleccione</option>
-                                <option value="no">Propia VES</option>
-                                <option value="si">Rentada</option>
-                            </select>
-                        </div>
-
-
-
-                        {{-- 4. Fecha última inspección --}}
-                        <div class="form-group">
-                            <label>Fecha última insp.</label>
-                            <input type="text" id="inputUltimaInspeccionPesada" class="form-control" readonly>
+                            <input type="text" id="inputVesRentadaPesada" class="form-control" readonly>
                         </div>
 
                         {{-- 5. Tanque de Diesel --}}
@@ -2097,6 +2076,30 @@
                 <button type="button" class="btn-viajes btn-primary" onclick="guardarInspeccionPesada()">
                     <i class="fas fa-save"></i> Guardar Inspección
                 </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- MODAL PARA USAR CÁMARA --}}
+    <div class="modal-camara" id="modalCamara">
+        <div class="camara-container">
+            <div class="camara-header">
+                <h3><i class="fas fa-camera"></i> Tomar Foto con Cámara</h3>
+                <button type="button" class="btn-cerrar-camara" onclick="cerrarCamara()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="camara-body">
+                <video id="videoCamara" autoplay playsinline></video>
+                <canvas id="canvasCamara" style="display:none;"></canvas>
+                <div class="camara-controls">
+                    <button type="button" class="btn-capturar" onclick="capturarFoto()">
+                        <i class="fas fa-camera"></i> Tomar Foto
+                    </button>
+                    <button type="button" class="btn-cerrar-camara" onclick="cerrarCamara()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
