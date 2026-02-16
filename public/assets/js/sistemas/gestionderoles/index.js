@@ -90,9 +90,10 @@ async function loadRoles() {
 }
 
 // Agrega esta función para cargar los permisos
+// Función para cargar los permisos
 async function loadPermissions() {
     try {
-        const response = await fetch('/sistemas/gestionderoles/get-permission', {
+        const response = await fetch('/sistemas/gestionderoles/get-permissions', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -108,12 +109,17 @@ async function loadPermissions() {
         const data = await response.json();
         if (data.success && data.permissions) {
             renderPermissions(data.permissions);
+        } else {
+            console.error('Respuesta sin permisos:', data);
+            throw new Error('La respuesta no contiene permisos');
         }
     } catch (error) {
         console.error('Error al cargar permisos:', error);
         document.getElementById('directPermissionsContainer').innerHTML = `
             <div class="alert alert-danger">
                 Error al cargar los permisos. Intente recargar la página.
+                <br>
+                <small>${error.message}</small>
             </div>
         `;
     }
@@ -147,7 +153,8 @@ function renderPermissions(permissions) {
 // Función para buscar empleados
 async function searchEmployees(query) {
     try {
-        const response = await fetch(`/sistemas/gestionderoles/search-employeesquery=${encodeURIComponent(query)}`, {
+        // CORRECCIÓN: Agregar el signo ? antes de query=
+        const response = await fetch(`/sistemas/gestionderoles/search-employees?query=${encodeURIComponent(query)}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
