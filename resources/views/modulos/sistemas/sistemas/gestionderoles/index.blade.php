@@ -120,7 +120,8 @@
                             <label class="form-label">Foto del Empleado</label>
                             <div class="employee-photo-container">
                                 <div class="photo-preview" id="photoPreview">
-                                    <img id="photoDisplay" src="{{ asset('assets/img/fotouser.png') }}"alt="Foto del empleado">
+                                    <img id="photoDisplay"
+                                        src="{{ asset('assets/img/fotouser.png') }}"alt="Foto del empleado">
                                 </div>
                                 <div class="photo-actions">
                                     <input type="file" id="photoInput" accept="image/*" style="display: none;">
@@ -336,6 +337,13 @@
                                             <span>Gestión de roles</span>
                                             <label class="switch">
                                                 <input type="checkbox" name="permissions[sistemas][gestionderoles]">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="permission-item">
+                                            <span>Gestión de tickets</span>
+                                            <label class="switch">
+                                                <input type="checkbox" name="permissions[sistemas][tickets]">
                                                 <span class="slider"></span>
                                             </label>
                                         </div>

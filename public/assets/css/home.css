@@ -1,378 +1,331 @@
 :root {
-    /* Colores Vinco Energy */
+    /* --- COLORES MARCA --- */
     --naranja: #d67e29;
-    --naranja-claro: #ff9d42;
+    --naranja-hover: #e58932;
+    --naranja-suave: rgba(214, 126, 41, 0.15);
+
     --azul: #334c95;
     --azul-oscuro: #1a2a5f;
+    --azul-medio: #2c4285;
+
     --blanco: #ffffff;
-    --negro: #1e293b;
-    --gris-claro: #f8fafc;
-    --gris-medio: #e2e8f0;
-    --gris-oscuro: #64748b;
-    /* Sombras y Transiciones */
-    --sombra: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --transicion: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --border-radius: 8px;
-    --border-radius-sm: 4px;
+    --texto-principal: #1e293b;
+    --texto-secundario: #64748b;
+    --fondo-app: #f1f5f9;
+
+    /* --- UI CONFIG --- */
+    --header-height: 64px;
+    --sidebar-width: 260px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --sombra-header: 0 2px 10px rgba(0,0,0,0.15);
+    --sombra-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --transicion: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* Base Global */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* RESET BÁSICO */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--gris-claro);
-    color: var(--negro);
-    line-height: 1.6;
-    overflow-x: hidden;
+    font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
+    background-color: var(--fondo-app);
+    color: var(--texto-principal);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
 .dashboard {
     display: flex;
     min-height: 100vh;
-    position: relative;
-    /* Asegura que el contenido se ajuste bajo el header */
-    padding-top: 60px;
-    /* Altura del header para que el contenido no quede debajo */
 }
 
-/* ==================================== */
-/* 1. Header (Estilo simplificado y fijo) */
-/* ==================================== */
+/* =========================================
+   1. HEADER
+   ========================================= */
 .header {
+    height: var(--header-height);
     background-color: var(--azul-oscuro);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    padding: 0 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     position: fixed;
     top: 0;
     width: 100%;
-    height: 60px;
-    /* Altura definida */
-    z-index: 1000;
-}
-
-.logo-container {
+    z-index: 100;
     display: flex;
     align-items: center;
-    gap: 15px;
+    justify-content: space-between;
+    padding: 0 24px;
+    box-shadow: var(--sombra-header);
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Contenedor del Logo + Texto */
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    height: 70px;
+    width: auto;
+    object-fit: contain;
+    /* Descomenta si tu logo es negro y necesitas invertirlo a blanco */
+    /* filter: brightness(0) invert(1); */
+}
+
+/* Estilo del nombre de la compañía (Parte Blanca) */
+.company-name {
+    color: var(--blanco);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    white-space: nowrap; /* Evita que se rompa en dos líneas */
+}
+
+/* Estilo del ERP (Parte Naranja) */
+.erp-text {
+    color: var(--naranja);
+    font-weight: 800; /* Un poco más grueso para resaltar */
+    margin-left: 8px; /* Separación entre Energy y ERP */
+}
+
+/* Botón Móvil */
 .menu-toggle {
     display: none;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--border-radius-sm);
-    background: rgba(255, 255, 255, 0.1);
+    background: transparent;
     border: none;
     color: var(--blanco);
+    font-size: 1.4rem;
     cursor: pointer;
-    transition: var(--transicion);
-    justify-content: center;
-    align-items: center;
-    font-size: 1.1rem;
+    padding: 5px;
 }
 
-.menu-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.logo {
-    width: 70px;
-    /* Tamaño ajustado */
-    height: 45px;
-    /* Tamaño ajustado */
-    background: var(--blanco);
-    border-radius: var(--border-radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    box-shadow: var(--sombra);
-}
-
-.logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.company-name {
-    font-size: 1.3rem;
-    /* Tamaño ajustado */
-    font-weight: 600;
-    color: var(--blanco);
-    letter-spacing: 0.5px;
-}
-
-/* ==================================== */
-/* 2. Sidebar (Menú Principal) */
-/* ==================================== */
+/* =========================================
+   2. SIDEBAR
+   ========================================= */
 .sidebar {
-    width: 280px;
-    /* Ancho más compacto */
+    width: var(--sidebar-width);
     background: linear-gradient(180deg, var(--azul-oscuro) 0%, var(--azul) 100%);
-    padding: 0 0 20px 0;
-    /* Eliminado el padding top, ya que el header es fijo */
     position: fixed;
-    top: 60px;
-    /* Empieza debajo del header */
-    height: calc(100vh - 60px);
-    /* Se ajusta a la altura restante de la pantalla */
-    z-index: 900;
+    top: var(--header-height);
+    bottom: 0;
+    left: 0;
+    z-index: 90;
     overflow-y: auto;
-    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
     transition: var(--transicion);
+    border-right: 1px solid rgba(255,255,255,0.05);
 }
 
-.sidebar::-webkit-scrollbar {
-    width: 5px;
+.sidebar-content {
+    padding: 20px 10px;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
+.nav-group {
+    margin-bottom: 5px;
 }
 
-.area-section {
-    margin-bottom: 8px;
-    /* Espacio reducido */
-}
-
-.area-header {
-    padding: 12px 20px;
-    /* Padding reducido */
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--blanco);
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
+/* Headers del Menú */
+.nav-header {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    border-left: 3px solid var(--naranja);
-    /* Borde más fino */
-    margin: 0 5px;
-    /* Margen reducido */
-    border-radius: var(--border-radius-sm);
-}
-
-.area-header:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.area-header i {
-    transition: transform 0.3s ease;
-    font-size: 12px;
-}
-
-.area-header.active i.fa-chevron-right {
-    transform: rotate(90deg);
-}
-
-.systems-list {
-    list-style: none;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease-in-out;
-    background: rgba(255, 255, 255, 0.05);
-    margin: 0 5px;
-    border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
-}
-
-.systems-list.active {
-    max-height: 500px;
-    /* Valor fijo grande para la transición */
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.system-item {
-    padding: 10px 20px 10px 45px;
-    /* Padding ajustado */
+    padding: 12px 15px;
     cursor: pointer;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+}
+
+.nav-header:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--blanco);
+}
+
+.nav-header-title {
     display: flex;
     align-items: center;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-    border-left: 3px solid transparent;
-    margin: 2px 5px;
-    border-radius: var(--border-radius-sm);
-    transition: var(--transicion);
-    animation: slideInFromLeft 0.3s ease-out;
+    gap: 12px;
 }
 
-.system-item:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: var(--blanco);
-}
-
-.system-item.active {
-    background: rgba(255, 255, 255, 0.25);
-    font-weight: 600;
-    color: var(--blanco);
-    border-left: 3px solid var(--naranja);
-}
-
-.system-icon {
-    margin-right: 10px;
-    /* Espacio reducido */
-    color: rgba(255, 255, 255, 0.6);
+.nav-header-title i {
     width: 20px;
     text-align: center;
-    font-size: 14px;
+    color: var(--naranja);
 }
 
-.system-item.active .system-icon,
-.system-item:hover .system-icon {
-    color: var(--naranja-claro);
+.arrow-icon {
+    font-size: 0.75rem;
+    transition: transform 0.3s ease;
+    opacity: 0.7;
 }
 
-/* ==================================== */
-/* 3. Contenido Principal */
-/* ==================================== */
+/* Listas internas */
+.nav-list {
+    list-style: none;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-sm);
+    margin-top: 2px;
+}
+
+/* Items individuales */
+.nav-item {
+    padding: 10px 15px 10px 48px;
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.nav-item .nav-icon {
+    margin-right: 10px;
+    font-size: 0.9rem;
+    width: 18px;
+    text-align: center;
+}
+
+.nav-item:hover {
+    color: var(--blanco);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.nav-item.active {
+    color: var(--blanco);
+    background: linear-gradient(90deg, rgba(214, 126, 41, 0.2) 0%, transparent 100%);
+    border-left-color: var(--naranja);
+    font-weight: 600;
+}
+
+.nav-item.active .nav-icon {
+    color: var(--naranja);
+}
+
+/* =========================================
+   3. CONTENIDO PRINCIPAL
+   ========================================= */
 .main-content {
+    margin-left: var(--sidebar-width);
+    margin-top: var(--header-height);
     flex: 1;
-    margin-left: 280px;
-    /* Ajustado al nuevo ancho del sidebar */
-    padding: 20px;
-    /* Padding general para el contenido */
-    min-height: calc(100vh - 60px);
+    padding: 30px;
+    width: 100%;
 }
 
+.content-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
-/* ==================================== */
-/* 6. Estilo de Estado Vacío (Empty State) */
-/* ==================================== */
-.empty-state-container {
+/* =========================================
+   4. EMPTY STATE
+   ========================================= */
+.empty-state-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 60vh;
+}
+
+.empty-state-card {
+    background: var(--blanco);
+    padding: 50px 30px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--sombra-card);
     text-align: center;
-    /* Ocupa el espacio disponible en main-content */
-    min-height: calc(100vh - 100px);
-    padding: 40px 20px;
-    background-color: var(--blanco);
-    border-radius: var(--border-radius);
-    box-shadow: var(--sombra);
+    max-width: 450px;
+    width: 100%;
 }
 
-.empty-state-content {
-    max-width: 400px;
-    padding: 30px;
-}
-
-.empty-state-icon {
-    color: var(--gris-medio);
-    font-size: 3rem;
-    margin-bottom: 20px;
-    /* Fondo circular suave, simulando el estilo de la imagen */
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    background-color: var(--naranja-suave);
+    border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background-color: rgb(80, 80, 80); /* Gris claro transparente */
+    margin-bottom: 25px;
 }
 
-.empty-state-icon i {
-    font-size: 2.5rem;
+.icon-circle i {
+    font-size: 2.2rem;
+    color: var(--naranja);
 }
 
-.empty-state-title {
-    font-size: 1.35rem;
-    font-weight: 600;
-    color: var(--negro);
-    margin-bottom: 10px;
+.empty-title {
+    font-size: 1.4rem;
+    color: var(--azul-oscuro);
+    margin-bottom: 15px;
+    font-weight: 700;
 }
 
-.empty-state-text {
+.empty-description {
+    color: var(--texto-secundario);
     font-size: 1rem;
-    color: var(--gris-oscuro);
-    line-height: 1.5;
+    line-height: 1.6;
 }
-/* ==================================== */
-/* 4. Responsive Design */
-/* ==================================== */
 
-/* Tablet y Móvil (<= 768px) */
+/* =========================================
+   5. RESPONSIVE
+   ========================================= */
 @media (max-width: 768px) {
-    .dashboard {
-        padding-top: 55px;
-        /* Ajuste de altura del header en móvil */
+    .menu-toggle {
+        display: block;
     }
 
     .header {
-        height: 55px;
+        padding: 0 15px;
+    }
+
+    .company-name {
+        font-size: 1.1rem; /* Texto un poco más pequeño en móvil */
     }
 
     .sidebar {
-        width: 280px;
         transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        z-index: 950;
-        top: 55px;
-        height: calc(100vh - 55px);
-        box-shadow: 8px 0 15px rgba(0, 0, 0, 0.3);
+        width: 280px;
+        box-shadow: 5px 0 15px rgba(0,0,0,0.3);
     }
 
-    .sidebar.active {
+    .sidebar.open {
         transform: translateX(0);
     }
 
     .main-content {
         margin-left: 0;
-        /* El contenido ocupa todo el ancho */
         padding: 15px;
     }
 
-    .menu-toggle {
-        display: flex;
-        /* Muestra el botón de menú */
-    }
-
-    .company-name {
-        font-size: 1.1rem;
-    }
-}
-
-/* Overlay para móvil */
-.sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 899;
-    display: none;
-    transition: opacity 0.3s ease;
-    opacity: 0;
-}
-
-.sidebar-overlay.active {
-    display: block;
-    opacity: 1;
-}
-
-/* ==================================== */
-/* 5. Animaciones */
-/* ==================================== */
-
-@keyframes slideInFromLeft {
-    from {
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 80;
         opacity: 0;
-        transform: translateX(-10px);
+        visibility: hidden;
+        transition: opacity 0.3s;
+        backdrop-filter: blur(2px);
     }
 
-    to {
+    .sidebar-overlay.show {
         opacity: 1;
-        transform: translateX(0);
+        visibility: visible;
     }
 }

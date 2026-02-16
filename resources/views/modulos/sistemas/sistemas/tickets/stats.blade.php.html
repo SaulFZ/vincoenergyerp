@@ -13,27 +13,29 @@
 <style>
 /* Variables y Colores (PALETA VERDE OLIVA, DOMINANCIA BLANCA) */
 :root {
-    --color-primary-accent: #728156;    /* Verde Oliva (Acento principal) */
-    --color-primary-dark: #5B6846;      /* Verde Musgo Oscuro (Hover, Thead BG) */
-    --color-primary-light: #E8EDE4;     /* Verde muy pálido/Grisáceo (Bordes, Separadores) */
-    --color-primary-softest: #F8FBF6;   /* Fondo de página (Blanco/Verde muy claro) */
+    --color-primary-accent: #5e9188;
+    --color-primary-dark: #3e5954;
+    --color-primary-medium: #253342;
+    --color-primary-softest: #ffffff;
+    /* --- Textos y Neutrales (Basados en la nueva paleta) --- */
+    /* Mapeado desde: #232226 */
+    --color-text-main: #232226;
+    --color-text-secondary: #253342;
+    --color-secondary-accent: #DBCF91;
+    --color-tertiary-accent: #B85F5F;
+    --color-green-soft: #85C285;
 
-    --color-secondary-accent: #DBCF91;  /* Beige/Arena (Secundario/Advertencia) */
-    --color-tertiary-accent: #B85F5F;   /* Rojo Tierra (Error/Peligro) */
-    --color-green-soft: #85C285;        /* Verde suave para éxito (diferente al acento) */
-
-    --color-background: #FFFFFF;        /* Blanco Puro (DOMINANTE) */
-    --color-text-dark: #3F4A38;          /* Verde Oscuro/Casi Negro para texto principal */
-    --color-text-soft: #8D9B82;          /* Verde Grisáceo suave para texto secundario */
-    --color-shadow: rgba(0, 0, 0, 0.12); /* Sombra más pronunciada */
+    --color-background: #FFFFFF;
+    --color-text-dark: #3F4A38;
+    --color-text-soft: #8D9B82;
+    --color-shadow: rgba(0, 0, 0, 0.12);
 
     /* Colores de ESTADO (Más vibrantes) */
-    --status-new: #4CAF50;          /* Verde vibrante (Nuevo) */
-    --status-waiting: #FF9800;      /* Naranja vibrante (En Espera) */
-    --status-open: #2196F3;         /* Azul vibrante (Abierto) */
-    --status-onhold: #F44336;       /* Rojo vibrante (Por Concluir/Bloqueado) */
-    --status-done: #9C27B0;         /* Púrpura vibrante (Realizado) */
-
+    --status-new: #4CAF50;
+    --status-waiting: #FF9800;
+    --status-open: #2196F3;
+    --status-onhold: #F44336;
+    --status-done: #9C27B0;
     --status-red: var(--status-onhold); /* Usamos el color de "Por Concluir" para Prioridad Alta */
 }
 

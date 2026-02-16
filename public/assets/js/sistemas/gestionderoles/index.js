@@ -27,7 +27,7 @@ function clearDirectPermissionsCheckboxes() {
 // Función para cargar usuarios desde el backend
 async function loadUsers() {
     try {
-        const response = await fetch('/sistemas/roles', {
+        const response = await fetch('/sistemas/gestionderoles/roles', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -59,7 +59,7 @@ async function loadUsers() {
 // Función para cargar roles desde el backend
 async function loadRoles() {
     try {
-        const response = await fetch('get-roles', {
+        const response = await fetch('/sistemas/gestionderoles/get-roles', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -92,7 +92,7 @@ async function loadRoles() {
 // Agrega esta función para cargar los permisos
 async function loadPermissions() {
     try {
-        const response = await fetch('get-permissions', {
+        const response = await fetch('/sistemas/gestionderoles/get-permission', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -147,7 +147,7 @@ function renderPermissions(permissions) {
 // Función para buscar empleados
 async function searchEmployees(query) {
     try {
-        const response = await fetch(`search-employees?query=${encodeURIComponent(query)}`, {
+        const response = await fetch(`/sistemas/gestionderoles/search-employeesquery=${encodeURIComponent(query)}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -702,7 +702,7 @@ async function deleteUser(userId) {
 
     if (result.isConfirmed) {
         try {
-            const response = await fetch(`/sistemas/roles/${userId}`, {
+            const response = await fetch(`/sistemas/gestionderoles/roles/${userId}`, {
                 method: 'DELETE',
                 headers: {
                     'Accept': 'application/json',
@@ -1010,7 +1010,7 @@ if (typeof $ !== 'undefined') {
 
             // Si estamos creando y no editando, la contraseña es requerida
             if (!editingUserId && !$('#password').val().trim()) {
-                 requiredFields.push('password');
+                requiredFields.push('password');
             }
 
             let hasValidationErrors = false;
@@ -1023,8 +1023,8 @@ if (typeof $ !== 'undefined') {
                 }
             }
             if (!editingUserId && !$('#password').val().trim()) {
-                 $('#password').addClass('is-invalid');
-                 hasValidationErrors = true;
+                $('#password').addClass('is-invalid');
+                hasValidationErrors = true;
             }
 
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1090,7 +1090,9 @@ if (typeof $ !== 'undefined') {
                 }
             });
 
-            const url = editingUserId ? `/sistemas/roles/${editingUserId}` : '/sistemas/roles';
+            const url = editingUserId
+                ? `/sistemas/gestionderoles/roles/${editingUserId}`
+                : '/sistemas/gestionderoles/roles';
             const method = editingUserId ? 'PUT' : 'POST';
 
             $.ajax({

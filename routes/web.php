@@ -13,8 +13,12 @@ use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\HistoryController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
+
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
+use App\Http\Controllers\Sistemas\Tickets\TicketController;
+
+
 use Illuminate\Support\Facades\Route;
 
 // ===================================================
@@ -86,7 +90,73 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:administracion')
         ->name('modulo.administracion');
 
-    // routes/web.php
+
+// ===================================================
+// MÓDULO: SISTEMAS Y SUBSISTEMAS
+// ===================================================
+    Route::prefix('sistemas')
+        ->middleware('check.permission:sistemas')
+        ->group(function () {
+
+            // ===================================================
+            // GRUPO: GESTIÓN DE ROLES
+            // Prefijo: /sistemas/gestionderoles
+            // ===================================================
+            Route::prefix('gestionderoles')->group(function () {
+
+                // 1. Redirección automática:
+                // Si el usuario entra a /sistemas/gestionderoles,
+                // lo mandamos a la lista principal de roles.
+                Route::get('/', function () {
+                    return redirect()->route('sistemas.roles.index');
+                })->name('sistemas.gestionderoles')
+                ->middleware('check.permission:sistemas,gestionderoles');
+
+                // --- RUTAS DE RECURSOS (CRUD) ---
+                Route::resource('roles', RoleController::class)
+                    ->except(['show'])
+                    ->names([
+                        'index'   => 'sistemas.roles.index',
+                        'create'  => 'sistemas.roles.create',
+                        'store'   => 'sistemas.roles.store',
+                        'edit'    => 'sistemas.roles.edit',
+                        'update'  => 'sistemas.roles.update',
+                        'destroy' => 'sistemas.roles.destroy',
+                    ]);
+
+                // --- RUTAS AUXILIARES (RoleController) ---
+                Route::controller(RoleController::class)->group(function () {
+                    Route::get('get-permissions', 'getPermissions')->name('sistemas.roles.permissions');
+                    Route::get('get-roles', 'getRoles')->name('sistemas.roles.list');
+                    Route::get('search-employees', 'searchEmployees')->name('sistemas.roles.search');
+                });
+            });
+
+
+            // ---------------------------------------------------
+        // SUBSISTEMA 2: GESTIÓN DE TICKETS (SOPORTE)
+        // ---------------------------------------------------
+        Route::prefix('tickets')->group(function () {
+
+            // Redirección automática a la vista principal de tickets
+            Route::get('/', function () {
+                return redirect()->route('tickets.index');
+            })->name('sistemas.tickets')
+              ->middleware('check.permission:sistemas,tickets');
+
+            // Rutas gestionadas por TicketController
+            // Nota: He usado 'index' para el dashboard de soporte
+            Route::controller(TicketController::class)->group(function () {
+                Route::get('/management_tickets', 'index')->name('tickets.index');
+
+            });
+        });
+        });
+
+
+    // ===================================================
+    // MÓDULO: SISTEMAS Y SUBSISTEMAS
+    // ===================================================
     Route::prefix('qhse')
         ->middleware('check.permission:qhse')
         ->group(function () {
@@ -102,7 +172,9 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // lo mandamos forzosamente a /qhse/gerenciamiento/journey
                 Route::get('/', function () {
                     return redirect()->route('gerenciamiento.journey');
-                })->name('qhse.gerenciamiento');
+                })
+                    ->name('qhse.gerenciamiento')
+                    ->middleware('check.permission:qhse,gerenciamiento');
 
                 // --- RUTAS PRINCIPALES (JourneyController) ---
                 Route::controller(JourneyController::class)->group(function () {
@@ -118,6 +190,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
             });
         });
+
+
     // ===================================================
     // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
     // ===================================================
@@ -247,41 +321,6 @@ Route::middleware(['web', 'auth'])->group(function () {
             })
                 ->middleware('check.permission:recursoshumanos,altasempleados')
                 ->name('recursoshumanos.altasempleados');
-        });
-
-    // ===================================================
-    // MÓDULO: SISTEMAS Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('sistemas')
-        ->middleware('check.permission:sistemas')
-        ->group(function () {
-            // Gestión de roles
-            Route::get('/gestionderoles', function () {
-                return view('modulos.sistemas.sistemas.gestionderoles.index');
-            });
-
-            // CRUD de roles (RoleController)
-            Route::resource('roles', RoleController::class)
-                ->except(['show'])
-                ->names([
-                    'index'   => 'sistemas.roles.index',
-                    'create'  => 'sistemas.roles.create',
-                    'store'   => 'sistemas.roles.store',
-                    'edit'    => 'sistemas.roles.edit',
-                    'update'  => 'sistemas.roles.update',
-                    'destroy' => 'sistemas.roles.destroy',
-                ]);
-
-            // Ruta para obtener permisos
-            Route::get('get-permissions', [RoleController::class, 'getPermissions']);
-
-            // Ruta para obtener roles
-            Route::get('get-roles', [RoleController::class, 'getRoles']);
-
-            Route::get('search-employees', [
-                RoleController::class,
-                'searchEmployees',
-            ]);
         });
 
     // ===================================================
