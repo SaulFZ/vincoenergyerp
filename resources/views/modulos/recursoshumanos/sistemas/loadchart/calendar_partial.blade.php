@@ -629,7 +629,9 @@
                     </div>
                 </div>
 
-                <div class="form-actions" style="@if (isset($isForModal) && $isForModal) display: none; @endif">
+                <div class="form-actions" style="@if (isset($isForModal) &&
+                        $isForModal &&
+                        !\App\Helpers\PermissionHelper::hasDirectPermission('editar_loadchart_empleado')) display: none; @endif">
                     <button class="btn btn-outline" id="cancel-activity">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
