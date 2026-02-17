@@ -16,8 +16,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Yasumi\Yasumi;
 
 class CalendarController extends Controller
@@ -63,7 +61,7 @@ class CalendarController extends Controller
             ->where('month_and_year', $monthYear)
             ->first();
 
-        $employeeActivities = $monthlyLog ? $monthlyLog->daily_activities : [];
+        $employeeActivities   = $monthlyLog ? $monthlyLog->daily_activities : [];
         $totalRestDaysInMonth = 0;
         foreach ($employeeActivities as $activity) {
             if (($activity['activity_type'] ?? null) === 'D') {
@@ -125,18 +123,18 @@ class CalendarController extends Controller
         // Generar días del calendario
         $mandatoryHolidays = $this->getMandatoryHolidays($currentYear);
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $date              = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
-            $isHoliday         = isset($mandatoryHolidays[$date]);
-            $holidayName       = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $date            = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
+            $isHoliday       = isset($mandatoryHolidays[$date]);
+            $holidayName     = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
             $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
 
             $calendarDays[] = [
-                'day'                  => $i,
-                'current_month'        => true,
-                'date'                 => $date,
-                'is_holiday'           => $isHoliday,
-                'holiday_name'         => $holidayName,
-                'holiday_icon_type'    => $holidayIconType,
+                'day'                => $i,
+                'current_month'      => true,
+                'date'               => $date,
+                'is_holiday'         => $isHoliday,
+                'holiday_name'       => $holidayName,
+                'holiday_icon_type'  => $holidayIconType,
                 'is_payroll_start_1' => ($fortnightlyConfig && $fortnightlyConfig->q1_start->format('Y-m-d') == $date),
                 'is_payroll_end_1'   => ($fortnightlyConfig && $fortnightlyConfig->q1_end->format('Y-m-d') == $date),
                 'is_payroll_start_2' => ($fortnightlyConfig && $fortnightlyConfig->q2_start->format('Y-m-d') == $date),
@@ -223,19 +221,19 @@ class CalendarController extends Controller
         // --- Solo días del mes actual ---
         $mandatoryHolidays = $this->getMandatoryHolidays($currentYear);
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $date              = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
-            $isHoliday         = isset($mandatoryHolidays[$date]);
-            $holidayName       = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
+            $date            = date('Y-m-d', mktime(0, 0, 0, $currentMonth, $i, $currentYear));
+            $isHoliday       = isset($mandatoryHolidays[$date]);
+            $holidayName     = $isHoliday ? $mandatoryHolidays[$date]['name'] : null;
             $holidayIconType = $isHoliday ? $mandatoryHolidays[$date]['icon_type'] : null;
 
             $dayData = [
-                'day'                  => $i,
-                'current_month'        => true,
-                'date'                 => $date,
-                'is_holiday'           => $isHoliday,
-                'holiday_name'         => $holidayName,
-                'holiday_icon_type'    => $holidayIconType,
-                'is_today'             => $date == date('Y-m-d'),
+                'day'                => $i,
+                'current_month'      => true,
+                'date'               => $date,
+                'is_holiday'         => $isHoliday,
+                'holiday_name'       => $holidayName,
+                'holiday_icon_type'  => $holidayIconType,
+                'is_today'           => $date == date('Y-m-d'),
                 'is_payroll_start_1' => false,
                 'is_payroll_end_1'   => false,
                 'is_payroll_start_2' => false,
@@ -267,9 +265,9 @@ class CalendarController extends Controller
     public function getEmployeeBalancesAjax(Request $request)
     {
         $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
-        $month = $request->input('month', date('n'));
-        $year = $request->input('year', date('Y'));
-        $monthYear = sprintf('%04d-%02d', $year, $month);
+        $month      = $request->input('month', date('n'));
+        $year       = $request->input('year', date('Y'));
+        $monthYear  = sprintf('%04d-%02d', $year, $month);
 
         $employee = Employee::find($employeeId);
 
@@ -284,7 +282,7 @@ class CalendarController extends Controller
             ->where('month_and_year', $monthYear)
             ->first();
 
-        $employeeActivities = $monthlyLog ? $monthlyLog->daily_activities : [];
+        $employeeActivities   = $monthlyLog ? $monthlyLog->daily_activities : [];
         $totalRestDaysInMonth = 0;
         foreach ($employeeActivities as $activity) {
             if (($activity['activity_type'] ?? null) === 'D') {
@@ -293,10 +291,9 @@ class CalendarController extends Controller
         }
         // -----------------------------------------------------------------
 
-
         return response()->json([
-            'success'      => true,
-            'vacationDays' => $vacationBalance->vacation_days_available ?? 0,
+            'success'              => true,
+            'vacationDays'         => $vacationBalance->vacation_days_available ?? 0,
             'totalRestDaysInMonth' => $totalRestDaysInMonth,
         ]);
     }
@@ -333,13 +330,13 @@ class CalendarController extends Controller
     {
         // 1. Buscar todos los logs del empleado que tengan actividad de servicio.
         // Optimizamos buscando solo los logs que incluyen el mes de la fecha real de servicio O el mes de la actividad actual.
-        $realDateMonthYear = Carbon::parse($serviceRealDate)->format('Y-m');
+        $realDateMonthYear     = Carbon::parse($serviceRealDate)->format('Y-m');
         $activityDateMonthYear = Carbon::parse($currentActivityDate)->format('Y-m');
 
         $monthlyLogs = EmployeeMonthlyWorkLog::where('employee_id', $employeeId)
             ->where(function ($query) use ($realDateMonthYear, $activityDateMonthYear) {
                 $query->where('month_and_year', $realDateMonthYear)
-                      ->orWhere('month_and_year', $activityDateMonthYear);
+                    ->orWhere('month_and_year', $activityDateMonthYear);
             })
             ->get();
 
@@ -348,7 +345,7 @@ class CalendarController extends Controller
             foreach ($log->daily_activities as $date => $activity) {
                 // Si encontramos un servicio en un día diferente al que estamos guardando, lo validamos.
                 if ($date !== $currentActivityDate && ($activity['services_list'] ?? [])) {
-                    $existingService = $activity['services_list'][0];
+                    $existingService  = $activity['services_list'][0];
                     $existingRealDate = $existingService['service_real_date'] ?? null;
 
                     if ($existingRealDate === $serviceRealDate) {
@@ -361,7 +358,6 @@ class CalendarController extends Controller
         return false;
     }
 
-
     /**
      * Guarda una actividad diaria con los nuevos campos.
      */
@@ -370,7 +366,33 @@ class CalendarController extends Controller
         DB::beginTransaction();
         try {
             $user = Auth::user();
-            $employee = Employee::find($user->employee_id);
+
+            // 🔴 ANTES (El error): Solo buscaba al usuario logueado
+            // $employee = Employee::find($user->employee_id);
+
+            // 🟢 AHORA (La corrección):
+            // Si viene un 'employee_id' en el request (desde el modal), úsalo.
+            // Si no, usa el del usuario logueado (caso "Mi Calendario").
+            $targetEmployeeId = $request->input('employee_id') ?? $user->employee_id;
+
+           // Si estoy editando a alguien que no soy yo...
+            if ($targetEmployeeId != $user->employee_id) {
+                // Validar si tengo permiso de editar o si soy su supervisor/aprobador
+                $hasPermission = \App\Models\RecursosHumanos\LoadChart\LoadChartAssignment::where('employee_id', $targetEmployeeId)
+                    ->where(function ($q) use ($user) {
+                        $q->where('reviewer_id', $user->id)
+                            ->orWhere('approver_id', $user->id);
+                    })->exists();
+
+                // O usa tu helper de permisos global si tienes uno para "editar cualquier calendario"
+                if (! $hasPermission && ! \App\Helpers\PermissionHelper::hasDirectPermission('editar_loadchart_empleado')) {
+                    return response()->json(['success' => false, 'message' => 'No tienes permiso para editar este calendario.'], 403);
+                }
+            }
+            $employee = Employee::find($targetEmployeeId);
+            if (! $employee) {
+                return response()->json(['success' => false, 'message' => 'Empleado no encontrado.'], 404);
+            }
             $monthYear = Carbon::create($request->displayed_year, $request->displayed_month, 1)->format('Y-m');
 
             $monthlyLog = EmployeeMonthlyWorkLog::firstOrCreate(
@@ -383,46 +405,46 @@ class CalendarController extends Controller
             $isWellActivity = ($request->activity_type === 'P');
 
             // Verificar estados existentes
-            $existingFoodBonus = $activityData['food_bonuses'][0] ?? null;
+            $existingFoodBonus  = $activityData['food_bonuses'][0] ?? null;
             $existingFieldBonus = $activityData['field_bonuses'][0] ?? null;
-            $existingService = $activityData['services_list'][0] ?? null;
+            $existingService    = $activityData['services_list'][0] ?? null;
 
             // Estados de bloqueo (solo approved y reviewed mantienen el estado)
-            $foodBonusLocked = $existingFoodBonus && in_array(strtolower($existingFoodBonus['status'] ?? ''), ['approved', 'reviewed']);
+            $foodBonusLocked  = $existingFoodBonus && in_array(strtolower($existingFoodBonus['status'] ?? ''), ['approved', 'reviewed']);
             $fieldBonusLocked = $existingFieldBonus && in_array(strtolower($existingFieldBonus['status'] ?? ''), ['approved', 'reviewed']);
-            $serviceLocked = $existingService && in_array(strtolower($existingService['status'] ?? ''), ['approved', 'reviewed']);
+            $serviceLocked    = $existingService && in_array(strtolower($existingService['status'] ?? ''), ['approved', 'reviewed']);
 
             if ($request->has('activity_type')) {
                 $activityType = $request->activity_type ?? 'N';
 
                 // Si cambia la actividad principal, resetear a under_review
                 if (($activityData['activity_type'] ?? '') !== $activityType) {
-                    $activityData['activity_status'] = 'under_review';
+                    $activityData['activity_status']  = 'under_review';
                     $activityData['rejection_reason'] = null;
                 }
 
-                $activityData['activity_type'] = $activityType;
+                $activityData['activity_type']        = $activityType;
                 $activityData['activity_description'] = $this->getActivityDescription($activityType);
-                $activityData['commissioned_to'] = $request->commissioned_to;
-                $activityData['well_name'] = $request->well_name;
-                $activityData['has_service_bonus'] = $request->has_service_bonus;
+                $activityData['commissioned_to']      = $request->commissioned_to;
+                $activityData['well_name']            = $request->well_name;
+                $activityData['has_service_bonus']    = $request->has_service_bonus;
 
                 // --- NUEVOS CAMPOS DE VIAJE ---
                 $activityData['travel_destination'] = $request->travel_destination;
-                $activityData['travel_reason'] = $request->travel_reason;
+                $activityData['travel_reason']      = $request->travel_reason;
                 // --- FIN NUEVOS CAMPOS DE VIAJE ---
 
                 // Limpiar bonos/servicios si la actividad principal no es 'P' y no están bloqueados
-                if (!$isWellActivity) {
+                if (! $isWellActivity) {
                     $activityData['has_service_bonus'] = 'no';
 
-                    if (!$foodBonusLocked) {
+                    if (! $foodBonusLocked) {
                         $activityData['food_bonuses'] = [];
                     }
-                    if (!$fieldBonusLocked) {
+                    if (! $fieldBonusLocked) {
                         $activityData['field_bonuses'] = [];
                     }
-                    if (!$serviceLocked) {
+                    if (! $serviceLocked) {
                         $activityData['services_list'] = [];
                     }
                 }
@@ -433,24 +455,24 @@ class CalendarController extends Controller
                 if ($request->filled('food_bonus_number')) {
                     $meal = Meal::where('meal_number', $request->food_bonus_number)->first();
                     if ($meal) {
-                        $newStatus = 'under_review';
+                        $newStatus          = 'under_review';
                         $newRejectionReason = null;
 
                         if ($foodBonusLocked && $existingFoodBonus) {
-                            $newStatus = $existingFoodBonus['status'];
+                            $newStatus          = $existingFoodBonus['status'];
                             $newRejectionReason = $existingFoodBonus['rejection_reason'] ?? null;
                         }
 
                         $activityData['food_bonuses'] = [[
-                            'bonus_type' => 'Bono de Comida',
-                            'num_daily' => (int) $meal->meal_number,
-                            'daily_amount' => (float) $meal->amount,
-                            'currency' => 'MXN',
-                            'status' => $newStatus,
+                            'bonus_type'       => 'Bono de Comida',
+                            'num_daily'        => (int) $meal->meal_number,
+                            'daily_amount'     => (float) $meal->amount,
+                            'currency'         => 'MXN',
+                            'status'           => $newStatus,
                             'rejection_reason' => $newRejectionReason,
                         ]];
                     }
-                } else if (!$foodBonusLocked) {
+                } else if (! $foodBonusLocked) {
                     $activityData['food_bonuses'] = [];
                 }
             }
@@ -466,34 +488,34 @@ class CalendarController extends Controller
                         ->where('employee_category', $employeeBonusCategory) // 👈 Validar que el bono sea del puesto
                         ->first();
 
-                    if (!$fieldBonus && !$fieldBonusLocked) {
+                    if (! $fieldBonus && ! $fieldBonusLocked) {
                         // Si el bono no existe para su categoría (y no estaba previamente aprobado/revisado)
-                         DB::rollback();
-                         return response()->json([
-                             'success' => false,
-                             'message' => "El bono de campo seleccionado no es válido para su puesto ($employeeBonusCategory).",
-                         ], 422);
+                        DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "El bono de campo seleccionado no es válido para su puesto ($employeeBonusCategory).",
+                        ], 422);
                     }
 
                     if ($fieldBonus) {
-                        $newStatus = 'under_review';
+                        $newStatus          = 'under_review';
                         $newRejectionReason = null;
 
                         if ($fieldBonusLocked && $existingFieldBonus) {
-                            $newStatus = $existingFieldBonus['status'];
+                            $newStatus          = $existingFieldBonus['status'];
                             $newRejectionReason = $existingFieldBonus['rejection_reason'] ?? null;
                         }
 
                         $activityData['field_bonuses'] = [[
                             'bonus_identifier' => $fieldBonus->bonus_identifier,
-                            'bonus_type' => $fieldBonus->bonus_type,
-                            'daily_amount' => (float) $fieldBonus->amount,
-                            'currency' => $fieldBonus->currency,
-                            'status' => $newStatus,
+                            'bonus_type'       => $fieldBonus->bonus_type,
+                            'daily_amount'     => (float) $fieldBonus->amount,
+                            'currency'         => $fieldBonus->currency,
+                            'status'           => $newStatus,
                             'rejection_reason' => $newRejectionReason,
                         ]];
                     }
-                } else if (!$fieldBonusLocked) {
+                } else if (! $fieldBonusLocked) {
                     $activityData['field_bonuses'] = [];
                 }
             }
@@ -510,14 +532,14 @@ class CalendarController extends Controller
                     }
 
                     if ($service || $serviceLocked) {
-                        $newStatus = 'under_review';
+                        $newStatus          = 'under_review';
                         $newRejectionReason = null;
-                        $realDateToSave = $request->service_real_date; // Valor por defecto del request
+                        $realDateToSave     = $request->service_real_date; // Valor por defecto del request
 
                         $serviceDataToUse = $service ?? $existingService;
 
                         if ($serviceLocked && $existingService) {
-                            $newStatus = $existingService['status'];
+                            $newStatus          = $existingService['status'];
                             $newRejectionReason = $existingService['rejection_reason'] ?? null;
 
                             // Si está bloqueado, usamos el valor que vino del JS
@@ -527,7 +549,7 @@ class CalendarController extends Controller
                         // ====================================================================
                         // ⚠️ NUEVA LÓGICA DE VALIDACIÓN DE NEGOCIO (service_real_date)
                         // ====================================================================
-                        if ($request->filled('service_real_date') && !$serviceLocked) {
+                        if ($request->filled('service_real_date') && ! $serviceLocked) {
                             // 1. Chequear si la fecha real es diferente a la fecha de la actividad actual
                             $isDateChanged = $realDateToSave !== $request->date;
 
@@ -549,18 +571,18 @@ class CalendarController extends Controller
                         if ($serviceDataToUse) {
                             $activityData['services_list'] = [[
                                 'service_identifier' => $serviceDataToUse['identifier'] ?? $serviceDataToUse['service_identifier'],
-                                'service_performed' => $serviceDataToUse['service_performed'],
-                                'service_name' => $serviceDataToUse['service_description'] ?? $serviceDataToUse['service_name'],
-                                'amount' => (float) ($serviceDataToUse['amount']),
-                                'currency' => $serviceDataToUse['currency'],
-                                'status' => $newStatus,
-                                'rejection_reason' => $newRejectionReason,
+                                'service_performed'  => $serviceDataToUse['service_performed'],
+                                'service_name'       => $serviceDataToUse['service_description'] ?? $serviceDataToUse['service_name'],
+                                'amount'             => (float) ($serviceDataToUse['amount']),
+                                'currency'           => $serviceDataToUse['currency'],
+                                'status'             => $newStatus,
+                                'rejection_reason'   => $newRejectionReason,
                                 // 🥇 CAMPO ALMACENADO FINAL
-                                'service_real_date' => $realDateToSave,
+                                'service_real_date'  => $realDateToSave,
                             ]];
                         }
                     }
-                } else if (!$serviceLocked) {
+                } else if (! $serviceLocked) {
                     // Si no se quiere servicio y no está bloqueado, se limpia
                     $activityData['services_list'] = [];
                 }
@@ -569,11 +591,11 @@ class CalendarController extends Controller
             // El resto del código se mantiene igual...
 
             $isAnythingLeft = ($activityData['activity_type'] ?? 'N') !== 'N' ||
-            !empty($activityData['food_bonuses']) ||
-            !empty($activityData['field_bonuses']) ||
-            !empty($activityData['services_list']);
+            ! empty($activityData['food_bonuses']) ||
+            ! empty($activityData['field_bonuses']) ||
+            ! empty($activityData['services_list']);
 
-            if (!$isAnythingLeft) {
+            if (! $isAnythingLeft) {
                 $monthlyLog->removeDailyActivity($request->date);
                 $monthlyLog->save();
                 DB::commit();
@@ -581,7 +603,7 @@ class CalendarController extends Controller
             }
 
             if (empty($monthlyLog->getDailyActivity($request->date))) {
-                $activityData['date'] = $request->date;
+                $activityData['date']                  = $request->date;
                 $activityData['payroll_period_marker'] = $this->determinePayrollPeriodMarker($request->date, $request->displayed_month, $request->displayed_year);
             }
 
@@ -594,7 +616,7 @@ class CalendarController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Actividad guardada exitosamente',
-                'data' => $activityData,
+                'data'    => $activityData,
             ]);
 
         } catch (\Exception $e) {
@@ -602,7 +624,7 @@ class CalendarController extends Controller
             // 💡 Log::error mejorado para incluir más contexto del error
             Log::error('Error al guardar actividad (saveActivity): ' . $e->getMessage(), [
                 'request_data' => $request->all(),
-                'trace' => $e->getTraceAsString()
+                'trace'        => $e->getTraceAsString(),
             ]);
             return response()->json(['success' => false, 'message' => 'Error interno del servidor. Consulte el log para más detalles.'], 500);
         }
@@ -676,7 +698,7 @@ class CalendarController extends Controller
             ->first();
 
         return response()->json([
-            'success'      => true,
+            'success'    => true,
             'activities' => $monthlyLog ? $monthlyLog->daily_activities : [],
         ]);
     }
@@ -800,11 +822,11 @@ class CalendarController extends Controller
 
     private function recalculateDayStatus($dailyActivity)
     {
-        $hasRejected      = false;
-        $hasUnderReview   = false;
-        $hasApproved      = false;
-        $hasReviewed      = false;
-        $totalItems       = 0;
+        $hasRejected    = false;
+        $hasUnderReview = false;
+        $hasApproved    = false;
+        $hasReviewed    = false;
+        $totalItems     = 0;
         $statusesToLock = ['approved', 'reviewed'];
 
         // 1. Verificar la actividad principal (si existe y no es 'N')
