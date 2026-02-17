@@ -1157,6 +1157,8 @@ function initializeModalCalendarScripts(employeeId) {
         document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
 
         const formData = {
+            // 👇 AGREGA ESTA LÍNEA: Enviar el ID del empleado actual
+        employee_id: currentEmployeeId,
             date: currentSelectedDate,
             displayed_month: document.querySelector('.month-navigation span').getAttribute('data-month'),
             displayed_year: document.querySelector('.month-navigation span').getAttribute('data-year'),
