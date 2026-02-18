@@ -530,12 +530,23 @@
                         <div class="evaluacion-item">
                             <div class="evaluacion-titulo">3. Núm. de vehículos y pasajeros</div>
                             <div class="evaluacion-opciones">
-                                <label class="evaluacion-radio"><input type="radio" name="ev_vehiculos" value="5"
-                                        required> Convoy con un pasajero o más por vehículo</label>
-                                <label class="evaluacion-radio"><input type="radio" name="ev_vehiculos"
-                                        value="10"> Convoy sin pasajeros / Un vehículo con pasajero(s)</label>
-                                <label class="evaluacion-radio"><input type="radio" name="ev_vehiculos"
-                                        value="15"> Un vehículo sin pasajeros (solo conductor)</label>
+                                <label class="evaluacion-radio">
+                                    <input type="radio" name="ev_vehiculos" value="5" required>
+                                    Vehículo con 1 ó más pasajeros
+                                </label>
+                                <label class="evaluacion-radio">
+                                    <input type="radio" name="ev_vehiculos" value="15">
+                                    Vehículo sin pasajeros (solo conductor)
+                                </label>
+
+                                <label class="evaluacion-radio">
+                                    <input type="radio" name="ev_vehiculos" value="5">
+                                    Convoy con un pasajero o más por vehículo
+                                </label>
+                                <label class="evaluacion-radio">
+                                    <input type="radio" name="ev_vehiculos" value="10">
+                                    Convoy sin pasajeros (solo conductores)
+                                </label>
                             </div>
                         </div>
 
@@ -637,7 +648,7 @@
                                 </label>
                                 <label class="evaluacion-radio">
                                     <input type="radio" name="ev_radiactivo">
-                                    Lleva material radiactivo y explosivo
+                                    Lleva material radiactivo O explosivo
                                 </label>
                             </div>
                         </div>
@@ -844,7 +855,7 @@
             <div class="form-header-modal">
                 <div class="form-header-info">
                     <div class="form-header-title">
-                        <h2>INSPECCIÓN - LISTA DE VERIFICACIÓN UNIDADES LIGERAS</h2>
+                        <h2>INSPECCIÓN DE UNIDADES LIGERAS</h2>
                     </div>
                 </div>
 
@@ -894,8 +905,6 @@
                         </button>
                     </div>
                 </div>
-
-
             </div>
 
             <form id="formInspeccionLigera" class="modal-inspeccion-body" enctype="multipart/form-data">
@@ -1283,7 +1292,29 @@
                     <i class="fas fa-camera"></i> IV. ANOMALÍAS Y EVIDENCIA
                 </h3>
 
-                <div class="evidence-container">
+                <div class="inspeccion-item"
+                    style="background-color: #ffffff; border-left: 4px solid var(--primary-blue); border-radius: 4px;">
+                    <div class="inspeccion-item-label">
+                        <i class="fas fa-exclamation-triangle" style="color: #f08a1f;"></i>
+                        <span>¿Anomalías, golpes o fallas?</span>
+                    </div>
+                    <div class="inspeccion-radio-group">
+                        {{-- Opción SÍ (Rojo) --}}
+                        <label class="no">
+                            {{-- Agregamos appearance: auto para forzar el pintado nativo --}}
+                            <input type="radio" name="anomalias_ligera" value="si" required>
+                            Sí
+                        </label>
+
+                        {{-- Opción NO (Verde) --}}
+                        <label class="si">
+                            <input type="radio" name="anomalias_ligera" value="no">
+                            No
+                        </label>
+                    </div>
+                </div>
+
+                <div class="evidence-container" id="evidenceContainerLigera" style="display: none;">
                     <div class="form-group full-width">
                         <label for="comentariosInspeccionLigera">Comentarios, Anomalías o Fallas detectadas:</label>
                         <textarea id="comentariosInspeccionLigera" name="comentarios" rows="3" class="form-control"
@@ -1359,7 +1390,7 @@
             <div class="form-header-modal">
                 <div class="form-header-info">
                     <div class="form-header-title">
-                        <h2>INSPECCIÓN - LISTA DE VERIFICACIÓN UNIDADES PESADAS</h2>
+                        <h2>INSPECCIÓN DEw UNIDADES PESADAS</h2>
                     </div>
                 </div>
 
@@ -1419,6 +1450,7 @@
                 {{-- CABECERA DE DATOS GENERALES --}}
                 <div class="header-inspeccion-section">
                     <h4 class="section-subtitle-small">DATOS GENERALES DE LA UNIDAD</h4>
+
                     <div class="header-inspeccion-grid">
                         <div class="form-group">
                             <label>Nombre del Conductor</label>
@@ -2017,8 +2049,29 @@
                 <h3 class="inspeccion-modal-title" style="margin-top: 25px;">
                     <i class="fas fa-camera"></i> IV. ANOMALÍAS Y EVIDENCIA
                 </h3>
+                <div class="inspeccion-item"
+                    style="background-color: #ffffff; border-left: 4px solid var(--primary-blue); border-radius: 4px;">
+                    <div class="inspeccion-item-label">
+                        <i class="fas fa-exclamation-triangle" style="color: #f08a1f;"></i>
+                        <span>¿Anomalías, golpes o fallas?</span>
+                    </div>
+                    <div class="inspeccion-radio-group">
+                        {{-- Opción SÍ (Rojo / Alerta) --}}
+                        <label class="no">
+                            {{-- Agregamos appearance: auto para forzar el pintado nativo si es necesario --}}
+                            <input type="radio" name="anomalias_pesada" value="si" required>
+                            Sí
+                        </label>
 
-                <div class="evidence-container">
+                        {{-- Opción NO (Verde / Seguro) --}}
+                        <label class="si">
+                            <input type="radio" name="anomalias_pesada" value="no">
+                            No
+                        </label>
+                    </div>
+                </div>
+
+                <div class="evidence-container" id="evidenceContainerPesada" style="display: none;">
                     <div class="form-group full-width">
                         <label for="comentariosInspeccionPesada">Comentarios, Anomalías o Fallas detectadas:</label>
                         <textarea id="comentariosInspeccionPesada" name="comentarios" rows="3" class="form-control"
@@ -2082,27 +2135,31 @@
 
     {{-- MODAL PARA USAR CÁMARA --}}
     <div class="modal-camara" id="modalCamara">
-        <div class="camara-container">
-            <div class="camara-header">
-                <h3><i class="fas fa-camera"></i> Tomar Foto con Cámara</h3>
-                <button type="button" class="btn-cerrar-camara" onclick="cerrarCamara()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="camara-body">
-                <video id="videoCamara" autoplay playsinline></video>
-                <canvas id="canvasCamara" style="display:none;"></canvas>
-                <div class="camara-controls">
-                    <button type="button" class="btn-capturar" onclick="capturarFoto()">
-                        <i class="fas fa-camera"></i> Tomar Foto
-                    </button>
-                    <button type="button" class="btn-cerrar-camara" onclick="cerrarCamara()">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                </div>
-            </div>
+    <div class="camara-content">
+
+        <video id="videoCamara" autoplay playsinline muted></video>
+        <canvas id="canvasCamara" style="display:none;"></canvas>
+
+        <button type="button" class="btn-camara-close" onclick="cerrarCamara()">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="camara-controls-overlay">
+
+            <button type="button" class="btn-control-secondary" onclick="alternarCamara()" title="Cambiar cámara">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+
+            <button type="button" class="btn-capture-main" onclick="capturarFoto()">
+                <div class="inner-circle"></div>
+            </button>
+
+            <div style="width: 50px;"></div>
         </div>
+
+        <div class="camara-instructions">Ajusta la imagen y captura</div>
     </div>
+</div>
 @endsection
 
 @push('scripts')
