@@ -232,7 +232,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // ---------------------------------------------------
                 Route::controller(StatsController::class)->group(function () {
                     // Usamos el método 'index' porque es la vista principal de este controlador
-                    // Route::get('/stats', 'index')->name('gerenciamiento.stats');
+                    Route::get('/stats', 'index')->name('gerenciamiento.stats');
                 });
             });
         });
