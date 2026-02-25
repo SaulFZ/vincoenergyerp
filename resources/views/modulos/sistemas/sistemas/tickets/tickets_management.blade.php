@@ -4,9 +4,9 @@
     <style>
         :root {
             /* --- PALETA VINCO ENERGY (BURDEOS) --- */
-            --primary-burgundy: #63122D;
-            --burgundy-dark: #4a0d21;
-            --burgundy-soft: #fdf2f5;
+            --primary-burgundy: #181466;
+            --burgundy-dark: #100d47;
+            --burgundy-soft: #f4f2fd;
             --primary-accent: #d4af37;
             /* Dorado */
 
@@ -86,7 +86,7 @@
         .card-main {
             grid-column: span 1;
             /* Cambiado de span 2 a span 1 para que ocupe una columna */
-            background: linear-gradient(135deg, var(--primary-burgundy) 0%, #4a0012 100%);
+            background: linear-gradient(135deg, var(--primary-burgundy) 0%, var(--burgundy-dark) 100%);
             color: white;
         }
 

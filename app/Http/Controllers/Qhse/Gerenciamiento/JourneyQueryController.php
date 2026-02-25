@@ -1,0 +1,244 @@
+<?php
+
+namespace App\Http\Controllers\Qhse\Gerenciamiento;
+
+use App\Http\Controllers\Controller;
+use App\Models\Qhse\Gerenciamiento\Journey;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+class JourneyQueryController extends Controller
+{
+    /**
+     * Obtener lista de viajes con filtros y paginación
+     */
+public function index(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+            $search = $request->get('search', '');
+            $statusGv = $request->get('status_gv', 'all'); // Nuevo: Filtro GV
+            $statusViaje = $request->get('status_viaje', 'all'); // Nuevo: Filtro Viaje
+            $riskLevel = $request->get('risk_level', 'all');
+            $destination = $request->get('destination', 'all');
+            $fechaSolicitud = $request->get('fecha_solicitud', '');
+
+            $query = Journey::with(['creator', 'approver'])
+                ->orderBy('created_at', 'desc');
+
+            // Búsqueda por texto
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('folio', 'like', "%{$search}%")
+                      ->orWhere('creator_name', 'like', "%{$search}%")
+                      ->orWhere('department', 'like', "%{$search}%")
+                      ->orWhere('destination_region', 'like', "%{$search}%")
+                      ->orWhere('specific_destination', 'like', "%{$search}%");
+                });
+            }
+
+            // Filtro SEPARADO por estado de aprobación (GV)
+            if ($statusGv !== 'all') {
+                if (in_array($statusGv, ['pending', 'approved', 'rejected', 'cancelled'])) {
+                    $query->where('approval_status', $statusGv);
+                }
+            }
+
+            // Filtro SEPARADO por estado de viaje operativo
+            if ($statusViaje !== 'all') {
+                if (in_array($statusViaje, ['not_started', 'in_progress', 'completed', 'cancelled', 'no_procede'])) {
+                    $query->where('journey_status', $statusViaje);
+                }
+            }
+
+            // Filtro por nivel de riesgo
+            if ($riskLevel !== 'all') {
+                $query->where('risk_level', $riskLevel);
+            }
+
+            // Filtro por destino
+            if ($destination !== 'all' && $destination !== '') {
+                if ($destination === 'OTRO') {
+                    $query->whereNotIn('destination_region', ['Coatzacoalcos, Ver.', 'Paraíso, Tab.', 'Ciudad del Carmen, Camp.']);
+                } elseif ($destination === 'COA') {
+                    $query->where('destination_region', 'like', '%Coatzacoalcos%');
+                } elseif ($destination === 'TAB') {
+                    $query->where('destination_region', 'like', '%Paraíso%');
+                } elseif ($destination === 'CAR') {
+                    $query->where('destination_region', 'like', '%Ciudad del Carmen%');
+                } else {
+                    $query->where('destination_region', 'like', "%{$destination}%");
+                }
+            }
+
+            // Filtro por fecha de solicitud
+            if (!empty($fechaSolicitud)) {
+                try {
+                    $fechaParts = explode('/', $fechaSolicitud);
+                    if (count($fechaParts) === 3) {
+                        $fechaMySQL = $fechaParts[2] . '-' . $fechaParts[1] . '-' . $fechaParts[0];
+                        $query->whereDate('request_date', $fechaMySQL);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error parsing fecha solicitud: ' . $e->getMessage());
+                }
+            }
+
+            $journeys = $query->paginate($perPage);
+
+            // Formatear datos para la vista
+            $formattedJourneys = collect($journeys->items())->map(function($journey) {
+                return [
+                    'id' => $journey->id,
+                    'folio' => $journey->folio,
+                    'solicitante' => $journey->creator_name,
+                    'departamento' => $journey->department,
+                    'destino' => $journey->destination_region,
+                    'destino_especifico' => $journey->specific_destination,
+                    'fechas' => $this->formatDates($journey),
+                    'fecha_solicitud' => $journey->request_date ? \Carbon\Carbon::parse($journey->request_date)->format('d/m/Y') : '',
+                    'riesgo' => [
+                        'nivel' => $journey->risk_level ?? 'bajo',
+                        'texto' => $this->getRiskText($journey->risk_level),
+                        'clase' => $this->getRiskClass($journey->risk_level)
+                    ],
+                    'estado_gv' => [
+                        'texto' => $this->getApprovalStatusText($journey->approval_status),
+                        'clase' => $this->getStatusClass($journey->approval_status)
+                    ],
+                    'estado_viaje' => [
+                        'texto' => $this->getJourneyStatusText($journey->journey_status),
+                        'clase' => $this->getStatusClass($journey->journey_status)
+                    ]
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $formattedJourneys,
+                'pagination' => [
+                    'current_page' => $journeys->currentPage(),
+                    'last_page' => $journeys->lastPage(),
+                    'per_page' => $journeys->perPage(),
+                    'total' => $journeys->total(),
+                    'from' => $journeys->firstItem(),
+                    'to' => $journeys->lastItem()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error cargando viajes: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar los viajes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getNextFolio()
+    {
+        try {
+            $lastJourney = Journey::orderBy('id', 'desc')->first();
+            if (!$lastJourney) {
+                $nextFolio = 'GV-00001';
+            } else {
+                $lastNumber = intval(substr($lastJourney->folio, 3));
+                $nextNumber = $lastNumber + 1;
+                $nextFolio = 'GV-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+            }
+            return response()->json(['success' => true, 'next_folio' => $nextFolio]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al generar folio'], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $journey = Journey::with([
+                'units',
+                'units.lightInspection',
+                'units.heavyInspection',
+                'riskAssessment',
+                'preConvoyMeeting',
+                'creator',
+                'approver'
+            ])->findOrFail($id);
+
+            return response()->json(['success' => true, 'data' => $journey]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Viaje no encontrado'], 404);
+        }
+    }
+
+    public function getStats()
+    {
+        try {
+            $stats = [
+                'activos' => Journey::where('journey_status', 'in_progress')->count(),
+                'pendientes' => Journey::where('approval_status', 'pending')->count(),
+                'completados' => Journey::where('journey_status', 'completed')->count(),
+                'total' => Journey::count(),
+                'riesgo_bajo' => Journey::where('risk_level', 'bajo')->count(),
+                'riesgo_medio' => Journey::where('risk_level', 'medio')->count(),
+                'riesgo_alto' => Journey::where('risk_level', 'alto')->count(),
+                'riesgo_muy_alto' => Journey::where('risk_level', 'muy_alto')->count(),
+            ];
+            return response()->json(['success' => true, 'data' => $stats]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al obtener estadísticas'], 500);
+        }
+    }
+
+    public function getDestinations()
+    {
+        try {
+            $destinations = Journey::select('destination_region')
+                ->whereNotNull('destination_region')
+                ->distinct()
+                ->orderBy('destination_region')
+                ->pluck('destination_region');
+            return response()->json(['success' => true, 'data' => $destinations]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al obtener destinos'], 500);
+        }
+    }
+
+    // Funciones auxiliares
+    private function formatDates($journey)
+    {
+        if (!$journey->start_date || !$journey->end_date) return 'Fechas no disponibles';
+        $start = \Carbon\Carbon::parse($journey->start_date);
+        $end = \Carbon\Carbon::parse($journey->end_date);
+        return $start->format('d M') . ' al ' . $end->format('d M Y');
+    }
+
+    private function getRiskText($level) {
+        $levels = ['bajo' => 'Bajo', 'medio' => 'Medio', 'alto' => 'Alto', 'muy_alto' => 'Muy Alto'];
+        return $levels[$level] ?? 'No definido';
+    }
+
+    private function getRiskClass($level) {
+        $classes = ['bajo' => 'status-riesgo-bajo', 'medio' => 'status-riesgo-medio', 'alto' => 'status-riesgo-alto', 'muy_alto' => 'status-riesgo-muy-alto'];
+        return $classes[$level] ?? 'status-riesgo-bajo';
+    }
+
+    private function getApprovalStatusText($status) {
+        $statuses = ['pending' => 'Pendiente', 'approved' => 'Aprobado', 'rejected' => 'Rechazado', 'cancelled' => 'Cancelado'];
+        return $statuses[$status] ?? 'Pendiente';
+    }
+
+    private function getJourneyStatusText($status) {
+        $statuses = ['not_started' => 'Por Iniciar', 'in_progress' => 'En Curso', 'completed' => 'Finalizado', 'cancelled' => 'Cancelado', 'no_procede' => 'No Procede'];
+        return $statuses[$status] ?? 'Por Iniciar';
+    }
+
+    private function getStatusClass($status) {
+        $classes = [
+            'pending' => 'status-pendiente', 'approved' => 'status-aprobado', 'rejected' => 'status-rechazado',
+            'cancelled' => 'status-cancelado', 'not_started' => 'status-poriniciar', 'in_progress' => 'status-encurso',
+            'completed' => 'status-finalizado', 'no_procede' => 'status-noprocede'
+        ];
+        return $classes[$status] ?? 'status-pendiente';
+    }
+}

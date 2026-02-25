@@ -2,7 +2,12 @@
 
 use App\Http\Controllers\Auth\LoginController;
 /* CONTROLADORES DE RECURSOS QHSE */
+use App\Http\Controllers\Qhse\Gerenciamiento\DriverLicenseController;
 use App\Http\Controllers\Qhse\Gerenciamiento\JourneyController;
+use App\Http\Controllers\Qhse\Gerenciamiento\JourneyQueryController;
+use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStatusController;
+use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStoreController;
+use App\Http\Controllers\Qhse\Gerenciamiento\StatsController;
 /* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
@@ -13,12 +18,9 @@ use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\HistoryController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
-
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
 use App\Http\Controllers\Sistemas\Tickets\TicketController;
-
-
 use Illuminate\Support\Facades\Route;
 
 // ===================================================
@@ -90,27 +92,25 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:administracion')
         ->name('modulo.administracion');
 
-
-// ===================================================
-// MÓDULO: SISTEMAS Y SUBSISTEMAS
-// ===================================================
+    // ===================================================
+    // MÓDULO: SISTEMAS Y SUBSISTEMAS
+    // ===================================================
     Route::prefix('sistemas')
         ->middleware('check.permission:sistemas')
         ->group(function () {
-
             // ===================================================
             // GRUPO: GESTIÓN DE ROLES
             // Prefijo: /sistemas/gestionderoles
             // ===================================================
             Route::prefix('gestionderoles')->group(function () {
-
                 // 1. Redirección automática:
                 // Si el usuario entra a /sistemas/gestionderoles,
                 // lo mandamos a la lista principal de roles.
                 Route::get('/', function () {
                     return redirect()->route('sistemas.roles.index');
-                })->name('sistemas.gestionderoles')
-                ->middleware('check.permission:sistemas,gestionderoles');
+                })
+                    ->name('sistemas.gestionderoles')
+                    ->middleware('check.permission:sistemas,gestionderoles');
 
                 // --- RUTAS DE RECURSOS (CRUD) ---
                 Route::resource('roles', RoleController::class)
@@ -132,65 +132,110 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
             });
 
-
             // ---------------------------------------------------
-        // SUBSISTEMA 2: GESTIÓN DE TICKETS (SOPORTE)
-        // ---------------------------------------------------
-        Route::prefix('tickets')->group(function () {
+            // SUBSISTEMA 2: GESTIÓN DE TICKETS (SOPORTE)
+            // ---------------------------------------------------
+            Route::prefix('tickets')->group(function () {
+                // Redirección automática a la vista principal de tickets
+                Route::get('/', function () {
+                    return redirect()->route('tickets.index');
+                })
+                    ->name('sistemas.tickets')
+                    ->middleware('check.permission:sistemas,tickets');
 
-            // Redirección automática a la vista principal de tickets
-            Route::get('/', function () {
-                return redirect()->route('tickets.index');
-            })->name('sistemas.tickets')
-              ->middleware('check.permission:sistemas,tickets');
-
-            // Rutas gestionadas por TicketController
-            // Nota: He usado 'index' para el dashboard de soporte
-            Route::controller(TicketController::class)->group(function () {
-                Route::get('/management_tickets', 'index')->name('tickets.index');
-
+                // Rutas gestionadas por TicketController
+                // Nota: He usado 'index' para el dashboard de soporte
+                Route::controller(TicketController::class)->group(function () {
+                    Route::get('/management_tickets', 'index')->name('tickets.index');
+                });
             });
         });
-        });
-
 
     // ===================================================
-    // MÓDULO: SISTEMAS Y SUBSISTEMAS
+    // MÓDULO: SISTEMAS Y SUBSISTEMAS QHSE
     // ===================================================
     Route::prefix('qhse')
-        ->middleware('check.permission:qhse')
+        ->middleware(['auth', 'check.permission:qhse']) // Agregamos 'auth' aquí por seguridad global
         ->group(function () {
-
             // ===================================================
             // GRUPO GERENCIAMIENTO DE VIAJES
             // Prefijo: /qhse/gerenciamiento
             // ===================================================
             Route::prefix('gerenciamiento')->group(function () {
-
-                // 1. Redirección automática:
-                // Si el usuario escribe /qhse/gerenciamiento,
-                // lo mandamos forzosamente a /qhse/gerenciamiento/journey
+                // 1. Redirección automática
                 Route::get('/', function () {
                     return redirect()->route('gerenciamiento.journey');
                 })
                     ->name('qhse.gerenciamiento')
                     ->middleware('check.permission:qhse,gerenciamiento');
 
-                // --- RUTAS PRINCIPALES (JourneyController) ---
+                // ---------------------------------------------------
+                // 2. VISTAS Y CARGA DE DATOS (Dropdowns, catálogos)
+                // Controlador: JourneyController
+                // ---------------------------------------------------
                 Route::controller(JourneyController::class)->group(function () {
-
-                    // Definimos 'journey' como el segmento final de la URL
                     Route::get('/journey', 'index')->name('gerenciamiento.journey');
-
-                    // Rutas auxiliares
                     Route::get('/employees', 'getEmployees')->name('gerenciamiento.empleados');
                     Route::get('/get-destinations', 'getDestinations')->name('gerenciamiento.destinations');
                     Route::get('/conductores', 'getConductores')->name('gerenciamiento.conductores');
                     Route::get('/vehicles', 'getVehicles')->name('gerenciamiento.vehicles');
+                    Route::get('/autorizadores/{nivel}', 'getAutorizadores')->name('gerenciamiento.autorizadores');
+                });
+
+                // ---------------------------------------------------
+                // 3. GUARDADO DE NUEVO VIAJE (Transaccional)
+                // Controlador: JourneyStoreController
+                // ---------------------------------------------------
+                // IMPORTANTE: Esta es la ruta que llama el fetch() en JS
+                Route::post('/journeys/store', [JourneyStoreController::class, 'store'])
+                    ->name('gerenciamiento.store');
+
+                // ---------------------------------------------------
+                // 4. CONSULTAS Y ESTADÍSTICAS (Tablas y Dashboard)
+                // Controlador: JourneyQueryController
+                // ---------------------------------------------------
+                Route::controller(JourneyQueryController::class)->group(function () {
+                    Route::get('/journeys', 'index')->name('gerenciamiento.list');
+                      // 👇 AQUÍ ESTÁ EL CAMBIO: Le agregamos /journeys/ antes de stats
+                    Route::get('/journeys/stats', 'getStats')->name('gerenciamiento.journeys.stats');
+                    Route::get('/journeys/next-folio', 'getNextFolio')->name('gerenciamiento.next-folio');
+
+                    Route::get('/destinations', 'getDestinations')->name('gerenciamiento.destinations');
+                    Route::get('/journeys/{id}', 'show')->name('gerenciamiento.show');
+                });
+
+                // ---------------------------------------------------
+                // 5. ACTUALIZACIÓN DE ESTADOS Y BITÁCORA EN RUTA
+                // Controlador: JourneyStatusController
+                // ---------------------------------------------------
+                Route::controller(JourneyStatusController::class)->group(function () {
+                    Route::put('/journeys/{id}/approval-status', 'updateApprovalStatus')->name('gerenciamiento.approval_status');
+                    Route::put('/journeys/{id}/journey-status', 'updateJourneyStatus')->name('gerenciamiento.journey_status');
+                    Route::post('/journeys/{id}/log-event', 'logEvent')->name('gerenciamiento.log_event');
+                });
+
+                // ---------------------------------------------------
+                // 6. GESTIÓN DE LICENCIAS Y CREDENCIALES
+                // Controlador: DriverLicenseController
+                // ---------------------------------------------------
+                Route::controller(DriverLicenseController::class)->group(function () {
+                    // Ruta para ver la tabla (la que pusimos en el nav)
+                    Route::get('/driver_licenses', 'index')->name('gerenciamiento.licenses');
+
+                    // Ruta POST para guardar los datos desde el modal (AJAX)
+                    Route::post('/empleados/{id}/actualizar-licencias', 'updateLicenses')->name('gerenciamiento.update_licenses');
+                });
+
+                // ---------------------------------------------------
+                // 7. DASHBOARD Y ESTADÍSTICAS
+                // Controlador: StatsController
+                // ---------------------------------------------------
+                Route::controller(StatsController::class)->group(function () {
+                    // Usamos el método 'index' porque es la vista principal de este controlador
+                    // Route::get('/stats', 'index')->name('gerenciamiento.stats');
                 });
             });
         });
-
 
     // ===================================================
     // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
@@ -198,7 +243,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::prefix('recursoshumanos')
         ->middleware('check.permission:recursoshumanos')
         ->group(function () {
-
             // ===================================================
             // GRUPO LOADCHART
             // Prefijo: /recursoshumanos/loadchart

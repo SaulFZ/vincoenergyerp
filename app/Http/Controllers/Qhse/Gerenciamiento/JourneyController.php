@@ -8,8 +8,6 @@ use App\Models\Qhse\Gerenciamiento\Destination;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-// Importar esto arriba
-// Importar esto
 
 class JourneyController extends Controller
 {
@@ -66,6 +64,60 @@ class JourneyController extends Controller
         );
     }
 
+    /**
+     * Obtener usuarios autorizadores dependiendo del nivel de riesgo
+     */
+    public function getAutorizadores($nivel)
+    {
+        try {
+            // 1. Mapear el nivel de riesgo con el nombre exacto de tu tabla permissions
+            $permisoRequerido = match($nivel) {
+                'bajo'     => 'aprobar_gv_bajo',
+                'medio'    => 'aprobar_gv_medio',
+                'alto'     => 'aprobar_gv_alto',
+                'muy_alto' => 'aprobar_gv_muy_alto',
+                default    => null,
+            };
+
+            if (!$permisoRequerido) {
+                return response()->json(['success' => false, 'message' => 'Nivel no válido'], 400);
+            }
+
+            // 2. Buscar usuarios Activos que tengan ese permiso directo
+            // Utilizamos el scopeActive() de tu modelo User
+            $usuarios = User::active()
+                ->whereHas('directPermissions', function ($query) use ($permisoRequerido) {
+                    $query->where('name', $permisoRequerido);
+                })
+                ->with('employee') // Traemos la relación employee para sacar el nombre real y puesto
+                ->get();
+
+            // 3. Mapear los datos para el frontend
+            $autorizadores = $usuarios->map(function ($user) {
+                return [
+                    'id'     => $user->id,
+                    // Si tiene empleado asociado, usamos full_name, sino el nombre de usuario
+                    'nombre' => $user->employee ? $user->employee->full_name : $user->name,
+                    // Usamos position o job_title del empleado
+                    'puesto' => $user->employee
+                                ? ($user->employee->position ?? $user->employee->job_title ?? 'Autorizador')
+                                : 'Autorizador',
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data'    => $autorizadores
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar autorizadores: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getDestinations()
     {
         try {
@@ -96,7 +148,7 @@ class JourneyController extends Controller
         }
     }
 
-    /**
+/**
      * Obtener todos los conductores (empleados con usuario activo)
      * para el autocomplete
      */
@@ -114,6 +166,7 @@ class JourneyController extends Controller
                 ->map(function ($emp) {
                     $license = $emp->license;
                     return [
+                        'id' => $emp->id, // <--- SE AGREGA EL ID DEL EMPLEADO
                         'nombre_completo' => $emp->full_name,
                         'departamento' => $emp->department,
                         // Datos de licencias
@@ -138,8 +191,15 @@ class JourneyController extends Controller
                         ] : null,
                     ];
                 });
-            // Formatear para el autocomplete
-            $nombresConductores = $conductores->pluck('nombre_completo')->toArray();
+
+            // Formatear para el autocomplete (AHORA ENVIAMOS UN OBJETO CON ID Y NOMBRE)
+            $listaConductoresAutocomplete = $conductores->map(function ($c) {
+                return [
+                    'id' => $c['id'],
+                    'nombre' => $c['nombre_completo']
+                ];
+            })->values()->toArray();
+
             // Crear objeto con datos de cada conductor
             $datosConductores = [];
             foreach ($conductores as $conductor) {
@@ -152,11 +212,12 @@ class JourneyController extends Controller
                     'permanente' => $conductor['licencia_conductor']['permanente'] ?? false,
                 ];
             }
+
             return response()->json([
                 'success' => true,
-                'conductores' => $nombresConductores,
+                'conductores' => $listaConductoresAutocomplete, // Enviamos el array de objetos
                 'datosConductores' => $datosConductores,
-                'total' => count($nombresConductores),
+                'total' => count($listaConductoresAutocomplete),
             ]);
         } catch (\Exception $e) {
             return response()->json([
