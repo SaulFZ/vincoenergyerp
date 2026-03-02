@@ -141,7 +141,7 @@
 
         $(document).ready(function() {
 
-            // --- 0. RECARGA AUTOMÁTICA ---
+            // --- 0. RECARGA AUTOMÁTICA (Cada 10 Minutos) ---
             setTimeout(function() {
                 window.location.reload();
             }, 600000);
@@ -163,12 +163,7 @@
             $('.custom-input').on('input change blur focus', checkInputs);
             setTimeout(checkInputs, 200);
 
-            // --- 3. RECARGA PESTAÑA OCULTA ---
-            let wasHidden = false;
-            document.addEventListener('visibilitychange', function() {
-                if (document.hidden) wasHidden = true;
-                else if (wasHidden) window.location.reload();
-            });
+            // --- SE ELIMINÓ LA LÓGICA DE RECARGA AL CAMBIAR DE PESTAÑA (visibilitychange) ---
 
             // --- 4. VER / OCULTAR CONTRASEÑA ---
             $('#eyeIcon').on('click', function() {

@@ -8,6 +8,7 @@ use App\Models\Qhse\Gerenciamiento\Destination;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use App\Mail\Qhse\Gerenciamiento\JourneyApprovalMail;
 
 class JourneyController extends Controller
 {
@@ -259,6 +260,7 @@ class JourneyController extends Controller
             $detallesVehiculo[$econ] = [
                 'propiedad' => $owner,
                 'marca' => $marca
+
             ];
 
             if (stripos($type, 'ligera') !== false) {

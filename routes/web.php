@@ -8,6 +8,8 @@ use App\Http\Controllers\Qhse\Gerenciamiento\JourneyQueryController;
 use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStatusController;
 use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStoreController;
 use App\Http\Controllers\Qhse\Gerenciamiento\StatsController;
+
+
 /* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
@@ -196,13 +198,14 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // ---------------------------------------------------
                 Route::controller(JourneyQueryController::class)->group(function () {
                     Route::get('/journeys', 'index')->name('gerenciamiento.list');
-                      // 👇 AQUÍ ESTÁ EL CAMBIO: Le agregamos /journeys/ antes de stats
+                    // 👇 AQUÍ ESTÁ EL CAMBIO: Le agregamos /journeys/ antes de stats
                     Route::get('/journeys/stats', 'getStats')->name('gerenciamiento.journeys.stats');
                     Route::get('/journeys/next-folio', 'getNextFolio')->name('gerenciamiento.next-folio');
-
+                    Route::get('/journeys/last-inspection/{economic_number}', 'getLastInspectionDate')->name('gerenciamiento.last-inspection');
                     Route::get('/destinations', 'getDestinations')->name('gerenciamiento.destinations');
                     Route::get('/journeys/{id}', 'show')->name('gerenciamiento.show');
                 });
+
 
                 // ---------------------------------------------------
                 // 5. ACTUALIZACIÓN DE ESTADOS Y BITÁCORA EN RUTA

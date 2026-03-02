@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Qhse\Gerenciamiento;
 
 use App\Http\Controllers\Controller;
+use App\Mail\Qhse\Gerenciamiento\JourneyApprovalMail;
 use App\Models\Auth\User;
 use App\Models\Qhse\Gerenciamiento\HeavyInspection;
 use App\Models\Qhse\Gerenciamiento\Journey;
@@ -9,14 +10,19 @@ use App\Models\Qhse\Gerenciamiento\JourneyUnit;
 use App\Models\Qhse\Gerenciamiento\LightInspection;
 use App\Models\Qhse\Gerenciamiento\PreConvoyMeeting;
 use App\Models\Qhse\Gerenciamiento\RiskAssessment;
+use App\Models\Qhse\Gerenciamiento\JourneyLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class JourneyStoreController extends Controller
 {
+    /**
+     * Guardar un viaje completo con todas sus relaciones
+     */
     /**
      * Guardar un viaje completo con todas sus relaciones
      */
@@ -43,7 +49,34 @@ class JourneyStoreController extends Controller
                 $this->createPreConvoyMeeting($journey, $data['reunion_pre_convoy']);
             }
 
+            // =========================================================
+            // 🚨 NUEVO: REGISTRAR EL LOG DE CREACIÓN EN LA BITÁCORA
+            // =========================================================
+            JourneyLog::create([
+                'journey_id'  => $journey->id,
+                'user_id'     => Auth::id(),
+                'event_type'  => 'created',
+                'title'       => 'Solicitud Creada',
+                'description' => 'El viaje ha sido registrado exitosamente y está a la espera de autorización.',
+                'event_time'  => now()
+            ]);
+
             DB::commit();
+
+            // =========================================================
+            // ENVIAR CORREO AL AUTORIZADOR DESPUÉS DE GUARDAR
+            // =========================================================
+            try {
+                if ($journey->approver_id) {
+                    $approver = User::find($journey->approver_id);
+                    if ($approver && $approver->email) {
+                        Mail::to($approver->email)->send(new JourneyApprovalMail($journey));
+                    }
+                }
+            } catch (\Exception $mailEx) {
+                // Registramos el error de correo pero NO cancelamos el viaje creado
+                Log::error('Error enviando correo de autorización (GV): ' . $mailEx->getMessage());
+            }
 
             return response()->json([
                 'success'    => true,
@@ -228,7 +261,6 @@ class JourneyStoreController extends Controller
 
         return $passengers;
     }
-
     /**
      * Crear inspección ligera
      */
@@ -408,62 +440,67 @@ class JourneyStoreController extends Controller
  * @param string $typeSuffix 'L' para Ligera, 'P' para Pesada
  * @param string $folio Folio del viaje (ej. GV-00001)
  */
-private function processPhotos($fotos, $typeSuffix, $folio)
-{
-    $paths = [];
+    private function processPhotos($fotos, $typeSuffix, $folio)
+    {
+        $paths = [];
 
-    if (isset($fotos) && is_array($fotos)) {
-        foreach ($fotos as $index => $fotoData) {
-            // Caso 1: Si es base64 (Cámara)
-            if (isset($fotoData['base64'])) {
-                $path = $this->saveBase64Image($fotoData['base64'], $typeSuffix, $folio);
-                if ($path) $paths[] = $path;
-            }
-            // Caso 2: Si es archivo subido (Input file)
-            elseif (isset($fotoData['file']) && $fotoData['file'] instanceof \Illuminate\Http\UploadedFile) {
-                $folder = "qhse/gerenciamiento/anomalias{$typeSuffix}/{$folio}";
-                $fileName = 'anomalia_' . time() . '_' . ($index + 1) . '.' . $fotoData['file']->getClientOriginalExtension();
-                $path = $fotoData['file']->storeAs($folder, $fileName, 'public');
-                $paths[] = $path;
+        if (isset($fotos) && is_array($fotos)) {
+            foreach ($fotos as $index => $fotoData) {
+                // Caso 1: Si es base64 (Cámara)
+                if (isset($fotoData['base64'])) {
+                    $path = $this->saveBase64Image($fotoData['base64'], $typeSuffix, $folio);
+                    if ($path) {
+                        $paths[] = $path;
+                    }
+
+                }
+                // Caso 2: Si es archivo subido (Input file)
+                elseif (isset($fotoData['file']) && $fotoData['file'] instanceof \Illuminate\Http\UploadedFile) {
+                    $folder   = "qhse/gerenciamiento/anomalias{$typeSuffix}/{$folio}";
+                    $fileName = 'anomalia_' . time() . '_' . ($index + 1) . '.' . $fotoData['file']->getClientOriginalExtension();
+                    $path     = $fotoData['file']->storeAs($folder, $fileName, 'public');
+                    $paths[]  = $path;
+                }
             }
         }
-    }
 
-    return $paths;
-}
+        return $paths;
+    }
 
 /**
  * Guardar imagen en base64 con nombre corto y carpeta de Folio
  */
-private function saveBase64Image($base64String, $typeSuffix, $folio)
-{
-    try {
-        // 1. Limpiar el prefijo data:image/... si existe
-        if (preg_match('/^data:image\/(\w+);base64,/', $base64String, $matches)) {
-            $base64String = substr($base64String, strpos($base64String, ',') + 1);
-            $extension = strtolower($matches[1]);
-        } else {
-            $extension = 'jpg'; // default
+    private function saveBase64Image($base64String, $typeSuffix, $folio)
+    {
+        try {
+            // 1. Limpiar el prefijo data:image/... si existe
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64String, $matches)) {
+                $base64String = substr($base64String, strpos($base64String, ',') + 1);
+                $extension    = strtolower($matches[1]);
+            } else {
+                $extension = 'jpg'; // default
+            }
+
+            $imageData = base64_decode(str_replace(' ', '+', $base64String));
+
+            if ($imageData === false) {
+                return null;
+            }
+
+            // 2. Construir la ruta: qhse/gerenciamiento/anomaliasL/GV-00001/anomalia_17000000.jpg
+            $fileName   = 'anomalia_' . microtime(true) * 100 . '.' . $extension;
+            $folderPath = "qhse/gerenciamiento/anomalias{$typeSuffix}/{$folio}";
+            $fullPath   = "{$folderPath}/{$fileName}";
+
+            // 3. Guardar en disco public
+            Storage::disk('public')->put($fullPath, $imageData);
+
+            return $fullPath;
+        } catch (\Exception $e) {
+            Log::error('Error guardando imagen base64: ' . $e->getMessage());
+            return null;
         }
-
-        $imageData = base64_decode(str_replace(' ', '+', $base64String));
-
-        if ($imageData === false) return null;
-
-        // 2. Construir la ruta: qhse/gerenciamiento/anomaliasL/GV-00001/anomalia_17000000.jpg
-        $fileName = 'anomalia_' . microtime(true) * 100 . '.' . $extension;
-        $folderPath = "qhse/gerenciamiento/anomalias{$typeSuffix}/{$folio}";
-        $fullPath = "{$folderPath}/{$fileName}";
-
-        // 3. Guardar en disco public
-        Storage::disk('public')->put($fullPath, $imageData);
-
-        return $fullPath;
-    } catch (\Exception $e) {
-        Log::error('Error guardando imagen base64: ' . $e->getMessage());
-        return null;
     }
-}
 
 /**
  * Generar folio único seguro
@@ -566,3 +603,29 @@ private function saveBase64Image($base64String, $typeSuffix, $folio)
         return 'Ligera'; // Valor por defecto
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

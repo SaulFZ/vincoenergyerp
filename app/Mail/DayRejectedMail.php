@@ -47,7 +47,7 @@ class DayRejectedMail extends Mailable
     public function content()
     {
         return new Content(
-            view: 'components.emails.rh.loadchart.day_rejected',
+            view: 'emails.rh.loadchart.day_rejected',
         );
     }
 

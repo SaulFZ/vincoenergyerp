@@ -97,7 +97,9 @@ async function cargarViajes(page = 1) {
         if (currentDestination !== "all")
             url += `&destination=${currentDestination}`;
         if (currentFechaSolicitud)
-            url += `&fecha_solicitud=${encodeURIComponent(currentFechaSolicitud)}`;
+            url += `&fecha_solicitud=${encodeURIComponent(
+                currentFechaSolicitud,
+            )}`;
 
         await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -141,6 +143,7 @@ function renderTablaViajes(viajes, container) {
                     <th class="th-nombre">Solicitante</th>
                     <th class="th-departamento">Departamento</th>
                     <th class="th-destino">Destino</th>
+                    <th class="th-tipo" style="text-align: center;">Tipo</th>
                     <th class="th-fechas">Fechas de Viaje</th>
                     <th class="th-riesgo">Riesgo</th>
                     <th class="th-estado">Estado GV</th>
@@ -152,43 +155,72 @@ function renderTablaViajes(viajes, container) {
     `;
 
     viajes.forEach((viaje) => {
+        // LÓGICA DE RENDERIZADO VISUAL PARA TIPO DE FLOTA
+        let badgeTipoViaje = "";
+        if (viaje.tipo_viaje === "Convoy de Unidades") {
+            badgeTipoViaje = `<span style="background: #fff4ed; color: #e85d04; border: 1px solid #fed7aa; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap;" title="Múltiples vehículos asignados">Convoy</span>`;
+        } else {
+            badgeTipoViaje = `<span style="background: #f0f7ff; color: #0056b3; border: 1px solid #cce1ff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap;" title="Solo un vehículo asignado">Única</span>`;
+        }
+
+        // ========================================================
+        // LÓGICA DEL BOTÓN PRINCIPAL
+        // ========================================================
+        let claseBotonVer = "btn-view";
+        let iconoBotonVer = "fa-eye";
+        let tituloBotonVer = "Ver detalle del viaje";
+
+        // EL BOTÓN REVISAR SOLO APARECE SI ESTÁ PENDIENTE *Y* EL USUARIO ES EL APROBADOR ASIGNADO
+        if (viaje.estado_gv.texto === "Pendiente" && viaje.can_approve) {
+            claseBotonVer = "btn-review";
+            iconoBotonVer = "fa-clipboard-check";
+            tituloBotonVer = "Revisar y Autorizar solicitud";
+        }
+
+        // CONSTRUCCIÓN DE BOTONES DE ACCIÓN
+        let botonesAccion = `
+    <div style="display: flex; gap: 8px; justify-content: center;">
+        <button class="btn-action-small ${claseBotonVer}" onclick="abrirModalViaje(${viaje.id})" title="${tituloBotonVer}">
+            <i class="fas ${iconoBotonVer}"></i>
+        </button>
+`;
+
+        // EL BOTÓN RUTA SOLO APARECE SI ESTÁ APROBADO, EN CURSO/POR INICIAR *Y* ES EL CREADOR DEL VIAJE
+        if (viaje.estado_gv.texto === "Aprobado" && (viaje.estado_viaje.texto === "En Curso" || viaje.estado_viaje.texto === "Por Iniciar")) {
+            if (viaje.is_creator) {
+                botonesAccion += `
+            <button class="btn-action-small btn-tracking" onclick="abrirModalRuta(${viaje.id}, '${viaje.folio}')" title="Ruta Operativa">
+                <i class="fas fa-route"></i> Ruta
+            </button>
+        `;
+            }
+        }
+        // EL BOTÓN HISTORIAL APARECE SI ESTÁ FINALIZADO/CANCELADO *Y* TIENE EL PERMISO
+        else if (viaje.estado_viaje.texto === "Finalizado" || viaje.estado_viaje.texto === "Cancelado") {
+            if (viaje.can_see_history) {
+                botonesAccion += `
+           <button class="btn-action-small btn-history" onclick="abrirModalHistorial(${viaje.id}, '${viaje.folio}')" title="Ver Historial">
+                <i class="fas fa-list-alt"></i> Historial
+            </button>
+        `;
+            }
+        }
+
+        botonesAccion += `</div>`;
+
+        // CONSTRUCCIÓN DE LA FILA
         html += `
             <tr>
                 <td><strong>${viaje.folio}</strong></td>
                 <td>${viaje.solicitante}</td>
                 <td>${viaje.departamento}</td>
                 <td>${viaje.destino}</td>
+                <td style="text-align: center;">${badgeTipoViaje}</td>
                 <td>${viaje.fechas}</td>
                 <td><span class="badge-riesgo ${viaje.riesgo.clase}">${viaje.riesgo.texto}</span></td>
                 <td><span class="badge-status ${viaje.estado_gv.clase}">${viaje.estado_gv.texto}</span></td>
                 <td><span class="badge-status ${viaje.estado_viaje.clase}">${viaje.estado_viaje.texto}</span></td>
-                <td>
-                    <div style="display: flex; gap: 8px; justify-content: center;">
-                        <button class="btn-action-small btn-view" title="Ver detalles" onclick="verDetalleViaje('${viaje.folio}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-        `;
-
-        if (
-            viaje.estado_viaje.texto === "En Curso" ||
-            viaje.estado_viaje.texto === "Por Iniciar"
-        ) {
-            html += `
-                        <button class="btn-action-small btn-tracking" title="Ruta Operativa" onclick="abrirModalRuta('${viaje.folio}')">
-                            <i class="fas fa-route"></i> Ruta
-                        </button>
-            `;
-        } else {
-            html += `
-                        <button class="btn-action-small btn-history" title="Ver Historial" onclick="abrirModalHistorial('${viaje.folio}')">
-                            <i class="fas fa-list-alt"></i> Historial
-                        </button>
-            `;
-        }
-
-        html += `
-                    </div>
-                </td>
+                <td>${botonesAccion}</td>
             </tr>
         `;
     });
@@ -200,7 +232,6 @@ function renderTablaViajes(viajes, container) {
 
     container.innerHTML = html;
 }
-
 // ====================================================================
 // RENDERIZADO DEL PAGINADOR CORREGIDO
 // ====================================================================
@@ -211,7 +242,8 @@ function renderPaginacion(pagination, container) {
         <div class="pagination-container">
             <div class="pagination-left-group">
                 <div class="pagination-info">
-                    Mostrando ${pagination.from || 0} a ${pagination.to || 0} de ${pagination.total} registros
+                    Mostrando ${pagination.from || 0} a ${pagination.to || 0
+        } de ${pagination.total} registros
                 </div>
 
                 <div class="pagination-limit">
@@ -220,7 +252,8 @@ function renderPaginacion(pagination, container) {
     `;
 
     [5, 10, 15, 25, 50].forEach((limit) => {
-        html += `<option value="${limit}" ${pagination.per_page == limit ? "selected" : ""}>${limit}</option>`;
+        html += `<option value="${limit}" ${pagination.per_page == limit ? "selected" : ""
+            }>${limit}</option>`;
     });
 
     html += `
@@ -284,13 +317,952 @@ function cambiarLimiteRegistros(limit) {
     cargarViajes(1);
 }
 
-function verDetalleViaje(folio) {
+// ====================================================================
+// MODO LECTURA — VER DETALLE DE VIAJE (REUTILIZA MODAL FORMULARIO)
+// ====================================================================
+
+let modoLectura = false;
+
+// ── PUNTO DE ENTRADA ─────────────────────────────────────────────────
+async function abrirModalViaje(idViaje) {
     Swal.fire({
-        title: "Detalle del Viaje",
-        text: `Mostrando información del viaje ${folio}`,
-        icon: "info",
-        confirmButtonColor: "#1e3a8a",
+        title: "Cargando información",
+        html: "Obteniendo los detalles del viaje...<br><b style='color:#0056b3;'>Por favor espere.</b>",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
     });
+
+    try {
+        const response = await fetch(`/qhse/gerenciamiento/journeys/${idViaje}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            Swal.fire("Error", result.message || "No se pudo cargar el viaje", "error");
+            return;
+        }
+        Swal.close();
+
+        // ¡NUEVO! Pasamos result.auth junto con result.data
+        await cargarModalEnModoLectura(result.data, result.auth);
+
+    } catch (e) {
+        Swal.fire("Error de conexión", e.message, "error");
+    }
+}
+// ── CARGA Y BLOQUEO COMPLETO ──────────────────────────────────────────
+async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authData
+    // 1. PRIMERO limpiar el formulario (esto apaga el modo lectura por defecto)
+    limpiarFormulario();
+
+    // 2. AHORA SÍ, activamos la bandera de modo lectura para bloquear las alertas
+    modoLectura = true;
+
+    // 3. Abrir modal
+    const modal = document.getElementById('modalFormulario');
+    if (!modal) return;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    // ── DATOS GENERALES ───────────────────────────────────────────────
+    const codigoEl = document.getElementById("codigoViaje");
+    if (codigoEl) codigoEl.innerHTML = viaje.folio || "SIN FOLIO";
+
+    const fechaDisplay = document.getElementById("fechaSolicitudDisplay");
+    const fechaHidden = document.getElementById("fechaSolicitudHidden");
+    const fechaFmt = formatearFechaDMA(viaje.request_date);
+    if (fechaDisplay) fechaDisplay.textContent = fechaFmt;
+    if (fechaHidden) fechaHidden.value = fechaFmt;
+
+    const elSolicitante = document.getElementById("solicitante");
+    const elDepartamento = document.getElementById("departamento");
+    if (elSolicitante) elSolicitante.value = viaje.creator_name || "";
+    if (elDepartamento) elDepartamento.value = viaje.department || "";
+
+    const inputDestinoHidden = document.getElementById("inputDestinoHidden");
+    const labelDestino = document.getElementById("labelDestinoSeleccionado");
+    if (inputDestinoHidden) inputDestinoHidden.value = viaje.destination_region || "";
+    if (labelDestino) {
+        labelDestino.textContent = viaje.destination_region || "Sin destino";
+        labelDestino.style.color = "#212529";
+    }
+
+    const elDestinoEsp = document.getElementById("destinoEspecifico");
+    if (elDestinoEsp) elDestinoEsp.value = viaje.specific_destination || "";
+
+    const elOrigen = modal.querySelector('input[name="origen"]');
+    const elLlegada = modal.querySelector('input[name="llegada"]');
+    if (elOrigen) elOrigen.value = viaje.origin_address || "";
+    if (elLlegada) elLlegada.value = viaje.destination_address || "";
+
+    _setFlatpickrValor("fechaInicioViaje", formatearFechaDMA(viaje.start_date));
+    _setFlatpickrValor("fechaFinViaje", formatearFechaDMA(viaje.end_date));
+    _setFlatpickrValor("horaInicioViaje", formatearHora(viaje.start_time));
+    _setFlatpickrValor("horaFinViaje", formatearHora(viaje.end_time));
+
+    // ── PARADAS ───────────────────────────────────────────────────────
+    const tieneParadas = !!viaje.has_stops;
+    const radioParadasSi = modal.querySelector('input[name="tiene_paradas"][value="si"]');
+    const radioParadasNo = modal.querySelector('input[name="tiene_paradas"][value="no"]');
+    if (tieneParadas && radioParadasSi) radioParadasSi.checked = true;
+    else if (radioParadasNo) radioParadasNo.checked = true;
+
+    if (tieneParadas && Array.isArray(viaje.planned_stops) && viaje.planned_stops.length) {
+        toggleSeccionParadas(true);
+        const listaParadas = document.getElementById("listaParadas");
+        if (listaParadas) listaParadas.innerHTML = "";
+        contadorParadas = 0;
+        viaje.planned_stops.forEach((p, i) => {
+            agregarParada();
+            const paradaEl = document.getElementById(`parada-${i + 1}`);
+            if (!paradaEl) return;
+            const sel = paradaEl.querySelector("select");
+            const inp = paradaEl.querySelector('input[type="text"]');
+            if (sel) sel.value = p.motivo || "";
+            if (inp) inp.value = p.lugar || "";
+        });
+    }
+
+    // ── UNIDADES ──────────────────────────────────────────────────────
+    const unidades = viaje.units || [];
+    for (let idx = 0; idx < unidades.length; idx++) {
+        const u = unidades[idx];
+        const num = idx + 1;
+        agregarUnidad();
+
+        const vHidden = document.getElementById(`vehicle-hidden-${num}`);
+        const vTrigger = document.getElementById(`vehicle-trigger-${num}`);
+        if (vHidden) vHidden.value = u.economic_number || "";
+        if (vTrigger && u.economic_number) {
+            const tipo = clasificacionVehiculos[u.economic_number] || "";
+            const icono = tipo.toLowerCase().includes("pesada") ? "fa-truck" : "fa-car";
+            vTrigger.innerHTML = `<i class="fas ${icono}"></i> ${u.economic_number}`;
+            vTrigger.style.color = "#495057";
+            vTrigger.style.fontWeight = "600";
+        }
+        actualizarTipoVehiculoCustom(num, u.economic_number || "");
+
+        const conductorInput = document.getElementById(`conductor-${num}`);
+        if (conductorInput) {
+            conductorInput.value = u.driver_name || "";
+            if (u.driver_id) conductorInput.dataset.conductorId = u.driver_id;
+        }
+
+        _setVal(`alcohol-pct-${num}`, u.alcohol_pct || "0.0");
+        _setVal(`presion-valor-${num}`, u.blood_pressure || "");
+
+        const medSel = document.getElementById(`medicamento-${num}`);
+        if (medSel) {
+            medSel.value = u.takes_medication || "no";
+            toggleMedicamentoDetalle(num);
+        }
+        _setVal(`medicamento-nombre-${num}`, u.medication_name || "");
+
+        const esPesada = (clasificacionVehiculos[u.economic_number] || "").toLowerCase().includes("pesada");
+        const labelLic = document.querySelector(`#vigencia-lic-${num}`)?.closest('.hour-input-group')?.querySelector('label');
+        const labelMan = document.querySelector(`#vigencia-man-${num}`)?.closest('.hour-input-group')?.querySelector('label');
+
+        if (labelLic) {
+            labelLic.innerHTML = esPesada ? `<i class="fas fa-id-card"></i> Vigencia Licencia Federal` : `<i class="fas fa-id-card"></i> Vigencia Licencia`;
+            labelLic.style.color = esPesada ? "#f08a1f" : "";
+        }
+        if (labelMan) {
+            labelMan.innerHTML = esPesada ? `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Pesada` : `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Ligera`;
+            labelMan.style.color = "#0056b3";
+        }
+
+        const inputLic = document.getElementById(`vigencia-lic-${num}`);
+        const inputMan = document.getElementById(`vigencia-man-${num}`);
+        if (inputLic) {
+            inputLic.value = u.state_license_validity || u.federal_license_validity || "No registrada";
+            inputLic.style.backgroundColor = "#e9ecef";
+            inputLic.style.color = "#495057";
+            inputLic.style.fontWeight = "bold";
+        }
+        if (inputMan) {
+            inputMan.value = u.light_defensive_driving_validity || u.heavy_defensive_driving_validity || "No registrado";
+            inputMan.style.backgroundColor = "#e9ecef";
+            inputMan.style.color = "#495057";
+            inputMan.style.fontWeight = "bold";
+        }
+
+        _setFlatpickrValor(`dormir-${num}`, u.sleep_at || "");
+        _setFlatpickrValor(`levantar-${num}`, u.wake_up_at || "");
+        _setVal(`total-hrs-dormidas-${num}`, u.total_sleep_hours || "0:00");
+        _setVal(`horas-despierto-${num}`, u.awake_hours_before || "0:00");
+        _setVal(`horas-viaje-${num}`, u.journey_duration || "0:00");
+        _setVal(`total-hrs-finalizar-${num}`, u.total_active_hours || "0:00");
+
+        const pasajeros = Array.isArray(u.passengers) ? u.passengers : [];
+        pasajeros.forEach((p, pIdx) => {
+            if (pIdx > 0) agregarPasajero(num);
+            const pInput = document.getElementById(`p-nombre-${num}-${pIdx + 1}`);
+            if (!pInput) return;
+            pInput.value = p.name || p.nombre || "";
+            if (p.id || p.driver_id) pInput.dataset.conductorId = p.id || p.driver_id;
+
+            const esRelevo = p.is_relay || p.role === "second_driver";
+            if (esRelevo) {
+                const fila = document.getElementById(`fila-p-${num}-${pIdx + 1}`);
+                if (fila) {
+                    Object.assign(fila.dataset, {
+                        alcoholPct: p.alcohol_pct || "0.0",
+                        presionValor: p.blood_pressure || "",
+                        medicamento: p.takes_medication || "no",
+                        medicamentoNombre: p.medication_name || "",
+                        dormir: p.sleep_at || "",
+                        levantar: p.wake_up_at || "",
+                        hrsDormidas: p.total_sleep_hours || "",
+                        hrDespierto: p.awake_hours_before || "",
+                        duracionViaje: p.journey_duration || "",
+                        totalHrs: p.total_active_hours || "",
+                        vigenciaLic: p.state_license_val || "",
+                        vigenciaMan: p.light_course_val || "",
+                    });
+                    actualizarIconoPasajero(fila, pIdx + 1, num);
+                    actualizarBotonVerConductor2(num);
+                }
+            }
+        });
+
+        const tieneInsp = u.light_inspection || u.heavy_inspection;
+        const btnInsp = document.getElementById(`btn-inspeccion-${num}`);
+        if (btnInsp && tieneInsp) {
+            btnInsp.dataset.realizada = "true";
+            let mappedData = null;
+
+            if (u.light_inspection) {
+                mappedData = _mapearInspeccionLigera(u.light_inspection);
+                datosInspeccionLigera[num] = mappedData;
+            }
+            if (u.heavy_inspection) {
+                mappedData = _mapearInspeccionPesada(u.heavy_inspection);
+                datosInspeccionPesada[num] = mappedData;
+            }
+
+            const tieneNos = _inspeccionTieneNos(mappedData);
+            btnInsp.className = tieneNos ? "btn-inspeccion-realizada-warning" : "btn-inspeccion-realizada-ok";
+            btnInsp.innerHTML = tieneNos ? '<i class="fas fa-exclamation-circle"></i> Realizado' : '<i class="fas fa-check-circle"></i> Realizado';
+            btnInsp.dataset.tieneNos = tieneNos ? "true" : "false";
+            btnInsp.setAttribute("onclick", `abrirInspeccionLectura(${num})`);
+            btnInsp.disabled = false;
+            btnInsp.style.pointerEvents = "auto";
+            btnInsp.style.cursor = "pointer";
+        }
+    }
+
+    // ── EVALUACIÓN DE RIESGO ──────────────────────────────────────────
+    if (viaje.risk_level || viaje.risk_assessment) {
+        evaluacionRiesgoGuardada = true;
+        puntajeRiesgoTotal = viaje.risk_score || viaje.risk_assessment?.total_score || 0;
+        const nivel = viaje.risk_level || viaje.risk_assessment?.risk_level || "bajo";
+        const mapaClase = { bajo: "btn-riesgo-bajo", medio: "btn-riesgo-medio", alto: "btn-riesgo-alto", muy_alto: "btn-riesgo-muy-alto" };
+        const mapaTexto = { bajo: "Bajo", medio: "Medio", alto: "Alto", muy_alto: "Muy Alto" };
+        const btnEval = document.getElementById("btnEvaluacionRiesgo");
+        if (btnEval) {
+            btnEval.className = `btn-evaluacion evaluacion-completada ${mapaClase[nivel] || "btn-riesgo-bajo"}`;
+            btnEval.innerHTML = `<i class="fas fa-shield-alt"></i> Evaluación: Riesgo ${mapaTexto[nivel] || "Bajo"}`;
+            btnEval.disabled = false;
+            btnEval.style.pointerEvents = "auto";
+            btnEval.style.opacity = "1";
+            btnEval.setAttribute("onclick", "abrirEvaluacionLectura()");
+        }
+        if (viaje.risk_assessment) llenarModalEvaluacionLectura(viaje.risk_assessment);
+    }
+
+    // ── REUNIÓN PRE-CONVOY ────────────────────────────────────────────
+    if (viaje.pre_convoy_meeting) {
+        const m = viaje.pre_convoy_meeting;
+        reunionPreConvoyGuardada = true;
+        datosReunionConvoy = {
+            lider_convoy_id: m.convoy_leader_id,
+            puntos_parada: m.understand_stopping_points ? "si" : "no",
+            ruptura_convoy: m.know_convoy_break_protocol ? "si" : "no",
+            doc_vigente: m.documents_verified ? "si" : "no",
+            prevencion_acc: m.accident_prevention_aware ? "si" : "no",
+            contactos_emerg: m.has_emergency_contacts ? "si" : "no",
+            compromiso_lider: m.leader_commitment_confirmed ? "si" : "no",
+        };
+        actualizarBotonReunionConvoy();
+        const btnReunion = document.getElementById("btnReunionPreConvoy");
+        if (btnReunion) {
+            btnReunion.disabled = false;
+            btnReunion.style.pointerEvents = "auto";
+            btnReunion.style.opacity = "1";
+            btnReunion.setAttribute("onclick", "abrirReunionLectura()");
+        }
+    }
+
+    // ── AUTORIZADOR ───────────────────────────────────────────────────
+    if (viaje.approver_id) {
+        const seccion = document.getElementById("seccionDestinatario");
+        const grid = document.getElementById("gridAutorizadores");
+
+        if (seccion) {
+            seccion.style.display = "block";
+            const tituloH3 = seccion.querySelector(".form-section-title");
+            if (tituloH3) tituloH3.innerHTML = '<i class="fas fa-user-check"></i> Autorizador Asignado';
+            const subtituloP = seccion.querySelector(".destinatario-subtitle");
+            if (subtituloP) subtituloP.style.display = "none";
+        }
+
+        if (grid) {
+            const nombre = viaje.approver?.employee?.full_name || viaje.approver?.name || `Autorizador #${viaje.approver_id}`;
+            const puesto = viaje.approver?.employee?.position || "Gerencia / Aprobador";
+
+            grid.innerHTML = `
+                <div style="display: flex; align-items: center; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px 16px; pointer-events: none; cursor: default; width: 100%; max-width: 400px;">
+                    <div style="font-size: 22px; color: #6c757d; margin-right: 15px;">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div style="flex-grow: 1; line-height: 1.3;">
+                        <div style="font-weight: 600; font-size: 1rem; color: #343a40;">${nombre}</div>
+                        <div style="font-size: 0.85rem; color: #6c757d;">${puesto}</div>
+                    </div>
+                    <div>
+                        <span style="background: #e9ecef; color: #495057; border: 1px solid #ced4da; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                            <i class="fas fa-check"></i> Asignado
+                        </span>
+                    </div>
+                </div>`;
+            grid.style.display = "flex";
+            grid.style.justifyContent = "flex-start";
+        }
+    }
+
+    // ── BLOQUEAR TODO Y CAMBIAR FOOTER (Pasando los datos dinámicos) ──
+    _bloquearTodo(modal);
+    _reemplazarFooter(modal, viaje, authData); // ¡NUEVO: Le pasamos los datos de auth!
+}
+function formatearHora(horaStr) {
+    if (!horaStr) return "";
+    // Si la hora viene como "14:30:00", la divide por los ":" y toma solo "14:30"
+    const partes = horaStr.split(":");
+    if (partes.length >= 2) {
+        return `${partes[0]}:${partes[1]}`;
+    }
+    return horaStr;
+}
+// ====================================================================
+// INSPECCIÓN EN MODO LECTURA
+// ====================================================================
+function abrirInspeccionLectura(num) {
+    const veh = document.getElementById(`vehicle-hidden-${num}`)?.value || "";
+    const tipo = clasificacionVehiculos[veh] || "";
+
+    if (tipo === "Ligera") {
+        gestionarModalInspeccionLigera(true, num);
+    } else if (tipo === "Pesada") {
+        gestionarModalInspeccionPesada(true, num);
+    } else {
+        Swal.fire("Sin datos", "No hay inspección registrada.", "info");
+        return;
+    }
+
+    // Bloquear el modal de inspección después de que se renderice
+    const idModal =
+        tipo === "Ligera" ? "modalInspeccionLigera" : "modalInspeccionPesada";
+    setTimeout(() => _bloquearModalInspeccion(idModal, tipo), 60);
+}
+
+function _bloquearModalInspeccion(idModal, tipo) {
+    const modal = document.getElementById(idModal);
+    if (!modal) return;
+
+    // Bloquear todos los controles
+    modal.querySelectorAll("input, select, textarea").forEach((el) => {
+        el.disabled = true;
+        el.style.pointerEvents = "none";
+    });
+
+    // Ocultar sección de cámara/fotos (no se puede agregar fotos)
+    const seccFotos = modal.querySelector(
+        '[id^="dropZone"], [id^="evidenciaInspeccion"]',
+    );
+    if (seccFotos)
+        seccFotos.closest(".fotos-section, .evidence-section, .form-group")
+            ?.style &&
+            seccFotos
+                .closest(".form-group")
+                ?.setAttribute("style", "pointer-events:none;opacity:0.5");
+
+    // Botones de cámara y limpiar → ocultar
+    modal
+        .querySelectorAll('[onclick*="abrirCamara"], [onclick*="limpiarFotos"]')
+        .forEach((btn) => {
+            btn.style.display = "none";
+        });
+
+    // Ocultar los botones de Guardar/Realizar y Cancelar
+    modal.querySelectorAll("button").forEach((btn) => {
+        const txt = btn.textContent.toLowerCase();
+        const oc = btn.getAttribute("onclick") || "";
+
+        if (
+            txt.includes("guardar") ||
+            txt.includes("realizar") ||
+            txt.includes("save") ||
+            oc.includes("guardarInspeccion")
+        ) {
+            btn.style.display = "none";
+        }
+        if (txt.includes("cancelar")) {
+            btn.style.display = "none";
+        }
+    });
+}
+
+// ====================================================================
+// EVALUACIÓN DE RIESGO EN MODO LECTURA
+// ====================================================================
+function abrirEvaluacionLectura() {
+    gestionarModalEvaluacion(true);
+    setTimeout(() => {
+        const modal = document.getElementById("modalEvaluacion");
+        if (!modal) return;
+
+        // Bloquear inputs para que no se editen
+        modal.querySelectorAll("input, select").forEach((el) => {
+            el.disabled = true;
+            el.style.pointerEvents = "none";
+        });
+
+        // Ocultar los botones de Guardar y Cancelar
+        modal.querySelectorAll("button").forEach((btn) => {
+            const txt = btn.textContent.toLowerCase();
+            const oc = btn.getAttribute("onclick") || "";
+
+            if (
+                txt.includes("guardar") ||
+                txt.includes("calcular") ||
+                oc.includes("guardarEvaluacion") ||
+                txt.includes("cancelar")
+            ) {
+                btn.style.display = "none"; // Lo ocultamos
+                btn.classList.add("btn-guardar-oculto"); // Le ponemos una marca para restaurarlo después
+            }
+        });
+
+        // Ya no inyectamos el botón Cerrar extra aquí
+    }, 60);
+}
+// ====================================================================
+// REUNIÓN PRE-CONVOY EN MODO LECTURA
+// ====================================================================
+function abrirReunionLectura() {
+    gestionarModalPreConvoy(true);
+    setTimeout(() => {
+        const modal = document.getElementById("modalPreConvoy");
+        if (!modal) return;
+
+        modal.querySelectorAll("input, select").forEach((el) => {
+            el.disabled = true;
+            el.style.pointerEvents = "none";
+        });
+
+        // Ocultar botones Guardar/Confirmar y Cancelar
+        modal.querySelectorAll("button").forEach((btn) => {
+            const txt = btn.textContent.toLowerCase();
+
+            if (
+                txt.includes("guardar") ||
+                txt.includes("confirmar") ||
+                txt.includes("save") ||
+                txt.includes("cancelar")
+            ) {
+                btn.style.display = "none";
+            }
+        });
+    }, 60);
+}
+
+// ====================================================================
+// CERRAR MODAL MODO LECTURA
+// ====================================================================
+function cerrarModalLectura() {
+    console.log("Cerrando modo lectura...");
+
+    const modal = document.getElementById("modalFormulario");
+    if (modal) {
+        modal.classList.remove("active");
+        document.body.style.overflow = "auto";
+    }
+
+    // Restaurar footer inmediatamente visualmente
+    const footerOriginal = document.getElementById("_footerOriginal");
+    const footerLectura = document.getElementById("_footerLectura");
+
+    if (footerOriginal) {
+        footerOriginal.style.display = "";
+        footerOriginal.id = ""; // Restaurar ID por si acaso
+    }
+    if (footerLectura) {
+        footerLectura.remove();
+    }
+
+    // LLAMADA CLAVE: Limpiar todo el rastro de datos
+    limpiarFormulario();
+}
+
+// ====================================================================
+// HELPERS PRIVADOS
+// ====================================================================
+
+function _setVal(id, valor) {
+    const el = document.getElementById(id);
+    if (el) el.value = valor;
+}
+
+function _setFlatpickrValor(id, valor) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el._flatpickr) el._flatpickr.destroy();
+    el.value = valor;
+}
+
+function formatearFechaDMA(fechaISO) {
+    if (!fechaISO) return "";
+    try {
+        const s = fechaISO.split("T")[0].split("-");
+        if (s.length === 3) return `${s[2]}/${s[1]}/${s[0]}`;
+    } catch (e) { }
+    return fechaISO;
+}
+
+function _bloquearTodo(modal) {
+    // 1. Todos los inputs, selects, textareas → disabled
+    modal.querySelectorAll("input, select, textarea").forEach((el) => {
+        el.disabled = true;
+        el.style.pointerEvents = "none";
+        el.removeAttribute("required");
+    });
+
+    // 2. Todos los botones internos → disabled, excepto los de inspección/conductor2/evaluación/reunión
+    modal.querySelectorAll("button").forEach((btn) => {
+        const id = btn.id || "";
+        const oc = btn.getAttribute("onclick") || "";
+        const preservar =
+            id.startsWith("btn-inspeccion-") ||
+            btn.classList.contains("btn-ver-conductor2") ||
+            oc.includes("abrirInspeccionLectura") ||
+            oc.includes("abrirEvaluacionLectura") ||
+            oc.includes("abrirReunionLectura") ||
+            id === "btnEvaluacionRiesgo" ||
+            id === "btnReunionPreConvoy";
+
+        if (!preservar) {
+            btn.disabled = true;
+            btn.style.pointerEvents = "none";
+            btn.style.opacity = "0.35";
+        }
+    });
+
+    // 3. Triggers de vehículo y destino → no clickeables
+    modal
+        .querySelectorAll('[id^="vehicle-trigger-"], #wrapperDestino')
+        .forEach((el) => {
+            el.style.pointerEvents = "none";
+            el.style.cursor = "default";
+        });
+
+    // 4. Ocultar botón "Agregar Unidad" y "Agregar Parada"
+    const btnAgregar = document.getElementById("btnAgregarUnidad");
+    if (btnAgregar) btnAgregar.style.display = "none";
+
+    modal.querySelectorAll('[onclick*="agregarParada"]').forEach((btn) => {
+        btn.style.display = "none";
+    });
+
+    // 5. Ocultar botones eliminar unidad, pasajero y paradas
+    modal
+        .querySelectorAll(
+            '[onclick*="eliminarUnidad"], [onclick*="eliminarPasajero"], .btn-add-pasajero, [id^="btn-add-pasajero-"], .btn-remove-parada-compact',
+        )
+        .forEach((el) => {
+            el.style.display = "none";
+        });
+
+    // 6. Ocultar icono de asignar rol pasajero (para no confundir)
+    modal
+        .querySelectorAll('[onclick*="gestionarRolPasajero"]')
+        .forEach((el) => {
+            el.style.pointerEvents = "none";
+            el.style.opacity = "0.4";
+            el.style.cursor = "default";
+        });
+}
+
+// ── FOOTER DINÁMICO E INTELIGENTE ────────────────────────────────────
+function _reemplazarFooter(modal, viaje, authData) {
+    let footer =
+        modal.querySelector(".modal-footer") ||
+        modal.querySelector(".form-footer") ||
+        modal.querySelector(".footer-actions") ||
+        document.getElementById("btnEnviarSolicitud")?.parentElement;
+
+    if (!footer) return;
+
+    footer.id = "_footerOriginal";
+    footer.style.display = "none";
+
+    const nuevoFooter = document.createElement("div");
+    nuevoFooter.id = "_footerLectura";
+    nuevoFooter.style.cssText = `
+        display: flex;
+        justify-content: center;
+        padding: 16px 24px;
+        border-top: 1px solid #dee2e6;
+        background: #f8f9fa;
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        gap: 15px;
+    `;
+
+    let botonesHTML = '';
+
+    // Si el viaje ya inició o finalizó, NADIE puede hacer nada, solo cerrar.
+    const viajeBloqueado = ['in_progress', 'completed', 'cancelled', 'no_procede'].includes(viaje.journey_status);
+
+    if (!viajeBloqueado) {
+
+        // 1. LÓGICA PARA EL APROBADOR (Si tiene permiso)
+        if (authData.can_approve) {
+            if (viaje.approval_status === 'pending') {
+                botonesHTML += `
+                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'aprobado')" style="background: #28a745; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
+                        <i class="fas fa-check-circle"></i> Aprobar
+                    </button>
+                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'rechazado')" style="background: #dc3545; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
+                        <i class="fas fa-times-circle"></i> Rechazar
+                    </button>
+                `;
+            }
+
+            // Si lo aprobó, pero el viaje aún no inicia, puede arrepentirse y cancelarlo
+            if (viaje.approval_status === 'approved') {
+                 botonesHTML += `
+                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')" style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
+                        <i class="fas fa-ban"></i> Cancelar Viaje
+                    </button>
+                `;
+            }
+        }
+
+        // 2. LÓGICA PARA EL CREADOR DEL VIAJE
+        // Si es el creador, la solicitud está pendiente o aprobada, y el viaje no ha iniciado, puede cancelar.
+        if (authData.is_creator && (viaje.approval_status === 'pending' || viaje.approval_status === 'approved')) {
+            // Evitamos duplicar el botón de cancelar si el creador también resulta ser el aprobador
+            if (!botonesHTML.includes('Cancelar Viaje')) {
+                botonesHTML += `
+                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')" style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
+                        <i class="fas fa-ban"></i> Cancelar Solicitud
+                    </button>
+                `;
+            }
+        }
+    }
+
+    // 3. BOTÓN DE CERRAR (Siempre visible para todos)
+    botonesHTML += `
+        <button onclick="cerrarModalLectura()" style="background: #6c757d; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+            <i class="fas fa-sign-out-alt"></i> Cerrar
+        </button>
+    `;
+
+    nuevoFooter.innerHTML = botonesHTML;
+    footer.parentNode.insertBefore(nuevoFooter, footer.nextSibling);
+}
+
+// ====== VARIABLES PARA SEGUIMIENTO DE RUTA ======
+let viajeRutaActivoId = null;
+// ====================================================================
+// GESTIÓN DE ESTADOS DEL VIAJE (APROBAR/RECHAZAR/CANCELAR)
+// ====================================================================
+function gestionarEstadoViaje(viajeId, accion) {
+    if (!viajeId) return;
+
+    let titulo = ""; let texto = ""; let icono = ""; let colorConf = "";
+
+    if (accion === 'aprobado') {
+        titulo = "¿Aprobar viaje?";
+        texto = "Este viaje pasará a estado 'Aprobado' y estará listo para iniciar.";
+        icono = "success"; colorConf = "#28a745";
+    } else if (accion === 'rechazado') {
+        titulo = "¿Rechazar viaje?";
+        texto = "El viaje será marcado como rechazado. El solicitante será notificado.";
+        icono = "error"; colorConf = "#dc3545";
+    } else if (accion === 'cancelado') {
+        titulo = "¿Cancelar viaje?";
+        texto = "El viaje se cancelará de forma permanente.";
+        icono = "warning"; colorConf = "#fd7e14";
+    }
+
+    const backendStatus = {
+        'aprobado': 'approved',
+        'rechazado': 'rejected',
+        'cancelado': 'cancelled'
+    }[accion];
+
+    Swal.fire({
+        title: titulo,
+        text: texto,
+        icon: icono,
+        showCancelButton: true,
+        confirmButtonColor: colorConf,
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: `Sí, ${accion}`,
+        cancelButtonText: "Regresar",
+        showLoaderOnConfirm: true, // Activa la animación de carga en el botón
+        allowOutsideClick: () => !Swal.isLoading(), // Evita cerrar si está cargando
+        preConfirm: async () => {
+            try {
+                // El fetch se hace aquí adentro para bloquear el botón
+                const response = await fetch(`/qhse/gerenciamiento/journeys/${viajeId}/approval-status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ approval_status: backendStatus })
+                });
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+                return await response.json();
+            } catch (error) {
+                Swal.showValidationMessage(`Falló la operación: ${error}`);
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed && result.value && result.value.success) {
+            Swal.fire("¡Acción completada!", `El viaje ha sido ${accion} con éxito.`, "success").then(() => {
+                cerrarModalLectura();
+                cargarViajes(currentPage);
+            });
+        } else if (result.isConfirmed && (!result.value || !result.value.success)) {
+            Swal.fire("Error", "No se pudo actualizar el estado.", "error");
+        }
+    });
+}
+// ── MAPEO DE INSPECCIÓN LIGERA (BD → objeto JS que espera el modal) ──
+function _mapearInspeccionLigera(insp) {
+    if (!insp) return {};
+    const b = (v) => (v ? "si" : "no");
+    return {
+        created_at: insp.created_at || null,
+        kilometraje: insp.mileage || "0",
+        nivel_gasolina: insp.fuel_level || "",
+        doc_tarjeta: b(insp.doc_registration_card),
+        doc_poliza: b(insp.doc_insurance_policy),
+        doc_tel_emergencia: b(insp.doc_emergency_phones),
+        doc_licencia: b(insp.doc_driving_license),
+        vis_botiquin: b(insp.vis_first_aid_kit),
+        vis_triangulo: b(insp.vis_safety_triangles),
+        vis_extintor: b(insp.vis_fire_extinguisher),
+        vis_gato: b(insp.vis_jack_wrench),
+        vis_cables: b(insp.vis_jumper_cables),
+        vis_herramientas: b(insp.vis_basic_tools),
+        vis_linterna: b(insp.vis_flashlight),
+        vis_espejos: b(insp.vis_mirrors),
+        vis_refaccion: b(insp.vis_spare_tire),
+        vis_neumaticos: b(insp.vis_tires_condition),
+        vis_pintura: b(insp.vis_paint_condition),
+        vis_parabrisas: b(insp.vis_windshield_wipers),
+        vis_defensas: b(insp.vis_bumpers),
+        vis_luces_gral: b(insp.vis_main_lights),
+        vis_luces_stop: b(insp.vis_stop_reverse_lights),
+        vis_claxon: b(insp.vis_horn),
+        vis_logos: b(insp.vis_company_logos),
+        vis_asientos: b(insp.vis_seats_condition),
+        vis_panel: b(insp.vis_dashboard_panel),
+        vis_cinturones: b(insp.vis_seatbelts),
+        mant_fecha_km: b(insp.maint_last_check_verified),
+        mant_fugas: b(insp.maint_leaks_check),
+        mant_niveles: b(insp.maint_fluid_levels),
+        mant_bandas: b(insp.maint_belts_condition),
+        anomalias_detectadas: b(insp.has_anomalies),
+        comentarios: insp.anomaly_comments || "",
+        // LÍNEA MODIFICADA: Capturamos las fotos enviadas por el backend
+        fotos_originales: insp.formatted_photos || [],
+    };
+}
+
+// ── MAPEO DE INSPECCIÓN PESADA (BD → objeto JS que espera el modal) ──
+function _mapearInspeccionPesada(insp) {
+    if (!insp) return {};
+    const b = (v) => (v ? "si" : "no");
+    return {
+        created_at: insp.created_at || null,
+        kilometraje: insp.mileage || "0",
+        nivel_diesel: insp.fuel_level || "",
+        doc_tarjeta: b(insp.doc_registration_card),
+        doc_poliza: b(insp.doc_insurance_policy),
+        doc_permiso_carga: b(insp.doc_cargo_permit),
+        doc_bajos_contam: b(insp.doc_emissions_cert),
+        doc_fisico_mec: b(insp.doc_mechanical_cert),
+        doc_carta_porte: b(insp.doc_waybill),
+        doc_tel_emergencia: b(insp.doc_emergency_phones),
+        doc_licencia: b(insp.doc_driving_license),
+        vis_botiquin: b(insp.vis_first_aid_kit),
+        vis_conos: b(insp.vis_safety_cones),
+        vis_extintor: b(insp.vis_fire_extinguisher),
+        vis_gato: b(insp.vis_jack),
+        vis_cables: b(insp.vis_jumper_cables),
+        vis_linterna: b(insp.vis_flashlight),
+        vis_espejos: b(insp.vis_mirrors),
+        vis_refaccion: b(insp.vis_spare_tire),
+        vis_llantas_estado: b(insp.vis_tires_condition),
+        vis_llantas_calib: b(insp.vis_tires_calibrated),
+        vis_puertas: b(insp.vis_doors_windows),
+        vis_golpes: b(insp.vis_body_dents),
+        vis_limpiaparabrisas: b(insp.vis_windshield_wipers),
+        vis_aire_acond: b(insp.vis_air_conditioning),
+        vis_resortes: b(insp.vis_springs_suspension),
+        vis_bolsas_aire: b(insp.vis_air_bags_suspension),
+        vis_luces_gral: b(insp.vis_general_lights),
+        vis_claxon: b(insp.vis_horn),
+        vis_alarma_reversa: b(insp.vis_reverse_alarm),
+        vis_logos: b(insp.vis_logos),
+        vis_asientos: b(insp.vis_seats),
+        vis_cinturones: b(insp.vis_seatbelts),
+        vis_torreta: b(insp.vis_beacon_light),
+        mant_fecha_km: b(insp.maint_date_km_check),
+        mant_encendido: b(insp.maint_engine_start),
+        mant_presion_aceite: b(insp.maint_oil_pressure),
+        mant_temp_motor: b(insp.maint_engine_temp),
+        mant_presion_aire: b(insp.maint_air_pressure),
+        mant_fan_clutch: b(insp.maint_fan_clutch),
+        mant_baterias: b(insp.maint_batteries),
+        mant_velocimetro: b(insp.maint_speedometer),
+        mant_rpm: b(insp.maint_rpm_indicator),
+        mant_nivel_aceite: b(insp.maint_oil_level),
+        mant_nivel_anticongelante: b(insp.maint_coolant_level),
+        mant_nivel_hidraulico: b(insp.maint_hydraulic_level),
+        mant_nivel_diesel: b(insp.maint_diesel_level),
+        mant_freno_motor: b(insp.maint_engine_brake),
+        mant_freno_parqueo: b(insp.maint_parking_brake),
+        mant_bandas: b(insp.maint_belts),
+        mant_purgado: b(insp.maint_air_tank_purge),
+        anomalias_detectadas: b(insp.has_anomalies),
+        comentarios: insp.anomaly_comments || "",
+        // LÍNEA MODIFICADA: Capturamos las fotos enviadas por el backend
+        fotos_originales: insp.formatted_photos || [],
+    };
+}
+
+function _inspeccionTieneNos(mappedInsp) {
+    if (!mappedInsp) return false;
+
+    // 1. Si el usuario marcó explícitamente que SÍ detectó anomalías generales
+    if (mappedInsp.anomalias_detectadas === "si") return true;
+
+    // 2. Revisar si hay algún "no" en el resto de los puntos de inspección.
+    for (const [key, value] of Object.entries(mappedInsp)) {
+        // Ignoramos los campos donde "no" es algo bueno, o que no son de revisión (textos, arrays, etc.)
+        if (
+            key === "anomalias_detectadas" ||
+            key === "comentarios" ||
+            key === "fotos_originales" ||
+            key === "kilometraje" ||
+            key === "nivel_gasolina" ||
+            key === "nivel_diesel" ||
+            key === "created_at"
+        ) {
+            continue;
+        }
+
+        // Si encontramos un "no" en los documentos, luces, llantas, etc., disparamos la alerta naranja
+        if (value === "no") {
+            return true;
+        }
+    }
+
+    // Si pasó todas las pruebas, todo está en orden (Botón Verde)
+    return false;
+}
+
+
+
+
+// ── PARCHAR gestionarModalFormulario para no mostrar confirm en lectura ──
+const __gestionarOriginal = gestionarModalFormulario;
+gestionarModalFormulario = function (abrir) {
+    if (!abrir && modoLectura) {
+        cerrarModalLectura();
+        return;
+    }
+    __gestionarOriginal(abrir);
+};
+
+function llenarModalEvaluacionLectura(assessment) {
+    const form = document.getElementById("formEvaluacionRiesgo");
+    if (!form || !assessment) return;
+
+    form.reset();
+
+    // Mapeo Inverso (Backend a Frontend)
+    const mapeoCampos = {
+        defensive_driving_score: "ev_manejo",
+        awake_hours_score: "ev_horas",
+        fleet_composition_score: "ev_vehiculos",
+        communication_score: "ev_comunicacion",
+        weather_score: "ev_clima",
+        lighting_score: "ev_iluminacion",
+        road_condition_score: "ev_carretera",
+        extra_road_hazards_score: "ev_otras",
+        wildlife_activity_score: "ev_animales",
+        route_security_score: "ev_seguridad",
+        hazardous_material_score: "ev_radiactivo",
+    };
+
+    // Llenar Radios
+    for (const [dbName, frontName] of Object.entries(mapeoCampos)) {
+        if (assessment[dbName] !== undefined && assessment[dbName] !== null) {
+            const val = assessment[dbName];
+            const radio = form.querySelector(
+                `input[name="${frontName}"][value="${val}"]`,
+            );
+            if (radio) {
+                radio.checked = true;
+                // Pintar visualmente la opción seleccionada
+                const allRadios = form.querySelectorAll(
+                    `input[name="${frontName}"]`,
+                );
+                allRadios.forEach((r) => {
+                    if (r.parentElement)
+                        r.parentElement.style.opacity =
+                            r === radio ? "1" : "0.5";
+                });
+            }
+        }
+    }
+
+    // Llenar Checkboxes Críticos
+    const checks = {
+        ev_horario_nocturno: assessment.is_night_shift,
+        ev_horas_dormidas: assessment.has_low_sleep,
+        ev_rebase_medianoche: assessment.exceeds_midnight,
+        ev_16hrs_despierto: assessment.extreme_fatigue,
+    };
+
+    for (const [frontName, state] of Object.entries(checks)) {
+        const check = form.querySelector(`input[name="${frontName}"]`);
+        if (check) {
+            check.checked = !!state;
+            if (state && check.parentElement) {
+                check.parentElement.style.color = "#dc3545";
+                check.parentElement.style.fontWeight = "bold";
+                check.parentElement.style.opacity = "1";
+            } else if (check.parentElement) {
+                check.parentElement.style.color = "";
+                check.parentElement.style.fontWeight = "normal";
+                check.parentElement.style.opacity = "0.5";
+            }
+        }
+    }
 }
 
 async function actualizarEstadisticas() {
@@ -300,9 +1272,12 @@ async function actualizarEstadisticas() {
         const result = await response.json();
 
         if (result.success) {
-            document.getElementById("active-count").textContent = result.data.activos || 0;
-            document.getElementById("pending-count").textContent = result.data.pendientes || 0;
-            document.getElementById("completed-count").textContent = result.data.completados || 0;
+            document.getElementById("active-count").textContent =
+                result.data.activos || 0;
+            document.getElementById("pending-count").textContent =
+                result.data.pendientes || 0;
+            document.getElementById("completed-count").textContent =
+                result.data.completados || 0;
         }
     } catch (error) {
         console.error("Error cargando estadísticas:", error);
@@ -313,13 +1288,18 @@ async function actualizarEstadisticas() {
 // CONFIGURACIÓN DE EVENTOS (FILTROS)
 // ====================================================================
 document.addEventListener("DOMContentLoaded", function () {
-    // Configuración flatpickr...
+    // Configuración flatpickr (FILTRO DE FECHA)
     if (document.getElementById("solicitud-date")) {
         flatpickr("#solicitud-date", {
             dateFormat: "d/m/Y",
             locale: "es",
+            disableMobile: true,
+            allowInput: true,
             onChange: function (selectedDates, dateStr, instance) {
-                currentFechaSolicitud = dateStr;
+                // Usamos tu función para transformar "DD/MM/YYYY" a "YYYY-MM-DD"
+                currentFechaSolicitud = dateStr
+                    ? convertirFechaParaMySQL(dateStr)
+                    : "";
                 currentPage = 1;
                 cargarViajes(1);
             },
@@ -381,17 +1361,49 @@ document.addEventListener("DOMContentLoaded", function () {
     const clearFilters = document.getElementById("clear-filters");
     if (clearFilters) {
         clearFilters.addEventListener("click", function () {
-            document.getElementById("searchViajes").value = "";
-            document.getElementById("destino-filter").value = "all";
-            document.getElementById("status-gv-filter").value = "all"; // Limpiar GV
-            document.getElementById("status-viaje-filter").value = "all"; // Limpiar Viaje
-            document.getElementById("riesgo-filter").value = "all";
+            // 1. Limpiar Input de Búsqueda
+            const searchInput = document.getElementById("searchViajes");
+            if (searchInput) searchInput.value = "";
 
+            // 2. Limpiar Selects Nativos
+            const statusGvFilter = document.getElementById("status-gv-filter");
+            if (statusGvFilter) statusGvFilter.value = "all";
+
+            const statusViajeFilter = document.getElementById(
+                "status-viaje-filter",
+            );
+            if (statusViajeFilter) statusViajeFilter.value = "all";
+
+            const riesgoFilter = document.getElementById("riesgo-filter");
+            if (riesgoFilter) riesgoFilter.value = "all";
+
+            // 3. Limpiar Select Personalizado de Destino
+            const inputDestinoHidden = document.getElementById(
+                "inputDestinoFiltroHidden",
+            );
+            if (inputDestinoHidden) inputDestinoHidden.value = "all";
+
+            const labelDestino = document.getElementById(
+                "labelDestinoFiltroSeleccionado",
+            );
+            if (labelDestino) labelDestino.textContent = "Todos los Destinos";
+
+            // Quitar clase active de las opciones del menú de destino si alguna estaba abierta
+            document
+                .querySelectorAll("#listaOpcionesDestinoFiltro .option-group")
+                .forEach((el) => {
+                    el.classList.remove("active");
+                    const icon = el.querySelector(".option-group-header i");
+                    if (icon) icon.className = "fas fa-chevron-right";
+                });
+
+            // 4. Limpiar Fecha (Flatpickr)
             const fechaInput = document.getElementById("solicitud-date");
             if (fechaInput && fechaInput._flatpickr) {
                 fechaInput._flatpickr.clear();
             }
 
+            // 5. Reiniciar Variables Globales
             currentSearch = "";
             currentStatusGv = "all";
             currentStatusViaje = "all";
@@ -400,6 +1412,7 @@ document.addEventListener("DOMContentLoaded", function () {
             currentFechaSolicitud = "";
             currentPage = 1;
 
+            // 6. Recargar datos limpios
             cargarViajes(1);
         });
     }
@@ -540,8 +1553,8 @@ function inicializarFlatpickr() {
     if (horaFinViaje) flatpickr(horaFinViaje, configHora);
 
     // NUEVO: Fecha de solicitud de viaje
-    const solicitudDate = document.getElementById("solicitud-date");
-    if (solicitudDate) flatpickr(solicitudDate, configFechaSolicitud);
+    // const solicitudDate = document.getElementById("solicitud-date");
+    //if (solicitudDate) flatpickr(solicitudDate, configFechaSolicitud);
 }
 
 // ====================================================================
@@ -762,23 +1775,17 @@ function calcularTotalHoras(unidadNumero) {
 
         totalInput.value = totalHorasStr;
 
-        // Si excede 15 horas (900 minutos)
-        if (totalMinutos > 900) {
-            totalInput.style.backgroundColor = "#dc3545";
+        // CAMBIO: Validar contra 960 minutos (16 horas exactas)
+        if (totalMinutos >= 960) {
+            totalInput.style.backgroundColor = "#dc3545"; // Rojo crítico
             totalInput.style.color = "#ffffff";
 
             if (!totalInput.dataset.warningShown) {
                 Swal.fire({
-                    title: "¡Advertencia de Horas!",
-                    html: `
-                        La Unidad <strong>${unidadNumero}</strong> acumulará <strong>${totalHorasStr} horas</strong> totales.<br>
-                        <div style="background-color: #f8d7da; color: #721c24; padding: 5px; border-radius: 4px; margin: 10px 0; font-weight: bold;">
-                             ${valDespierto} (Despierto) ${valViaje} (Viaje)
-                        </div>
-                        Esto excede el límite recomendado de 15 horas.
-                    `,
-                    icon: "warning",
-                    confirmButtonColor: "#0056b3",
+                    title: "¡Alerta Crítica de Fatiga!",
+                    html: `La Unidad <strong>${unidadNumero}</strong> alcanzará <strong>${totalHorasStr} horas</strong> despierto.<br>Excede el límite máximo de seguridad (16 hrs).`,
+                    icon: "error",
+                    confirmButtonColor: "#dc3545",
                 });
                 totalInput.dataset.warningShown = "true";
             }
@@ -1148,20 +2155,31 @@ function finalizarSeleccion(valorReal, textoVisual) {
 // FUNCIONES DE UNIDADES
 // ===================================================================
 
+// ====================================================================
+// FUNCIONES DE UNIDADES
+// ===================================================================
+
 function agregarUnidad() {
     if (contadorUnidades >= MAX_UNIDADES) {
-        Swal.fire(
-            "Límite alcanzado",
-            `Solo puedes agregar hasta ${MAX_UNIDADES} unidades.`,
-            "warning",
-        );
+        // Validación de límite máximo, se suprime visualmente en modo lectura
+        // ya que el botón no existe, pero protege la lógica interna.
+        if (!modoLectura) {
+            Swal.fire(
+                "Límite alcanzado",
+                `Solo puedes agregar hasta ${MAX_UNIDADES} unidades.`,
+                "warning",
+            );
+        }
         return;
     }
 
     contadorUnidades++;
     const numeroUnidad = contadorUnidades;
 
-    if (numeroUnidad === 2) {
+    // Supresión categórica de la alerta de Convoy cuando estamos en modo lectura.
+    // Previene interrupciones en la experiencia de usuario (UX) mientras
+    // el sistema inyecta dinámicamente las unidades del viaje desde la base de datos.
+    if (numeroUnidad === 2 && !modoLectura) {
         Swal.fire({
             title: "¡Convoy de Unidades!",
             html: "Has agregado una segunda unidad. Se gestionará como Convoy.",
@@ -1186,16 +2204,15 @@ function agregarUnidad() {
     actualizarBotonReunionConvoy();
     actualizarBotonEvaluacion();
 }
-
 function generarHTMLUnidad(numeroUnidad) {
     const botonEliminarHTML =
         numeroUnidad === 1
             ? `<button type="button" class="btn-accion eliminar" style="opacity: 0.3; pointer-events: none;" title="La primera unidad es obligatoria y no se puede eliminar">
-               <i class="fas fa-trash"></i>
-           </button>`
+            <i class="fas fa-trash"></i>
+                </button>`
             : `<button type="button" class="btn-accion eliminar" onclick="eliminarUnidad(${numeroUnidad})" title="Eliminar unidad">
-               <i class="fas fa-trash"></i>
-           </button>`;
+            <i class="fas fa-trash"></i>
+            </button>`;
 
     return `
     <td>
@@ -1648,9 +2665,8 @@ function actualizarBotonAgregar() {
         boton.textContent = `Límite de ${MAX_UNIDADES} Unidades Alcanzado`;
     } else {
         const restantes = MAX_UNIDADES - contadorUnidades;
-        boton.innerHTML = `<i class="fas fa-plus-circle"></i> Agregar Unidad (${restantes} restante${
-            restantes !== 1 ? "s" : ""
-        })`;
+        boton.innerHTML = `<i class="fas fa-plus-circle"></i> Agregar Unidad (${restantes} restante${restantes !== 1 ? "s" : ""
+            })`;
     }
 }
 
@@ -1693,7 +2709,7 @@ function validarPersonaDuplicada(inputActual, nombreSeleccionado) {
         if (
             otroInput !== inputActual &&
             otroInput.value.trim().toUpperCase() ===
-                nombreSeleccionado.trim().toUpperCase()
+            nombreSeleccionado.trim().toUpperCase()
         ) {
             esDuplicado = true;
             break;
@@ -2022,8 +3038,8 @@ function actualizarDatosConductor(unidadNumero, nombreConductor) {
                     Se detectaron los siguientes problemas:
                     <ul style="color: #dc3545; font-weight: bold; margin-top: 10px; text-align: left;">
                         ${problemasDocumentacion
-                            .map((prob) => `<li>${prob}</li>`)
-                            .join("")}
+                    .map((prob) => `<li>${prob}</li>`)
+                    .join("")}
                     </ul>
                     <br>
                     <i class="fas fa-ban"></i> <strong>ACCIÓN REQUERIDA:</strong><br>
@@ -2688,9 +3704,12 @@ function gestionarRolPasajero(unidad, index) {
                 const totalMinutos = minutosDespierto + minutosViaje;
                 totalHrsInput.value = minutosAStringHora(totalMinutos);
 
-                if (totalMinutos > 900) {
+                // CAMBIO: Ajuste a 960 minutos (16 horas)
+                if (totalMinutos >= 960) {
                     totalHrsInput.style.backgroundColor = "#dc3545";
                     totalHrsInput.style.color = "#ffffff";
+                    warningMsg.innerHTML =
+                        '<i class="fas fa-exclamation-triangle"></i> Excede el límite legal de 16 hrs';
                     warningMsg.style.display = "block";
                     totalHrsInput.dataset.excede = "true";
                 } else {
@@ -2756,19 +3775,16 @@ function gestionarRolPasajero(unidad, index) {
 
             if (licStatus === "expired" || licStatus === "missing") {
                 erroresDocs.push(
-                    `${esPesada ? "Licencia Federal" : "Licencia"} (${
-                        licStatus === "expired" ? "VENCIDA" : "NO REGISTRADA"
+                    `${esPesada ? "Licencia Federal" : "Licencia"} (${licStatus === "expired" ? "VENCIDA" : "NO REGISTRADA"
                     })`,
                 );
             }
             if (manStatus === "expired" || manStatus === "missing") {
                 erroresDocs.push(
-                    `${
-                        esPesada
-                            ? "Curso Man. Def. Pesada"
-                            : "Curso Man. Def. Ligera"
-                    } (${
-                        manStatus === "expired" ? "VENCIDO" : "NO REGISTRADO"
+                    `${esPesada
+                        ? "Curso Man. Def. Pesada"
+                        : "Curso Man. Def. Ligera"
+                    } (${manStatus === "expired" ? "VENCIDO" : "NO REGISTRADO"
                     })`,
                 );
             }
@@ -2881,39 +3897,34 @@ function mostrarInfoConductor2(unidadNumero) {
                     <h3 style="color: #0056b3; margin-top: 0;">${pNombre}</h3>
                     <div style="display: flex; gap: 15px; margin-top: 10px;">
                         <div>
-                            <strong>${
-                                esPesada
-                                    ? "Licencia Federal"
-                                    : "Vigencia Licencia"
-                            }:</strong><br>
-                            <span style="color: ${
-                                pVigenciaLic.includes("No registrada")
-                                    ? "#dc3545"
-                                    : "#28a745"
-                            }">${pVigenciaLic || "No registrada"}</span>
+                            <strong>${esPesada
+                ? "Licencia Federal"
+                : "Vigencia Licencia"
+            }:</strong><br>
+                            <span style="color: ${pVigenciaLic.includes("No registrada")
+                ? "#dc3545"
+                : "#28a745"
+            }">${pVigenciaLic || "No registrada"}</span>
                         </div>
                         <div>
-                            <strong>${
-                                esPesada
-                                    ? "Man. Def. Pesada"
-                                    : "Man. Def. Ligera"
-                            }:</strong><br>
-                            <span style="color: ${
-                                pVigenciaMan.includes("No registrada")
-                                    ? "#dc3545"
-                                    : "#28a745"
-                            }">${pVigenciaMan || "No registrada"}</span>
+                            <strong>${esPesada
+                ? "Man. Def. Pesada"
+                : "Man. Def. Ligera"
+            }:</strong><br>
+                            <span style="color: ${pVigenciaMan.includes("No registrada")
+                ? "#dc3545"
+                : "#28a745"
+            }">${pVigenciaMan || "No registrada"}</span>
                         </div>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div>
                         <strong><i class="fas fa-wind"></i> Alcoholimetría:</strong><br>
-                        <span style="color: ${
-                            parseFloat(pAlcoholPct) === 0
-                                ? "#28a745"
-                                : "#dc3545"
-                        }">${pAlcoholPct}%</span>
+                        <span style="color: ${parseFloat(pAlcoholPct) === 0
+                ? "#28a745"
+                : "#dc3545"
+            }">${pAlcoholPct}%</span>
                     </div>
                     <div>
                         <strong><i class="fas fa-heartbeat"></i> Presión Arterial:</strong><br>
@@ -2933,29 +3944,24 @@ function mostrarInfoConductor2(unidadNumero) {
                     </div>
                     <div>
                         <strong><i class="fas fa-pills"></i> Toma Medicamento:</strong><br>
-                        <span style="color: ${
-                            pMedicamento === "si" ? "#ffc107" : "#28a745"
-                        }">${
-                            pMedicamento === "si"
-                                ? `Sí (${pMedicamentoNombre})`
-                                : "No"
-                        }</span>
+                        <span style="color: ${pMedicamento === "si" ? "#ffc107" : "#28a745"
+            }">${pMedicamento === "si"
+                ? `Sí (${pMedicamentoNombre})`
+                : "No"
+            }</span>
                     </div>
                 </div>
                 <div style="background: #e9ecef; padding: 10px; border-radius: 6px; margin-top: 15px;">
                     <h4 style="color: #0056b3; margin-top: 0; margin-bottom: 10px;">Horas de Conducción:</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div><strong>Hr Despierto:</strong><br><span>${
-                            pHrDespierto || "No calculado"
-                        }</span></div>
-                        <div><strong>Duración Viaje:</strong><br><span>${
-                            pDuracionViaje || "No calculado"
-                        }</span></div>
+                        <div><strong>Hr Despierto:</strong><br><span>${pHrDespierto || "No calculado"
+            }</span></div>
+                        <div><strong>Duración Viaje:</strong><br><span>${pDuracionViaje || "No calculado"
+            }</span></div>
                         <div style="grid-column: span 2;">
                             <strong>Total Hrs:</strong><br>
-                            <span style="font-weight: bold; color: #0056b3;">${
-                                pTotalHrs || "No calculado"
-                            }</span>
+                            <span style="font-weight: bold; color: #0056b3;">${pTotalHrs || "No calculado"
+            }</span>
                         </div>
                     </div>
                 </div>
@@ -3137,6 +4143,64 @@ function convertirArchivoABase64(file) {
     });
 }
 
+// ====================================================================
+// FUNCIÓN PARA OBTENER LA ÚLTIMA FECHA DE INSPECCIÓN DESDE LA BD
+// ====================================================================
+async function cargarFechaUltimaInspeccion(numeroEconomico, tipo, fechaHistorica = null) {
+    const headerElement = document.getElementById(
+        tipo === "ligera"
+            ? "headerUltimaInspeccionLigera"
+            : "headerUltimaInspeccionPesada",
+    );
+
+    if (!headerElement) return;
+
+    // Estado de carga mientras busca
+    headerElement.textContent = "Buscando...";
+    headerElement.style.color = "#f08a1f"; // Color de advertencia mientras carga
+
+    if (!numeroEconomico) {
+        headerElement.textContent = "--/--/----";
+        headerElement.style.color = "";
+        return;
+    }
+
+    // Determinar la fecha de contexto para buscar hacia atrás.
+    // Si pasamos una fecha histórica (modo lectura), usamos esa.
+    // De lo contrario, usamos la fecha de hoy.
+    let fechaISO = "";
+    if (fechaHistorica) {
+        // La fecha histórica viene en formato ISO directo de la BD (ej. 2026-02-24T10:30:00.000000Z)
+        fechaISO = fechaHistorica;
+    } else {
+        // Si es un viaje nuevo, tomamos la fecha actual del formulario y la convertimos
+        const fechaContexto = document.getElementById("fechaSolicitudHidden")?.value || "";
+        fechaISO = convertirFechaParaMySQL(fechaContexto);
+    }
+
+    try {
+        // Enviamos la fecha como parámetro de consulta
+        const response = await fetch(
+            `/qhse/gerenciamiento/journeys/last-inspection/${encodeURIComponent(
+                numeroEconomico,
+            )}?context_date=${encodeURIComponent(fechaISO)}`,
+        );
+        const result = await response.json();
+
+        if (result.success && result.date) {
+            headerElement.textContent = result.date;
+            headerElement.style.color = "#f08a1f"; // Naranja para resaltar
+        } else {
+            headerElement.textContent = "Primera vez"; // O puedes poner "Sin registros"
+            headerElement.style.color = "#6c757d"; // Gris
+        }
+    } catch (error) {
+        console.error("Error al obtener última inspección:", error);
+        headerElement.textContent = "--/--/----";
+        headerElement.style.color = "";
+    }
+}
+
 function gestionarModalInspeccionLigera(
     abrir,
     unidadNumero = null,
@@ -3147,7 +4211,13 @@ function gestionarModalInspeccionLigera(
     if (abrir && unidadNumero !== null) {
         unidadEnInspeccion = unidadNumero;
         tipoVehiculoInspeccion = "ligera";
-        fotosSubidas.ligera = [];
+
+        const savedData = datosInspeccionLigera[unidadNumero] || {};
+        if (savedData.fotos_originales) {
+            fotosSubidas.ligera = [...savedData.fotos_originales];
+        } else {
+            fotosSubidas.ligera = [];
+        }
         actualizarVistaPrevia("ligera");
 
         const inputConductorPrincipal = document.getElementById(
@@ -3156,10 +4226,45 @@ function gestionarModalInspeccionLigera(
         const nombreConductor = inputConductorPrincipal
             ? inputConductorPrincipal.value
             : "";
+
         const hiddenInput = document.getElementById(
             `vehicle-hidden-${unidadNumero}`,
         );
         const numeroEconomico = hiddenInput?.value || "";
+
+        // =========================================================
+        // LÓGICA CONDICIONAL DE FECHAS: MODO LECTURA VS MODO EDICIÓN
+        // =========================================================
+        const spanFechaInspeccion = document.getElementById(
+            "fechaActualInspeccionLigera",
+        );
+
+        if (modoLectura) {
+            // MODO LECTURA: Mostrar la fecha en que se creó la inspección actual
+            if (savedData.created_at) {
+                const fechaCreacionFmt = formatearFechaDMA(
+                    savedData.created_at,
+                );
+                if (spanFechaInspeccion) {
+                    spanFechaInspeccion.textContent = fechaCreacionFmt;
+                }
+                // ¡NUEVO! Pasamos la fecha exacta de creación para buscar hacia atrás
+                cargarFechaUltimaInspeccion(numeroEconomico, "ligera", savedData.created_at);
+            } else {
+                if (spanFechaInspeccion)
+                    spanFechaInspeccion.textContent = "Sin fecha";
+                cargarFechaUltimaInspeccion(numeroEconomico, "ligera");
+            }
+        } else {
+            // MODO EDICIÓN: Restauramos la fecha de la inspección actual a "hoy"
+            if (spanFechaInspeccion) {
+                const hoy = new Date();
+                spanFechaInspeccion.textContent = `${String(hoy.getDate()).padStart(2, "0")}/${String(hoy.getMonth() + 1).padStart(2, "0")}/${hoy.getFullYear()}`;
+            }
+            // Buscamos hacia atrás desde hoy
+            cargarFechaUltimaInspeccion(numeroEconomico, "ligera");
+        }
+        // =========================================================
         const nombreMostrar = numeroEconomico || "Unidad " + unidadNumero;
         let marca = "";
         let propiedad = "";
@@ -3178,15 +4283,18 @@ function gestionarModalInspeccionLigera(
         document.getElementById("inspeccionUnidadIndexLigera").value =
             unidadNumero;
 
-        const savedData = datosInspeccionLigera[unidadNumero] || {};
-
         const allRadios = modal.querySelectorAll('input[type="radio"]');
         allRadios.forEach((r) => (r.checked = false));
 
         const inputKm = document.querySelector(
             '#modalInspeccionLigera input[name="kilometraje"]',
         );
-        if (inputKm) inputKm.value = savedData.kilometraje || "";
+        if (inputKm) {
+            inputKm.value = savedData.kilometraje || "";
+            // NUEVO: Forzar el formateo inmediatamente después de asignar el valor
+            formatearKilometraje(inputKm);
+        }
+
         const selectGas = document.querySelector(
             '#modalInspeccionLigera select[name="nivel_gasolina"]',
         );
@@ -3423,7 +4531,6 @@ async function procederGuardadoLigera(comentarios, anomaliasValor) {
     data.anomalias_detectadas = anomaliasValor;
     data.comentarios = comentarios;
 
-    // AQUI ESTÁ EL CAMBIO PARA LAS FOTOS (Convertir a Base64)
     const arrayFotosBase64 = [];
     for (let i = 0; i < fotosSubidas.ligera.length; i++) {
         let foto = fotosSubidas.ligera[i];
@@ -3432,12 +4539,14 @@ async function procederGuardadoLigera(comentarios, anomaliasValor) {
             nombre: foto.name,
             tamaño: foto.size,
             tipo: foto.type,
-            base64: base64String, // <--- ¡Esto es lo que el PHP estaba esperando!
+            base64: base64String,
         });
     }
 
-    // Ahora lo guardamos exactamente donde el PHP lo busca
     data.fotos = arrayFotosBase64;
+    // --- CORRECCIÓN: GUARDAR RESPALDO DE FOTOS PARA LA VISTA ---
+    data.fotos_originales = [...fotosSubidas.ligera];
+    // -----------------------------------------------------------
 
     datosInspeccionLigera[unidadNumero] = data;
 
@@ -3493,7 +4602,13 @@ function gestionarModalInspeccionPesada(
     if (abrir && unidadNumero !== null) {
         unidadEnInspeccion = unidadNumero;
         tipoVehiculoInspeccion = "pesada";
-        fotosSubidas.pesada = [];
+
+        const savedData = datosInspeccionPesada[unidadNumero] || {};
+        if (savedData.fotos_originales) {
+            fotosSubidas.pesada = [...savedData.fotos_originales];
+        } else {
+            fotosSubidas.pesada = [];
+        }
         actualizarVistaPrevia("pesada");
 
         const inputConductorPrincipal = document.getElementById(
@@ -3502,10 +4617,46 @@ function gestionarModalInspeccionPesada(
         const nombreConductor = inputConductorPrincipal
             ? inputConductorPrincipal.value
             : "";
+
         const hiddenInput = document.getElementById(
             `vehicle-hidden-${unidadNumero}`,
         );
         const numeroEconomico = hiddenInput?.value || "";
+
+        // =========================================================
+        // LÓGICA CONDICIONAL DE FECHAS: MODO LECTURA VS MODO EDICIÓN
+        // =========================================================
+        const spanFechaInspeccion = document.getElementById(
+            "fechaActualInspeccionPesada",
+        );
+
+        if (modoLectura) {
+            // MODO LECTURA: Mostrar la fecha en que se creó la inspección actual
+            if (savedData.created_at) {
+                const fechaCreacionFmt = formatearFechaDMA(
+                    savedData.created_at,
+                );
+                if (spanFechaInspeccion) {
+                    spanFechaInspeccion.textContent = fechaCreacionFmt;
+                }
+                // ¡NUEVO! Pasamos la fecha exacta de creación para buscar hacia atrás
+                cargarFechaUltimaInspeccion(numeroEconomico, "pesada", savedData.created_at);
+            } else {
+                if (spanFechaInspeccion)
+                    spanFechaInspeccion.textContent = "Sin fecha";
+                cargarFechaUltimaInspeccion(numeroEconomico, "pesada");
+            }
+        } else {
+            // MODO EDICIÓN: Restauramos la fecha de la inspección actual a "hoy"
+            if (spanFechaInspeccion) {
+                const hoy = new Date();
+                spanFechaInspeccion.textContent = `${String(hoy.getDate()).padStart(2, "0")}/${String(hoy.getMonth() + 1).padStart(2, "0")}/${hoy.getFullYear()}`;
+            }
+            // Buscamos hacia atrás desde hoy
+            cargarFechaUltimaInspeccion(numeroEconomico, "pesada");
+        }
+        // =========================================================
+
         const nombreMostrar = numeroEconomico || "Unidad " + unidadNumero;
         let marca = "";
         let propiedad = "";
@@ -3524,19 +4675,22 @@ function gestionarModalInspeccionPesada(
         document.getElementById("inspeccionUnidadIndexPesada").value =
             unidadNumero;
 
-        const savedData = datosInspeccionPesada[unidadNumero] || {};
         const allRadios = modal.querySelectorAll('input[type="radio"]');
         allRadios.forEach((r) => (r.checked = false));
 
         const inputKm = document.querySelector(
             '#modalInspeccionPesada input[name="kilometraje"]',
         );
-        if (inputKm) inputKm.value = savedData.kilometraje || "";
+        if (inputKm) {
+            inputKm.value = savedData.kilometraje || "";
+            // NUEVO: Forzar el formateo inmediatamente después de asignar el valor
+            formatearKilometraje(inputKm);
+        }
+
         const selectDiesel = document.querySelector(
             '#modalInspeccionPesada select[name="nivel_diesel"]',
         );
         if (selectDiesel) selectDiesel.value = savedData.nivel_diesel || "";
-
         const allItems = [
             "doc_tarjeta",
             "doc_poliza",
@@ -3657,7 +4811,6 @@ function gestionarModalInspeccionPesada(
         }
     }
 }
-
 function guardarInspeccionPesada() {
     const form = document.getElementById("formInspeccionPesada");
 
@@ -3808,7 +4961,6 @@ async function procederGuardadoPesada(comentarios, anomaliasValor) {
     data.anomalias_detectadas = anomaliasValor;
     data.comentarios = comentarios;
 
-    // AQUI ESTÁ EL CAMBIO PARA LAS FOTOS PESADAS (Convertir a Base64)
     const arrayFotosBase64 = [];
     for (let i = 0; i < fotosSubidas.pesada.length; i++) {
         let foto = fotosSubidas.pesada[i];
@@ -3817,12 +4969,14 @@ async function procederGuardadoPesada(comentarios, anomaliasValor) {
             nombre: foto.name,
             tamaño: foto.size,
             tipo: foto.type,
-            base64: base64String, // <--- Enviamos el código 64 al PHP
+            base64: base64String,
         });
     }
 
-    // Lo guardamos en 'fotos' para que haga match con el backend PHP
     data.fotos = arrayFotosBase64;
+    // --- CORRECCIÓN: GUARDAR RESPALDO DE FOTOS PARA LA VISTA ---
+    data.fotos_originales = [...fotosSubidas.pesada];
+    // -----------------------------------------------------------
 
     datosInspeccionPesada[unidadNumero] = data;
 
@@ -4012,15 +5166,19 @@ function actualizarVistaPrevia(tipo) {
         if (placeholder) placeholder.style.display = "flex";
     }
 
-    countSpan.textContent = `${fotosSubidas[tipo].length} ${
-        fotosSubidas[tipo].length === 1 ? "foto" : "fotos"
-    } seleccionada${fotosSubidas[tipo].length === 1 ? "" : "s"}`;
+    countSpan.textContent = `${fotosSubidas[tipo].length} ${fotosSubidas[tipo].length === 1 ? "foto" : "fotos"
+        } seleccionada${fotosSubidas[tipo].length === 1 ? "" : "s"}`;
     grid.innerHTML = "";
 
     fotosSubidas[tipo].forEach((foto) => {
         const item = document.createElement("div");
         item.className = "preview-item";
         item.dataset.id = foto.id;
+
+        // Renderizado condicional del botón de eliminar según si estamos en modo lectura o no
+        const btnEliminarHtml = modoLectura
+            ? ""
+            : `<button type="button" class="btn-preview-action btn-preview-delete" onclick="eliminarFoto('${foto.id}', '${tipo}')" title="Eliminar"><i class="fas fa-trash"></i></button>`;
 
         if (
             foto.type === "application/pdf" ||
@@ -4029,20 +5187,15 @@ function actualizarVistaPrevia(tipo) {
             item.innerHTML = `
                 <div class="preview-file-icon">
                     <i class="fas fa-file-pdf"></i>
-                    <span>${
-                        foto.name.length > 15
-                            ? foto.name.substring(0, 12) + "..."
-                            : foto.name
-                    }</span>
+                    <span>${foto.name.length > 15
+                    ? foto.name.substring(0, 12) + "..."
+                    : foto.name
+                }</span>
                 </div>
                 <div class="preview-overlay">
                     <div class="preview-actions">
-                        <button type="button" class="btn-preview-action btn-preview-view" onclick="verArchivo('${tipo}', '${
-                            foto.id
-                        }')" title="Ver PDF"><i class="fas fa-eye"></i></button>
-                        <button type="button" class="btn-preview-action btn-preview-delete" onclick="eliminarFoto('${
-                            foto.id
-                        }', '${tipo}')" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        <button type="button" class="btn-preview-action btn-preview-view" onclick="verArchivo('${tipo}', '${foto.id}')" title="Ver PDF"><i class="fas fa-eye"></i></button>
+                        ${btnEliminarHtml}
                     </div>
                 </div>
             `;
@@ -4052,7 +5205,7 @@ function actualizarVistaPrevia(tipo) {
                 <div class="preview-overlay">
                     <div class="preview-actions">
                         <button type="button" class="btn-preview-action btn-preview-view" onclick="verArchivo('${tipo}', '${foto.id}')" title="Ver imagen"><i class="fas fa-eye"></i></button>
-                        <button type="button" class="btn-preview-action btn-preview-delete" onclick="eliminarFoto('${foto.id}', '${tipo}')" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        ${btnEliminarHtml}
                     </div>
                 </div>
             `;
@@ -4060,9 +5213,19 @@ function actualizarVistaPrevia(tipo) {
         grid.appendChild(item);
     });
 
-    const dataTransfer = new DataTransfer();
-    fotosSubidas[tipo].forEach((foto) => dataTransfer.items.add(foto.file));
-    input.files = dataTransfer.files;
+    // ==========================================
+    // ESTA ES LA PARTE CORREGIDA DEL DATA TRANSFER
+    // ==========================================
+    if (input) {
+        const dataTransfer = new DataTransfer();
+        fotosSubidas[tipo].forEach((foto) => {
+            // VERIFICACIÓN ESTRICTA: Solo añadir si 'foto.file' existe y es del tipo 'File' (Archivo físico)
+            if (foto.file && foto.file instanceof File) {
+                dataTransfer.items.add(foto.file);
+            }
+        });
+        input.files = dataTransfer.files;
+    }
 }
 
 function limpiarFotos(tipo) {
@@ -4079,8 +5242,7 @@ function limpiarFotos(tipo) {
         if (result.isConfirmed) {
             fotosSubidas[tipo] = [];
             const input = document.getElementById(
-                `evidenciaInspeccion${
-                    tipo.charAt(0).toUpperCase() + tipo.slice(1)
+                `evidenciaInspeccion${tipo.charAt(0).toUpperCase() + tipo.slice(1)
                 }`,
             );
             if (input) input.value = "";
@@ -4302,11 +5464,11 @@ function calcularAutomarcadoEvaluacion() {
     const form = document.getElementById("formEvaluacionRiesgo");
     if (!form) return;
 
-    let maxTotalHoras = 0;
+    let maxTotalMinutos = 0; // Trabajaremos en minutos para mayor precisión
     let hayManejoVencido = false;
     let hayManejoNoTiene = false;
     let hayPasajeros = false;
-    let minHorasDormidas = 99;
+    let minMinutosDormidos = 1440; // Inicializado en 24h (máximo posible)
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -4319,31 +5481,33 @@ function calcularAutomarcadoEvaluacion() {
             tipoVehiculoDiv?.textContent.includes("Pesada") ||
             tipoVehiculoDiv?.classList.contains("tipo-pesada");
 
+        // 1. Validación de Cursos (Manejo Defensivo)
         if (nombreConductor && datosConductoresGlobales[nombreConductor]) {
             const data = datosConductoresGlobales[nombreConductor];
             const fechaCursoRaw = esPesada
                 ? data.cursoPesadoVigencia
                 : data.manDefVigencia;
-            if (!fechaCursoRaw) hayManejoNoTiene = true;
-            else {
+
+            if (!fechaCursoRaw) {
+                hayManejoNoTiene = true;
+            } else {
                 const fechaCurso = new Date(fechaCursoRaw + "T00:00:00");
                 if (fechaCurso < hoy) hayManejoVencido = true;
             }
-        } else {
-            if (nombreConductor) hayManejoNoTiene = true;
+        } else if (nombreConductor) {
+            hayManejoNoTiene = true;
         }
 
+        // 2. Cálculo de Horas Totales (Despierto + Viaje)
         const inputTotalHoras = document.getElementById(
             `total-hrs-finalizar-${i}`,
         );
         if (inputTotalHoras && inputTotalHoras.value) {
-            const partes = inputTotalHoras.value.split(":");
-            const horas = parseInt(partes[0]) || 0;
-            const minutos = parseInt(partes[1]) || 0;
-            const totalDecimal = horas + minutos / 60;
-            if (totalDecimal > maxTotalHoras) maxTotalHoras = totalDecimal;
+            const minsTotales = stringHoraAMinutos(inputTotalHoras.value);
+            if (minsTotales > maxTotalMinutos) maxTotalMinutos = minsTotales;
         }
 
+        // 3. Detección de Pasajeros
         const containerPasajeros = document.getElementById(
             `pasajeros-unidad-${i}`,
         );
@@ -4351,62 +5515,73 @@ function calcularAutomarcadoEvaluacion() {
             const inputsPasajeros = containerPasajeros.querySelectorAll(
                 'input[name*="[nombre]"]',
             );
-            let pasajerosEnUnidad = 0;
             inputsPasajeros.forEach((inp) => {
-                if (inp.value.trim() !== "") pasajerosEnUnidad++;
+                if (inp.value.trim() !== "") hayPasajeros = true;
             });
-            if (pasajerosEnUnidad > 0) hayPasajeros = true;
         }
 
+        // 4. Mínimo de Horas Dormidas
         const inputDormidas = document.getElementById(
             `total-hrs-dormidas-${i}`,
         );
         if (inputDormidas && inputDormidas.value) {
-            const partesD = inputDormidas.value.split(":");
-            const horasD = parseInt(partesD[0]) || 0;
-            const minsD = parseInt(partesD[1]) || 0;
-            const dormidasDecimal = horasD + minsD / 60;
-            if (dormidasDecimal < minHorasDormidas)
-                minHorasDormidas = dormidasDecimal;
+            const minsDormidos = stringHoraAMinutos(inputDormidas.value);
+            if (minsDormidos < minMinutosDormidos)
+                minMinutosDormidos = minsDormidos;
         }
     }
 
+    // --- ASIGNACIÓN DE PUNTAJES ---
+
+    // Manejo Defensivo
     let valorManejo = "5";
     if (hayManejoNoTiene) valorManejo = "15";
     else if (hayManejoVencido) valorManejo = "10";
     seleccionarYBloquearRadio(form, "ev_manejo", valorManejo);
 
+    // Horas de Jornada (Puntaje por rangos)
     let valorHoras = "5";
-    if (maxTotalHoras <= 8) valorHoras = "5";
-    else if (maxTotalHoras <= 12) valorHoras = "10";
-    else valorHoras = "15";
+    if (maxTotalMinutos <= 480)
+        valorHoras = "5"; // <= 8h
+    else if (maxTotalMinutos <= 720)
+        valorHoras = "10"; // <= 12h
+    else valorHoras = "15"; // > 12h
     seleccionarYBloquearRadio(form, "ev_horas", valorHoras);
 
+    // Composición de Flota (Convoy vs Única)
     const esConvoy = contadorUnidades > 1;
     let indiceRadioVehiculo = 0;
     if (!esConvoy) indiceRadioVehiculo = hayPasajeros ? 0 : 1;
     else indiceRadioVehiculo = hayPasajeros ? 2 : 3;
     marcarRadioPorIndiceYBloquear(form, "ev_vehiculos", indiceRadioVehiculo);
 
+    // --- FACTORES DE RIESGO CRÍTICOS (CHECKBOXES) ---
+
     const horaInicioStr =
         document.getElementById("horaInicioViaje")?.value || "00:00";
     const horaFinStr =
         document.getElementById("horaFinViaje")?.value || "00:00";
-
     const minInicio = stringHoraAMinutos(horaInicioStr);
     const minFin = stringHoraAMinutos(horaFinStr);
 
+    // A) Horario Nocturno (Si termina después de las 9:00 PM o empieza después de las 9:00 PM)
     const factorNocturno = minFin > 1260 || minInicio >= 1260;
-    const factorPocoSueno = minHorasDormidas <= 6;
-    const factorMedianoche = minFin < minInicio;
-    const factor16Horas = maxTotalHoras > 16;
+
+    // B) Horas Dormidas (Menos de 6 horas es crítico)
+    const factorPocoSueno = minMinutosDormidos < 360;
+
+    // C) Rebase de Medianoche (Si la hora de fin es menor a la de inicio, cruzó el día)
+    const factorMedianoche = minFin < minInicio && minFin !== 0;
+
+    // D) !!! CRÍTICO: MÁS DE 16 HORAS DESPIERTO !!!
+    // Se activa exactamente a los 960 minutos (16 horas)
+    const factor16Horas = maxTotalMinutos >= 960;
 
     manejarCheckboxFactor(form, "ev_horario_nocturno", factorNocturno);
     manejarCheckboxFactor(form, "ev_horas_dormidas", factorPocoSueno);
     manejarCheckboxFactor(form, "ev_rebase_medianoche", factorMedianoche);
     manejarCheckboxFactor(form, "ev_16hrs_despierto", factor16Horas);
 }
-
 function manejarCheckboxFactor(form, name, estado) {
     const check = form.querySelector(`input[name="${name}"]`);
     if (check) {
@@ -4449,7 +5624,10 @@ function gestionarModalEvaluacion(abrir) {
     if (!modal) return;
 
     if (abrir) {
-        calcularAutomarcadoEvaluacion();
+        // SOLUCIÓN: Solo hace el cálculo automático si NO estamos en modo lectura
+        if (!modoLectura) {
+            calcularAutomarcadoEvaluacion();
+        }
         modal.classList.add("active");
         document.body.style.overflow = "hidden";
     } else {
@@ -4554,24 +5732,14 @@ function guardarEvaluacion() {
         return;
     }
 
-    let nivelRiesgoTexto = "";
-    let cssClassBtn = "";
-    let iconoSwal = "";
-    let btnConfirmColor = "";
-    let iconoBadge = "";
-    let mensajeAdicional = "";
-    let esRiesgoForzado = false;
-    let nivelInterno = "";
-
-    // 1. Identificamos qué opción se seleccionó (0, 1, 2 o 3)
+    // Identificamos qué opción se seleccionó (0, 1, 2 o 3)
     const radiosRadiactivos = Array.from(
         form.querySelectorAll('input[name="ev_radiactivo"]'),
     );
     const indexRadiactivo = radiosRadiactivos.indexOf(radiactivoSeleccionado);
 
-    // 2. Separamos la lógica
-    const esEquipoPesado = indexRadiactivo === 1; // Opción 2: Maquinaria (Riesgo Medio)
-    const esMaterialPeligroso = indexRadiactivo === 2 || indexRadiactivo === 3; // Opciones 3 y 4: Rad/Exp (Riesgo Alto)
+    const esEquipoPesado = indexRadiactivo === 1;
+    const esMaterialPeligroso = indexRadiactivo === 2 || indexRadiactivo === 3;
 
     const factorNocturno = form.querySelector(
         'input[name="ev_horario_nocturno"]',
@@ -4586,45 +5754,52 @@ function guardarEvaluacion() {
         'input[name="ev_16hrs_despierto"]',
     ).checked;
 
-    // --- APLICACIÓN DE REGLAS DE RIESGO ---
+    // =========================================================
+    // PASO 1: EVALUAR RIESGO POR PUNTOS (BASE)
+    // Asignamos valores numéricos: 1=Bajo, 2=Medio, 3=Alto, 4=Muy Alto
+    // =========================================================
+    let nivelPuntos = 1;
+    if (totalPuntos <= 55) nivelPuntos = 1;
+    else if (totalPuntos <= 105) nivelPuntos = 2;
+    else if (totalPuntos <= 145) nivelPuntos = 3;
+    else nivelPuntos = 4;
+
+    // =========================================================
+    // PASO 2: EVALUAR RIESGO POR FACTORES CRÍTICOS (PUNTO 11)
+    // =========================================================
+    let nivelFactores = 1;
+    let motivoFactor = "";
 
     if (factorMedianoche || factor16Horas) {
-        // REGLA 1: Factores extremos fuerzan a Muy Alto
-        nivelInterno = "muy_alto";
-        nivelRiesgoTexto = "Riesgo Muy Alto";
-        cssClassBtn = "btn-riesgo-muy-alto";
-        iconoSwal = "error";
-        btnConfirmColor = "#dc3545";
-        iconoBadge = '<i class="fas fa-ban"></i>';
-        mensajeAdicional =
-            "Se recomienda mucha precaución. Requiere autorización de gerencia. (Detectado por Factores Críticos)";
-        esRiesgoForzado = true;
+        nivelFactores = 4; // MUY ALTO
+        motivoFactor = "Factores Críticos (Medianoche o >16h despierto)";
     } else if (esMaterialPeligroso || factorNocturno || factorPocoSueno) {
-        // REGLA 2: Material Rad/Exp o fatiga fuerzan a Alto
-        nivelInterno = "alto";
-        nivelRiesgoTexto = "Riesgo Alto";
-        cssClassBtn = "btn-riesgo-alto";
-        iconoSwal = "warning";
-        btnConfirmColor = "#fd7e14";
-        iconoBadge = '<i class="fas fa-exclamation-triangle"></i>';
-        mensajeAdicional =
-            "Se requiere aprobación especial y medidas de seguridad. (Detectado por Material Peligroso o Factores de Fatiga)";
-        esRiesgoForzado = true;
-    } else if (esEquipoPesado && totalPuntos <= 55) {
-        // REGLA 3: Si lleva Maquinaria y su puntaje era Bajo (<= 55), lo forzamos a Medio.
-        // Si su puntaje ya era > 55, lo dejamos pasar a la lógica normal porque ya será Medio o mayor por sí solo.
-        nivelInterno = "medio";
-        nivelRiesgoTexto = "Riesgo Medio";
-        cssClassBtn = "btn-riesgo-medio";
-        iconoSwal = "warning";
-        btnConfirmColor = "#ffc107";
-        iconoBadge = '<i class="fas fa-exclamation-circle"></i>';
-        mensajeAdicional =
-            "Se requieren precauciones adicionales. (Detectado por Transporte de Equipo/Maquinaria)";
-        esRiesgoForzado = true;
-    } else {
-        // REGLA 4: Lógica normal de suma de puntos
-        if (totalPuntos <= 55) {
+        nivelFactores = 3; // ALTO
+        motivoFactor = "Material Peligroso, Horario Nocturno o Fatiga";
+    } else if (esEquipoPesado) {
+        nivelFactores = 2; // MEDIO
+        motivoFactor = "Transporte de Equipo/Maquinaria";
+    }
+
+    // =========================================================
+    // PASO 3: TOMAR EL RIESGO MÁS ALTO (PRIORIDAD ESTRICTA)
+    // Math.max() asegura que siempre gane el nivel más crítico
+    // =========================================================
+    let nivelFinal = Math.max(nivelPuntos, nivelFactores);
+
+    // Saber si el riesgo subió por culpa de los factores para la alerta visual
+    let esRiesgoForzado = nivelFactores > nivelPuntos;
+
+    let nivelInterno = "";
+    let nivelRiesgoTexto = "";
+    let cssClassBtn = "";
+    let iconoSwal = "";
+    let btnConfirmColor = "";
+    let iconoBadge = "";
+    let mensajeAdicional = "";
+
+    switch (nivelFinal) {
+        case 1:
             nivelInterno = "bajo";
             nivelRiesgoTexto = "Riesgo Bajo";
             cssClassBtn = "btn-riesgo-bajo";
@@ -4632,38 +5807,46 @@ function guardarEvaluacion() {
             btnConfirmColor = "#28a745";
             iconoBadge = '<i class="fas fa-check-circle"></i>';
             mensajeAdicional = "El viaje puede proceder normalmente.";
-        } else if (totalPuntos <= 105) {
+            break;
+        case 2:
             nivelInterno = "medio";
             nivelRiesgoTexto = "Riesgo Medio";
             cssClassBtn = "btn-riesgo-medio";
             iconoSwal = "warning";
             btnConfirmColor = "#ffc107";
             iconoBadge = '<i class="fas fa-exclamation-circle"></i>';
-            mensajeAdicional = "Se requieren precauciones adicionales.";
-        } else if (totalPuntos <= 145) {
+            mensajeAdicional = esRiesgoForzado
+                ? `Se requieren precauciones adicionales. (Detectado por: ${motivoFactor})`
+                : "Se requieren precauciones adicionales.";
+            break;
+        case 3:
             nivelInterno = "alto";
             nivelRiesgoTexto = "Riesgo Alto";
             cssClassBtn = "btn-riesgo-alto";
             iconoSwal = "warning";
             btnConfirmColor = "#fd7e14";
             iconoBadge = '<i class="fas fa-exclamation-triangle"></i>';
-            mensajeAdicional =
-                "Se requiere aprobación especial y medidas de seguridad.";
-        } else {
+            mensajeAdicional = esRiesgoForzado
+                ? `Se requiere aprobación especial y medidas de seguridad. (Detectado por: ${motivoFactor})`
+                : "Se requiere aprobación especial y medidas de seguridad.";
+            break;
+        case 4:
             nivelInterno = "muy_alto";
             nivelRiesgoTexto = "Riesgo Muy Alto";
             cssClassBtn = "btn-riesgo-muy-alto";
             iconoSwal = "error";
             btnConfirmColor = "#dc3545";
             iconoBadge = '<i class="fas fa-ban"></i>';
-            mensajeAdicional =
-                "Se recomienda mucha precaución. Requiere autorización de gerencia.";
-        }
+            mensajeAdicional = esRiesgoForzado
+                ? `Se recomienda mucha precaución. Requiere autorización de gerencia. (Detectado por: ${motivoFactor})`
+                : "Se recomienda mucha precaución. Requiere autorización de gerencia.";
+            break;
     }
 
     puntajeRiesgoTotal = totalPuntos;
     evaluacionRiesgoGuardada = true;
 
+    // Carga los autorizadores en base al nivel más crítico resultante
     cargarAutorizadores(nivelInterno);
 
     const btn = document.getElementById("btnEvaluacionRiesgo");
@@ -4687,16 +5870,18 @@ function guardarEvaluacion() {
         html: `
             <div style="display: flex; flex-direction: column; align-items: center;">
                 <div class="resultado-titulo">Nivel de Riesgo:</div>
-                <div class="riesgo-badge ${cssClassBtn.replace("btn-", "status-")}">
+                <div class="riesgo-badge ${cssClassBtn.replace(
+            "btn-",
+            "status-",
+        )}">
                     ${iconoBadge} ${nivelRiesgoTexto}
                 </div>
                 <div class="resultado-mensaje">${mensajeAdicional}</div>
                 <div class="resultado-puntaje">
-                    ${
-                        esRiesgoForzado
-                            ? `Puntaje base: ${totalPuntos} <br><span style='color:red; font-size:0.9em'>(Nivel elevado por Factores de Riesgo Críticos)</span>`
-                            : `Puntaje total: <strong>${totalPuntos}</strong>`
-                    }
+                    ${esRiesgoForzado
+                ? `Puntaje base: ${totalPuntos} <br><span style='color:red; font-size:0.9em'>(Nivel forzado a ${nivelRiesgoTexto} por factores críticos)</span>`
+                : `Puntaje total: <strong>${totalPuntos}</strong>`
+            }
                 </div>
             </div>
         `,
@@ -5162,20 +6347,26 @@ function gestionarModalFormulario(abrir) {
 
     if (abrir) {
         if (modal) {
-            // Llama a la BD para obtener el folio más reciente
-            cargarFolioEstimado();
+            limpiarFormulario();
+
+            // BLOQUE CORREGIDO: Solo buscar folio nuevo si vamos a ESCRIBIR uno nuevo
+            if (!modoLectura) {
+                cargarFolioEstimado();
+            }
 
             modal.classList.add("active");
             document.body.style.overflow = "hidden";
+
             if (contadorUnidades === 0) agregarUnidad();
         }
     } else {
+        // AL CERRAR
         Swal.fire({
             title: "¿Desea cerrar el formulario?",
             text: "Se perderán los datos no guardados de la solicitud actual.",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Sí, cerrar",
+            confirmButtonText: "Sí, cerrar y limpiar",
             cancelButtonText: "Continuar editando",
             confirmButtonColor: "#dc3545",
             cancelButtonColor: "#0056b3",
@@ -5183,65 +6374,258 @@ function gestionarModalFormulario(abrir) {
             if (result.isConfirmed) {
                 if (modal) modal.classList.remove("active");
                 document.body.style.overflow = "auto";
+
+                // LIMPIEZA PROFUNDA
                 limpiarFormulario();
             }
         });
     }
 }
 
+// ====================================================================
+// LIMPIEZA TOTAL DEL FORMULARIO Y VARIABLES GLOBALES
+// ====================================================================
 function limpiarFormulario() {
+    console.log("Limpiando y restaurando formulario completo...");
+
+    // 1. Resetear el formulario HTML nativo
     const formViaje = document.getElementById("formViaje");
     if (formViaje) formViaje.reset();
 
+    // 2. Limpiar tabla de unidades
     const cuerpoTablaUnidades = document.getElementById("cuerpoTablaUnidades");
     if (cuerpoTablaUnidades) cuerpoTablaUnidades.innerHTML = "";
 
+    // 3. Resetear contadores y estados lógicos
     contadorUnidades = 0;
-    actualizarContadorUnidades();
-    actualizarLabelTipoUnidad();
-    actualizarBotonAgregar();
-    cargarFolioEstimado();
+    contadorParadas = 0;
+    modoLectura = false;
+    reunionPreConvoyGuardada = false;
+    evaluacionRiesgoGuardada = false;
+    puntajeRiesgoTotal = 0;
+    unidadEnInspeccion = null;
+    tipoVehiculoInspeccion = null;
 
+    // 4. VACIAR OBJETOS GLOBALES DE DATOS
     Object.keys(datosInspeccionLigera).forEach(
         (key) => delete datosInspeccionLigera[key],
     );
     Object.keys(datosInspeccionPesada).forEach(
         (key) => delete datosInspeccionPesada[key],
     );
-
-    reunionPreConvoyGuardada = false;
     datosReunionConvoy = {};
-    actualizarBotonReunionConvoy();
+    fotosSubidas = { ligera: [], pesada: [] };
 
+    // 5. Limpiar sección de Paradas
     const listaParadas = document.getElementById("listaParadas");
     if (listaParadas) listaParadas.innerHTML = "";
-    contadorParadas = 0;
     toggleSeccionParadas(false);
 
-    evaluacionRiesgoGuardada = false;
-    puntajeRiesgoTotal = 0;
+    // 6. Limpiar UI general (Destino, Autorizadores, Fechas)
+    const labelDestino = document.getElementById("labelDestinoSeleccionado");
+    if (labelDestino) {
+        labelDestino.textContent = "Seleccione Destino...";
+        labelDestino.style.color = "#6c757d";
+    }
+    const inputDestinoHidden = document.getElementById("inputDestinoHidden");
+    if (inputDestinoHidden) inputDestinoHidden.value = "";
+
+    const gridAut = document.getElementById("gridAutorizadores");
+    if (gridAut) gridAut.innerHTML = "";
+    const secDest = document.getElementById("seccionDestinatario");
+    if (secDest) secDest.style.display = "none";
+
+    // 7. Limpiar Modales de Inspección y Evaluación
+    document.getElementById("formInspeccionLigera")?.reset();
+    document.getElementById("formInspeccionPesada")?.reset();
+    document.getElementById("formEvaluacionRiesgo")?.reset();
+    if (document.getElementById("comentariosInspeccionLigera"))
+        document.getElementById("comentariosInspeccionLigera").value = "";
+    if (document.getElementById("comentariosInspeccionPesada"))
+        document.getElementById("comentariosInspeccionPesada").value = "";
+
+    if (document.getElementById("previewContainerLigera"))
+        document.getElementById("previewContainerLigera").style.display =
+            "none";
+    if (document.getElementById("previewContainerPesada"))
+        document.getElementById("previewContainerPesada").style.display =
+            "none";
+
+    // 8. RESTAURAR ABSOLUTAMENTE TODOS LOS BLOQUEOS Y ESTILOS
+    restaurarModoEscritura();
+
+    // 9. RE-INICIALIZAR COMPONENTES (Fundamental para las fechas)
+    inicializarFlatpickr(); // Vuelve a crear los calendarios que se destruyeron en modo lectura
+    mostrarFechaActual();
+    //cargarFolioEstimado();
+
+    // 10. Restaurar Botones Base
+    actualizarContadorUnidades();
+    actualizarLabelTipoUnidad();
+    actualizarBotonAgregar();
+    actualizarBotonReunionConvoy();
 
     const btnEval = document.getElementById("btnEvaluacionRiesgo");
     if (btnEval) {
-        btnEval.classList.remove(
-            "evaluacion-completada",
-            "btn-riesgo-bajo",
-            "btn-riesgo-medio",
-            "btn-riesgo-alto",
-            "btn-riesgo-muy-alto",
-        );
+        btnEval.className = "btn-evaluacion";
         btnEval.innerHTML =
             '<i class="fas fa-list-check"></i> Realizar Evaluación del Viaje (Requerido)';
+        btnEval.disabled = true;
+        btnEval.style.opacity = "1";
+        // RESTAURAR LA FUNCIÓN ORIGINAL DE EDICIÓN
+        btnEval.setAttribute("onclick", "gestionarModalEvaluacion(true)");
     }
 
-    const formEvaluacionRiesgo = document.getElementById(
-        "formEvaluacionRiesgo",
-    );
-    if (formEvaluacionRiesgo) formEvaluacionRiesgo.reset();
-
-    actualizarBotonEvaluacion();
+    // AÑADIR ESTO PARA PREVENIR EL MISMO ERROR EN LA REUNIÓN PRE-CONVOY
+    const btnReunion = document.getElementById("btnReunionPreConvoy");
+    if (btnReunion) {
+        btnReunion.setAttribute("onclick", "gestionarModalPreConvoy(true)");
+    }
 }
 
+// ====================================================================
+// FUNCIÓN PARA QUITAR BLOQUEOS Y VOLVER AL MODO EDICIÓN
+// ====================================================================
+function restaurarModoEscritura() {
+    // 1. Desbloquear Formulario Principal
+    const modalPrincipal = document.getElementById("modalFormulario");
+    if (modalPrincipal) {
+        modalPrincipal
+            .querySelectorAll("input, select, textarea, button")
+            .forEach((el) => {
+                el.disabled = false;
+                el.style.pointerEvents = "auto";
+                el.style.opacity = "1";
+                el.style.cursor = "";
+            });
+
+        // Restaurar triggers visuales
+        modalPrincipal
+            .querySelectorAll('[id^="vehicle-trigger-"], #wrapperDestino')
+            .forEach((el) => {
+                el.style.pointerEvents = "auto";
+                el.style.cursor = "pointer";
+            });
+
+        // Asegurar que el botón agregar unidad sea visible
+        const btnAgregar = document.getElementById("btnAgregarUnidad");
+        if (btnAgregar) btnAgregar.style.display = "";
+    }
+    // Asegurar que el botón agregar unidad sea visible
+    const btnAgregar = document.getElementById("btnAgregarUnidad");
+    if (btnAgregar) btnAgregar.style.display = "";
+
+    // NUEVO: Asegurar que el botón agregar parada sea visible
+    modalPrincipal
+        .querySelectorAll('[onclick*="agregarParada"]')
+        .forEach((btn) => {
+            btn.style.display = "";
+        });
+    // 2. Desbloquear Modales de Inspección (Ligera y Pesada)
+    const modalesInspeccion = [
+        "modalInspeccionLigera",
+        "modalInspeccionPesada",
+    ];
+    modalesInspeccion.forEach((id) => {
+        const mod = document.getElementById(id);
+        if (mod) {
+            mod.querySelectorAll("input, select, textarea, button").forEach(
+                (el) => {
+                    el.disabled = false;
+                    el.style.pointerEvents = "auto";
+                    el.style.opacity = "1";
+                    // ¡AQUÍ ESTÁ LA MAGIA! Si es un botón, lo volvemos a mostrar
+                    if (el.tagName === "BUTTON") {
+                        el.style.display = "";
+                    }
+                },
+            );
+            // Reactivar zona para arrastrar fotos
+            const seccFotos = mod.querySelector(
+                '[id^="dropZone"], [id^="evidenciaInspeccion"]',
+            );
+            if (seccFotos && seccFotos.closest(".form-group")) {
+                seccFotos.closest(".form-group").setAttribute("style", "");
+            }
+        }
+    });
+
+    // 3. Desbloquear Modal Evaluación de Riesgo
+    const modEval = document.getElementById("modalEvaluacion");
+    if (modEval) {
+        // Habilitar inputs y restaurar botones
+        modEval.querySelectorAll("input, select, button").forEach((el) => {
+            el.disabled = false;
+            el.style.pointerEvents = "auto";
+            el.style.opacity = "1";
+
+            // Si es botón, lo volvemos a mostrar
+            if (el.tagName === "BUTTON") {
+                el.style.display = "";
+            }
+
+            // Desbloquear también al elemento padre (los div/label que envuelven los radios)
+            if (el.parentElement) {
+                el.parentElement.style.pointerEvents = "auto";
+                el.parentElement.style.opacity = "1";
+            }
+        });
+
+        // Quitar estilos de bloqueo de las etiquetas (labels)
+        modEval.querySelectorAll("label").forEach((lbl) => {
+            lbl.style.opacity = "1";
+            lbl.style.color = "";
+            lbl.style.fontWeight = "";
+            lbl.style.pointerEvents = "auto";
+        });
+
+        // Limpiar marcas de botones ocultos
+        modEval.querySelectorAll(".btn-guardar-oculto").forEach((btn) => {
+            btn.classList.remove("btn-guardar-oculto");
+        });
+    }
+
+    // 4. Desbloquear Modal Pre-Convoy
+    const modConvoy = document.getElementById("modalPreConvoy");
+    if (modConvoy) {
+        modConvoy.querySelectorAll("input, select, button").forEach((el) => {
+            el.disabled = false;
+            el.style.pointerEvents = "auto";
+            el.style.opacity = "1";
+            // Volver a mostrar los botones
+            if (el.tagName === "BUTTON") {
+                el.style.display = "";
+            }
+        });
+    }
+
+    // 5. Restaurar Footer Original
+    const footerOriginal = document.getElementById("_footerOriginal");
+    const footerLectura = document.getElementById("_footerLectura");
+    if (footerOriginal) {
+        footerOriginal.style.display = "";
+        footerOriginal.id = ""; // Se quita el ID temporal
+    }
+    if (footerLectura) footerLectura.remove(); // Se elimina el botón "Cerrar" del modo lectura
+
+    // 6. Restaurar textos de la sección del Autorizador (Blade original)
+    const seccionDestinatario = document.getElementById("seccionDestinatario");
+    if (seccionDestinatario) {
+        const tituloH3 = seccionDestinatario.querySelector(
+            ".form-section-title",
+        );
+        if (tituloH3) {
+            tituloH3.innerHTML =
+                '<i class="fas fa-paper-plane"></i> Enviar solicitud a: <span class="required">*</span>';
+        }
+        const subtituloP = seccionDestinatario.querySelector(
+            ".destinatario-subtitle",
+        );
+        if (subtituloP) {
+            subtituloP.style.display = "block"; // Volver a mostrar las instrucciones
+        }
+    }
+}
 // ====================================================================
 // FUNCIÓN DE VALIDACIÓN COMPLETA PARA ENVÍO DE SOLICITUD
 // ====================================================================
@@ -5648,6 +7032,7 @@ function convertirFechaParaMySQL(fechaDMA) {
 
     return fechaDMA;
 }
+
 // ====================================================================
 // FUNCIÓN PARA ENVIAR SOLICITUD AL BACKEND
 // ====================================================================
@@ -5700,19 +7085,22 @@ function enviarSolicitudAJAX() {
             document.querySelector('input[name="autorizador_id"]:checked')
                 ?.value || "",
         riesgo_puntaje: puntajeRiesgoTotal || 0,
+
+        // --- AQUÍ ESTÁ LA CORRECCIÓN EXACTA ---
         riesgo_nivel: document
             .getElementById("btnEvaluacionRiesgo")
             ?.textContent.includes("Bajo")
             ? "bajo"
             : document
+                .getElementById("btnEvaluacionRiesgo")
+                ?.textContent.includes("Medio")
+                ? "medio"
+                : document
                     .getElementById("btnEvaluacionRiesgo")
-                    ?.textContent.includes("Medio")
-              ? "medio"
-              : document
-                      .getElementById("btnEvaluacionRiesgo")
-                      ?.textContent.includes("Alto")
-                ? "alto"
-                : "muy_alto",
+                    ?.textContent.includes("Muy Alto")
+                    ? "muy_alto"
+                    : "alto",
+        // --------------------------------------
     };
 
     // Recolectar paradas
@@ -5747,7 +7135,6 @@ function enviarSolicitudAJAX() {
         data.reunion_pre_convoy = datosReunionConvoy;
     }
 
-    // URL CORREGIDA - Usando la ruta que definiste
     fetch("/qhse/gerenciamiento/journeys/store", {
         method: "POST",
         headers: {
@@ -5772,7 +7159,6 @@ function enviarSolicitudAJAX() {
             if (result.success) {
                 Swal.fire({
                     title: "¡Viaje Registrado!",
-                    // AQUÍ ESTÁ EL CAMBIO: Muestra el folio que le asignó el backend
                     html: `${result.message}<br><br><span style="font-size: 1.2em;">Folio asignado: <strong>${result.folio}</strong></span>`,
                     icon: "success",
                     confirmButtonColor: "#0056b3",
@@ -5781,6 +7167,8 @@ function enviarSolicitudAJAX() {
                         .getElementById("modalFormulario")
                         ?.classList.remove("active");
                     document.body.style.overflow = "auto";
+
+                    // ESTO AHORA LIMPIARÁ TODO CORRECTAMENTE
                     limpiarFormulario();
 
                     if (typeof cargarViajes === "function") cargarViajes();
@@ -5804,9 +7192,7 @@ function enviarSolicitudAJAX() {
             });
         });
 }
-// ====================================================================
-// FUNCIÓN AUXILIAR PARA RECOLECTAR UNA UNIDAD
-// ====================================================================
+
 // ====================================================================
 // FUNCIÓN AUXILIAR PARA RECOLECTAR UNA UNIDAD
 // ====================================================================
@@ -5901,9 +7287,8 @@ function recolectarUnidad(numero) {
 
     return unidad;
 }
-
 // ====================================================================
-// FUNCIÓN AUXILIAR PARA RECOLECTAR EVALUACIÓN DE RIESGO (CORREGIDA)
+// FUNCIÓN AUXILIAR PARA RECOLECTAR EVALUACIÓN DE RIESGO
 // ====================================================================
 function recolectarEvaluacionRiesgo() {
     const form = document.getElementById("formEvaluacionRiesgo");
@@ -5929,19 +7314,15 @@ function recolectarEvaluacionRiesgo() {
             `input[name="${campoFront}"]:checked`,
         );
         if (seleccionado) {
-            // EL CAMBIO ESTÁ EN ESTA LÍNEA:
-            // .replace(/\s+/g, ' ') convierte cualquier salto de línea o múltiples espacios en un solo espacio limpio.
             const textoOpcion = seleccionado.parentElement.textContent
                 .replace(/\s+/g, " ")
                 .trim();
 
-            // Asignamos el texto a la columna '_option' y el número a '_score'
             evaluacion[`${campoBD}_option`] = textoOpcion;
             evaluacion[`${campoBD}_score`] = parseInt(seleccionado.value) || 0;
         }
     }
 
-    // El resto se mantiene exactamente igual
     evaluacion.is_night_shift =
         form.querySelector('input[name="ev_horario_nocturno"]')?.checked ||
         false;
@@ -5954,23 +7335,25 @@ function recolectarEvaluacionRiesgo() {
         form.querySelector('input[name="ev_16hrs_despierto"]')?.checked ||
         false;
     evaluacion.total_score = puntajeRiesgoTotal || 0;
+
+    // --- AQUÍ ESTÁ LA CORRECCIÓN EXACTA ---
     evaluacion.risk_level = document
         .getElementById("btnEvaluacionRiesgo")
         ?.textContent.includes("Bajo")
         ? "bajo"
         : document
+            .getElementById("btnEvaluacionRiesgo")
+            ?.textContent.includes("Medio")
+            ? "medio"
+            : document
                 .getElementById("btnEvaluacionRiesgo")
-                ?.textContent.includes("Medio")
-          ? "medio"
-          : document
-                  .getElementById("btnEvaluacionRiesgo")
-                  ?.textContent.includes("Alto")
-            ? "alto"
-            : "muy_alto";
+                ?.textContent.includes("Muy Alto")
+                ? "muy_alto"
+                : "alto";
+    // --------------------------------------
 
     return evaluacion;
 }
-
 // ====================================================================
 // FUNCIÓN PRINCIPAL DE ENVÍO DE SOLICITUD
 // ====================================================================
@@ -6005,35 +7388,313 @@ function actualizarBotonEnviarSolicitud() {
 let estadoViajeActual = "Por Iniciar";
 
 // ====== GESTIÓN DE MODALES DE SEGUIMIENTO ======
-function abrirModalRuta(idViaje) {
-    document.getElementById("lblRutaViaje").innerText = idViaje;
-    estadoViajeActual = "Por Iniciar";
-    actualizarBotonPrincipalRuta();
 
-    const modal = document.getElementById("modalSeguimientoRuta");
-    modal.style.display = "flex";
-    setTimeout(() => {
-        modal.classList.add("active");
-    }, 10);
+async function abrirModalRuta(idViaje, folioViaje) {
+    Swal.fire({ title: "Cargando ruta...", html: "Sincronizando estado...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const response = await fetch(`/qhse/gerenciamiento/journeys/${idViaje}`);
+        const result = await response.json();
+
+        if (!result.success) throw new Error(result.message || "No se pudo cargar la información");
+
+        const viaje = result.data;
+        const logs = viaje.logs || []; // <-- Leemos toda la bitácora histórica
+        viajeRutaActivoId = viaje.id;
+
+        document.getElementById("lblRutaViaje").innerText = viaje.folio || folioViaje;
+
+        // 1. Determinar estado principal (Iniciado / No Iniciado)
+        estadoViajeActual = viaje.journey_status === 'in_progress' ? "En Curso" : "Por Iniciar";
+        if (viaje.journey_status === 'completed') estadoViajeActual = "Finalizado";
+
+        actualizarBotonPrincipalRuta();
+
+        // 2. Determinar estado de movimiento (¿Está detenido o en ruta?)
+        const dot = document.getElementById("dotEstado");
+        const txt = document.getElementById("txtEstadoActual");
+        const btnDetener = document.getElementById("btnDetenerMarcha");
+        const btnReanudar = document.getElementById("btnReanudarMarcha");
+        const formDetencion = document.getElementById("formDetencion");
+
+        formDetencion.style.display = "none"; // Ocultar formulario de detención por defecto
+
+        if (estadoViajeActual === "Por Iniciar") {
+            dot.className = "status-dot-ruta";
+            dot.style.backgroundColor = "#64748b";
+            txt.innerText = "ESPERANDO SALIDA";
+            txt.className = "status-value text-gray-500";
+            btnDetener.style.display = "flex";
+            btnReanudar.style.display = "none";
+        } else if (estadoViajeActual === "En Curso") {
+            // Buscamos en el historial cuál fue el ÚLTIMO evento de detención o reanudación
+            const ultimoEventoMovimiento = [...logs].reverse().find(l => l.event_type === 'detencion' || l.event_type === 'reanudacion');
+
+            if (ultimoEventoMovimiento && ultimoEventoMovimiento.event_type === 'detencion') {
+                // SE QUEDÓ DETENIDO
+                dot.className = "status-dot-ruta pulsing-red";
+                dot.style.backgroundColor = "";
+                txt.innerText = "UNIDAD DETENIDA";
+                txt.className = "status-value text-red";
+                btnDetener.style.display = "none";
+                btnReanudar.style.display = "flex";
+            } else {
+                // ESTÁ EN RUTA NORMAL
+                dot.className = "status-dot-ruta pulsing-green";
+                dot.style.backgroundColor = "";
+                txt.innerText = "EN RUTA";
+                txt.className = "status-value text-green";
+                btnDetener.style.display = "flex";
+                btnReanudar.style.display = "none";
+            }
+        }
+
+        // 3. Renderizar Paradas y Conductores PASANDO LOS LOGS
+        renderizarParadasRuta(viaje, logs);
+        renderizarConductoresRuta(viaje, logs);
+
+        Swal.close();
+        const modal = document.getElementById("modalSeguimientoRuta");
+        modal.style.display = "flex";
+        setTimeout(() => modal.classList.add("active"), 10);
+
+    } catch (error) {
+        Swal.fire("Error", error.message, "error");
+    }
+}
+// Función maestra para guardar eventos (CON RETORNO DE PROMESA PARA BLOQUEAR DOBLE CLIC)
+async function guardarEventoBackend(tipo, titulo, descripcion) {
+    if (!viajeRutaActivoId) throw new Error("Sin viaje activo");
+
+    const response = await fetch(`/qhse/gerenciamiento/journeys/${viajeRutaActivoId}/log-event`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            event_type: tipo,
+            title: titulo,
+            description: descripcion
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error("Error guardando evento en la Base de Datos");
+    }
+    return await response.json();
+}
+function renderizarParadasRuta(viaje, logs) {
+    const contenedor = document.getElementById("contenedorParadasProgramadas");
+    contenedor.innerHTML = "";
+
+    let paradas = [];
+    if (viaje.planned_stops) {
+        paradas = typeof viaje.planned_stops === 'string' ? JSON.parse(viaje.planned_stops) : viaje.planned_stops;
+    }
+
+    if (!paradas || paradas.length === 0) {
+        contenedor.innerHTML = `<p style="color:#64748b; font-size:13px; font-style:italic;">No hay paradas programadas para este viaje.</p>`;
+        return;
+    }
+
+    paradas.forEach((parada, index) => {
+        let icon = "fa-map-pin";
+        if(parada.motivo.includes("Alimentos")) icon = "fa-utensils";
+        if(parada.motivo.includes("Combustible")) icon = "fa-gas-pump";
+        if(parada.motivo.includes("Aseguramiento")) icon = "fa-shield-alt";
+
+        // VERIFICAMOS EN LOS LOGS SI ESTA PARADA YA FUE MARCADA
+        const logParada = logs.find(l => l.event_type === 'parada' && l.description.includes(parada.lugar));
+        const isCompleted = !!logParada; // true si ya existe en la bitácora
+
+        const cardClass = isCompleted ? 'parada-card completed' : 'parada-card';
+        const btnDisabled = isCompleted ? 'disabled' : '';
+        const btnIcon = isCompleted ? '<i class="fas fa-check-double"></i>' : '<i class="fas fa-check"></i>';
+
+        const cardHtml = `
+            <div class="${cardClass}" id="card-parada-${index}">
+                <div class="parada-info">
+                    <strong><i class="fas fa-map-marker-alt" style="color:var(--primary-orange)"></i> ${parada.lugar}</strong>
+                    <span><i class="fas ${icon}" style="color:#64748b;"></i> Motivo: ${parada.motivo}</span>
+                </div>
+                <button class="btn-check-parada" ${btnDisabled} onclick="marcarParada('card-parada-${index}', '${parada.lugar}', '${parada.motivo}', this)">
+                    ${btnIcon}
+                </button>
+            </div>
+        `;
+        contenedor.insertAdjacentHTML('beforeend', cardHtml);
+    });
+}
+function renderizarConductoresRuta(viaje, logs) {
+    const seccionRelevo = document.getElementById("seccionRelevoRuta");
+    const contenedor = document.getElementById("contenedorRelevoConductor");
+    contenedor.innerHTML = "";
+
+    const unidad1 = viaje.units && viaje.units.length > 0 ? viaje.units[0] : null;
+    if (!unidad1) {
+        seccionRelevo.style.display = "none";
+        return;
+    }
+
+    const conductorOriginal = unidad1.driver_name;
+    let relevoOriginal = null;
+
+    if (unidad1.passengers && Array.isArray(unidad1.passengers)) {
+        relevoOriginal = unidad1.passengers.find(p => p.is_relay || p.role === 'second_driver');
+    }
+
+    if (relevoOriginal) {
+        seccionRelevo.style.display = "block";
+
+        // CONTAMOS LOS CAMBIOS EN EL HISTORIAL PARA SABER QUIÉN ESTÁ AL VOLANTE
+        const cantidadCambios = logs.filter(l => l.event_type === 'relevo').length;
+
+        // Si hay un número impar de cambios, el relevo va manejando. Si es par (0, 2, 4...), va el principal.
+        let actualAlVolante = conductorOriginal;
+        let actualDescansando = relevoOriginal.name;
+
+        if (cantidadCambios % 2 !== 0) {
+            actualAlVolante = relevoOriginal.name;
+            actualDescansando = conductorOriginal;
+        }
+
+        contenedor.innerHTML = `
+            <div class="conductor-swap-box" id="cajaRelevoActivo">
+                <div class="driver-info">
+                    <span>Al Volante</span>
+                    <strong id="lblConductorAlVolante">${actualAlVolante}</strong>
+                </div>
+                <button class="btn-swap" onclick="ejecutarRelevo()"><i class="fas fa-exchange-alt"></i> Cambiar</button>
+                <div class="driver-info">
+                    <span>Relevo</span>
+                    <strong id="lblConductorDescansando">${actualDescansando}</strong>
+                </div>
+            </div>
+        `;
+    } else {
+        seccionRelevo.style.display = "none";
+    }
+}
+// Actualiza el texto verde/rojo según el estado para mantener congruencia
+function actualizarIndicadorEstadoUI() {
+    const dot = document.getElementById("dotEstado");
+    const txt = document.getElementById("txtEstadoActual");
+
+    if (estadoViajeActual === "Por Iniciar") {
+        dot.className = "status-dot-ruta";
+        dot.style.backgroundColor = "#64748b"; // Gris
+        txt.innerText = "ESPERANDO SALIDA";
+        txt.className = "status-value text-gray-500";
+    } else if (estadoViajeActual === "En Curso") {
+        dot.className = "status-dot-ruta pulsing-green";
+        dot.style.backgroundColor = "";
+        txt.innerText = "EN RUTA";
+        txt.className = "status-value text-green";
+    }
 }
 
+// Y un ligero cambio en tu botón de Iniciar Viaje para que actualice el UI
 function cerrarModalRuta() {
     const modal = document.getElementById("modalSeguimientoRuta");
     modal.classList.remove("active");
     setTimeout(() => {
         modal.style.display = "none";
+        // RECARGAR LA TABLA HASTA QUE SE CIERRA EL MODAL
+        cargarViajes(currentPage);
     }, 300);
 }
 
-function abrirModalHistorial(idViaje) {
-    document.getElementById("lblHistorialViaje").innerText = idViaje;
+async function abrirModalHistorial(folioViaje) {
+    document.getElementById("lblHistorialViaje").innerText = folioViaje;
     const modal = document.getElementById("modalHistorialActividad");
-    modal.style.display = "flex";
-    setTimeout(() => {
-        modal.classList.add("active");
-    }, 10);
-}
+    const timeline = document.getElementById("timelineHistorialGlobal");
 
+    timeline.innerHTML = `<div style="text-align:center; padding: 20px; color:#6c757d;"><i class="fas fa-spinner fa-spin"></i> Cargando historial...</div>`;
+    modal.style.display = "flex";
+    setTimeout(() => modal.classList.add("active"), 10);
+
+    try {
+        const idViaje = arguments.length > 1 ? arguments[0] : folioViaje;
+        const folioReal = arguments.length > 1 ? arguments[1] : folioViaje;
+        document.getElementById("lblHistorialViaje").innerText = folioReal;
+
+        const response = await fetch(`/qhse/gerenciamiento/journeys/${idViaje}`);
+        const result = await response.json();
+
+        timeline.innerHTML = "";
+
+        if (result.success && result.data.logs && result.data.logs.length > 0) {
+            result.data.logs.forEach(log => {
+
+                let colorClass = "bg-blue-base";
+                let iconClass = "fas fa-info-circle";
+                let textColor = "#1d4ed8";
+
+                // PATRÓN 1: CREACIÓN (Azul normal brillante)
+                if (log.event_type === 'created') {
+                    colorClass = "bg-blue-base"; iconClass = "fas fa-file-signature"; textColor = "#1d4ed8";
+                }
+
+                // PATRÓN 2: APROBACIONES Y RECHAZOS (Verde Esmeralda / Rojo)
+                if (log.event_type === 'approved') {
+                    colorClass = "bg-green-approve"; iconClass = "fas fa-check-circle"; textColor = "#047857";
+                }
+                if (log.event_type === 'rejected' || log.event_type === 'cancelled') {
+                    colorClass = "bg-danger-red"; iconClass = "fas fa-ban"; textColor = "#b91c1c";
+                }
+
+                // PATRÓN 3: ARRANQUE EN RUTA (Azul marino oscuro)
+                if (log.event_type === 'in_progress') {
+                    colorClass = "bg-blue-dark"; iconClass = "fas fa-truck-fast"; textColor = "#1e3a8a";
+                }
+
+                // PATRÓN 4: SUCESOS EN RUTA (Amarillo / Naranja)
+                if (log.event_type === 'parada') {
+                    colorClass = "bg-warning-yellow"; iconClass = "fas fa-location-dot"; textColor = "#a16207";
+                }
+                if (log.event_type === 'relevo') {
+                    colorClass = "bg-warning-orange"; iconClass = "fas fa-users-gear"; textColor = "#c2410c";
+                }
+
+                // PATRÓN 5: INCIDENCIAS OPERATIVAS (Rojo oscuro / Verde Lima)
+                if (log.event_type === 'detencion') {
+                    colorClass = "bg-danger-dark"; iconClass = "fas fa-exclamation-triangle"; textColor = "#7f1d1d";
+                }
+                if (log.event_type === 'reanudacion') {
+                    // Verde diferente al aprobado
+                    colorClass = "bg-green-resume"; iconClass = "fas fa-play-circle"; textColor = "#4d7c0f";
+                }
+
+                // PATRÓN 6: CONCLUSIÓN (Verde Oscuro)
+                if (log.event_type === 'completed') {
+                    colorClass = "bg-green-finish"; iconClass = "fas fa-flag-checkered"; textColor = "#14532d";
+                }
+
+                const fechaObj = new Date(log.created_at);
+                const fechaFormat = fechaObj.toLocaleDateString("es-MX", { day: '2-digit', month: 'short' }) + ', ' + fechaObj.toLocaleTimeString("es-MX", { hour: '2-digit', minute: '2-digit' });
+
+                const htmlExtra = `
+                    <div class="timeline-item">
+                        <div class="timeline-icon ${colorClass}">
+                            <i class="${iconClass}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <h4 style="color: ${textColor}">${log.title}</h4>
+                            <span class="timeline-time"><i class="far fa-clock"></i> ${fechaFormat}</span>
+                            <p>${log.description}</p>
+                        </div>
+                    </div>
+                `;
+                timeline.insertAdjacentHTML("beforeend", htmlExtra);
+            });
+        } else {
+            timeline.innerHTML = `<div style="text-align:center; padding: 20px; color:#6c757d;">No hay eventos registrados en este viaje.</div>`;
+        }
+    } catch (e) {
+        timeline.innerHTML = `<div style="color:red; text-align:center;">Error al cargar el historial</div>`;
+    }
+}
 function cerrarModalHistorial() {
     const modal = document.getElementById("modalHistorialActividad");
     modal.classList.remove("active");
@@ -6041,6 +7702,11 @@ function cerrarModalHistorial() {
         modal.style.display = "none";
     }, 300);
 }
+// Ya no necesitamos inyectar HTML estático en la variable global, así que dejamos esta función vacía o la usamos solo en memoria si queremos ver cambios instantáneos antes de recargar.
+function agregarEventoTimelineGlobal() {
+    // Obsoleta, ahora el historial se lee directo de la BD cada vez que se abre.
+}
+
 
 // ====== LÓGICA DEL BOTÓN: INICIAR / FINALIZAR VIAJE ======
 function actualizarBotonPrincipalRuta() {
@@ -6049,116 +7715,64 @@ function actualizarBotonPrincipalRuta() {
         btnMain.innerHTML = '<i class="fas fa-play"></i> Iniciar Viaje';
         btnMain.style.background = "var(--primary-blue)";
     } else {
-        btnMain.innerHTML =
-            '<i class="fas fa-flag-checkered"></i> Finalizar Viaje';
+        btnMain.innerHTML = '<i class="fas fa-flag-checkered"></i> Finalizar Viaje';
         btnMain.style.background = "#166534";
     }
 }
 
 function toggleEstadoViaje() {
-    if (estadoViajeActual === "Por Iniciar") {
-        Swal.fire({
-            title: "¿Quieres iniciar el viaje?",
-            text: "El estado pasará a 'En Curso' y podrás registrar paradas e incidencias.",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#1e3c72",
-            cancelButtonColor: "#64748b",
-            confirmButtonText: "Sí, iniciar",
-            cancelButtonText: "No",
-        }).then((result) => {
-            if (result.isConfirmed) {
+    const esInicio = estadoViajeActual === "Por Iniciar";
+
+    Swal.fire({
+        title: esInicio ? "¿Quieres iniciar el viaje?" : "¿Finalizar Viaje?",
+        text: esInicio ? "El estado pasará a 'En Curso' y la unidad estará en ruta." : "La bitácora se cerrará y el viaje pasará al Historial.",
+        icon: esInicio ? "question" : "warning",
+        showCancelButton: true,
+        confirmButtonColor: esInicio ? "#1e3c72" : "#166534",
+        cancelButtonColor: esInicio ? "#6c757d" : "#d33",
+        confirmButtonText: esInicio ? "Sí, iniciar" : "Sí, finalizar",
+        cancelButtonText: "Cancelar",
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async () => {
+            try {
+                const response = await fetch(`/qhse/gerenciamiento/journeys/${viajeRutaActivoId}/journey-status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ journey_status: esInicio ? 'in_progress' : 'completed' })
+                });
+                if (!response.ok) throw new Error("Error actualizando estado");
+                return await response.json();
+            } catch (error) {
+                Swal.showValidationMessage(`Fallo de red: ${error}`);
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            if (esInicio) {
                 estadoViajeActual = "En Curso";
                 actualizarBotonPrincipalRuta();
-                agregarEventoTimelineGlobal(
-                    "Viaje Iniciado",
-                    "La unidad ha salido a ruta.",
-                    "bg-blue",
-                    "fas fa-truck-moving",
-                );
-                Swal.fire({
-                    toast: true,
-                    position: "top-end",
-                    icon: "success",
-                    title: "Viaje Iniciado",
-                    showConfirmButton: false,
-                    timer: 2000,
-                });
-            }
-        });
-    } else {
-        Swal.fire({
-            title: "¿Estás seguro de que vas a finalizar el viaje?",
-            text: "La bitácora se cerrará, el estado pasará a 'Finalizado' y solo se podrá ver el Historial.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#166534",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Sí, finalizar",
-            cancelButtonText: "Cancelar",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                agregarEventoTimelineGlobal(
-                    "Viaje Finalizado",
-                    "La unidad llegó exitosamente y el viaje se ha cerrado.",
-                    "bg-green",
-                    "fas fa-flag-checkered",
-                );
-                Swal.fire(
-                    "¡Finalizado!",
-                    "El viaje ha terminado. Puedes revisarlo en el Historial.",
-                    "success",
-                ).then(() => {
+                document.getElementById("dotEstado").className = "status-dot-ruta pulsing-green";
+                document.getElementById("dotEstado").style.backgroundColor = "";
+                document.getElementById("txtEstadoActual").innerText = "EN RUTA";
+                document.getElementById("txtEstadoActual").className = "status-value text-green";
+                document.getElementById("btnDetenerMarcha").style.display = "flex";
+
+                Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Viaje Iniciado", showConfirmButton: false, timer: 2000 });
+            } else {
+                Swal.fire("¡Finalizado!", "El viaje ha terminado exitosamente.", "success").then(() => {
                     cerrarModalRuta();
                 });
             }
-        });
-    }
-}
-
-// ====== FUNCIÓN AUXILIAR: AGREGAR AL TIMELINE DEL HISTORIAL ======
-function agregarEventoTimelineGlobal(
-    titulo,
-    descripcion,
-    colorClass,
-    iconClass,
-) {
-    const timeline = document.getElementById("timelineHistorialGlobal");
-    const horaActual = new Date().toLocaleTimeString("es-MX", {
-        hour: "2-digit",
-        minute: "2-digit",
+        }
     });
-
-    let textColor = "";
-    if (colorClass === "bg-red") textColor = "#c62828";
-    if (colorClass === "bg-green") textColor = "#2e7d32";
-    if (colorClass === "bg-purple") textColor = "#7e22ce";
-
-    const htmlExtra = `
-        <div class="timeline-item">
-            <div class="timeline-icon ${colorClass}">
-                <i class="${iconClass}"></i>
-            </div>
-            <div class="timeline-content">
-                <h4 style="color: ${textColor}">${titulo}</h4>
-                <span class="timeline-time"><i class="far fa-clock"></i> Hoy, ${horaActual}</span>
-                <p>${descripcion}</p>
-            </div>
-        </div>
-    `;
-    timeline.insertAdjacentHTML("beforeend", htmlExtra);
-    timeline.scrollTop = timeline.scrollHeight;
 }
+
 
 // ====== LÓGICA DE DETENCIÓN E INCIDENCIAS CON ALERTA ======
 function abrirFormularioDetencion() {
     if (estadoViajeActual === "Por Iniciar") {
-        Swal.fire(
-            "Aviso",
-            "Debes Iniciar el Viaje antes de poder registrar incidencias.",
-            "info",
-        );
-        return;
+        return Swal.fire("Aviso", "Debes Iniciar el Viaje antes de poder registrar incidencias.", "info");
     }
     document.getElementById("btnDetenerMarcha").style.display = "none";
     document.getElementById("formDetencion").style.display = "block";
@@ -6176,14 +7790,7 @@ function confirmarDetencion() {
     const motivo = selector.value;
     const notas = document.getElementById("notasDetencion").value;
 
-    if (!motivo) {
-        Swal.fire({
-            icon: "warning",
-            title: "Atención",
-            text: "Seleccione un motivo de detención.",
-        });
-        return;
-    }
+    if (!motivo) return Swal.fire({ icon: "warning", title: "Atención", text: "Seleccione un motivo de detención." });
 
     Swal.fire({
         title: "¿Notificar Incidencia?",
@@ -6191,82 +7798,113 @@ function confirmarDetencion() {
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#d32f2f",
-        cancelButtonColor: "#64748b",
-        confirmButtonText: "Sí, notificar detención",
-        cancelButtonText: "Cancelar",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, notificar",
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async () => {
+            try {
+                const textoDescripcion = notas ? `${motivo} - Notas: ${notas}` : motivo;
+                return await guardarEventoBackend('detencion', 'Incidencia / Unidad Detenida', textoDescripcion);
+            } catch (error) {
+                Swal.showValidationMessage(`Error: ${error}`);
+            }
+        }
     }).then((result) => {
         if (result.isConfirmed) {
-            document.getElementById("dotEstado").className =
-                "status-dot pulsing-red";
-            document.getElementById("txtEstadoActual").innerText =
-                "UNIDAD DETENIDA";
-            document.getElementById("txtEstadoActual").className =
-                "status-value text-red";
-
+            // Actualizar UI inmediatamente
+            document.getElementById("dotEstado").className = "status-dot-ruta pulsing-red";
+            document.getElementById("txtEstadoActual").innerText = "UNIDAD DETENIDA";
+            document.getElementById("txtEstadoActual").className = "status-value text-red";
             document.getElementById("formDetencion").style.display = "none";
             document.getElementById("btnReanudarMarcha").style.display = "flex";
 
-            const textoDescripcion = notas
-                ? `${motivo} - Notas: ${notas}`
-                : motivo;
-            agregarEventoTimelineGlobal(
-                "Incidencia / Unidad Detenida",
-                textoDescripcion,
-                "bg-red",
-                "fas fa-hand-paper",
-            );
-
-            selector.value = "";
-            document.getElementById("notasDetencion").value = "";
-
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "error",
-                title: "Detención notificada",
-                showConfirmButton: false,
-                timer: 2000,
-            });
+            selector.value = ""; document.getElementById("notasDetencion").value = "";
+            Swal.fire({ toast: true, position: "top-end", icon: "error", title: "Detención notificada", showConfirmButton: false, timer: 2000 });
         }
     });
 }
 
 function confirmarReanudacion() {
-    document.getElementById("dotEstado").className = "status-dot pulsing-green";
-    document.getElementById("txtEstadoActual").innerText = "EN RUTA";
-    document.getElementById("txtEstadoActual").className =
-        "status-value text-green";
-
-    document.getElementById("btnReanudarMarcha").style.display = "none";
-    document.getElementById("btnDetenerMarcha").style.display = "flex";
-
-    agregarEventoTimelineGlobal(
-        "Ruta Reanudada",
-        "La unidad ha retomado su trayecto.",
-        "bg-green",
-        "fas fa-play",
-    );
-
+    // Agregamos un SweetAlert de confirmación también aquí para evitar clics múltiples
     Swal.fire({
-        toast: true,
-        position: "top-end",
-        icon: "success",
-        title: "Ruta reanudada",
-        showConfirmButton: false,
-        timer: 2000,
+        title: "¿Reanudar marcha?",
+        text: "La unidad continuará su trayecto.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#28a745",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, reanudar",
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async () => {
+            try {
+                return await guardarEventoBackend('reanudacion', 'Ruta Reanudada', 'La unidad ha retomado su trayecto.');
+            } catch (error) {
+                Swal.showValidationMessage(`Error: ${error}`);
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById("dotEstado").className = "status-dot-ruta pulsing-green";
+            document.getElementById("txtEstadoActual").innerText = "EN RUTA";
+            document.getElementById("txtEstadoActual").className = "status-value text-green";
+            document.getElementById("btnReanudarMarcha").style.display = "none";
+            document.getElementById("btnDetenerMarcha").style.display = "flex";
+
+            Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Ruta reanudada", showConfirmButton: false, timer: 2000 });
+        }
     });
 }
 
-// ====== LÓGICA DE PARADAS PROGRAMADAS CON ALERTA ======
-function marcarParada(idCard, ubicacion, motivo, botonElemento) {
-    if (estadoViajeActual === "Por Iniciar") {
-        Swal.fire(
-            "Aviso",
-            "Debes Iniciar el viaje para registrar paradas operativas.",
-            "info",
-        );
+// ====================================================================
+// PARADAS PROGRAMADAS EN RUTA
+// ====================================================================
+function renderizarParadasRuta(viaje, logs) {
+    const contenedor = document.getElementById("contenedorParadasProgramadas");
+    contenedor.innerHTML = "";
+
+    let paradas = [];
+    if (viaje.planned_stops) {
+        paradas = typeof viaje.planned_stops === 'string' ? JSON.parse(viaje.planned_stops) : viaje.planned_stops;
+    }
+
+    if (!paradas || paradas.length === 0) {
+        contenedor.innerHTML = `<p style="color:#64748b; font-size:13px; font-style:italic;">No hay paradas programadas para este viaje.</p>`;
         return;
     }
+
+    paradas.forEach((parada, index) => {
+        let icon = "fa-map-pin";
+        if(parada.motivo.includes("Alimentos")) icon = "fa-utensils";
+        if(parada.motivo.includes("Combustible")) icon = "fa-gas-pump";
+        if(parada.motivo.includes("Aseguramiento")) icon = "fa-shield-alt";
+
+        // VERIFICAMOS EN EL HISTORIAL DE LA BD SI ESTA PARADA YA FUE MARCADA
+        const logParada = logs.find(l => l.event_type === 'parada' && l.description.includes(parada.lugar));
+        const isCompleted = !!logParada;
+
+        const cardClass = isCompleted ? 'parada-card completed' : 'parada-card';
+        const btnDisabled = isCompleted ? 'disabled' : '';
+        const btnIcon = isCompleted ? '<i class="fas fa-check-double"></i>' : '<i class="fas fa-check"></i>';
+
+        const cardHtml = `
+            <div class="${cardClass}" id="card-parada-${index}">
+                <div class="parada-info">
+                    <strong><i class="fas fa-map-marker-alt" style="color:var(--primary-orange)"></i> ${parada.lugar}</strong>
+                    <span><i class="fas ${icon}" style="color:#64748b;"></i> Motivo: ${parada.motivo}</span>
+                </div>
+                <button class="btn-check-parada" ${btnDisabled} onclick="marcarParada('card-parada-${index}', '${parada.lugar}', '${parada.motivo}', this)">
+                    ${btnIcon}
+                </button>
+            </div>
+        `;
+        contenedor.insertAdjacentHTML('beforeend', cardHtml);
+    });
+}
+
+function marcarParada(idCard, ubicacion, motivo, botonElemento) {
+    if (estadoViajeActual === "Por Iniciar") return Swal.fire("Aviso", "Debes Iniciar el viaje para registrar paradas.", "info");
 
     Swal.fire({
         title: "¿Confirmar Parada?",
@@ -6275,84 +7913,159 @@ function marcarParada(idCard, ubicacion, motivo, botonElemento) {
         showCancelButton: true,
         confirmButtonColor: "#1e3c72",
         cancelButtonColor: "#6c757d",
-        confirmButtonText: "Sí, confirmar parada",
-        cancelButtonText: "Cancelar",
+        confirmButtonText: "Sí, confirmar",
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async () => {
+            try {
+                const desc = `Ubicación: ${ubicacion} | Motivo: ${motivo}`;
+                return await guardarEventoBackend('parada', 'Parada Alcanzada', desc);
+            } catch (error) {
+                Swal.showValidationMessage(`Error: ${error}`);
+            }
+        }
     }).then((result) => {
         if (result.isConfirmed) {
+            // Actualizar UI
             const card = document.getElementById(idCard);
             card.classList.add("completed");
             botonElemento.disabled = true;
             botonElemento.innerHTML = '<i class="fas fa-check-double"></i>';
 
-            agregarEventoTimelineGlobal(
-                "Parada Alcanzada",
-                `<i class="fas fa-map-marker-alt" style="color:var(--primary-blue)"></i> <strong>${ubicacion}</strong><br><small>Motivo: ${motivo}</small>`,
-                "bg-purple",
-                "fas fa-check-circle",
-            );
-
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "success",
-                title: "Parada confirmada",
-                showConfirmButton: false,
-                timer: 2000,
-            });
+            Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Parada confirmada", showConfirmButton: false, timer: 2000 });
         }
     });
 }
 
-// ====== LÓGICA DE RELEVO DE CONDUCTOR ======
-function ejecutarRelevo() {
-    if (estadoViajeActual === "Por Iniciar") {
-        Swal.fire("Aviso", "Inicia el viaje para registrar el relevo.", "info");
+// ====================================================================
+// CAMBIO DE CONDUCTOR (RELEVOS)
+// ====================================================================
+function renderizarConductoresRuta(viaje, logs) {
+    const seccionRelevo = document.getElementById("seccionRelevoRuta");
+    const contenedor = document.getElementById("contenedorRelevoConductor");
+    contenedor.innerHTML = "";
+
+    const unidad1 = viaje.units && viaje.units.length > 0 ? viaje.units[0] : null;
+    if (!unidad1) {
+        seccionRelevo.style.display = "none";
         return;
     }
 
+    const conductorOriginal = unidad1.driver_name;
+    let relevoOriginal = null;
+
+    if (unidad1.passengers && Array.isArray(unidad1.passengers)) {
+        relevoOriginal = unidad1.passengers.find(p => p.is_relay || p.role === 'second_driver');
+    }
+
+    if (relevoOriginal) {
+        seccionRelevo.style.display = "block";
+
+        // CONTAMOS LOS CAMBIOS EN EL HISTORIAL PARA SABER QUIÉN ESTÁ AL VOLANTE
+        const cantidadCambios = logs.filter(l => l.event_type === 'relevo').length;
+
+        let actualAlVolante = conductorOriginal;
+        let actualDescansando = relevoOriginal.name;
+
+        // Si han cambiado un número impar de veces, el relevo va manejando
+        if (cantidadCambios % 2 !== 0) {
+            actualAlVolante = relevoOriginal.name;
+            actualDescansando = conductorOriginal;
+        }
+
+        contenedor.innerHTML = `
+            <div class="conductor-swap-box" id="cajaRelevoActivo">
+                <div class="driver-info">
+                    <span>Al Volante</span>
+                    <strong id="lblConductorAlVolante">${actualAlVolante}</strong>
+                </div>
+                <button class="btn-swap" onclick="ejecutarRelevo()"><i class="fas fa-exchange-alt"></i> Cambiar</button>
+                <div class="driver-info">
+                    <span>Relevo</span>
+                    <strong id="lblConductorDescansando">${actualDescansando}</strong>
+                </div>
+            </div>
+        `;
+    } else {
+        seccionRelevo.style.display = "none";
+    }
+}
+
+function ejecutarRelevo() {
+    if (estadoViajeActual === "Por Iniciar") return Swal.fire("Aviso", "Inicia el viaje para registrar el relevo.", "info");
+
+    const lblAlVolante = document.getElementById("lblConductorAlVolante");
+    const lblDescansando = document.getElementById("lblConductorDescansando");
+    const proximoConductor = lblDescansando.innerText;
+
     Swal.fire({
         title: "¿Confirmar Cambio de Conductor?",
-        text: "Se registrará el relevo en el historial.",
+        text: `Se registrará que ${proximoConductor} toma el volante.`,
         icon: "question",
         showCancelButton: true,
         confirmButtonColor: "#d67e29",
         cancelButtonColor: "#6c757d",
         confirmButtonText: "Sí, cambiar",
-        cancelButtonText: "Cancelar",
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async () => {
+            try {
+                const desc = `El conductor ${proximoConductor} ha tomado el volante.`;
+                return await guardarEventoBackend('relevo', 'Cambio de Conductor', desc);
+            } catch (error) {
+                Swal.showValidationMessage(`Error: ${error}`);
+            }
+        }
     }).then((result) => {
         if (result.isConfirmed) {
-            const lblAlVolante = document.getElementById(
-                "lblConductorAlVolante",
-            );
-            const lblDescansando = document.getElementById(
-                "lblConductorDescansando",
-            );
-
+            // Intercambiar Nombres Visualmente
             const temp = lblAlVolante.innerText;
             lblAlVolante.innerText = lblDescansando.innerText;
             lblDescansando.innerText = temp;
 
+            // Animación de intercambio
             const caja = document.querySelector(".conductor-swap-box");
-            caja.style.transform = "scale(0.96)";
-            setTimeout(() => {
-                caja.style.transform = "scale(1)";
-            }, 150);
+            if(caja) {
+                caja.style.transform = "scale(0.96)";
+                setTimeout(() => caja.style.transform = "scale(1)", 150);
+            }
 
-            agregarEventoTimelineGlobal(
-                "Cambio de Conductor",
-                `El conductor <strong>${lblAlVolante.innerText}</strong> ha tomado el volante.`,
-                "bg-orange",
-                "fas fa-user-check",
-            );
-
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "success",
-                title: "Relevo registrado",
-                showConfirmButton: false,
-                timer: 2000,
-            });
+            Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Relevo registrado", showConfirmButton: false, timer: 2000 });
         }
     });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

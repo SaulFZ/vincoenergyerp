@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reloj 24 Horas Estricto</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/clockpicker/0.0.7/bootstrap-clockpicker.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        body {
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .reloj-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        /* Estilo para el input de hora */
+        #hora24h {
+            font-size: 2.5rem;
+            height: auto;
+            text-align: center;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            color: #2d3748;
+            cursor: pointer;
+            width: 200px;
+            margin: 0 auto;
+        }
+        #hora24h:focus {
+            border-color: #4a90e2;
+            box-shadow: none;
+        }
+        label {
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 20px;
+            display: block;
+            letter-spacing: 1px;
+        }
+        /* Personalización del panel del reloj para que se vea más moderno */
+        .clockpicker-popover .popover-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="reloj-card">
+    <label>HORA FORMATO 24H</label>
+    <div class="input-group clockpicker">
+        <input type="text" id="hora24h" class="form-control" value="15:00" readonly>
+    </div>
+    <small class="text-muted d-block mt-3">Haz clic para cambiar la hora</small>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clockpicker/0.0.7/bootstrap-clockpicker.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#hora24h').clockpicker({
+            placement: 'bottom',
+            align: 'left',
+            autoclose: true,
+            'default': 'now',
+            twelvehour: false, // DESACTIVA EL FORMATO AM/PM
+            vibrate: true,
+            afterDone: function() {
+                console.log("Hora seleccionada correctamente: " + $('#hora24h').val());
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -49,7 +49,7 @@ class PasswordResetMail extends Mailable
     public function content()
     {
         return new Content(
-            view: 'components.emails.login.password_reset',
+            view: 'emails.login.password_reset',
             // El token, la expiración y el nombre de usuario se pasan automáticamente a la vista.
         );
     }

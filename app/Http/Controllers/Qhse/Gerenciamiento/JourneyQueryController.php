@@ -1,7 +1,7 @@
 <?php
-
 namespace App\Http\Controllers\Qhse\Gerenciamiento;
 
+use App\Helpers\PermissionHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Qhse\Gerenciamiento\Journey;
 use Illuminate\Http\Request;
@@ -9,31 +9,48 @@ use Illuminate\Support\Facades\Log;
 
 class JourneyQueryController extends Controller
 {
-    /**
+
+
+
+/**
      * Obtener lista de viajes con filtros y paginación
      */
-public function index(Request $request)
+    public function index(Request $request)
     {
         try {
-            $perPage = $request->get('per_page', 10);
-            $search = $request->get('search', '');
-            $statusGv = $request->get('status_gv', 'all'); // Nuevo: Filtro GV
-            $statusViaje = $request->get('status_viaje', 'all'); // Nuevo: Filtro Viaje
-            $riskLevel = $request->get('risk_level', 'all');
-            $destination = $request->get('destination', 'all');
+            $user = auth()->user();
+
+            // 1. EVALUAR VISIBILIDAD GLOBAL Y PERMISO DE HISTORIAL
+            $canSeeAll = PermissionHelper::hasDirectPermission('ver_gv_todos') ||
+                         PermissionHelper::hasDirectPermission('aprobar_gv_bajo') ||
+                         PermissionHelper::hasDirectPermission('aprobar_gv_medio') ||
+                         PermissionHelper::hasDirectPermission('aprobar_gv_alto') ||
+                         PermissionHelper::hasDirectPermission('aprobar_gv_muy_alto');
+
+            $perPage        = $request->get('per_page', 10);
+            $search         = $request->get('search', '');
+            $statusGv       = $request->get('status_gv', 'all');
+            $statusViaje    = $request->get('status_viaje', 'all');
+            $riskLevel      = $request->get('risk_level', 'all');
+            $destination    = $request->get('destination', 'all');
             $fechaSolicitud = $request->get('fecha_solicitud', '');
 
             $query = Journey::with(['creator', 'approver'])
                 ->orderBy('created_at', 'desc');
 
+            // 2. APLICAR REGLA: Si no puede ver todos, solo ve los suyos
+            if (!$canSeeAll) {
+                $query->where('created_by', $user->id);
+            }
+
             // Búsqueda por texto
-            if (!empty($search)) {
-                $query->where(function($q) use ($search) {
+            if (! empty($search)) {
+                $query->where(function ($q) use ($search) {
                     $q->where('folio', 'like', "%{$search}%")
-                      ->orWhere('creator_name', 'like', "%{$search}%")
-                      ->orWhere('department', 'like', "%{$search}%")
-                      ->orWhere('destination_region', 'like', "%{$search}%")
-                      ->orWhere('specific_destination', 'like', "%{$search}%");
+                        ->orWhere('creator_name', 'like', "%{$search}%")
+                        ->orWhere('department', 'like', "%{$search}%")
+                        ->orWhere('destination_region', 'like', "%{$search}%")
+                        ->orWhere('specific_destination', 'like', "%{$search}%");
                 });
             }
 
@@ -49,6 +66,9 @@ public function index(Request $request)
                 if (in_array($statusViaje, ['not_started', 'in_progress', 'completed', 'cancelled', 'no_procede'])) {
                     $query->where('journey_status', $statusViaje);
                 }
+            }
+            if ($request->filled('fecha_solicitud')) {
+                $query->whereDate('request_date', $request->input('fecha_solicitud'));
             }
 
             // Filtro por nivel de riesgo
@@ -72,7 +92,7 @@ public function index(Request $request)
             }
 
             // Filtro por fecha de solicitud
-            if (!empty($fechaSolicitud)) {
+            if (! empty($fechaSolicitud)) {
                 try {
                     $fechaParts = explode('/', $fechaSolicitud);
                     if (count($fechaParts) === 3) {
@@ -86,51 +106,56 @@ public function index(Request $request)
 
             $journeys = $query->paginate($perPage);
 
-            // Formatear datos para la vista
-            $formattedJourneys = collect($journeys->items())->map(function($journey) {
+            // Formatear datos para la vista Y AÑADIR BANDERAS DE PERMISOS
+            $formattedJourneys = collect($journeys->items())->map(function ($journey) use ($user, $canSeeAll) {
                 return [
-                    'id' => $journey->id,
-                    'folio' => $journey->folio,
-                    'solicitante' => $journey->creator_name,
-                    'departamento' => $journey->department,
-                    'destino' => $journey->destination_region,
+                    'id'                 => $journey->id,
+                    'folio'              => $journey->folio,
+                    'solicitante'        => $journey->creator_name,
+                    'departamento'       => $journey->department,
+                    'destino'            => $journey->destination_region,
                     'destino_especifico' => $journey->specific_destination,
-                    'fechas' => $this->formatDates($journey),
-                    'fecha_solicitud' => $journey->request_date ? \Carbon\Carbon::parse($journey->request_date)->format('d/m/Y') : '',
-                    'riesgo' => [
+                    'fechas'             => $this->formatDates($journey),
+                    'fecha_solicitud'    => $journey->request_date ? \Carbon\Carbon::parse($journey->request_date)->format('d/m/Y') : '',
+                    'tipo_viaje'         => $journey->fleet_type ?? 'Unidad Única',
+                    'riesgo'             => [
                         'nivel' => $journey->risk_level ?? 'bajo',
                         'texto' => $this->getRiskText($journey->risk_level),
-                        'clase' => $this->getRiskClass($journey->risk_level)
+                        'clase' => $this->getRiskClass($journey->risk_level),
                     ],
-                    'estado_gv' => [
+                    'estado_gv'          => [
                         'texto' => $this->getApprovalStatusText($journey->approval_status),
-                        'clase' => $this->getStatusClass($journey->approval_status)
+                        'clase' => $this->getStatusClass($journey->approval_status),
                     ],
-                    'estado_viaje' => [
+                    'estado_viaje'       => [
                         'texto' => $this->getJourneyStatusText($journey->journey_status),
-                        'clase' => $this->getStatusClass($journey->journey_status)
-                    ]
+                        'clase' => $this->getStatusClass($journey->journey_status),
+                    ],
+                    // 👇 NUEVAS BANDERAS PARA CONTROLAR BOTONES EN EL FRONTEND 👇
+                    'is_creator'         => $journey->created_by === $user->id,
+                    'can_approve'        => $journey->approver_id === $user->id,
+                    'can_see_history'    => $canSeeAll, // Si ve todo, puede ver el historial
                 ];
             });
 
             return response()->json([
-                'success' => true,
-                'data' => $formattedJourneys,
+                'success'    => true,
+                'data'       => $formattedJourneys,
                 'pagination' => [
                     'current_page' => $journeys->currentPage(),
-                    'last_page' => $journeys->lastPage(),
-                    'per_page' => $journeys->perPage(),
-                    'total' => $journeys->total(),
-                    'from' => $journeys->firstItem(),
-                    'to' => $journeys->lastItem()
-                ]
+                    'last_page'    => $journeys->lastPage(),
+                    'per_page'     => $journeys->perPage(),
+                    'total'        => $journeys->total(),
+                    'from'         => $journeys->firstItem(),
+                    'to'           => $journeys->lastItem(),
+                ],
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error cargando viajes: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cargar los viajes: ' . $e->getMessage()
+                'message' => 'Error al cargar los viajes: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -139,16 +164,68 @@ public function index(Request $request)
     {
         try {
             $lastJourney = Journey::orderBy('id', 'desc')->first();
-            if (!$lastJourney) {
+            if (! $lastJourney) {
                 $nextFolio = 'GV-00001';
             } else {
                 $lastNumber = intval(substr($lastJourney->folio, 3));
                 $nextNumber = $lastNumber + 1;
-                $nextFolio = 'GV-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+                $nextFolio  = 'GV-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
             }
             return response()->json(['success' => true, 'next_folio' => $nextFolio]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al generar folio'], 500);
+        }
+    }
+
+/**
+ * Obtener la fecha de la última inspección de un vehículo específico
+ */
+    public function getLastInspectionDate(Request $request, $economic_number)
+    {
+        try {
+            // Obtenemos la fecha exacta del contexto.
+            // Si viene del frontend (modo lectura), usamos esa.
+            // Si no viene nada (viaje nuevo), usamos el momento actual.
+            $contextDate = $request->get('context_date')
+                ? \Carbon\Carbon::parse($request->get('context_date'))
+                : now();
+
+            $lastUnit = \App\Models\Qhse\Gerenciamiento\JourneyUnit::with(['lightInspection', 'heavyInspection'])
+                ->where('economic_number', $economic_number)
+                ->whereHas('journey', function ($q) use ($contextDate) {
+                    // REGLA DE ORO: La fecha del viaje debe ser estrictamente MENOR (<) a la fecha de contexto.
+                    // Así evitamos que la inspección actual se encuentre a sí misma.
+                    $q->where('request_date', '<', $contextDate->format('Y-m-d'))
+                        ->orWhere(function ($subQ) use ($contextDate) {
+                            // Si es el mismo día, nos aseguramos que el ID del viaje sea menor
+                            // para garantizar que fue un viaje anterior.
+                            $subQ->where('request_date', '=', $contextDate->format('Y-m-d'))
+                                ->where('created_at', '<', $contextDate);
+                        });
+                })
+                ->where(function ($query) {
+                    $query->has('lightInspection')->orHas('heavyInspection');
+                })
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($lastUnit) {
+                $fechaInspeccion = $lastUnit->lightInspection
+                    ? $lastUnit->lightInspection->created_at
+                    : $lastUnit->heavyInspection->created_at;
+
+                if ($fechaInspeccion) {
+                    return response()->json([
+                        'success' => true,
+                        'date'    => $fechaInspeccion->format('d/m/Y'),
+                    ]);
+                }
+            }
+
+            return response()->json(['success' => false, 'message' => 'Sin registros previos']);
+        } catch (\Exception $e) {
+            Log::error('Error en getLastInspectionDate: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al buscar']);
         }
     }
 
@@ -162,27 +239,114 @@ public function index(Request $request)
                 'riskAssessment',
                 'preConvoyMeeting',
                 'creator',
-                'approver'
+                'approver',
+                'logs'
             ])->findOrFail($id);
 
-            return response()->json(['success' => true, 'data' => $journey]);
+            // =========================================================================
+            // LÓGICA PARA FORMATEAR LAS FOTOS ANTES DE ENVIARLAS AL FRONTEND
+            // =========================================================================
+            $journey->units->transform(function ($unit) {
+                // Formatear fotos de inspección ligera
+                if ($unit->lightInspection && ! empty($unit->lightInspection->photo_evidence)) {
+                    $photos = is_string($unit->lightInspection->photo_evidence)
+                        ? json_decode($unit->lightInspection->photo_evidence, true)
+                        : $unit->lightInspection->photo_evidence;
+
+                    $unit->lightInspection->formatted_photos = collect($photos)->map(function ($path) {
+                        return [
+                            'id'   => uniqid('photo_'),
+                            'name' => basename($path),
+                            'url'  => asset('storage/' . $path),
+                            'type' => str_ends_with(strtolower($path), '.pdf') ? 'application/pdf' : 'image/jpeg',
+                        ];
+                    })->toArray();
+                }
+
+                // Formatear fotos de inspección pesada
+                if ($unit->heavyInspection && ! empty($unit->heavyInspection->photo_evidence)) {
+                    $photos = is_string($unit->heavyInspection->photo_evidence)
+                        ? json_decode($unit->heavyInspection->photo_evidence, true)
+                        : $unit->heavyInspection->photo_evidence;
+
+                    $unit->heavyInspection->formatted_photos = collect($photos)->map(function ($path) {
+                        return [
+                            'id'   => uniqid('photo_'),
+                            'name' => basename($path),
+                            'url'  => asset('storage/' . $path),
+                            'type' => str_ends_with(strtolower($path), '.pdf') ? 'application/pdf' : 'image/jpeg',
+                        ];
+                    })->toArray();
+                }
+
+                return $unit;
+            });
+
+            // =========================================================================
+            // 2. EVALUACIÓN DE PERMISOS PARA EL FRONTEND (REGLA ESTRICTA)
+            // =========================================================================
+            $user = auth()->user();
+            $isCreator = $journey->created_by === $user->id;
+            $canApprove = false;
+
+            // EL USUARIO SOLO PUEDE APROBAR SI FUE EL ASIGNADO EXPLÍCITAMENTE A ESTE VIAJE
+            if ($journey->approver_id === $user->id) {
+                $riskLevel = $journey->risk_level ?? 'bajo';
+
+                // Y verificamos que (por seguridad) siga teniendo el permiso de su nivel
+                if ($riskLevel === 'bajo' && PermissionHelper::hasDirectPermission('aprobar_gv_bajo')) {
+                    $canApprove = true;
+                } elseif ($riskLevel === 'medio' && PermissionHelper::hasDirectPermission('aprobar_gv_medio')) {
+                    $canApprove = true;
+                } elseif ($riskLevel === 'alto' && PermissionHelper::hasDirectPermission('aprobar_gv_alto')) {
+                    $canApprove = true;
+                } elseif ($riskLevel === 'muy_alto' && PermissionHelper::hasDirectPermission('aprobar_gv_muy_alto')) {
+                    $canApprove = true;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $journey,
+                'auth' => [
+                    'is_creator' => $isCreator,
+                    'can_approve' => $canApprove
+                ]
+            ]);
+
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Viaje no encontrado'], 404);
+            return response()->json(['success' => false, 'message' => 'Viaje no encontrado: ' . $e->getMessage()], 404);
         }
     }
 
     public function getStats()
     {
         try {
+            $user = auth()->user();
+
+            // Replicamos la regla de visibilidad para que los contadores coincidan con lo que ve el usuario
+            $canSeeAll = PermissionHelper::hasDirectPermission('ver_gv_todos') ||
+                         PermissionHelper::hasDirectPermission('aprobar_gv_bajo') ||
+                         PermissionHelper::hasDirectPermission('aprobar_gv_medio') ||
+                         PermissionHelper::hasDirectPermission('aprobar_gv_alto') ||
+                         PermissionHelper::hasDirectPermission('aprobar_gv_muy_alto');
+
+            $query = Journey::query();
+
+            // Si no puede ver todo, filtramos las estadísticas solo para sus viajes
+            if (!$canSeeAll) {
+                $query->where('created_by', $user->id);
+            }
+
             $stats = [
-                'activos' => Journey::where('journey_status', 'in_progress')->count(),
-                'pendientes' => Journey::where('approval_status', 'pending')->count(),
-                'completados' => Journey::where('journey_status', 'completed')->count(),
-                'total' => Journey::count(),
-                'riesgo_bajo' => Journey::where('risk_level', 'bajo')->count(),
-                'riesgo_medio' => Journey::where('risk_level', 'medio')->count(),
-                'riesgo_alto' => Journey::where('risk_level', 'alto')->count(),
-                'riesgo_muy_alto' => Journey::where('risk_level', 'muy_alto')->count(),
+                'activos'         => (clone $query)->where('journey_status', 'in_progress')->count(),
+                'pendientes'      => (clone $query)->where('approval_status', 'pending')->count(),
+                'completados'     => (clone $query)->where('journey_status', 'completed')->count(),
+                'total'           => (clone $query)->count(),
+                'riesgo_bajo'     => (clone $query)->where('risk_level', 'bajo')->count(),
+                'riesgo_medio'    => (clone $query)->where('risk_level', 'medio')->count(),
+                'riesgo_alto'     => (clone $query)->where('risk_level', 'alto')->count(),
+                'riesgo_muy_alto' => (clone $query)->where('risk_level', 'muy_alto')->count(),
             ];
             return response()->json(['success' => true, 'data' => $stats]);
         } catch (\Exception $e) {
@@ -207,37 +371,45 @@ public function index(Request $request)
     // Funciones auxiliares
     private function formatDates($journey)
     {
-        if (!$journey->start_date || !$journey->end_date) return 'Fechas no disponibles';
+        if (! $journey->start_date || ! $journey->end_date) {
+            return 'Fechas no disponibles';
+        }
+
         $start = \Carbon\Carbon::parse($journey->start_date);
-        $end = \Carbon\Carbon::parse($journey->end_date);
+        $end   = \Carbon\Carbon::parse($journey->end_date);
         return $start->format('d M') . ' al ' . $end->format('d M Y');
     }
 
-    private function getRiskText($level) {
+    private function getRiskText($level)
+    {
         $levels = ['bajo' => 'Bajo', 'medio' => 'Medio', 'alto' => 'Alto', 'muy_alto' => 'Muy Alto'];
         return $levels[$level] ?? 'No definido';
     }
 
-    private function getRiskClass($level) {
+    private function getRiskClass($level)
+    {
         $classes = ['bajo' => 'status-riesgo-bajo', 'medio' => 'status-riesgo-medio', 'alto' => 'status-riesgo-alto', 'muy_alto' => 'status-riesgo-muy-alto'];
         return $classes[$level] ?? 'status-riesgo-bajo';
     }
 
-    private function getApprovalStatusText($status) {
+    private function getApprovalStatusText($status)
+    {
         $statuses = ['pending' => 'Pendiente', 'approved' => 'Aprobado', 'rejected' => 'Rechazado', 'cancelled' => 'Cancelado'];
         return $statuses[$status] ?? 'Pendiente';
     }
 
-    private function getJourneyStatusText($status) {
+    private function getJourneyStatusText($status)
+    {
         $statuses = ['not_started' => 'Por Iniciar', 'in_progress' => 'En Curso', 'completed' => 'Finalizado', 'cancelled' => 'Cancelado', 'no_procede' => 'No Procede'];
         return $statuses[$status] ?? 'Por Iniciar';
     }
 
-    private function getStatusClass($status) {
+    private function getStatusClass($status)
+    {
         $classes = [
-            'pending' => 'status-pendiente', 'approved' => 'status-aprobado', 'rejected' => 'status-rechazado',
+            'pending'   => 'status-pendiente', 'approved'    => 'status-aprobado', 'rejected'      => 'status-rechazado',
             'cancelled' => 'status-cancelado', 'not_started' => 'status-poriniciar', 'in_progress' => 'status-encurso',
-            'completed' => 'status-finalizado', 'no_procede' => 'status-noprocede'
+            'completed' => 'status-finalizado', 'no_procede' => 'status-noprocede',
         ];
         return $classes[$status] ?? 'status-pendiente';
     }

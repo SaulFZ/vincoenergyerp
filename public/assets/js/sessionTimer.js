@@ -6,23 +6,22 @@
                              document.querySelector('#forgotPasswordLink') !== null ||
                              document.querySelector('.toggle-password') !== null;
 
+    // Si estamos en la página de login o similares, NO ejecutamos este script
     const shouldSkip = excludedPaths.some(path => currentPath.includes(path)) || hasLoginElements;
-
     if (shouldSkip) return;
 
     // ====== CONFIGURACIÓN ======
-    const SESSION_TIMEOUT_MINUTES = 10;
-    const WARNING_TIME_MINUTES = 1;
+    const SESSION_TIMEOUT_MINUTES = 10; // Tiempo total de inactividad
+    const WARNING_TIME_MINUTES = 1;     // Cuándo mostrar la advertencia (1 minuto antes)
 
     const EXPIRY_TIME_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
     const ALERT_THRESHOLD_MS = (SESSION_TIMEOUT_MINUTES - WARNING_TIME_MINUTES) * 60 * 1000;
     const FINAL_ALERT_DURATION_MS = 5000;
-    const EXTEND_GRACE_PERIOD_MS = 10000; // 10 segundos de "gracia" tras dar a continuar
 
     let lastActivityTime = Date.now();
     let isWarningShown = false;
     let isFinalAlertShown = false;
-    let lastExtendClickTime = 0; // Para evitar que el modal reaparezca instantáneamente
+    let checkInterval;
 
     // ====== FUNCIONES AUXILIARES ======
     function isTabActive() { return !document.hidden; }
@@ -49,35 +48,27 @@
     }
 
     function resetActivity() {
-        // Si el modal está visible, no reseteamos por movimiento externo (queremos que den clic al botón)
+        // No resetear si el modal de advertencia o el de cierre final están en pantalla
         if (isWarningShown || isFinalAlertShown) return;
         lastActivityTime = Date.now();
     }
 
     async function extendSession() {
         console.log("🔄 Extendiendo sesión local...");
-
-        // 1. Reiniciar tiempos inmediatamente
         lastActivityTime = Date.now();
-        lastExtendClickTime = Date.now(); // Marca el momento del clic
         isWarningShown = false;
 
-        // 2. Cerrar alerta
-        Swal.close();
+        Swal.close(); // Cierra la advertencia
 
-        // 3. Avisar al servidor en segundo plano
+        // Avisar al servidor
         pingSession().then(success => {
             if (success) console.log("✅ Servidor sincronizado");
         });
     }
 
     // ====== MODALES ======
-
     function showTimeoutWarning() {
-        // NO mostrar si ya está visible, si la sesión ya acabó, o si acabamos de dar clic a "Continuar"
-        const timeSinceLastExtend = Date.now() - lastExtendClickTime;
-        if (isWarningShown || isFinalAlertShown || timeSinceLastExtend < EXTEND_GRACE_PERIOD_MS) return;
-
+        if (isWarningShown || isFinalAlertShown) return;
         isWarningShown = true;
 
         Swal.fire({
@@ -95,7 +86,6 @@
             confirmButtonColor: "#3085d6",
             allowOutsideClick: false,
             allowEscapeKey: false,
-            allowEnterKey: true,
             didOpen: () => {
                 const timerEl = document.getElementById("sessionTimer");
                 const timerInt = setInterval(() => {
@@ -104,11 +94,12 @@
 
                     if (timerEl) timerEl.textContent = `${timeLeft}s`;
 
-                    // Si el usuario da clic o el tiempo se agota, matamos este intervalo
-                    if (!isWarningShown || timeLeft <= 0 || isFinalAlertShown) {
+                    // Si el tiempo llega a 0 estando el modal abierto, forzamos el cierre
+                    if (timeLeft <= 0) {
                         clearInterval(timerInt);
+                        showFinalAlert();
                     }
-                }, 1000);
+                }, 480000);
             }
         }).then((result) => {
             if (result.isConfirmed) {
@@ -119,18 +110,28 @@
 
     function showFinalAlert() {
         if (isFinalAlertShown) return;
-
         isFinalAlertShown = true;
         isWarningShown = false;
 
-        Swal.close();
+        Swal.close(); // Cerramos cualquier alerta previa
 
+        const now = Date.now();
+        const overTime = now - lastActivityTime;
+
+        // Si el usuario regresa y se pasó del límite por más de 5 segundos,
+        // lo mandamos directo al login sin mostrarle el modal de los 5 segundos.
+        if (overTime > (EXPIRY_TIME_MS + 5000)) {
+            window.location.href = '/login';
+            return;
+        }
+
+        // Si está en la pestaña viendo cómo se acaba el tiempo, le mostramos el conteo final
         Swal.fire({
             title: "🔴 Sesión Agotada",
             html: `
                 <div style="text-align: center; padding: 10px;">
                     <p><strong style="color: #d63031;">Tu tiempo de inactividad ha superado el límite.</strong></p>
-                    <p>Redirigiendo al login en <strong id="finalTimer">5</strong>...</p>
+                    <p>Redirigiendo al login en <strong id="finalTimer">${FINAL_ALERT_DURATION_MS / 1000}</strong>...</p>
                 </div>
             `,
             icon: "error",
@@ -157,32 +158,40 @@
         const now = Date.now();
         const inactiveTime = now - lastActivityTime;
 
-        // Si ya expiró el tiempo total
         if (inactiveTime >= EXPIRY_TIME_MS) {
             showFinalAlert();
-        }
-        // Si entró en el rango de alerta y NO estamos en periodo de gracia
-        else if (inactiveTime >= ALERT_THRESHOLD_MS && !isWarningShown) {
+        } else if (inactiveTime >= ALERT_THRESHOLD_MS && !isWarningShown && !isFinalAlertShown) {
             showTimeoutWarning();
         }
     }
 
     function init() {
+        // Eventos que reinician la actividad del usuario
         const events = ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'];
         events.forEach(e => document.addEventListener(e, resetActivity, { passive: true }));
 
-        setInterval(checkInactivity, 1000);
+        // Validar inactividad cada segundo
+        checkInactivityInterval = setInterval(checkInactivity, 1000);
 
-        // Ping de mantenimiento cada 5 min (siempre que el usuario sea activo)
+        // ESTO ES LO NUEVO Y MÁS IMPORTANTE:
+        // Se dispara en el milisegundo exacto en que el usuario vuelve a la pestaña
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                checkInactivity();
+            }
+        });
+
+        // Ping de mantenimiento cada 5 min (solo si está activo)
         setInterval(() => {
             if (isTabActive() && !isWarningShown && !isFinalAlertShown) {
                 pingSession();
             }
         }, 300000);
 
-        console.log("✅ Sistema de sesión robusto con periodo de gracia activado.");
+        console.log("✅ Sistema de sesión estricto y preciso activado.");
     }
 
+    // Esperar a que SweetAlert2 cargue si aún no lo ha hecho
     if (typeof Swal === 'undefined') {
         const checkSwal = setInterval(() => {
             if (typeof Swal !== 'undefined') {

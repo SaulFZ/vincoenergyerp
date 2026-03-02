@@ -1,157 +1,159 @@
 @extends('modulos.qhse.sistemas.gerenciamiento.index')
 
 @section('content')
-<div class="dashboard-container">
-    <div class="compact-header">
-        <div class="header-content">
-            <div class="title-section">
-                <h1 class="travel-title">
-                    <i class="fas fa-route"></i>
-                    Gerenciamiento de Viajes
-                </h1>
-                <p class="travel-subtitle">
-                    Panel de control y registro completo de los viajes vehiculares de la compañía
-                </p>
-            </div>
-
-            <div class="header-stats stats-grid">
-                <div class="stat-card stat-active">
-                    <div class="stat-icon stat-active-icon">
-                        <i class="fas fa-truck-moving"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-number" id="active-count">0</span>
-                        <span class="stat-label">En Curso</span>
-                    </div>
+    <div class="dashboard-container">
+        <div class="compact-header">
+            <div class="header-content">
+                <div class="title-section">
+                    <h1 class="travel-title">
+                        <i class="fas fa-route"></i>
+                        Gerenciamiento de Viajes
+                    </h1>
+                    <p class="travel-subtitle">
+                        Panel de control y registro completo de los viajes vehiculares de la compañía
+                    </p>
                 </div>
 
-                <div class="stat-card stat-pending">
-                    <div class="stat-icon stat-pending-icon">
-                        <i class="fas fa-clock"></i>
+                <div class="header-stats stats-grid">
+                    <div class="stat-card stat-active">
+                        <div class="stat-icon stat-active-icon">
+                            <i class="fas fa-truck-moving"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="active-count">0</span>
+                            <span class="stat-label">En Curso</span>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <span class="stat-number" id="pending-count">0</span>
-                        <span class="stat-label">Pendientes</span>
-                    </div>
-                </div>
 
-                <div class="stat-card stat-completed">
-                    <div class="stat-icon stat-completed-icon">
-                        <i class="fas fa-check-circle"></i>
+                    <div class="stat-card stat-pending">
+                        <div class="stat-icon stat-pending-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="pending-count">0</span>
+                            <span class="stat-label">Pendientes</span>
+                        </div>
                     </div>
-                    <div class="stat-info">
-                        <span class="stat-number" id="completed-count">0</span>
-                        <span class="stat-label">Completados</span>
+
+                    <div class="stat-card stat-completed">
+                        <div class="stat-icon stat-completed-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="completed-count">0</span>
+                            <span class="stat-label">Completados</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="filters-section">
-        <div class="filters-grid">
-            <div class="filter-group filter-search" style="grid-column: span 2;">
-                <label for="searchViajes">
-                    <i class="fas fa-search"></i> Búsqueda Rápida
-                </label>
-                <div class="input-icon-wrapper">
-                    <i class="fas fa-search input-icon"></i>
-                    <input type="text" id="searchViajes" class="form-control input-with-icon"
-                        placeholder="Buscar por folio, solicitante, destino...">
+        <div class="filters-section">
+            <div class="filters-grid">
+                <div class="filter-group filter-search" style="grid-column: span 2;">
+                    <label for="searchViajes">
+                        <i class="fas fa-search"></i> Búsqueda Rápida
+                    </label>
+                    <div class="input-icon-wrapper">
+                        <i class="fas fa-search input-icon"></i>
+                        <input type="text" id="searchViajes" class="form-control input-with-icon"
+                            placeholder="Buscar por folio, solicitante, destino...">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="solicitud-date">
+                        <i class="fas fa-calendar-day"></i> Fecha Solicitud
+                    </label>
+                    <input type="text" id="solicitud-date" class="form-control" placeholder="DD/MM/AAAA">
+                </div>
+
+                <div class="filter-group">
+                    <label>
+                        <i class="fas fa-map-marker-alt"></i> Destino
+                    </label>
+                    <div class="custom-select-wrapper" id="wrapperDestinoFiltro">
+                        <div class="custom-select-trigger form-control" onclick="toggleMenuDestinoFiltro()">
+                            <span id="labelDestinoFiltroSeleccionado" class="text-truncate">Todos los Destinos</span>
+                            <i class="fas fa-chevron-down select-arrow"></i>
+                        </div>
+                        <div class="custom-options shadow-sm" id="listaOpcionesDestinoFiltro">
+                            <div class="loading-options">Cargando destinos...</div>
+                        </div>
+                        <input type="hidden" id="inputDestinoFiltroHidden" value="all">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="status-gv-filter">
+                        <i class="fas fa-clipboard-check"></i> Estatus GV
+                    </label>
+                    <select id="status-gv-filter" class="form-control custom-native-select">
+                        <option value="all">Todos</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="approved">Aprobado</option>
+                        <option value="rejected">Rechazado</option>
+                        <option value="cancelled">Cancelado</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="status-viaje-filter">
+                        <i class="fas fa-truck-moving"></i> Estatus Viaje
+                    </label>
+                    <select id="status-viaje-filter" class="form-control custom-native-select">
+                        <option value="all">Todos</option>
+                        <option value="not_started">Por Iniciar</option>
+                        <option value="in_progress">En Curso</option>
+                        <option value="completed">Finalizado</option>
+                        <option value="cancelled">Cancelado</option>
+                        <option value="no_procede">No Procede</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="riesgo-filter">
+                        <i class="fas fa-exclamation-triangle"></i> Nivel de Riesgo
+                    </label>
+                    <select id="riesgo-filter" class="form-control custom-native-select">
+                        <option value="all">Todos</option>
+                        <option value="bajo">Bajo</option>
+                        <option value="medio">Medio</option>
+                        <option value="alto">Alto</option>
+                        <option value="muy_alto">Muy Alto</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn-icon btn-clear-filters" id="clear-filters" title="Limpiar Filtros"
+                        aria-label="Limpiar Filtros">
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                    <button class="btn-icon btn-refresh" onclick="cargarViajes()" title="Actualizar Datos"
+                        aria-label="Actualizar Datos">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <div class="filter-group">
-                <label for="solicitud-date">
-                    <i class="fas fa-calendar-day"></i> Fecha Solicitud
-                </label>
-                <input type="text" id="solicitud-date" class="form-control" placeholder="DD/MM/AAAA">
-            </div>
-
-            <div class="filter-group">
-                <label>
-                    <i class="fas fa-map-marker-alt"></i> Destino
-                </label>
-                <div class="custom-select-wrapper" id="wrapperDestinoFiltro">
-                    <div class="custom-select-trigger form-control" onclick="toggleMenuDestinoFiltro()">
-                        <span id="labelDestinoFiltroSeleccionado" class="text-truncate">Todos los Destinos</span>
-                        <i class="fas fa-chevron-down select-arrow"></i>
-                    </div>
-                    <div class="custom-options shadow-sm" id="listaOpcionesDestinoFiltro">
-                        <div class="loading-options">Cargando destinos...</div>
-                    </div>
-                    <input type="hidden" id="inputDestinoFiltroHidden" value="all">
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <label for="status-gv-filter">
-                    <i class="fas fa-clipboard-check"></i> Estatus GV
-                </label>
-                <select id="status-gv-filter" class="form-control custom-native-select">
-                    <option value="all">Todos</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="approved">Aprobado</option>
-                    <option value="rejected">Rechazado</option>
-                    <option value="cancelled">Cancelado</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="status-viaje-filter">
-                    <i class="fas fa-truck-moving"></i> Estatus Viaje
-                </label>
-                <select id="status-viaje-filter" class="form-control custom-native-select">
-                    <option value="all">Todos</option>
-                    <option value="not_started">Por Iniciar</option>
-                    <option value="in_progress">En Curso</option>
-                    <option value="completed">Finalizado</option>
-                    <option value="cancelled">Cancelado</option>
-                    <option value="no_procede">No Procede</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="riesgo-filter">
-                    <i class="fas fa-exclamation-triangle"></i> Nivel de Riesgo
-                </label>
-                <select id="riesgo-filter" class="form-control custom-native-select">
-                    <option value="all">Todos</option>
-                    <option value="bajo">Bajo</option>
-                    <option value="medio">Medio</option>
-                    <option value="alto">Alto</option>
-                    <option value="muy_alto">Muy Alto</option>
-                </select>
-            </div>
-
-            <div class="filter-actions">
-                <button class="btn-icon btn-clear-filters" id="clear-filters" title="Limpiar Filtros" aria-label="Limpiar Filtros">
-                    <i class="fas fa-eraser"></i>
+        <div class="table-header">
+            <h3>
+                <i class="fas fa-history"></i> Viajes Recientes
+            </h3>
+            <div class="header-actions">
+                <button type="button" class="btn-viajes btn-primary" onclick="gestionarModalFormulario(true)">
+                    <i class="fas fa-plus-circle"></i> Nueva Solicitud
                 </button>
-                <button class="btn-icon btn-refresh" onclick="cargarViajes()" title="Actualizar Datos" aria-label="Actualizar Datos">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
             </div>
         </div>
-    </div>
 
-    <div class="table-header">
-        <h3>
-            <i class="fas fa-history"></i> Viajes Recientes
-        </h3>
-        <div class="header-actions">
-            <button type="button" class="btn-viajes btn-primary" onclick="gestionarModalFormulario(true)">
-                <i class="fas fa-plus-circle"></i> Nueva Solicitud
-            </button>
+        <div class="table-responsive-wrapper">
+            <div id="tablaViajesContainer"></div>
         </div>
-    </div>
 
-    <div class="table-responsive-wrapper">
-        <div id="tablaViajesContainer"></div>
+        <div id="paginationContainer" class="pagination-wrapper"></div>
     </div>
-
-    <div id="paginationContainer" class="pagination-wrapper"></div>
-</div>
 
     <div id="loaderTemplate" style="display: none;">
         <div style="text-align: center; padding: 60px 20px;">
@@ -208,7 +210,6 @@
 
             <div class="form-body" style="padding: 20px;">
                 <div class="ruta-grid">
-
                     <div class="form-section" style="margin-bottom: 0;">
 
                         <button type="button" class="btn-ruta-action btn-main-viaje" id="btnMainViaje"
@@ -218,10 +219,10 @@
 
                         <div class="status-panel">
                             <div class="status-indicator">
-                                <span class="status-dot pulsing-green" id="dotEstado"></span>
+                                <span class="status-dot-ruta pulsing-green" id="dotEstado"></span>
                                 <div class="status-texts">
-                                    <span class="status-label">ESTADO ACTUAL DE LA UNIDAD</span>
-                                    <strong class="status-value text-green" id="txtEstadoActual">EN RUTA</strong>
+                                    <span class="status-label">ESTADO ACTUAL DEL VIAJE</span>
+                                    <strong class="status-value text-green" id="txtEstadoActual">Por Iniciar</strong>
                                 </div>
                             </div>
                         </div>
@@ -238,7 +239,6 @@
                                 style="display: none; margin-top: 10px; padding: 15px; background: #ffebee; border-radius: 6px; border: 1px dashed #ef5350;">
                                 <label style="font-size: 11px; font-weight: 600; color: #c62828;">Seleccione el motivo de
                                     la detención:</label>
-
                                 <select id="motivoDetencionSelect" class="form-control"
                                     style="margin-bottom: 10px; font-size: 13px;">
                                     <option value="" disabled selected>-- Elija una opción --</option>
@@ -246,16 +246,16 @@
                                     </option>
                                     <option value="Carretera Cerrada / Manifestación">Carretera Cerrada / Manifestación
                                     </option>
-                                    <option value="Retén Militar / Policía">Retén / Inspección de Autoridad</option>
+                                    <option value="Retén / Inspección de Autoridad">Retén / Inspección de Autoridad
+                                    </option>
                                     <option value="Accidente en la Vía">Accidente en la Vía</option>
-                                    <option value="Falla Mecánica de la Unidad">Falla Mecánica / Ponchadura</option>
-                                    <option value="Condiciones Climáticas">Condiciones Climáticas Adversas</option>
+                                    <option value="Falla Mecánica / Ponchadura">Falla Mecánica / Ponchadura</option>
+                                    <option value="Condiciones Climáticas Adversas">Condiciones Climáticas Adversas
+                                    </option>
                                     <option value="Otro">Otro (Especificar en notas)</option>
                                 </select>
-
                                 <input type="text" id="notasDetencion" class="form-control form-control-sm"
                                     placeholder="Notas adicionales (Opcional)" style="margin-bottom: 10px;">
-
                                 <div style="display: flex; gap: 5px;">
                                     <button type="button" class="btn-action-small btn-edit"
                                         style="width: 100%; justify-content: center; background: #d32f2f;"
@@ -267,7 +267,7 @@
 
                             <button type="button" class="btn-ruta-action btn-resume" id="btnReanudarMarcha"
                                 style="display: none;" onclick="confirmarReanudacion()">
-                                <i class="fas fa-play"></i> Reanudando Ruta
+                                 <i class="fas fa-play"></i> Reanudando Ruta
                             </button>
                         </div>
 
@@ -276,54 +276,17 @@
                         <div class="form-section-title" style="border-bottom: none; margin-bottom: 10px;">
                             <h3 style="font-size: 14px;"><i class="fas fa-map-marked-alt"></i> Paradas Programadas</h3>
                         </div>
+                        <div class="paradas-list" id="contenedorParadasProgramadas"></div>
 
-                        <div class="paradas-list" id="contenedorParadasProgramadas">
-                            <div class="parada-card" id="card-parada-1">
-                                <div class="parada-info">
-                                    <strong><i class="fas fa-map-pin" style="color:var(--primary-orange)"></i> Cárdenas,
-                                        Tabasco</strong>
-                                    <span><i class="fas fa-utensils" style="color:#64748b;"></i> Motivo: Alimentos</span>
-                                </div>
-                                <button class="btn-check-parada"
-                                    onclick="marcarParada('card-parada-1', 'Cárdenas, Tabasco', 'Alimentos', this)">
-                                    <i class="fas fa-check"></i>
-                                </button>
+                        <div id="seccionRelevoRuta" style="display: none;">
+                            <div class="form-section-title"
+                                style="border-bottom: none; margin-bottom: 10px; margin-top: 10px;">
+                                <h3 style="font-size: 14px;"><i class="fas fa-users"></i> Relevo de Conductor</h3>
                             </div>
-
-                            <div class="parada-card" id="card-parada-2">
-                                <div class="parada-info">
-                                    <strong><i class="fas fa-map-pin" style="color:var(--primary-orange)"></i>
-                                        Coatzacoalcos, Veracruz</strong>
-                                    <span><i class="fas fa-shield-alt" style="color:#64748b;"></i> Motivo: Aseguramiento
-                                        de Carga</span>
-                                </div>
-                                <button class="btn-check-parada"
-                                    onclick="marcarParada('card-parada-2', 'Coatzacoalcos, Veracruz', 'Aseguramiento de Carga', this)">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="form-section-title"
-                            style="border-bottom: none; margin-bottom: 10px; margin-top: 10px;">
-                            <h3 style="font-size: 14px;"><i class="fas fa-users"></i> Relevo de Conductor</h3>
-                        </div>
-
-                        <div class="conductor-swap-box">
-                            <div class="driver-info">
-                                <span>Al Volante</span>
-                                <strong id="lblConductorAlVolante">Saúl Pérez</strong>
-                            </div>
-                            <button class="btn-swap" onclick="ejecutarRelevo()"><i class="fas fa-exchange-alt"></i>
-                                Cambiar</button>
-                            <div class="driver-info">
-                                <span>Relevo</span>
-                                <strong id="lblConductorDescansando">Juan Gómez</strong>
-                            </div>
+                            <div id="contenedorRelevoConductor"></div>
                         </div>
 
                     </div>
-
                 </div>
             </div>
         </div>
@@ -628,7 +591,11 @@
                     <i class="fas fa-paper-plane"></i>
                     Enviar Solicitud
                 </button>
-
+                <!-- Botón para modo lectura -->
+                <button type="button" class="btn-cerrar-lectura" id="btnCerrarLectura" onclick="cerrarModoLectura()"
+                    style="display: none;">
+                    <i class="fas fa-times-circle"></i> Cerrar Vista
+                </button>
             </div>
         </div>
     </div>
@@ -1028,21 +995,25 @@
                                 style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
                                 Última Inspección
                             </span>
-                            {{-- El dato (Usamos un ID nuevo para llenarlo con JS) --}}
-                            <span id="headerUltimaInspeccionLigera" style="font-weight: 700; font-size: 13px;">
-                                --/--/----
-                            </span>
+                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                                <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
+                                {{-- El dato (Usamos un ID nuevo para llenarlo con JS) --}}
+                                <span id="headerUltimaInspeccionLigera" style="font-weight: 700; font-size: 13px;">
+                                    --/--/----
+                                </span>
+                            </div>
+
                         </div>
 
-                        {{-- 2. Fecha de Inspección (La de hoy) --}}
+                        {{-- 2. Fecha de Inspección --}}
                         <div style="display: flex; flex-direction: column; align-items: flex-end;">
                             <span
                                 style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                Fecha Actual
+                                Fecha de Inspección
                             </span>
                             <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
                                 <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
-                                <span>{{ date('d/m/Y') }}</span>
+                                <span id="fechaActualInspeccionLigera">{{ date('d/m/Y') }}</span>
                             </div>
                         </div>
 
@@ -1563,7 +1534,6 @@
                     <div class="header-meta-info"
                         style="display: flex; align-items: center; color: white; font-size: 13px;">
 
-                        {{-- 1. NUEVO: Bloque Última Inspección (A la izquierda de la fecha) --}}
                         <div
                             style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 15px; padding-right: 15px; border-right: 1px solid rgba(255,255,255,0.3);">
                             {{-- Título pequeñito --}}
@@ -1577,16 +1547,15 @@
                             </span>
                         </div>
 
-                        {{-- 2. Fecha de Inspección (La de hoy) --}}
+                        {{-- 2. Fecha de Inspección --}}
                         <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                            {{-- Título pequeñito --}}
                             <span
                                 style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                Fecha Actual
+                                Fecha de Inspección
                             </span>
                             <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
                                 <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
-                                <span>{{ date('d/m/Y') }}</span>
+                                <span id="fechaActualInspeccionPesada">{{ date('d/m/Y') }}</span>
                             </div>
                         </div>
 
