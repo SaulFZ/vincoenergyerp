@@ -267,7 +267,7 @@
 
                             <button type="button" class="btn-ruta-action btn-resume" id="btnReanudarMarcha"
                                 style="display: none;" onclick="confirmarReanudacion()">
-                                 <i class="fas fa-play"></i> Reanudando Ruta
+                                <i class="fas fa-play"></i> Reanudando Ruta
                             </button>
                         </div>
 
@@ -445,14 +445,6 @@
 
                         <div class="form-group">
                             <label>
-                                <i class="fas fa-map-marker"></i>
-                                Llegando a
-                            </label>
-                            <input type="text" name="llegada" placeholder="Ej: Villahermosa, Tabasco" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
                                 <i class="fas fa-calendar-day"></i>
                                 Fecha de Inicio <span class="required">*</span>
                             </label>
@@ -462,6 +454,28 @@
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-clock"></i>
+                                Hora de Inicio <span class="required">*</span>
+                            </label>
+                            <div class="datetime-input-wrapper">
+                                <input type="text" name="hora_inicio" id="horaInicioViaje" placeholder="HH:MM"
+                                    required>
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                         <div class="form-group">
+                            <label>
+                                <i class="fas fa-clock"></i>
+                                Hora de Término
+                            </label>
+                            <div class="datetime-input-wrapper">
+                                <input type="text" name="hora_fin" id="horaFinViaje" placeholder="HH:MM">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+
 
                         <div class="form-group">
                             <label>
@@ -474,31 +488,16 @@
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
                         </div>
-
-                        <div class="form-group">
+<div class="form-group">
                             <label>
-                                <i class="fas fa-clock"></i>
-                                Hora de Inicio <span class="required">*</span>
+                                <i class="fas fa-map-marker"></i>
+                                Llegando a
                             </label>
-                            <div class="datetime-input-wrapper">
-                                <input type="text" name="hora_inicio" id="horaInicioViaje" placeholder="HH:MM"
-                                    required>
-                                <i class="fas fa-clock"></i>
-                            </div>
-
-
+                            <input type="text" name="llegada" placeholder="Ej: Villahermosa, Tabasco" required>
                         </div>
 
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-clock"></i>
-                                Hora de Término
-                            </label>
-                            <div class="datetime-input-wrapper">
-                                <input type="text" name="hora_fin" id="horaFinViaje" placeholder="HH:MM">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                        </div>
+
+
                     </div>
 
                     <div id="contenedorParadas" class="hidden">

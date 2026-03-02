@@ -9,7 +9,8 @@
     <title>Vinco Energy - Gerenciamiento de Viajes</title>
 
     <link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
+    <link
+        rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -34,13 +35,17 @@
                 <i class="fas fa-tachometer-alt"></i> Inicio
             </a>
 
-            <a href="#" class="nav-link-viajes" data-route="driver_licenses">
-                <i class="fas fa-id-card-alt"></i> Control de Licencias
-            </a>
+            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_control_lic_gv'))
+                <a href="#" class="nav-link-viajes" data-route="driver_licenses">
+                    <i class="fas fa-id-card-alt"></i> Control de Licencias
+                </a>
+            @endif
 
-            <a href="#" class="nav-link-viajes" data-route="stats">
-                <i class="fas fa-chart-pie"></i> Estadísticas
-            </a>
+            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_estadisticas_gv'))
+                <a href="#" class="nav-link-viajes" data-route="stats">
+                    <i class="fas fa-chart-pie"></i> Estadísticas
+                </a>
+            @endif
         </nav>
 
         @include('components.layouts._user-profile')

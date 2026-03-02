@@ -398,18 +398,31 @@ class JourneyQueryController extends Controller
         return $statuses[$status] ?? 'Pendiente';
     }
 
-    private function getJourneyStatusText($status)
+private function getJourneyStatusText($status)
     {
-        $statuses = ['not_started' => 'Por Iniciar', 'in_progress' => 'En Curso', 'completed' => 'Finalizado', 'cancelled' => 'Cancelado', 'no_procede' => 'No Procede'];
+        $statuses = [
+            'not_started' => 'Por Iniciar',
+            'in_progress' => 'En Curso',
+            'stopped'     => 'Detenido', // 👈 NUEVO
+            'completed'   => 'Finalizado',
+            'cancelled'   => 'Cancelado',
+            'no_procede'  => 'No Procede'
+        ];
         return $statuses[$status] ?? 'Por Iniciar';
     }
 
     private function getStatusClass($status)
     {
         $classes = [
-            'pending'   => 'status-pendiente', 'approved'    => 'status-aprobado', 'rejected'      => 'status-rechazado',
-            'cancelled' => 'status-cancelado', 'not_started' => 'status-poriniciar', 'in_progress' => 'status-encurso',
-            'completed' => 'status-finalizado', 'no_procede' => 'status-noprocede',
+            'pending'     => 'status-pendiente',
+            'approved'    => 'status-aprobado',
+            'rejected'    => 'status-rechazado',
+            'cancelled'   => 'status-cancelado',
+            'not_started' => 'status-poriniciar',
+            'in_progress' => 'status-encurso',
+            'stopped'     => 'status-detenido', // 👈 NUEVO (Crea esta clase CSS en tu frontend con color rojo/naranja)
+            'completed'   => 'status-finalizado',
+            'no_procede'  => 'status-noprocede',
         ];
         return $classes[$status] ?? 'status-pendiente';
     }

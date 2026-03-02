@@ -643,7 +643,7 @@ body {
 .status-rechazado { background-color: var(--status-rechazado-bg, #ffcdd2); color: var(--status-rechazado-color, #b71c1c); border: 1px solid #ef5350; }
 .status-noprocede { background-color: var(--status-noprocede-bg, #f1f5f9); color: var(--status-noprocede-color, #475569); border: 1px solid #94a3b8; }
 .status-finalizado { background-color: var(--status-finalizado-bg, #e8f5e9); color: var(--status-finalizado-color, #2e7d32); border: 1px solid #81c784; }
-
+.status-detenido { background-color: var(--status-detenido-bg, #fee2e2); color: var(--status-detenido-color, #b91c1c); border: 1px solid #fca5a5; }
 /* Niveles de Riesgo */
 .status-riesgo-bajo { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; }
 .status-riesgo-medio { background-color: #fff9c4; color: #fbc02d; border: 1px solid #fdd835; }
@@ -847,7 +847,11 @@ body {
 }
 
 
-
+.is-loading-table {
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+}
 
 
 
@@ -1846,7 +1850,7 @@ body {
 
 .trayecto-grid {
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.5fr;
     gap: 20px;
     margin-bottom: 20px;
 }

@@ -80,36 +80,62 @@ let currentFechaSolicitud = "";
 async function cargarViajes(page = 1) {
     const container = document.getElementById("tablaViajesContainer");
     const paginationContainer = document.getElementById("paginationContainer");
+    const wrapper = container.parentElement; // El div .table-responsive-wrapper
 
     currentPage = page;
-    container.innerHTML = document.getElementById("loaderTemplate").innerHTML;
+
+    // --- LÓGICA DEL SPINNER ---
+    let spinner = document.getElementById("loadingSpinnerOverlay");
+    if (!spinner) {
+        // Creamos el spinner si no existe
+        spinner = document.createElement("div");
+        spinner.id = "loadingSpinnerOverlay";
+        spinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        // Estilos para centrarlo sobre la tabla
+        spinner.style.position = "absolute";
+        spinner.style.top = "50%";
+        spinner.style.left = "50%";
+        spinner.style.transform = "translate(-50%, -50%)";
+        spinner.style.fontSize = "3rem"; // Tamaño del icono
+        spinner.style.color = "#2563eb"; // Color azul primario
+        spinner.style.zIndex = "10";
+        spinner.style.display = "none";
+
+        wrapper.style.position = "relative"; // Necesario para que el spinner flote correctamente
+        wrapper.appendChild(spinner);
+    }
+
+    // 1. Verificamos si la tabla ya tiene contenido
+    if (container.innerHTML.trim() !== "") {
+        // Opacamos la tabla y mostramos el icono girando
+        container.classList.add("is-loading-table");
+        spinner.style.display = "block";
+    } else {
+        // Si está vacía (primera carga), usamos tu loader original
+        container.innerHTML = document.getElementById("loaderTemplate").innerHTML;
+    }
 
     try {
         let url = `/qhse/gerenciamiento/journeys?page=${currentPage}&per_page=${currentPerPage}`;
 
-        if (currentSearch)
-            url += `&search=${encodeURIComponent(currentSearch)}`;
-        if (currentStatusGv !== "all") url += `&status_gv=${currentStatusGv}`; // Añadido
-        if (currentStatusViaje !== "all")
-            url += `&status_viaje=${currentStatusViaje}`; // Añadido
-        if (currentRiskLevel !== "all")
-            url += `&risk_level=${currentRiskLevel}`;
-        if (currentDestination !== "all")
-            url += `&destination=${currentDestination}`;
-        if (currentFechaSolicitud)
-            url += `&fecha_solicitud=${encodeURIComponent(
-                currentFechaSolicitud,
-            )}`;
-
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+        if (currentStatusGv !== "all") url += `&status_gv=${currentStatusGv}`;
+        if (currentStatusViaje !== "all") url += `&status_viaje=${currentStatusViaje}`;
+        if (currentRiskLevel !== "all") url += `&risk_level=${currentRiskLevel}`;
+        if (currentDestination !== "all") url += `&destination=${currentDestination}`;
+        if (currentFechaSolicitud) url += `&fecha_solicitud=${encodeURIComponent(currentFechaSolicitud)}`;
 
         const response = await fetch(url);
         const result = await response.json();
 
+        // 2. Quitamos el efecto y el spinner al terminar
+        container.classList.remove("is-loading-table");
+        spinner.style.display = "none";
+
         if (result.success) {
             if (result.data.length === 0) {
-                container.innerHTML =
-                    document.getElementById("emptyTemplate").innerHTML;
+                container.innerHTML = document.getElementById("emptyTemplate").innerHTML;
                 paginationContainer.innerHTML = "";
             } else {
                 renderTablaViajes(result.data, container);
@@ -122,11 +148,14 @@ async function cargarViajes(page = 1) {
             mostrarError(result.message || "Error al cargar los datos");
         }
     } catch (error) {
+        // Restaurar si hay un error
+        container.classList.remove("is-loading-table");
+        if (spinner) spinner.style.display = "none";
+
         console.error("Error:", error);
         mostrarError("Error de conexión al servidor");
     }
 }
-
 function mostrarError(mensaje) {
     const container = document.getElementById("tablaViajesContainer");
     const errorTemplate = document.getElementById("errorTemplate").innerHTML;
@@ -185,8 +214,12 @@ function renderTablaViajes(viajes, container) {
         </button>
 `;
 
-        // EL BOTÓN RUTA SOLO APARECE SI ESTÁ APROBADO, EN CURSO/POR INICIAR *Y* ES EL CREADOR DEL VIAJE
-        if (viaje.estado_gv.texto === "Aprobado" && (viaje.estado_viaje.texto === "En Curso" || viaje.estado_viaje.texto === "Por Iniciar")) {
+      // EL BOTÓN RUTA SOLO APARECE SI ESTÁ APROBADO, EN CURSO/POR INICIAR/DETENIDO *Y* ES EL CREADOR DEL VIAJE
+        if (viaje.estado_gv.texto === "Aprobado" &&
+           (viaje.estado_viaje.texto === "En Curso" ||
+            viaje.estado_viaje.texto === "Por Iniciar" ||
+            viaje.estado_viaje.texto === "Detenido")) { // 👈 SE AGREGA "Detenido" AQUÍ
+
             if (viaje.is_creator) {
                 botonesAccion += `
             <button class="btn-action-small btn-tracking" onclick="abrirModalRuta(${viaje.id}, '${viaje.folio}')" title="Ruta Operativa">
@@ -875,10 +908,12 @@ function _bloquearTodo(modal) {
         btn.style.display = "none";
     });
 
-    // 5. Ocultar botones eliminar unidad, pasajero y paradas
+    // ====================================================================
+    // 5. Ocultar botones eliminar unidad, pasajero y paradas (¡CORREGIDO!)
+    // ====================================================================
     modal
         .querySelectorAll(
-            '[onclick*="eliminarUnidad"], [onclick*="eliminarPasajero"], .btn-add-pasajero, [id^="btn-add-pasajero-"], .btn-remove-parada-compact',
+            '.btn-accion.eliminar, .btn-remove-pasajero, .btn-add-pasajero, [id^="btn-add-pasajero-"], .btn-remove-parada-compact'
         )
         .forEach((el) => {
             el.style.display = "none";
@@ -7389,8 +7424,15 @@ let estadoViajeActual = "Por Iniciar";
 
 // ====== GESTIÓN DE MODALES DE SEGUIMIENTO ======
 
+// ====== GESTIÓN DE MODALES DE SEGUIMIENTO ======
+
 async function abrirModalRuta(idViaje, folioViaje) {
-    Swal.fire({ title: "Cargando ruta...", html: "Sincronizando estado...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({
+        title: "Cargando ruta...",
+        html: "Sincronizando estado...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
 
     try {
         const response = await fetch(`/qhse/gerenciamiento/journeys/${idViaje}`);
@@ -7399,54 +7441,69 @@ async function abrirModalRuta(idViaje, folioViaje) {
         if (!result.success) throw new Error(result.message || "No se pudo cargar la información");
 
         const viaje = result.data;
-        const logs = viaje.logs || []; // <-- Leemos toda la bitácora histórica
+        const logs = viaje.logs || [];
         viajeRutaActivoId = viaje.id;
 
-        document.getElementById("lblRutaViaje").innerText = viaje.folio || folioViaje;
+        const lblRutaViaje = document.getElementById("lblRutaViaje");
+        if (lblRutaViaje) lblRutaViaje.innerText = viaje.folio || folioViaje;
 
-        // 1. Determinar estado principal (Iniciado / No Iniciado)
-        estadoViajeActual = viaje.journey_status === 'in_progress' ? "En Curso" : "Por Iniciar";
-        if (viaje.journey_status === 'completed') estadoViajeActual = "Finalizado";
+        // 1. Determinar estado principal exacto desde la BD
+        if (viaje.journey_status === 'in_progress') {
+            estadoViajeActual = "En Curso";
+        } else if (viaje.journey_status === 'stopped') {
+            estadoViajeActual = "Detenido";
+        } else if (viaje.journey_status === 'completed') {
+            estadoViajeActual = "Finalizado";
+        } else {
+            estadoViajeActual = "Por Iniciar";
+        }
 
         actualizarBotonPrincipalRuta();
 
-        // 2. Determinar estado de movimiento (¿Está detenido o en ruta?)
+        // 2. Determinar estado de movimiento visual
         const dot = document.getElementById("dotEstado");
         const txt = document.getElementById("txtEstadoActual");
         const btnDetener = document.getElementById("btnDetenerMarcha");
         const btnReanudar = document.getElementById("btnReanudarMarcha");
         const formDetencion = document.getElementById("formDetencion");
 
-        formDetencion.style.display = "none"; // Ocultar formulario de detención por defecto
+        if (formDetencion) formDetencion.style.display = "none"; // Ocultar formulario de detención por defecto
 
         if (estadoViajeActual === "Por Iniciar") {
-            dot.className = "status-dot-ruta";
-            dot.style.backgroundColor = "#64748b";
-            txt.innerText = "ESPERANDO SALIDA";
-            txt.className = "status-value text-gray-500";
-            btnDetener.style.display = "flex";
-            btnReanudar.style.display = "none";
-        } else if (estadoViajeActual === "En Curso") {
-            // Buscamos en el historial cuál fue el ÚLTIMO evento de detención o reanudación
-            const ultimoEventoMovimiento = [...logs].reverse().find(l => l.event_type === 'detencion' || l.event_type === 'reanudacion');
-
-            if (ultimoEventoMovimiento && ultimoEventoMovimiento.event_type === 'detencion') {
-                // SE QUEDÓ DETENIDO
+            if (dot) {
+                dot.className = "status-dot-ruta";
+                dot.style.backgroundColor = "#64748b";
+            }
+            if (txt) {
+                txt.innerText = "ESPERANDO SALIDA";
+                txt.className = "status-value text-gray-500";
+            }
+            if (btnDetener) btnDetener.style.display = "flex";
+            if (btnReanudar) btnReanudar.style.display = "none";
+        }
+        else if (estadoViajeActual === "Detenido") {
+            if (dot) {
                 dot.className = "status-dot-ruta pulsing-red";
                 dot.style.backgroundColor = "";
+            }
+            if (txt) {
                 txt.innerText = "UNIDAD DETENIDA";
                 txt.className = "status-value text-red";
-                btnDetener.style.display = "none";
-                btnReanudar.style.display = "flex";
-            } else {
-                // ESTÁ EN RUTA NORMAL
+            }
+            if (btnDetener) btnDetener.style.display = "none";
+            if (btnReanudar) btnReanudar.style.display = "flex";
+        }
+        else if (estadoViajeActual === "En Curso") {
+            if (dot) {
                 dot.className = "status-dot-ruta pulsing-green";
                 dot.style.backgroundColor = "";
+            }
+            if (txt) {
                 txt.innerText = "EN RUTA";
                 txt.className = "status-value text-green";
-                btnDetener.style.display = "flex";
-                btnReanudar.style.display = "none";
             }
+            if (btnDetener) btnDetener.style.display = "flex";
+            if (btnReanudar) btnReanudar.style.display = "none";
         }
 
         // 3. Renderizar Paradas y Conductores PASANDO LOS LOGS
@@ -7455,8 +7512,10 @@ async function abrirModalRuta(idViaje, folioViaje) {
 
         Swal.close();
         const modal = document.getElementById("modalSeguimientoRuta");
-        modal.style.display = "flex";
-        setTimeout(() => modal.classList.add("active"), 10);
+        if (modal) {
+            modal.style.display = "flex";
+            setTimeout(() => modal.classList.add("active"), 10);
+        }
 
     } catch (error) {
         Swal.fire("Error", error.message, "error");
@@ -7625,51 +7684,22 @@ async function abrirModalHistorial(folioViaje) {
         timeline.innerHTML = "";
 
         if (result.success && result.data.logs && result.data.logs.length > 0) {
-            result.data.logs.forEach(log => {
 
+            // 1. DIBUJAR LA LÍNEA DE TIEMPO NORMAL
+            result.data.logs.forEach(log => {
                 let colorClass = "bg-blue-base";
                 let iconClass = "fas fa-info-circle";
                 let textColor = "#1d4ed8";
 
-                // PATRÓN 1: CREACIÓN (Azul normal brillante)
-                if (log.event_type === 'created') {
-                    colorClass = "bg-blue-base"; iconClass = "fas fa-file-signature"; textColor = "#1d4ed8";
-                }
-
-                // PATRÓN 2: APROBACIONES Y RECHAZOS (Verde Esmeralda / Rojo)
-                if (log.event_type === 'approved') {
-                    colorClass = "bg-green-approve"; iconClass = "fas fa-check-circle"; textColor = "#047857";
-                }
-                if (log.event_type === 'rejected' || log.event_type === 'cancelled') {
-                    colorClass = "bg-danger-red"; iconClass = "fas fa-ban"; textColor = "#b91c1c";
-                }
-
-                // PATRÓN 3: ARRANQUE EN RUTA (Azul marino oscuro)
-                if (log.event_type === 'in_progress') {
-                    colorClass = "bg-blue-dark"; iconClass = "fas fa-truck-fast"; textColor = "#1e3a8a";
-                }
-
-                // PATRÓN 4: SUCESOS EN RUTA (Amarillo / Naranja)
-                if (log.event_type === 'parada') {
-                    colorClass = "bg-warning-yellow"; iconClass = "fas fa-location-dot"; textColor = "#a16207";
-                }
-                if (log.event_type === 'relevo') {
-                    colorClass = "bg-warning-orange"; iconClass = "fas fa-users-gear"; textColor = "#c2410c";
-                }
-
-                // PATRÓN 5: INCIDENCIAS OPERATIVAS (Rojo oscuro / Verde Lima)
-                if (log.event_type === 'detencion') {
-                    colorClass = "bg-danger-dark"; iconClass = "fas fa-exclamation-triangle"; textColor = "#7f1d1d";
-                }
-                if (log.event_type === 'reanudacion') {
-                    // Verde diferente al aprobado
-                    colorClass = "bg-green-resume"; iconClass = "fas fa-play-circle"; textColor = "#4d7c0f";
-                }
-
-                // PATRÓN 6: CONCLUSIÓN (Verde Oscuro)
-                if (log.event_type === 'completed') {
-                    colorClass = "bg-green-finish"; iconClass = "fas fa-flag-checkered"; textColor = "#14532d";
-                }
+                if (log.event_type === 'created') { colorClass = "bg-blue-base"; iconClass = "fas fa-file-signature"; textColor = "#1d4ed8"; }
+                if (log.event_type === 'approved') { colorClass = "bg-green-approve"; iconClass = "fas fa-check-circle"; textColor = "#047857"; }
+                if (log.event_type === 'rejected' || log.event_type === 'cancelled') { colorClass = "bg-danger-red"; iconClass = "fas fa-ban"; textColor = "#b91c1c"; }
+                if (log.event_type === 'in_progress') { colorClass = "bg-blue-dark"; iconClass = "fas fa-truck-fast"; textColor = "#1e3a8a"; }
+                if (log.event_type === 'parada') { colorClass = "bg-warning-yellow"; iconClass = "fas fa-location-dot"; textColor = "#a16207"; }
+                if (log.event_type === 'relevo') { colorClass = "bg-warning-orange"; iconClass = "fas fa-users-gear"; textColor = "#c2410c"; }
+                if (log.event_type === 'detencion') { colorClass = "bg-danger-dark"; iconClass = "fas fa-exclamation-triangle"; textColor = "#7f1d1d"; }
+                if (log.event_type === 'reanudacion') { colorClass = "bg-green-resume"; iconClass = "fas fa-play-circle"; textColor = "#4d7c0f"; }
+                if (log.event_type === 'completed') { colorClass = "bg-green-finish"; iconClass = "fas fa-flag-checkered"; textColor = "#14532d"; }
 
                 const fechaObj = new Date(log.created_at);
                 const fechaFormat = fechaObj.toLocaleDateString("es-MX", { day: '2-digit', month: 'short' }) + ', ' + fechaObj.toLocaleTimeString("es-MX", { hour: '2-digit', minute: '2-digit' });
@@ -7688,12 +7718,98 @@ async function abrirModalHistorial(folioViaje) {
                 `;
                 timeline.insertAdjacentHTML("beforeend", htmlExtra);
             });
+
+            // ====================================================================
+            // 2. NUEVA LÓGICA: COMPARATIVA DE TIEMPOS (DISEÑO COMPACTO Y MODERNO)
+            // ====================================================================
+            const logInicio = result.data.logs.find(l => l.event_type === 'in_progress');
+            const logFin = result.data.logs.find(l => l.event_type === 'completed');
+            const tiempoEstimadoStr = result.data.estimated_duration;
+
+            if (logInicio && logFin && tiempoEstimadoStr) {
+                // Calcular tiempo real en minutos
+                const fechaInicio = new Date(logInicio.created_at);
+                const fechaFin = new Date(logFin.created_at);
+                const diffMs = fechaFin - fechaInicio;
+                const minutosReales = Math.floor(diffMs / 60000);
+
+                // Calcular tiempo estimado en minutos
+                const partesEstimado = tiempoEstimadoStr.split(':');
+                const minutosEstimados = (parseInt(partesEstimado[0]) || 0) * 60 + (parseInt(partesEstimado[1]) || 0);
+
+                // Comparativa
+                const diferencia = minutosReales - minutosEstimados;
+                let textoDiferencia = "";
+                let colorResumen = "";
+                let bgColor = "";
+                let borderColor = "";
+                let iconoResumen = "";
+
+                if (diferencia < -5) {
+                    textoDiferencia = `Anticipado por ${formatearMinutosAString(Math.abs(diferencia))}`;
+                    colorResumen = "#059669"; // Verde esmeralda
+                    bgColor = "#ecfdf5";
+                    borderColor = "#a7f3d0";
+                    iconoResumen = "fa-tachometer-alt";
+                } else if (diferencia > 5) {
+                    textoDiferencia = `Retraso de ${formatearMinutosAString(diferencia)}`;
+                    colorResumen = "#dc2626"; // Rojo
+                    bgColor = "#fef2f2";
+                    borderColor = "#fecaca";
+                    iconoResumen = "fa-exclamation-circle";
+                } else {
+                    textoDiferencia = `Llegada exacta`;
+                    colorResumen = "#2563eb"; // Azul
+                    bgColor = "#eff6ff";
+                    borderColor = "#bfdbfe";
+                    iconoResumen = "fa-check-circle";
+                }
+
+                // Inyectar tarjeta súper compacta
+                const resumenHtml = `
+                    <div style="margin-top: 20px; border-radius: 8px; border: 1px solid ${borderColor}; background-color: ${bgColor}; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+
+                        <div style="display: flex; gap: 20px; align-items: center;">
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Tiempo Estimado</span>
+                                <strong style="font-size: 1.1rem; color: #0f172a; line-height: 1.2;">${formatearMinutosAString(minutosEstimados)}</strong>
+                            </div>
+
+                            <div style="width: 1px; height: 28px; background-color: ${borderColor};"></div>
+
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Tiempo en Ruta</span>
+                                <strong style="font-size: 1.1rem; color: #0f172a; line-height: 1.2;">${formatearMinutosAString(minutosReales)}</strong>
+                            </div>
+                        </div>
+
+                        <div style="color: ${colorResumen}; background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid ${borderColor}; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                            <i class="fas ${iconoResumen}"></i> ${textoDiferencia}
+                        </div>
+
+                    </div>
+                `;
+                timeline.insertAdjacentHTML("beforeend", resumenHtml);
+            }
+
         } else {
             timeline.innerHTML = `<div style="text-align:center; padding: 20px; color:#6c757d;">No hay eventos registrados en este viaje.</div>`;
         }
     } catch (e) {
+        console.error(e);
         timeline.innerHTML = `<div style="color:red; text-align:center;">Error al cargar el historial</div>`;
     }
+}
+function formatearMinutosAString(totalMinutos) {
+    if (isNaN(totalMinutos) || totalMinutos < 0) return "0m";
+    const horas = Math.floor(totalMinutos / 60);
+    const minutos = totalMinutos % 60;
+
+    let resultado = [];
+    if (horas > 0) resultado.push(`${horas}h`);
+    if (minutos > 0 || horas === 0) resultado.push(`${minutos}m`);
+
+    return resultado.join(' ');
 }
 function cerrarModalHistorial() {
     const modal = document.getElementById("modalHistorialActividad");
@@ -8034,37 +8150,6 @@ function ejecutarRelevo() {
         }
     });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

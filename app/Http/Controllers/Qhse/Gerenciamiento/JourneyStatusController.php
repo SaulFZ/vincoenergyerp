@@ -115,6 +115,7 @@ class JourneyStatusController extends Controller
                 'description' => 'required|string',
             ]);
 
+            // 1. Guardar el evento en la bitácora
             $log = JourneyLog::create([
                 'journey_id'  => $journey->id,
                 'user_id'     => auth()->id(),
@@ -123,6 +124,15 @@ class JourneyStatusController extends Controller
                 'description' => $request->description,
                 'event_time'  => now(),
             ]);
+
+            // 2. 👇 NUEVO: Actualizar el estado del viaje si es detención o reanudación
+            if ($request->event_type === 'detencion') {
+                $journey->journey_status = 'stopped';
+                $journey->save();
+            } elseif ($request->event_type === 'reanudacion') {
+                $journey->journey_status = 'in_progress';
+                $journey->save();
+            }
 
             return response()->json(['success' => true, 'data' => $log]);
         } catch (\Exception $e) {

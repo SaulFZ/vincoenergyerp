@@ -1,14 +1,13 @@
 <?php
+
 namespace App\Http\Controllers\Qhse\Gerenciamiento;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auth\User;
 use App\Models\Core\VehicleUnit;
-use App\Models\Qhse\Gerenciamiento\Destination;
 use App\Models\Employee;
+use App\Models\Qhse\Gerenciamiento\Destination;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use App\Mail\Qhse\Gerenciamiento\JourneyApprovalMail;
 
 class JourneyController extends Controller
 {
@@ -28,6 +27,7 @@ class JourneyController extends Controller
             ->map(function ($emp) {
                 $license = $emp->license;
                 $user = $emp->user;
+
                 return [
                     'id' => $emp->id,
                     'nombre_completo' => $emp->full_name,
@@ -59,6 +59,7 @@ class JourneyController extends Controller
             'departamento' => $user->employee ? $user->employee->department : 'N/A',
             'email' => $user->email,
         ];
+
         return view(
             'modulos.qhse.sistemas.gerenciamiento.journey_management',
             compact('userData', 'employees')
@@ -72,15 +73,15 @@ class JourneyController extends Controller
     {
         try {
             // 1. Mapear el nivel de riesgo con el nombre exacto de tu tabla permissions
-            $permisoRequerido = match($nivel) {
-                'bajo'     => 'aprobar_gv_bajo',
-                'medio'    => 'aprobar_gv_medio',
-                'alto'     => 'aprobar_gv_alto',
+            $permisoRequerido = match ($nivel) {
+                'bajo' => 'aprobar_gv_bajo',
+                'medio' => 'aprobar_gv_medio',
+                'alto' => 'aprobar_gv_alto',
                 'muy_alto' => 'aprobar_gv_muy_alto',
-                default    => null,
+                default => null,
             };
 
-            if (!$permisoRequerido) {
+            if (! $permisoRequerido) {
                 return response()->json(['success' => false, 'message' => 'Nivel no válido'], 400);
             }
 
@@ -96,7 +97,7 @@ class JourneyController extends Controller
             // 3. Mapear los datos para el frontend
             $autorizadores = $usuarios->map(function ($user) {
                 return [
-                    'id'     => $user->id,
+                    'id' => $user->id,
                     // Si tiene empleado asociado, usamos full_name, sino el nombre de usuario
                     'nombre' => $user->employee ? $user->employee->full_name : $user->name,
                     // Usamos position o job_title del empleado
@@ -108,13 +109,13 @@ class JourneyController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => $autorizadores
+                'data' => $autorizadores,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cargar autorizadores: ' . $e->getMessage()
+                'message' => 'Error al cargar autorizadores: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -126,7 +127,7 @@ class JourneyController extends Controller
             // Según tus datos, México es ID 1, pero lo buscamos por nombre por seguridad o parent_id null
             $mexico = Destination::where('name', 'México')->first();
 
-            if (!$mexico) {
+            if (! $mexico) {
                 return response()->json(['success' => false, 'message' => 'País no encontrado']);
             }
 
@@ -149,7 +150,7 @@ class JourneyController extends Controller
         }
     }
 
-/**
+    /**
      * Obtener todos los conductores (empleados con usuario activo)
      * para el autocomplete
      */
@@ -166,6 +167,7 @@ class JourneyController extends Controller
                 ->get()
                 ->map(function ($emp) {
                     $license = $emp->license;
+
                     return [
                         'id' => $emp->id, // <--- SE AGREGA EL ID DEL EMPLEADO
                         'nombre_completo' => $emp->full_name,
@@ -197,7 +199,7 @@ class JourneyController extends Controller
             $listaConductoresAutocomplete = $conductores->map(function ($c) {
                 return [
                     'id' => $c['id'],
-                    'nombre' => $c['nombre_completo']
+                    'nombre' => $c['nombre_completo'],
                 ];
             })->values()->toArray();
 
@@ -223,65 +225,65 @@ class JourneyController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cargar conductores: ' . $e->getMessage(),
+                'message' => 'Error al cargar conductores: '.$e->getMessage(),
                 'conductores' => [],
                 'datosConductores' => [],
             ], 500);
         }
     }
 
-/**
+    /**
      * Obtener todos los vehículos desde la tabla ves_units incluyendo ownership (string)
      */
     public function getVehicles()
-{
-    try {
-        // 1. AGREGAMOS 'brand' AL SELECT
-        $vehicles = VehicleUnit::select('economic_number', 'unit_type', 'ownership', 'brand')
-            ->orderBy('economic_number', 'asc')
-            ->get();
+    {
+        try {
+            // 1. AGREGAMOS 'brand' AL SELECT
+            $vehicles = VehicleUnit::select('economic_number', 'unit_type', 'ownership', 'brand')
+                ->orderBy('economic_number', 'asc')
+                ->get();
 
-        $ligeras = [];
-        $pesadas = [];
-        $clasificacion = [];
+            $ligeras = [];
+            $pesadas = [];
+            $clasificacion = [];
 
-        // 2. NUEVA VARIABLE PARA DETALLES
-        $detallesVehiculo = [];
+            // 2. NUEVA VARIABLE PARA DETALLES
+            $detallesVehiculo = [];
 
-        foreach ($vehicles as $vehicle) {
-            $econ = $vehicle->economic_number;
-            $type = $vehicle->unit_type;
-            $owner = (string) ($vehicle->ownership ?? '');
-            $marca = (string) ($vehicle->brand ?? 'Sin Marca'); // Obtenemos la marca
+            foreach ($vehicles as $vehicle) {
+                $econ = $vehicle->economic_number;
+                $type = $vehicle->unit_type;
+                $owner = (string) ($vehicle->ownership ?? '');
+                $marca = (string) ($vehicle->brand ?? 'Sin Marca'); // Obtenemos la marca
 
-            $clasificacion[$econ] = $type;
+                $clasificacion[$econ] = $type;
 
-            // Guardamos marca y propiedad en un objeto detallado indexado por el número económico
-            $detallesVehiculo[$econ] = [
-                'propiedad' => $owner,
-                'marca' => $marca
+                // Guardamos marca y propiedad en un objeto detallado indexado por el número económico
+                $detallesVehiculo[$econ] = [
+                    'propiedad' => $owner,
+                    'marca' => $marca,
 
-            ];
+                ];
 
-            if (stripos($type, 'ligera') !== false) {
-                $ligeras[] = $econ;
-            } elseif (stripos($type, 'pesada') !== false) {
-                $pesadas[] = $econ;
+                if (stripos($type, 'ligera') !== false) {
+                    $ligeras[] = $econ;
+                } elseif (stripos($type, 'pesada') !== false) {
+                    $pesadas[] = $econ;
+                }
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'ligeras' => $ligeras,
-            'pesadas' => $pesadas,
-            'clasificacion' => $clasificacion,
-            'detalles' => $detallesVehiculo, // 3. RETORNAMOS LOS DETALLES
-            'total' => count($ligeras) + count($pesadas),
-        ]);
+            return response()->json([
+                'success' => true,
+                'ligeras' => $ligeras,
+                'pesadas' => $pesadas,
+                'clasificacion' => $clasificacion,
+                'detalles' => $detallesVehiculo, // 3. RETORNAMOS LOS DETALLES
+                'total' => count($ligeras) + count($pesadas),
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
+                'message' => 'Error: '.$e->getMessage(),
                 'ligeras' => [],
                 'pesadas' => [],
                 'clasificacion' => [],
