@@ -28,7 +28,7 @@ class EmployeeVacationBalanceController extends Controller
 
         $vacationDaysTaken = $this->getConsolidatedVacationDaysTaken();
 
-        return view('modulos.recursoshumanos.sistemas.loadchart.employee_vacation_balance', [
+        return view('modulos.recursoshumanos.loadchart.employee_vacation_balance', [
             'vacationBalances'  => $vacationBalances,
             'employees'         => $employees,
             'departments'       => $departments,

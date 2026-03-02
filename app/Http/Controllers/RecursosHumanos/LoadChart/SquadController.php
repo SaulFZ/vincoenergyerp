@@ -25,7 +25,7 @@ class SquadController extends Controller
 
         $squads = $this->getSquadsWithEmployees();
 
-        return view('modulos.recursoshumanos.sistemas.loadchart.approval', [
+        return view('modulos.recursoshumanos.loadchart.approval', [
             'operadores' => $operadores,
             'squads' => $squads
         ]);

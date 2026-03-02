@@ -358,13 +358,13 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
 
                 Route::get('/stats', function () {
-                    return view('modulos.recursoshumanos.sistemas.loadchart.stats');
+                    return view('modulos.recursoshumanos.loadchart.stats');
                 })->name('loadchart.stats');
             });
 
             // Subsistemas de RRHH (Rutas que no son de LoadChart)
             Route::get('/altasempleados', function () {
-                return view('modulos.recursoshumanos.sistemas.altasempleados.index');
+                return view('modulos.recursoshumanos.altasempleados.index');
             })
                 ->middleware('check.permission:recursoshumanos,altasempleados')
                 ->name('recursoshumanos.altasempleados');

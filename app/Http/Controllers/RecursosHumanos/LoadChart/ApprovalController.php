@@ -3,7 +3,7 @@ namespace App\Http\Controllers\RecursosHumanos\LoadChart;
 
 use App\Helpers\PermissionHelper;
 use App\Http\Controllers\Controller;
-use App\Mail\DayRejectedMail;
+use App\Mail\RecursosHumanos\LoadChart\DayRejectedMail;
 use App\Models\Employee;
 use App\Models\RecursosHumanos\LoadChart\EmployeeMonthlyWorkLog;
 use App\Models\RecursosHumanos\LoadChart\EmployeeVacationBalance;
@@ -173,7 +173,7 @@ class ApprovalController extends Controller
         $canSeeAmounts        = PermissionHelper::hasDirectPermission('ver_montos');
         $userPermissions      = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
-        return view('modulos.recursoshumanos.sistemas.loadchart.approval', compact(
+        return view('modulos.recursoshumanos.loadchart.approval', compact(
             'employees', 'workLogsData', 'fortnightlyConfig', 'monthlyDays', 'currentMonth', 'currentYear',
             'canSeeAmounts', 'loadChartAssignments', 'userPermissions', 'departments', 'positions' // <--- Agrega 'positions' aquí
         ));

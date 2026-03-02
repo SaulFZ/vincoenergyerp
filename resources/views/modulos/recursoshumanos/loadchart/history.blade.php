@@ -1,4 +1,4 @@
-@extends('modulos.recursoshumanos.sistemas.loadchart.index')
+@extends('modulos.recursoshumanos.loadchart.index')
 <style>
     /* Variables CSS actualizadas con los colores proporcionados */
     :root {

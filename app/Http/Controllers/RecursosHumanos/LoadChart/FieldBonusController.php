@@ -20,7 +20,7 @@ class FieldBonusController extends Controller
             ->orderBy('bonus_type')
             ->get();
 
-        return view('modulos.recursoshumanos.sistemas.loadchart.field_bonuses', [
+        return view('modulos.recursoshumanos.loadchart.field_bonuses', [
             'bonuses' => $bonuses,
             'jobTitles' => $this->getJobTitles(),
             'currencies' => $this->getCurrencies(),

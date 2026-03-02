@@ -27,7 +27,7 @@ class AssignmentController extends Controller
         })->get(['id', 'name']);
 
         return view(
-            "modulos.recursoshumanos.sistemas.loadchart.review_assignments",
+            "modulos.recursoshumanos.loadchart.review_assignments",
             [
                 "departments" => $departments,
                 "reviewers" => $reviewers,

@@ -1,4 +1,4 @@
-@extends('modulos.recursoshumanos.sistemas.loadchart.index')
+@extends('modulos.recursoshumanos.loadchart.index')
 
 @section('content')
     <div class="container">

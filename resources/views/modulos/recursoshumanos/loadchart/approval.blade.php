@@ -1,4 +1,4 @@
-@extends('modulos.recursoshumanos.sistemas.loadchart.index')
+@extends('modulos.recursoshumanos.loadchart.index')
 @push('styles')
     {{-- Asegúrate de que este CSS incluya los estilos del punto 3 (si es necesario) --}}
     <link href="{{ asset('assets/css/recursoshumanos/loadchart/approval.css') }}" rel="stylesheet">

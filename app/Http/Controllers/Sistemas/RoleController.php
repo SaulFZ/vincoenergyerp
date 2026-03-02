@@ -71,7 +71,7 @@ class RoleController extends Controller
         $roles = Role::getRolesForSelect();
 
         return view(
-            'modulos.sistemas.sistemas.gestionderoles.index',
+            'modulos.sistemas.gestionderoles.index',
             compact('users', 'roles')
         );
     }
@@ -102,7 +102,7 @@ class RoleController extends Controller
     {
         $roles = Role::getRolesForSelect();
         return view(
-            'modulos.sistemas.sistemas.gestionderoles.index',
+            'modulos.sistemas.gestionderoles.index',
             compact('roles')
         );
     }
@@ -195,7 +195,7 @@ class RoleController extends Controller
         $roles       = Role::getRolesForSelect();
 
         return view(
-            'modulos.sistemas.sistemas.gestionderoles.index',
+            'modulos.sistemas.gestionderoles.index',
             compact('user', 'permissions', 'roles')
         );
     }

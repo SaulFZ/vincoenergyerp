@@ -1,4 +1,4 @@
-@extends('modulos.recursoshumanos.sistemas.loadchart.index')
+@extends('modulos.recursoshumanos.loadchart.index')
 
 @section('header_metadata')
     <meta name="csrf-token" content="{{ csrf_token() }}">

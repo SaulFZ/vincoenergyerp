@@ -23,7 +23,7 @@ class HistoryController extends Controller
         $employeeId = $user->employee_id;
 
         if (!$employeeId) {
-            return view('modulos.recursoshumanos.sistemas.loadchart.history', [
+            return view('modulos.recursoshumanos.loadchart.history', [
                 'employee' => null,
                 'historyData' => collect([]),
                 'error_message' => 'No se encontró un empleado asociado a tu cuenta de usuario.',
@@ -34,7 +34,7 @@ class HistoryController extends Controller
         $employee = Employee::find($employeeId);
 
         if (!$employee) {
-            return view('modulos.recursoshumanos.sistemas.loadchart.history', [
+            return view('modulos.recursoshumanos.loadchart.history', [
                 'employee' => null,
                 'historyData' => collect([]),
                 'error_message' => 'Empleado no encontrado en el sistema.',
@@ -53,7 +53,7 @@ class HistoryController extends Controller
         // Preparar datos para la vista
         $historyData = $this->formatHistoryData($historyLogs);
 
-        return view('modulos.recursoshumanos.sistemas.loadchart.history', [
+        return view('modulos.recursoshumanos.loadchart.history', [
             'employee' => $employee,
             'historyData' => $historyData,
             'filters' => [

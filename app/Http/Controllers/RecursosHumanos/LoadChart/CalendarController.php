@@ -167,7 +167,7 @@ class CalendarController extends Controller
             // Para el modal - retornar JSON con el HTML
             try {
                 // Asegúrate de que esta vista parcial contenga el HTML/Blade modificado
-                $html = View::make('modulos.recursoshumanos.sistemas.loadchart.calendar_partial', $viewData)->render();
+                $html = View::make('modulos.recursoshumanos.loadchart.calendar_partial', $viewData)->render();
 
                 return response()->json([
                     'success' => true,
@@ -182,7 +182,7 @@ class CalendarController extends Controller
             }
         } else {
             // Vista normal del calendario
-            return view('modulos.recursoshumanos.sistemas.loadchart.calendar', $viewData);
+            return view('modulos.recursoshumanos.loadchart.calendar', $viewData);
         }
     }
 
