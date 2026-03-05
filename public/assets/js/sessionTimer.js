@@ -54,16 +54,10 @@
     }
 
     async function extendSession() {
-        console.log("🔄 Extendiendo sesión local...");
         lastActivityTime = Date.now();
         isWarningShown = false;
 
         Swal.close(); // Cierra la advertencia
-
-        // Avisar al servidor
-        pingSession().then(success => {
-            if (success) console.log("✅ Servidor sincronizado");
-        });
     }
 
     // ====== MODALES ======
@@ -188,7 +182,6 @@
             }
         }, 300000);
 
-        console.log("✅ Sistema de sesión estricto y preciso activado.");
     }
 
     // Esperar a que SweetAlert2 cargue si aún no lo ha hecho
