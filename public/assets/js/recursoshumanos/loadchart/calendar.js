@@ -31,16 +31,27 @@ function initializeModalCalendarScripts(employeeId) {
     const restDaysElement = document.querySelector('p[data-balance-type="rest"]');
     const conditionalFields = document.getElementById('conditional-fields');
 
-    // --- ELEMENTOS DE VIAJE ---
     const travelDestinationField = document.getElementById('travel-destination-field');
     const travelDestinationInput = document.getElementById('travel-destination');
     const travelReasonField = document.getElementById('travel-reason-field');
     const travelReasonInput = document.getElementById('travel-reason');
-
-    // 🥇 NUEVO ELEMENTO: Fecha Real de Servicio
     const serviceRealDateInput = document.getElementById('service-real-date');
-    // -----------------------------------
 
+    // 🚔 NUEVO: Elementos de Guardia
+    const isGuardia = document.getElementById('is_guardia_user')?.value === '1';
+    const normalActivityGroup = document.getElementById('activity-type-group');
+    const guardiaActivityGroups = document.getElementById('guardia-activity-groups');
+    const matutinaSelect = document.getElementById('activity-matutina');
+    const vespertinaSelect = document.getElementById('activity-vespertina');
+
+    if (isGuardia) {
+        if (normalActivityGroup) normalActivityGroup.style.display = 'none';
+        if (guardiaActivityGroups) guardiaActivityGroups.style.display = 'block';
+        if (serviceTabBtn) serviceTabBtn.style.display = 'none';
+
+        const fieldBonusLabel = document.querySelector('label[for="field-bonus"]');
+        if (fieldBonusLabel) fieldBonusLabel.textContent = 'Bono';
+    }
 
     let currentSelectedDate = null;
     let monthlyActivities = {};
@@ -49,10 +60,8 @@ function initializeModalCalendarScripts(employeeId) {
     let vacationDaysAvailable = parseInt(vacationDaysElement?.textContent) || 0;
     let currentEmployeeId = employeeId;
 
-    // Estados que bloquean la edición
     const statusesToBlockField = ['approved', 'reviewed'];
     const statusesToBlockAll = ['approved', 'reviewed'];
-
 
     function getCSSVariable(varName) {
         return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
@@ -94,12 +103,19 @@ function initializeModalCalendarScripts(employeeId) {
     function createActivityHTML(activity) {
         const color = getActivityTagColor(activity.activity_type);
         const statusIcon = getStatusIcon(activity.day_status || 'under_review');
-        return `<div class="day-header-info"><div class="activity-tag" style="background-color: ${color};">${activity.activity_description}</div>${statusIcon}</div>`;
+        let html = `<div class="day-header-info">`;
+
+        html += `<div class="activity-tag" style="background-color: ${color};">${activity.activity_description || activity.activity_type}</div>`;
+
+        if (activity.activity_type_vespertina && activity.activity_type_vespertina !== 'N') {
+            const colorVesp = getActivityTagColor(activity.activity_type_vespertina);
+            html += `<div class="activity-tag" style="background-color: ${colorVesp}; margin-top: 2px;">${activity.activity_description_vespertina || activity.activity_type_vespertina}</div>`;
+        }
+
+        html += `${statusIcon}</div>`;
+        return html;
     }
 
-    /**
-     * Actualiza la UI con los nuevos saldos.
-     */
     async function updateBalanceUI(vacationDays, totalRestDaysInMonth) {
         if (vacationDaysElement) {
             vacationDaysAvailable = parseInt(vacationDays);
@@ -110,9 +126,6 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
-    /**
-     * Llama al backend para obtener y actualizar los saldos.
-     */
     async function fetchBalances() {
         try {
             const monthSpan = document.querySelector('.month-navigation span');
@@ -131,7 +144,6 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
-    // ✅ MODIFICADO: Lógica precisa para ocultar solo el bono de comida en C y V
     function handleActivityTypeChange(activityType) {
         const wellNameField = document.getElementById('well-name-field');
         const wellNameInput = document.getElementById('well-name');
@@ -142,49 +154,52 @@ function initializeModalCalendarScripts(employeeId) {
 
         const foodBonusSelect = document.getElementById('food-bonus');
         const fieldBonusSelect = document.getElementById('field-bonus');
-        // Identificamos los contenedores padres (form-group) para ocultarlos limpiamente
         const foodBonusContainer = foodBonusSelect ? foodBonusSelect.closest('.form-group') : null;
         const fieldBonusContainer = fieldBonusSelect ? fieldBonusSelect.closest('.form-group') : null;
 
+        // 🚔 LÓGICA EXCLUSIVA PARA GUARDIAS
+        if (isGuardia) {
+            conditionalFields.style.display = 'block';
+            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
+            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
 
-        // Mostrar/Ocultar error de Vacaciones
+            travelDestinationField.style.display = 'none';
+            travelReasonField.style.display = 'none';
+            wellNameField.style.display = 'none';
+            commissionedField.style.display = 'none';
+            vacationError.style.display = 'none';
+
+            const radioNo = document.getElementById('service-bonus-no');
+            if (radioNo) radioNo.checked = true;
+            return;
+        }
+
         if (activityType === 'VAC' && vacationDaysAvailable <= 0) {
             vacationError.style.display = 'block';
         } else {
             vacationError.style.display = 'none';
         }
 
-        // Resetear campos antes de re-evaluar
         travelDestinationField.style.display = 'none';
         travelReasonField.style.display = 'none';
         wellNameField.style.display = 'none';
         commissionedField.style.display = 'none';
 
-        // --- Lógica de campos condicionales por Tipo de Actividad ---
-
-        if (activityType === 'P') { // ✅ Trabajo en Pozo: TODO VISIBLE
+        if (activityType === 'P') {
             wellNameField.style.display = 'block';
             conditionalFields.style.display = 'block';
-
-            // Mostrar ambos bonos
             if (foodBonusContainer) foodBonusContainer.style.display = 'block';
             if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
-
             handleServiceBonusChange(hasServiceBonusSelect?.value);
 
-        } else if (activityType === 'C') { // ✅ Comisionado: SOLO BONO DE CAMPO
+        } else if (activityType === 'C') {
             commissionedField.style.display = 'block';
             conditionalFields.style.display = 'block';
-
-            // 👁️ OCULTAR BONO DE COMIDA, MOSTRAR BONO DE CAMPO
             if (foodBonusContainer) foodBonusContainer.style.display = 'none';
             if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
-
-            // Limpiar valores innecesarios
             if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
             wellNameInput.value = '';
 
-            // Forzar NO servicio
             const radioNo = document.getElementById('service-bonus-no');
             const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
             const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
@@ -200,21 +215,16 @@ function initializeModalCalendarScripts(employeeId) {
                 resetServiceForm();
             }
 
-        } else if (activityType === 'V') { // ✅ Viaje: SOLO BONO DE CAMPO
+        } else if (activityType === 'V') {
             travelDestinationField.style.display = 'block';
             travelReasonField.style.display = 'block';
             conditionalFields.style.display = 'block';
-
-            // 👁️ OCULTAR BONO DE COMIDA, MOSTRAR BONO DE CAMPO
             if (foodBonusContainer) foodBonusContainer.style.display = 'none';
             if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
-
-            // Limpiar valores innecesarios
             if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
             wellNameInput.value = '';
             commissionedSelect.selectedIndex = 0;
 
-            // Forzar NO servicio
             const radioNo = document.getElementById('service-bonus-no');
             const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
             const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
@@ -231,28 +241,22 @@ function initializeModalCalendarScripts(employeeId) {
             }
 
         } else {
-            // ✅ OTRAS ACTIVIDADES: OCULTAR TODO
             wellNameInput.value = '';
             travelDestinationInput.value = '';
             travelReasonInput.value = '';
             commissionedSelect.selectedIndex = 0;
 
-            // SOLO LIMPIAR BONOS si NO están BLOQUEADOS
             const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
             const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
 
             if (!statusesToBlockField.includes(foodBonusStatus)) {
                 if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
             }
-
             if (!statusesToBlockField.includes(fieldBonusStatus)) {
                 if (fieldBonusSelect) fieldBonusSelect.selectedIndex = 0;
             }
 
-            // Ocultar sección de bonos completa
             conditionalFields.style.display = 'none';
-
-            // Resetear visibilidad interna por si acaso
             if (foodBonusContainer) foodBonusContainer.style.display = 'block';
             if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
 
@@ -274,10 +278,11 @@ function initializeModalCalendarScripts(employeeId) {
     }
 
     function handleServiceBonusChange(hasServiceBonus) {
+        if (isGuardia) return;
+
         const serviceTab = document.getElementById('service-tab');
         const activityTabBtn = document.querySelector('.tab-btn[data-tab="activity"]');
         const isActivityP = document.getElementById('activity-type').value === 'P';
-
 
         if (hasServiceBonus === 'si' && isActivityP) {
             serviceTabBtn.style.display = 'block';
@@ -290,9 +295,12 @@ function initializeModalCalendarScripts(employeeId) {
                 activityTabBtn.click();
             }
             if (hasServiceBonus === 'no' || !isActivityP) {
-                document.getElementById('service-bonus-no').checked = true;
-                document.querySelector('.service-bonus-option[data-value="no"]').classList.add('selected');
-                document.querySelector('.service-bonus-option[data-value="si"]').classList.remove('selected');
+                const radioNo = document.getElementById('service-bonus-no');
+                if(radioNo) radioNo.checked = true;
+                const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+                if(optionNo) optionNo.classList.add('selected');
+                const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+                if(optionSi) optionSi.classList.remove('selected');
             }
             resetServiceForm();
         }
@@ -303,7 +311,11 @@ function initializeModalCalendarScripts(employeeId) {
         if (!activity) return;
 
         if (activity.rejection_reason && activity.activity_status && activity.activity_status.toLowerCase() === 'rejected') {
-            showRejectionMessage('activity-type-select', activity.rejection_reason);
+            if (isGuardia) {
+                showRejectionMessage('activity-matutina-select', activity.rejection_reason);
+            } else {
+                showRejectionMessage('activity-type-select', activity.rejection_reason);
+            }
         }
 
         if (activity.services_list && activity.services_list.length > 0) {
@@ -361,18 +373,16 @@ function initializeModalCalendarScripts(employeeId) {
         unlockAllFields();
     }
 
-    function unlockAllFields() {
-        // Elementos en pestaña Actividad
+function unlockAllFields() {
         const activityElements = [
             document.getElementById('activity-type-select'), ...document.querySelectorAll('.activity-option'),
             document.getElementById('commissioned-select'), document.getElementById('well-name'),
-            // --- CAMPOS DE VIAJE ---
             document.getElementById('travel-destination'), document.getElementById('travel-reason'),
-            // -----------------------------
             ...document.querySelectorAll('.service-bonus-option'),
-            document.getElementById('food-bonus'), document.getElementById('field-bonus')
+            document.getElementById('food-bonus'), document.getElementById('field-bonus'),
+            // AGREGADOS PARA GUARDIA
+            document.getElementById('activity-matutina-select'), document.getElementById('activity-vespertina-select')
         ];
-        // Elementos en pestaña Servicio
         const serviceElements = [
             ...document.querySelectorAll('.work-type-option'),
             document.getElementById('service-type'), document.getElementById('service-performed'),
@@ -401,16 +411,14 @@ function initializeModalCalendarScripts(employeeId) {
                 }
             }
         });
-        saveBtn.disabled = false;
-        loadingSpinner.style.display = 'none';
-    }
 
-    /**
-     * @param {Object} activity - El objeto de actividad para el día.
-     * @param {string} fieldType - El tipo de campo ('activity', 'service', 'food_bonus', 'field_bonus').
-     * @param {number} itemIndex - Índice del item (generalmente 0 para bonos/servicios).
-     * @returns {string} - El estado del campo ('approved', 'reviewed', 'rejected', 'under_review').
-     */
+        // ⭐ ESTADO NORMAL DEL BOTÓN
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'pointer';
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+    }
     function getFieldStatus(activity, fieldType, itemIndex = 0) {
         if (!activity) return 'under_review';
         let status = 'under_review';
@@ -447,7 +455,6 @@ function initializeModalCalendarScripts(employeeId) {
         const isOption = element.classList.contains('work-type-option') || element.classList.contains('activity-option') || element.classList.contains('service-bonus-option');
         const lowerCaseStatus = status ? status.toLowerCase() : '';
 
-        // --- MANEJO DEL INDICADOR DE ESTADO (LA ETIQUETA) ---
         const existingIndicator = parentGroup.querySelector('.lock-indicator');
         if (existingIndicator) existingIndicator.remove();
 
@@ -480,7 +487,6 @@ function initializeModalCalendarScripts(employeeId) {
             parentGroup.appendChild(lockIndicator);
         }
 
-        // --- MANEJO DEL BLOQUEO DEL CAMPO ---
         if (isLocked) {
             if (isCustomSelect) {
                 element.classList.add('locked');
@@ -515,11 +521,8 @@ function initializeModalCalendarScripts(employeeId) {
         if (!activity) return;
 
         const dayStatus = activity.day_status ? activity.day_status.toLowerCase() : '';
-
-        // Determinar si el día completo está bloqueado (Aprobado o Revisado)
         const isDayCompletelyBlocked = statusesToBlockAll.includes(dayStatus);
 
-        // Si el día está completamente bloqueado, aplicamos bloqueo a todo y salimos.
         if (isDayCompletelyBlocked) {
             const allFormElements = document.querySelectorAll('#activity-tab select, #activity-tab .custom-select, #activity-tab input:not([type="radio"]), #service-tab select, #service-tab input');
             document.querySelectorAll('.work-type-option, .activity-option, .service-bonus-option').forEach(el => toggleFieldLock(el, true, dayStatus));
@@ -533,23 +536,36 @@ function initializeModalCalendarScripts(employeeId) {
             return;
         }
 
-        // --- Pestaña Actividad ---
         const activityStatus = getFieldStatus(activity, 'activity');
         const isActivityLocked = statusesToBlockField.includes(activityStatus);
 
-        const activityTypeSelectContainer = document.getElementById('activity-type-select');
-        const commissionedSelect = document.getElementById('commissioned-select');
-        const wellNameInput = document.getElementById('well-name');
-        const travelDestinationInput = document.getElementById('travel-destination');
-        const travelReasonInput = document.getElementById('travel-reason');
-        const activityTypeOptions = document.querySelectorAll('.activity-option');
+        if (isGuardia) {
+            const matContainer = document.getElementById('activity-matutina-select');
+            const vespContainer = document.getElementById('activity-vespertina-select');
+            const matOptions = document.querySelectorAll('#activity-matutina-options .activity-option');
+            const vespOptions = document.querySelectorAll('#activity-vespertina-options .activity-option');
 
-        toggleFieldLock(activityTypeSelectContainer, isActivityLocked, activityStatus);
-        activityTypeOptions.forEach(option => toggleFieldLock(option, isActivityLocked, activityStatus));
-        toggleFieldLock(commissionedSelect, isActivityLocked, activityStatus);
-        toggleFieldLock(wellNameInput, isActivityLocked, activityStatus);
-        toggleFieldLock(travelDestinationInput, isActivityLocked, activityStatus);
-        toggleFieldLock(travelReasonInput, isActivityLocked, activityStatus);
+            toggleFieldLock(matContainer, isActivityLocked, activityStatus);
+            matOptions.forEach(opt => toggleFieldLock(opt, isActivityLocked, activityStatus));
+
+            toggleFieldLock(vespContainer, isActivityLocked, activityStatus);
+            vespOptions.forEach(opt => toggleFieldLock(opt, isActivityLocked, activityStatus));
+
+        } else {
+            const activityTypeSelectContainer = document.getElementById('activity-type-select');
+            const commissionedSelect = document.getElementById('commissioned-select');
+            const wellNameInput = document.getElementById('well-name');
+            const travelDestinationInput = document.getElementById('travel-destination');
+            const travelReasonInput = document.getElementById('travel-reason');
+            const activityTypeOptions = document.querySelectorAll('.activity-option');
+
+            toggleFieldLock(activityTypeSelectContainer, isActivityLocked, activityStatus);
+            activityTypeOptions.forEach(option => toggleFieldLock(option, isActivityLocked, activityStatus));
+            toggleFieldLock(commissionedSelect, isActivityLocked, activityStatus);
+            toggleFieldLock(wellNameInput, isActivityLocked, activityStatus);
+            toggleFieldLock(travelDestinationInput, isActivityLocked, activityStatus);
+            toggleFieldLock(travelReasonInput, isActivityLocked, activityStatus);
+        }
 
         const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
         const serviceStatus = getFieldStatus(activity, 'service');
@@ -563,11 +579,8 @@ function initializeModalCalendarScripts(employeeId) {
         }
 
         const isServiceBonusLocked = statusesToBlockField.includes(statusForServiceBonus);
-
         serviceBonusOptions.forEach(option => toggleFieldLock(option, isServiceBonusLocked, statusForServiceBonus));
 
-
-        // --- Bonos ---
         const foodBonusStatus = getFieldStatus(activity, 'food_bonus');
         const isFoodBonusLocked = statusesToBlockField.includes(foodBonusStatus);
         const foodBonusSelect = document.getElementById('food-bonus');
@@ -578,7 +591,6 @@ function initializeModalCalendarScripts(employeeId) {
         const fieldBonusSelect = document.getElementById('field-bonus');
         toggleFieldLock(fieldBonusSelect, isFieldBonusLocked, fieldBonusStatus);
 
-        // --- Pestaña Servicio ---
         const isServiceLocked = statusesToBlockField.includes(serviceStatus);
         const workTypeOptions = document.querySelectorAll('.work-type-option');
         const serviceTypeSelect = document.getElementById('service-type');
@@ -588,7 +600,6 @@ function initializeModalCalendarScripts(employeeId) {
         const serviceAmountInput = document.getElementById('service-amount');
 
         toggleFieldLock(serviceRealDateInput, isServiceLocked, serviceStatus);
-
         workTypeOptions.forEach(option => toggleFieldLock(option, isServiceLocked, serviceStatus));
         toggleFieldLock(serviceTypeSelect, isServiceLocked, serviceStatus);
         toggleFieldLock(servicePerformedSelect, isServiceLocked, serviceStatus);
@@ -610,9 +621,46 @@ function initializeModalCalendarScripts(employeeId) {
         const activityTabBtn = document.querySelector('.tab-btn[data-tab="activity"]');
         const serviceTabButton = document.querySelector('.tab-btn[data-tab="service"]');
         const vacationError = document.getElementById('vacation-balance-error');
-        const isActivityP = activity.activity_type === 'P';
 
-        // Mostrar campos condicionales (Bonos) si es P, C o V
+        // 🚔 POBLAMIENTO EXCLUSIVO PARA GUARDIAS
+        if (isGuardia) {
+            if (matutinaSelect) matutinaSelect.value = activity.activity_type || 'N';
+            if (vespertinaSelect) vespertinaSelect.value = activity.activity_type_vespertina || 'N';
+
+            // Estilizar Selectores Personalizados (Guardia)
+            const matOpt = document.querySelector(`#activity-matutina-options .activity-option[data-value="${activity.activity_type || 'N'}"]`);
+            if(matOpt) {
+                matOpt.classList.add('selected');
+                document.querySelector('#activity-matutina-header .placeholder').textContent = matOpt.querySelector('.activity-label').textContent;
+            }
+
+            const vespOpt = document.querySelector(`#activity-vespertina-options .activity-option[data-value="${activity.activity_type_vespertina || 'N'}"]`);
+            if(vespOpt) {
+                vespOpt.classList.add('selected');
+                document.querySelector('#activity-vespertina-header .placeholder').textContent = vespOpt.querySelector('.activity-label').textContent;
+            }
+
+            conditionalFields.style.display = 'block';
+            const foodBonusSelect = document.getElementById('food-bonus');
+            if (foodBonusSelect) foodBonusSelect.closest('.form-group').style.display = 'none';
+
+            if (activity.field_bonuses && activity.field_bonuses.length > 0) {
+                const fieldBonus = activity.field_bonuses[0];
+                const fieldBonusSelect = document.getElementById('field-bonus');
+                if (fieldBonus.bonus_identifier) {
+                    fieldBonusSelect.value = fieldBonus.bonus_identifier;
+                }
+            }
+
+            setTimeout(() => {
+                applyFieldLocks(activity);
+            }, 200);
+
+            return;
+        }
+
+
+        const isActivityP = activity.activity_type === 'P';
         const activityTypesWithBonuses = ['P', 'C', 'V'];
         conditionalFields.style.display = activityTypesWithBonuses.includes(activity.activity_type) ? 'block' : 'none';
 
@@ -624,7 +672,6 @@ function initializeModalCalendarScripts(employeeId) {
 
         const hasService = activity.services_list && activity.services_list.length > 0;
 
-        // Lógica para el botón de Servicio
         const radioYes = document.getElementById('service-bonus-yes');
         const radioNo = document.getElementById('service-bonus-no');
         const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
@@ -657,7 +704,6 @@ function initializeModalCalendarScripts(employeeId) {
             activityTypeOption.classList.add('selected');
             document.getElementById('activity-type').value = activity.activity_type;
             document.querySelector('#activity-type-header .placeholder').textContent = activityTypeOption.querySelector('.activity-label').textContent;
-
             handleActivityTypeChange(activity.activity_type);
         } else {
             document.getElementById('activity-type').value = activity.activity_type || 'N';
@@ -687,7 +733,6 @@ function initializeModalCalendarScripts(employeeId) {
             serviceRealDateInput.value = currentSelectedDate;
         }
 
-
         if (activity.food_bonuses && activity.food_bonuses.length > 0) {
             const foodBonus = activity.food_bonuses[0];
             if (foodBonus.num_daily) {
@@ -709,7 +754,7 @@ function initializeModalCalendarScripts(employeeId) {
     }
 
     // =========================================================================
-    // FUNCIONES AUXILIARES
+    // FUNCIONES AUXILIARES DE SERVICIOS
     // =========================================================================
 
     function updateServicePerformedOptions(workType, serviceTypeFormatted, selectedPerformedId = null) {
@@ -749,7 +794,6 @@ function initializeModalCalendarScripts(employeeId) {
         const serviceAmountInput = document.getElementById('service-amount');
         serviceAmountGroup.style.display = 'none';
         serviceAmountInput.value = '';
-
 
         if (workType && serviceTypeFormatted && servicePerformedFormatted) {
             serviceSelect.disabled = false;
@@ -847,11 +891,17 @@ function initializeModalCalendarScripts(employeeId) {
             clearAllBlocksAndMessages();
             document.getElementById('vacation-balance-error').style.display = 'none';
             document.querySelector('.tab-btn[data-tab="activity"]').click();
-            conditionalFields.style.display = 'none';
-            serviceTabBtn.style.display = 'none';
+
+            if (!isGuardia) {
+                conditionalFields.style.display = 'none';
+                serviceTabBtn.style.display = 'none';
+            } else {
+                conditionalFields.style.display = 'block';
+                const foodBonusSelect = document.getElementById('food-bonus');
+                if (foodBonusSelect) foodBonusSelect.closest('.form-group').style.display = 'none';
+            }
 
             serviceRealDateInput.value = processedDate;
-
 
             if (existingActivity) {
                 populateModalWithActivity(existingActivity);
@@ -881,7 +931,10 @@ function initializeModalCalendarScripts(employeeId) {
         clearAllBlocksAndMessages();
         currentSelectedDate = null;
         currentActivity = null;
-        conditionalFields.style.display = 'none';
+
+        if(!isGuardia){
+            conditionalFields.style.display = 'none';
+        }
 
         const radioNo = document.getElementById('service-bonus-no');
         const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
@@ -895,9 +948,26 @@ function initializeModalCalendarScripts(employeeId) {
     }
 
     function resetActivityOptions() {
-        document.querySelectorAll('.activity-option').forEach(opt => opt.classList.remove('selected'));
-        document.getElementById('activity-type').value = '';
-        document.querySelector('#activity-type-header .placeholder').textContent = 'Seleccionar actividad...';
+        if (isGuardia) {
+            if(matutinaSelect) matutinaSelect.value = '';
+            if(vespertinaSelect) vespertinaSelect.value = '';
+
+            document.querySelectorAll('#activity-matutina-options .activity-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelectorAll('#activity-vespertina-options .activity-option').forEach(opt => opt.classList.remove('selected'));
+
+            const matHeader = document.querySelector('#activity-matutina-header .placeholder');
+            const vespHeader = document.querySelector('#activity-vespertina-header .placeholder');
+
+            if(matHeader) matHeader.textContent = 'Seleccionar...';
+            if(vespHeader) vespHeader.textContent = 'Seleccionar...';
+
+            document.getElementById('activity-matutina-error').style.display = 'none';
+            document.getElementById('activity-vespertina-error').style.display = 'none';
+        } else {
+            document.querySelectorAll('#activity-type-options .activity-option').forEach(opt => opt.classList.remove('selected'));
+            document.getElementById('activity-type').value = '';
+            document.querySelector('#activity-type-header .placeholder').textContent = 'Seleccionar actividad...';
+        }
     }
 
     function resetAdditionalForms() {
@@ -905,7 +975,10 @@ function initializeModalCalendarScripts(employeeId) {
         document.getElementById('commissioned-select').selectedIndex = 0;
         document.getElementById('well-name-field').style.display = 'none';
         document.getElementById('well-name').value = '';
-        conditionalFields.style.display = 'none';
+
+        if(!isGuardia){
+            conditionalFields.style.display = 'none';
+        }
 
         travelDestinationField.style.display = 'none';
         travelDestinationInput.value = '';
@@ -945,68 +1018,130 @@ function initializeModalCalendarScripts(employeeId) {
         }
     });
 
-    const activityOptions = document.querySelectorAll('.activity-option');
-    const activityTypeHeader = document.getElementById('activity-type-header');
-    const activityTypeOptionsEl = document.getElementById('activity-type-options');
-    const activityTypeSelect = document.getElementById('activity-type');
+    // =========================================================================
+    // LÓGICA DE EVENTOS DE SELECTORES PERSONALIZADOS
+    // =========================================================================
 
-    activityTypeHeader.addEventListener('click', function () {
-        if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
-        if (currentActivity && statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'))) return;
-
-        this.classList.toggle('open');
-        activityTypeOptionsEl.classList.toggle('open');
-    });
+    // Cierra cualquier selector si se hace clic afuera
     document.addEventListener('click', function (e) {
-        if (!activityTypeHeader.contains(e.target) && !activityTypeOptionsEl.contains(e.target)) {
-            activityTypeHeader.classList.remove('open');
-            activityTypeOptionsEl.classList.remove('open');
-        }
+        const selectsToClose = [
+            { header: 'activity-type-header', options: 'activity-type-options' },
+            { header: 'activity-matutina-header', options: 'activity-matutina-options' },
+            { header: 'activity-vespertina-header', options: 'activity-vespertina-options' }
+        ];
+
+        selectsToClose.forEach(item => {
+            const h = document.getElementById(item.header);
+            const o = document.getElementById(item.options);
+            if (h && o && !h.contains(e.target) && !o.contains(e.target)) {
+                h.classList.remove('open');
+                o.classList.remove('open');
+            }
+        });
     });
 
-    activityOptions.forEach(option => {
-        option.addEventListener('click', function () {
+    // Eventos Selector Normal
+    if (!isGuardia) {
+        const activityOptions = document.querySelectorAll('#activity-type-options .activity-option');
+        const activityTypeHeader = document.getElementById('activity-type-header');
+        const activityTypeOptionsEl = document.getElementById('activity-type-options');
+        const activityTypeSelect = document.getElementById('activity-type');
+
+        activityTypeHeader.addEventListener('click', function (e) {
+            e.stopPropagation();
             if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
             if (currentActivity && statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'))) return;
 
-            const value = this.getAttribute('data-value');
-            activityOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-            activityTypeSelect.value = value;
-            document.querySelector('#activity-type-header .placeholder').textContent = this.querySelector('.activity-label').textContent;
-            activityTypeHeader.classList.remove('open');
-            activityTypeOptionsEl.classList.remove('open');
-
-            handleActivityTypeChange(value);
+            this.classList.toggle('open');
+            activityTypeOptionsEl.classList.toggle('open');
         });
-    });
 
-    const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
-    serviceBonusOptions.forEach(option => {
-        option.addEventListener('click', function () {
-            if (currentActivity) {
-                const serviceStatus = getFieldStatus(currentActivity, 'service');
-                const activityStatus = getFieldStatus(currentActivity, 'activity');
-                let statusForCheck = activityStatus;
+        activityOptions.forEach(option => {
+            option.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
+                if (currentActivity && statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'))) return;
 
-                if (serviceStatus === 'approved' || serviceStatus === 'reviewed') {
-                    statusForCheck = serviceStatus;
+                const value = this.getAttribute('data-value');
+                activityOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                activityTypeSelect.value = value;
+                document.querySelector('#activity-type-header .placeholder').textContent = this.querySelector('.activity-label').textContent;
+
+                activityTypeHeader.classList.remove('open');
+                activityTypeOptionsEl.classList.remove('open');
+
+                handleActivityTypeChange(value);
+            });
+        });
+
+        const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
+        serviceBonusOptions.forEach(option => {
+            option.addEventListener('click', function () {
+                if (currentActivity) {
+                    const serviceStatus = getFieldStatus(currentActivity, 'service');
+                    const activityStatus = getFieldStatus(currentActivity, 'activity');
+                    let statusForCheck = activityStatus;
+
+                    if (serviceStatus === 'approved' || serviceStatus === 'reviewed') {
+                        statusForCheck = serviceStatus;
+                    }
+
+                    if (statusesToBlockAll.includes(statusForCheck) || statusesToBlockField.includes(statusForCheck)) return;
                 }
 
-                if (statusesToBlockAll.includes(statusForCheck) || statusesToBlockField.includes(statusForCheck)) return;
-            }
+                if (document.getElementById('activity-type').value !== 'P') return;
 
-            if (document.getElementById('activity-type').value !== 'P') {
-                return;
-            }
-            const value = this.getAttribute('data-value');
-            const radio = this.querySelector('input[type="radio"]');
-            serviceBonusOptions.forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-            radio.checked = true;
-            handleServiceBonusChange(value);
+                const value = this.getAttribute('data-value');
+                const radio = this.querySelector('input[type="radio"]');
+                serviceBonusOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                radio.checked = true;
+                handleServiceBonusChange(value);
+            });
         });
-    });
+    }
+
+    // Eventos Selectores de Guardia
+    function setupGuardiaCustomSelect(prefix) {
+        const header = document.getElementById(`activity-${prefix}-header`);
+        const optionsEl = document.getElementById(`activity-${prefix}-options`);
+        const realSelect = document.getElementById(`activity-${prefix}`);
+        if(!header || !optionsEl) return;
+
+        const options = optionsEl.querySelectorAll('.activity-option');
+
+        header.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
+            if (currentActivity && statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'))) return;
+
+            this.classList.toggle('open');
+            optionsEl.classList.toggle('open');
+        });
+
+        options.forEach(opt => {
+            opt.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
+                if (currentActivity && statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'))) return;
+
+                options.forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                const val = this.getAttribute('data-value');
+                realSelect.value = val;
+                header.querySelector('.placeholder').textContent = this.querySelector('.activity-label').textContent;
+
+                header.classList.remove('open');
+                optionsEl.classList.remove('open');
+            });
+        });
+    }
+
+    if (isGuardia) {
+        setupGuardiaCustomSelect('matutina');
+        setupGuardiaCustomSelect('vespertina');
+    }
 
     const workTypeOptions = document.querySelectorAll('.work-type-option');
     workTypeOptions.forEach(option => {
@@ -1152,158 +1287,188 @@ function initializeModalCalendarScripts(employeeId) {
         });
     }
 
+    // 🚔 GUARDAR ACTIVIDAD MODIFICADO
     saveBtn.addEventListener('click', function () {
         let isValid = true;
         document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
 
         const formData = {
-            // 👇 AGREGA ESTA LÍNEA: Enviar el ID del empleado actual
-        employee_id: currentEmployeeId,
+            employee_id: currentEmployeeId,
             date: currentSelectedDate,
             displayed_month: document.querySelector('.month-navigation span').getAttribute('data-month'),
             displayed_year: document.querySelector('.month-navigation span').getAttribute('data-year'),
         };
 
         const activityStatus = getFieldStatus(currentActivity, 'activity');
-        if (!statusesToBlockField.includes(activityStatus)) {
-            const activityType = document.getElementById('activity-type').value;
-            formData.activity_type = activityType || 'N';
-            formData.commissioned_to = activityType === 'C' ? document.getElementById('commissioned-select').value : null;
-            formData.well_name = activityType === 'P' ? document.getElementById('well-name').value : null;
 
-            formData.travel_destination = activityType === 'V' ? document.getElementById('travel-destination').value.trim() : null;
-            formData.travel_reason = activityType === 'V' ? document.getElementById('travel-reason').value.trim() : null;
-
-            const isActivityP = activityType === 'P';
-            const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
-            formData.has_service_bonus = isActivityP ? hasServiceBonus : 'no';
-
-            if (activityType === 'VAC') {
-                let currentVacationDaysInMonth = 0;
-                document.querySelectorAll('.calendar td[data-date]').forEach(cell => {
-                    const activity = monthlyActivities[cell.getAttribute('data-date')];
-                    if (activity && activity.activity_type === 'VAC') {
-                        currentVacationDaysInMonth++;
-                    }
-                });
-
-                const isNewVacationDay = !(currentActivity && currentActivity.activity_type === 'VAC' && currentActivity.date === currentSelectedDate);
-
-                if (isNewVacationDay || (currentActivity && currentActivity.activity_type !== 'VAC')) {
-                    if (!currentActivity || currentActivity.activity_type !== 'VAC') {
-                        currentVacationDaysInMonth++;
-                    }
-                }
-
-                const daysAvailable = vacationDaysAvailable;
-
-                if (currentVacationDaysInMonth > daysAvailable) {
-                    document.getElementById('vacation-balance-error').style.display = 'block';
-                    isValid = false;
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Límite alcanzado',
-                        text: `El límite de tus vacaciones ha sido alcanzado. Saldo disponible: ${daysAvailable} día(s).`,
-                        confirmButtonText: 'Aceptar'
-                    });
-                    return;
-                }
-            }
-
-            if (!activityType) {
-                document.getElementById('activity-type-error').style.display = 'block';
-                isValid = false;
-            }
-            if (activityType === 'C' && !formData.commissioned_to) {
-                document.getElementById('commissioned-error').style.display = 'block';
-                isValid = false;
-            }
-            if (activityType === 'P' && !formData.well_name.trim()) {
-                document.getElementById('well-name-error').style.display = 'block';
-                isValid = false;
-            }
-
-            if (activityType === 'V' && !formData.travel_destination) {
-                document.getElementById('travel-destination-error').style.display = 'block';
-                isValid = false;
-            }
-            if (activityType === 'V' && !formData.travel_reason) {
-                document.getElementById('travel-reason-error').style.display = 'block';
-                isValid = false;
-            }
-        }
-
-        // 2. Procesar Bonos (CORREGIDO PARA C Y V)
-        const currentActivityType = document.getElementById('activity-type').value;
-
-        // ✅ REGLA: Bono de Comida SOLO para P o N (No para C ni V)
-        if (['P', 'N'].includes(currentActivityType) || !currentActivityType) {
-            const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
-            if (!statusesToBlockField.includes(foodBonusStatus)) {
-                formData.food_bonus_number = document.getElementById('food-bonus').value || null;
-            }
-        }
-
-        // ✅ REGLA: Bono de Campo para P, N, C, V
-        if (['P', 'N', 'C', 'V'].includes(currentActivityType) || !currentActivityType) {
-            const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
-            if (!statusesToBlockField.includes(fieldBonusStatus)) {
+        if (isGuardia) {
+            // Lógica Especial Guardias
+            if (!statusesToBlockField.includes(activityStatus)) {
+                formData.activity_type = matutinaSelect.value;
+                formData.activity_type_vespertina = vespertinaSelect.value;
                 formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;
-            }
-        }
+                formData.has_service_bonus = 'no'; // Fuerte sin servicio
 
+                if (!formData.activity_type) {
+                    document.getElementById('activity-matutina-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.activity_type_vespertina) {
+                    document.getElementById('activity-vespertina-error').style.display = 'block';
+                    isValid = false;
+                }
 
-        // 3. Procesar la Pestaña de Servicio
-        const serviceStatus = getFieldStatus(currentActivity, 'service');
-        const wantsService = document.querySelector('input[name="has_service_bonus"]:checked')?.value === 'si';
-        const isActivityP = document.getElementById('activity-type').value === 'P';
-
-        const realDate = serviceRealDateInput.value;
-
-        if (wantsService && isActivityP && !statusesToBlockField.includes(serviceStatus)) {
-            const workTypeSelected = document.querySelector('.work-type-option.selected');
-            const serviceValue = document.getElementById('service').value;
-
-            formData.service_identifier = serviceValue || null;
-            formData.service_real_date = realDate;
-
-            if (!workTypeSelected) {
-                document.getElementById('work-type-error').style.display = 'block';
-                isValid = false;
-                document.querySelector('.tab-btn[data-tab="service"]').click();
+                if (formData.activity_type === 'VAC' || formData.activity_type_vespertina === 'VAC') {
+                     if (vacationDaysAvailable <= 0) {
+                         document.getElementById('vacation-balance-error').style.display = 'block';
+                         isValid = false;
+                         Swal.fire({
+                             icon: 'warning',
+                             title: 'Límite alcanzado',
+                             text: `El límite de tus vacaciones ha sido alcanzado.`,
+                             confirmButtonText: 'Aceptar'
+                         });
+                         return;
+                     }
+                }
             }
-            if (!document.getElementById('service-type').value) {
-                document.getElementById('service-type-error').style.display = 'block';
-                isValid = false;
-                document.querySelector('.tab-btn[data-tab="service"]').click();
-            }
-            if (!document.getElementById('service-performed').value) {
-                document.getElementById('service-performed-error').style.display = 'block';
-                isValid = false;
-                document.querySelector('.tab-btn[data-tab="service"]').click();
-            }
-            if (!serviceValue) {
-                document.getElementById('service-error').style.display = 'block';
-                isValid = false;
-                document.querySelector('.tab-btn[data-tab="service"]').click();
-            }
-            if (!formData.service_real_date) {
-                document.getElementById('service-real-date-error').style.display = 'block';
-                isValid = false;
-                document.querySelector('.tab-btn[data-tab="service"]').click();
-            }
-        } else if (wantsService && isActivityP && statusesToBlockField.includes(serviceStatus)) {
-            formData.service_identifier = currentActivity?.services_list[0]?.service_identifier;
-            formData.service_real_date = currentActivity?.services_list[0]?.service_real_date;
         } else {
-            if (!statusesToBlockField.includes(serviceStatus)) {
-                formData.service_identifier = null;
-                formData.service_real_date = null;
+            // Lógica Normal
+            if (!statusesToBlockField.includes(activityStatus)) {
+                const activityType = document.getElementById('activity-type').value;
+                formData.activity_type = activityType || 'N';
+                formData.commissioned_to = activityType === 'C' ? document.getElementById('commissioned-select').value : null;
+                formData.well_name = activityType === 'P' ? document.getElementById('well-name').value : null;
+
+                formData.travel_destination = activityType === 'V' ? document.getElementById('travel-destination').value.trim() : null;
+                formData.travel_reason = activityType === 'V' ? document.getElementById('travel-reason').value.trim() : null;
+
+                const isActivityP = activityType === 'P';
+                const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
+                formData.has_service_bonus = isActivityP ? hasServiceBonus : 'no';
+
+                if (activityType === 'VAC') {
+                    let currentVacationDaysInMonth = 0;
+                    document.querySelectorAll('.calendar td[data-date]').forEach(cell => {
+                        const activity = monthlyActivities[cell.getAttribute('data-date')];
+                        if (activity && activity.activity_type === 'VAC') {
+                            currentVacationDaysInMonth++;
+                        }
+                    });
+
+                    const isNewVacationDay = !(currentActivity && currentActivity.activity_type === 'VAC' && currentActivity.date === currentSelectedDate);
+
+                    if (isNewVacationDay || (currentActivity && currentActivity.activity_type !== 'VAC')) {
+                        if (!currentActivity || currentActivity.activity_type !== 'VAC') {
+                            currentVacationDaysInMonth++;
+                        }
+                    }
+
+                    const daysAvailable = vacationDaysAvailable;
+
+                    if (currentVacationDaysInMonth > daysAvailable) {
+                        document.getElementById('vacation-balance-error').style.display = 'block';
+                        isValid = false;
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Límite alcanzado',
+                            text: `El límite de tus vacaciones ha sido alcanzado. Saldo disponible: ${daysAvailable} día(s).`,
+                            confirmButtonText: 'Aceptar'
+                        });
+                        return;
+                    }
+                }
+
+                if (!activityType) {
+                    document.getElementById('activity-type-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (activityType === 'C' && !formData.commissioned_to) {
+                    document.getElementById('commissioned-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (activityType === 'P' && !formData.well_name.trim()) {
+                    document.getElementById('well-name-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (activityType === 'V' && !formData.travel_destination) {
+                    document.getElementById('travel-destination-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (activityType === 'V' && !formData.travel_reason) {
+                    document.getElementById('travel-reason-error').style.display = 'block';
+                    isValid = false;
+                }
+            }
+
+            // 2. Procesar Bonos NORMAL
+            const currentActivityType = document.getElementById('activity-type').value;
+
+            if (['P', 'N'].includes(currentActivityType) || !currentActivityType) {
+                const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
+                if (!statusesToBlockField.includes(foodBonusStatus)) {
+                    formData.food_bonus_number = document.getElementById('food-bonus').value || null;
+                }
+            }
+
+            if (['P', 'N', 'C', 'V'].includes(currentActivityType) || !currentActivityType) {
+                const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
+                if (!statusesToBlockField.includes(fieldBonusStatus)) {
+                    formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;
+                }
+            }
+
+            // 3. Procesar la Pestaña de Servicio
+            const serviceStatus = getFieldStatus(currentActivity, 'service');
+            const wantsService = document.querySelector('input[name="has_service_bonus"]:checked')?.value === 'si';
+            const isActivityP = document.getElementById('activity-type').value === 'P';
+
+            const realDate = serviceRealDateInput.value;
+
+            if (wantsService && isActivityP && !statusesToBlockField.includes(serviceStatus)) {
+                const workTypeSelected = document.querySelector('.work-type-option.selected');
+                const serviceValue = document.getElementById('service').value;
+
+                formData.service_identifier = serviceValue || null;
+                formData.service_real_date = realDate;
+
+                if (!workTypeSelected) {
+                    document.getElementById('work-type-error').style.display = 'block';
+                    isValid = false;
+                    document.querySelector('.tab-btn[data-tab="service"]').click();
+                }
+                if (!document.getElementById('service-type').value) {
+                    document.getElementById('service-type-error').style.display = 'block';
+                    isValid = false;
+                    document.querySelector('.tab-btn[data-tab="service"]').click();
+                }
+                if (!document.getElementById('service-performed').value) {
+                    document.getElementById('service-performed-error').style.display = 'block';
+                    isValid = false;
+                    document.querySelector('.tab-btn[data-tab="service"]').click();
+                }
+                if (!serviceValue) {
+                    document.getElementById('service-error').style.display = 'block';
+                    isValid = false;
+                    document.querySelector('.tab-btn[data-tab="service"]').click();
+                }
+                if (!formData.service_real_date) {
+                    document.getElementById('service-real-date-error').style.display = 'block';
+                    isValid = false;
+                    document.querySelector('.tab-btn[data-tab="service"]').click();
+                }
+            } else if (wantsService && isActivityP && statusesToBlockField.includes(serviceStatus)) {
+                formData.service_identifier = currentActivity?.services_list[0]?.service_identifier;
+                formData.service_real_date = currentActivity?.services_list[0]?.service_real_date;
+            } else {
+                if (!statusesToBlockField.includes(serviceStatus)) {
+                    formData.service_identifier = null;
+                    formData.service_real_date = null;
+                }
             }
         }
 
-
-        if (!isValid) {
+       if (!isValid) {
             Swal.fire({
                 icon: 'error',
                 title: 'Campos incompletos',
@@ -1313,8 +1478,13 @@ function initializeModalCalendarScripts(employeeId) {
             return;
         }
 
+        // ⭐ 1. INICIAR ANIMACIÓN DE CARGA EN EL BOTÓN
+        const originalBtnHTML = '<i class="fas fa-save"></i> Guardar'; // Guardamos el estado original
         saveBtn.disabled = true;
-        loadingSpinner.style.display = 'block';
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; // Ponemos el icono giratorio
+        saveBtn.style.opacity = '0.7';
+        saveBtn.style.cursor = 'wait';
+        if (loadingSpinner) loadingSpinner.style.display = 'none'; // Ocultamos el div viejo por si acaso
 
         fetch('/recursoshumanos/loadchart/save-activity', {
             method: 'POST',
@@ -1358,8 +1528,11 @@ function initializeModalCalendarScripts(employeeId) {
                 });
             })
             .finally(() => {
+                // ⭐ 2. RESTAURAR EL BOTÓN A LA NORMALIDAD AL TERMINAR (Éxito o Error)
                 saveBtn.disabled = false;
-                loadingSpinner.style.display = 'none';
+                saveBtn.innerHTML = originalBtnHTML;
+                saveBtn.style.opacity = '1';
+                saveBtn.style.cursor = 'pointer';
             });
     });
 
@@ -1423,7 +1596,6 @@ function initializeModalCalendarScripts(employeeId) {
         });
     }
 
-
     const monthSpan = document.querySelector('.month-navigation span');
     const prevMonthBtn = document.getElementById('prev-month');
     const nextMonthBtn = document.getElementById('next-month');
@@ -1478,7 +1650,6 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
-
     async function updateCalendar(month, year) {
         if (!isDateWithinLimits(month, year)) {
             return;
@@ -1531,7 +1702,6 @@ function initializeModalCalendarScripts(employeeId) {
 
                 if (day.day !== '') {
                     currentRow += `<td class="${cellClass}" data-date="${day.date}"><span class="day-number">${day.day}</span>${holidayIconHTML}${payrollIcons}</td>`;
-                } else {
                 }
 
                 if ((index + firstDayOfMonthIndex + 1) % 7 === 0) {
@@ -1548,7 +1718,6 @@ function initializeModalCalendarScripts(employeeId) {
                 }
                 newTableHTML += currentRow + '</tr>';
             }
-
 
             calendarTableBody.innerHTML = newTableHTML;
             attachDayClickEvents();
@@ -1571,7 +1740,6 @@ function initializeModalCalendarScripts(employeeId) {
             });
         }
     }
-
 
     prevMonthBtn.addEventListener('click', function () {
         if (this.disabled) return;
@@ -1621,9 +1789,7 @@ function initializeModalCalendarScripts(employeeId) {
     } else {
         console.error("Flatpickr no está disponible o el elemento serviceRealDateInput no existe.");
     }
-
 }
-
 
 // =========================================================================
 // INICIALIZACIÓN AUTOMÁTICA

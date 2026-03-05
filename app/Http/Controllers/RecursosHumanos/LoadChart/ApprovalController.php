@@ -31,9 +31,10 @@ class ApprovalController extends Controller
             ->pluck('employee_id');
     }
 
-    /**
-     * Calcula el day_status basado en todos los elementos de un día específico
-     */
+/**
+ * Calcula el day_status basado en todos los elementos de un día específico
+ * CORREGIDO: Elimina la herencia de estado.
+ */
     private function calculateDayStatus($dailyActivity)
     {
         $hasRejected    = false;
@@ -44,7 +45,6 @@ class ApprovalController extends Controller
         $approvedItems  = 0;
         $reviewedItems  = 0;
 
-        // Verificar el estado de la actividad principal
         if (isset($dailyActivity['activity_type']) &&
             ! empty($dailyActivity['activity_type']) &&
             $dailyActivity['activity_type'] !== 'N') {
@@ -66,7 +66,28 @@ class ApprovalController extends Controller
             }
         }
 
-        // Verificar todos los sub-elementos
+        if (isset($dailyActivity['activity_type_vespertina']) &&
+            ! empty($dailyActivity['activity_type_vespertina']) &&
+            $dailyActivity['activity_type_vespertina'] !== 'N') {
+
+            $totalItems++;
+            // ⭐ CORRECCIÓN: Ahora lee SOLO la vespertina, sin heredar la matutina
+            $vStatus = strtolower($dailyActivity['activity_status_vespertina'] ?? 'under_review');
+
+            switch ($vStatus) {
+                case 'rejected':$hasRejected = true;
+                    break;
+                case 'under_review':$hasUnderReview = true;
+                    break;
+                case 'reviewed':$hasReviewed = true;
+                    $reviewedItems++;
+                    break;
+                case 'approved':$hasApproved = true;
+                    $approvedItems++;
+                    break;
+            }
+        }
+
         $itemTypes = ['food_bonuses', 'field_bonuses', 'services_list'];
 
         foreach ($itemTypes as $type) {
@@ -125,35 +146,30 @@ class ApprovalController extends Controller
         $assignedEmployeeIds = $this->getAssignedEmployeeIds();
         $canSeeFilters       = PermissionHelper::hasDirectPermission('ver_filtros');
 
-        // Obtener la lista de departamentos para el filtro de la vista
-        // Se carga para todos, ya que el select de filtros se construye en el Blade si tienen permiso.
         $departments = Employee::select("department")
             ->whereNotNull("department")
             ->distinct()
             ->orderBy("department")
             ->pluck("department");
 
-        // ⭐ NUEVO: Obtener la lista de cargos (Positions)
         $positions = Employee::select("position")
             ->whereNotNull("position")
             ->distinct()
             ->orderBy("position")
             ->pluck("position");
 
-        // MODIFICACIÓN CLAVE (index): Cargamos TODOS los empleados si tiene 'ver_filtros',
-        // de lo contrario, solo cargamos a los asignados.
+        // ⭐ AQUÍ SE AGREGÓ 'job_title' AL SELECT
         $employeeQuery = Employee::with(['employeeMonthlyWorkLogs' => function ($query) use ($currentMonth, $currentYear) {
             $query->where('month_and_year', Carbon::createFromDate($currentYear, $currentMonth, 1)->format('Y-m'));
         }])
             ->with('squads')
-            ->select('id', 'full_name', 'employee_number', 'position', 'department');
+            ->select('id', 'full_name', 'employee_number', 'position', 'department', 'job_title');
 
         if (! $canSeeFilters) {
             $employeeQuery->whereIn('id', $assignedEmployeeIds);
         }
 
         $employees = $employeeQuery->get();
-        // FIN MODIFICACIÓN
 
         $workLogsData = [];
         foreach ($employees as $employee) {
@@ -168,14 +184,13 @@ class ApprovalController extends Controller
             }
         }
 
-        // Obtenemos todas las asignaciones para poder determinar los permisos en el Blade/JS
         $loadChartAssignments = LoadChartAssignment::all();
         $canSeeAmounts        = PermissionHelper::hasDirectPermission('ver_montos');
         $userPermissions      = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
         return view('modulos.recursoshumanos.loadchart.approval', compact(
             'employees', 'workLogsData', 'fortnightlyConfig', 'monthlyDays', 'currentMonth', 'currentYear',
-            'canSeeAmounts', 'loadChartAssignments', 'userPermissions', 'departments', 'positions' // <--- Agrega 'positions' aquí
+            'canSeeAmounts', 'loadChartAssignments', 'userPermissions', 'departments', 'positions'
         ));
     }
 
@@ -245,11 +260,12 @@ class ApprovalController extends Controller
 
             // MODIFICACIÓN CLAVE (getApprovalData): Cargamos TODOS los empleados si tiene 'ver_filtros',
             // de lo contrario, solo cargamos a los asignados.
+            // ⭐ AQUÍ SE AGREGÓ 'job_title' AL SELECT PARA LAS PETICIONES AJAX
             $employeeQuery = Employee::with(['employeeMonthlyWorkLogs' => function ($query) use ($month, $year) {
                 $query->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'));
             }])
-                ->with('squads')                                                          // Agregamos 'with('squads')'
-                ->select('id', 'full_name', 'employee_number', 'position', 'department'); // Agregamos 'department'
+                ->with('squads')
+                ->select('id', 'full_name', 'employee_number', 'position', 'department', 'job_title');
 
             if (! $canSeeFilters) {
                 $employeeQuery->whereIn('id', $assignedEmployeeIds);
@@ -345,12 +361,19 @@ class ApprovalController extends Controller
     }
 
     /**
+/**
      * Actualiza masivamente el estado de revisión o aprobación para los ítems de una quincena.
      */
     public function updateApprovalStatus(Request $request)
     {
         try {
-            $request->validate(['employee_id' => 'required|integer|exists:employees,id', 'month' => 'required|integer|min:1|max:12', 'year' => 'required|integer|min:2020|max:2030', 'status' => 'required|in:reviewed,approved', 'fortnight' => 'required|in:quincena1,quincena2,full-month']);
+            $request->validate([
+                'employee_id' => 'required|integer|exists:employees,id',
+                'month'       => 'required|integer|min:1|max:12',
+                'year'        => 'required|integer|min:2020|max:2030',
+                'status'      => 'required|in:reviewed,approved',
+                'fortnight'   => 'required|in:quincena1,quincena2,full-month'
+            ]);
 
             $employeeId = $request->employee_id;
             $month      = $request->month;
@@ -358,100 +381,136 @@ class ApprovalController extends Controller
             $newStatus  = strtolower($request->status);
             $fortnight  = $request->fortnight;
             $userId     = auth()->id();
-            $assignment = LoadChartAssignment::where('employee_id', $employeeId)->where(function ($query) use ($userId) {$query->where('reviewer_id', $userId)->orWhere('approver_id', $userId);})->first();
+
+            $assignment = LoadChartAssignment::where('employee_id', $employeeId)
+                ->where(function ($query) use ($userId) {
+                    $query->where('reviewer_id', $userId)->orWhere('approver_id', $userId);
+                })->first();
 
             // Validación de permisos
-            if (! $assignment) {return response()->json(['success' => false, 'message' => 'Acceso denegado. No tiene permisos para modificar el estado de este empleado.'], 403);}
+            if (! $assignment) {
+                return response()->json(['success' => false, 'message' => 'Acceso denegado. No tiene permisos para modificar el estado de este empleado.'], 403);
+            }
             $isReviewer = $assignment->reviewer_id === $userId;
             $isApprover = $assignment->approver_id === $userId;
 
-            if ($newStatus === 'reviewed' && ! $isReviewer) {return response()->json(['success' => false, 'message' => 'No tiene permisos para revisar este registro.'], 403);}
-            if ($newStatus === 'approved' && ! $isApprover) {return response()->json(['success' => false, 'message' => 'No tiene permisos para aprobar este registro.'], 403);}
+            if ($newStatus === 'reviewed' && ! $isReviewer) {
+                return response()->json(['success' => false, 'message' => 'No tiene permisos para revisar este registro.'], 403);
+            }
+            if ($newStatus === 'approved' && ! $isApprover) {
+                return response()->json(['success' => false, 'message' => 'No tiene permisos para aprobar este registro.'], 403);
+            }
 
             $monthAndYear      = Carbon::createFromDate($year, $month, 1)->format('Y-m');
-            $workLog           = EmployeeMonthlyWorkLog::firstOrCreate(['employee_id' => $employeeId, 'month_and_year' => $monthAndYear], ['user_id' => $userId, 'daily_activities' => []]);
+            $workLog           = EmployeeMonthlyWorkLog::firstOrCreate(
+                ['employee_id' => $employeeId, 'month_and_year' => $monthAndYear],
+                ['user_id' => $userId, 'daily_activities' => []]
+            );
             $fortnightlyConfig = FortnightlyConfig::where('year', $year)->where('month', $month)->first();
-            if (! $fortnightlyConfig) {$fortnightlyConfig = $this->createDefaultFortnightlyConfig($year, $month);}
+            if (! $fortnightlyConfig) {
+                $fortnightlyConfig = $this->createDefaultFortnightlyConfig($year, $month);
+            }
 
-            $startDate = null;
-            $endDate   = null;
-            if ($fortnight === 'quincena1') {$startDate = Carbon::parse($fortnightlyConfig->q1_start);
-                $endDate                              = Carbon::parse($fortnightlyConfig->q1_end);} elseif ($fortnight === 'quincena2') {$startDate = Carbon::parse($fortnightlyConfig->q2_start);
-                $endDate                              = Carbon::parse($fortnightlyConfig->q2_end);} else { $startDate = Carbon::createFromDate($year, $month, 1);
-                $endDate                               = Carbon::createFromDate($year, $month, 1)->endOfMonth();}
+            if ($fortnight === 'quincena1') {
+                $startDate = Carbon::parse($fortnightlyConfig->q1_start);
+                $endDate   = Carbon::parse($fortnightlyConfig->q1_end);
+            } elseif ($fortnight === 'quincena2') {
+                $startDate = Carbon::parse($fortnightlyConfig->q2_start);
+                $endDate   = Carbon::parse($fortnightlyConfig->q2_end);
+            } else {
+                $startDate = Carbon::createFromDate($year, $month, 1);
+                $endDate   = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+            }
 
             DB::beginTransaction();
             $dailyActivities = collect($workLog->daily_activities);
             $updated         = false;
             $balance         = EmployeeVacationBalance::firstOrNew(['employee_id' => $employeeId]);
 
-            // Validación de saldo de VACACIONES (MANTENIDA)
+            // Validación Previa de saldo de VACACIONES
             if ($newStatus === 'approved') {
                 $vacationDaysToApprove = $dailyActivities->filter(function ($dailyActivity) use ($startDate, $endDate) {
                     $activityDate = Carbon::parse($dailyActivity['date']);
-                    $activityType = $dailyActivity['activity_type'] ?? null;
+
+                    $activityType = $dailyActivity['activity_type'] ?? 'N';
+                    $vType        = $dailyActivity['activity_type_vespertina'] ?? 'N';
+
+                    // Solo basta con que UN turno sea vacaciones para contar el día completo
+                    $isVacation   = ($activityType === 'VAC' || $vType === 'VAC');
+
                     $oldStatus    = strtolower($dailyActivity['activity_status'] ?? 'under_review');
-                    return $activityDate->between($startDate, $endDate) && $activityType === 'VAC' && $oldStatus !== 'approved';
+                    $oldVStatus   = strtolower($dailyActivity['activity_status_vespertina'] ?? 'under_review');
+                    $isNotApproved = ($oldStatus !== 'approved' && $oldVStatus !== 'approved');
+
+                    return $activityDate->between($startDate, $endDate) && $isVacation && $isNotApproved;
                 })->count();
 
-                if ($balance->vacation_days_available < $vacationDaysToApprove) {
+                if ($vacationDaysToApprove > 0 && $balance->vacation_days_available < $vacationDaysToApprove) {
                     DB::rollback();
                     return response()->json(['success' => false, 'message' => "No hay suficientes días de vacaciones disponibles para aprobar."], 422);
                 }
-
-                // ❌ SE ELIMINA LA VALIDACIÓN DE SALDO DE DESCANSOS ('D')
             }
 
-            // Recorrer y aplicar cambios individuales y actualizar saldos
+            // Recorrer y aplicar cambios individuales
             $dailyActivities = $dailyActivities->map(function ($dailyActivity) use ($startDate, $endDate, $newStatus, $isReviewer, $isApprover, &$updated, $employeeId) {
                 $activityDate = Carbon::parse($dailyActivity['date']);
-                if ($activityDate->between($startDate, $endDate)) {
-                    $oldActivityStatus = strtolower($dailyActivity['activity_status'] ?? 'under_review');
-                    $tempUpdated       = false;
 
-                    // 1. Actividad principal
+                if ($activityDate->between($startDate, $endDate)) {
+                    $oldActivityStatus   = strtolower($dailyActivity['activity_status'] ?? 'under_review');
+                    $oldVespertinaStatus = strtolower($dailyActivity['activity_status_vespertina'] ?? 'under_review');
+                    $tempUpdated         = false;
+
+                    // 1. Actividad principal (Matutina)
                     $dailyActivity = $this->updateItemStatus($dailyActivity, 'activity_status', $oldActivityStatus, $newStatus, $isReviewer, $isApprover, $tempUpdated);
+
+                    // ⭐ CORRECCIÓN: 1.5 Actividad Vespertina (Ahora sí se actualiza en la aprobación masiva)
+                    if (isset($dailyActivity['activity_type_vespertina']) && $dailyActivity['activity_type_vespertina'] !== 'N') {
+                        $dailyActivity = $this->updateItemStatus($dailyActivity, 'activity_status_vespertina', $oldVespertinaStatus, $newStatus, $isReviewer, $isApprover, $tempUpdated);
+                    }
 
                     // 2. Sub-ítems
                     $itemTypes = ['food_bonuses', 'field_bonuses', 'services_list'];
                     foreach ($itemTypes as $type) {
                         if (isset($dailyActivity[$type]) && is_array($dailyActivity[$type])) {
-                            $dailyActivity[$type] = array_map(function ($item) use ($newStatus, $isReviewer, $isApprover, &$updated) {
+                            $dailyActivity[$type] = array_map(function ($item) use ($newStatus, $isReviewer, $isApprover, &$tempUpdated) {
                                 $currentItemStatus = strtolower($item['status'] ?? 'under_review');
                                 $tempSubUpdated    = false;
-                                $item              = $this->updateItemStatus($item, 'status', $currentItemStatus, $newStatus, $isReviewer, $isApprover, $tempSubUpdated);
+                                $item = $this->updateItemStatus($item, 'status', $currentItemStatus, $newStatus, $isReviewer, $isApprover, $tempSubUpdated);
                                 if ($tempSubUpdated) {
-                                    $updated = true;
+                                    $tempUpdated = true;
                                 }
-
                                 return $item;
                             }, $dailyActivity[$type]);
                         }
                     }
-                    if ($tempUpdated) {
-                        $updated = true;
-                    }
-
-                    $newActivityStatus = strtolower($dailyActivity['activity_status'] ?? 'under_review');
 
                     // 3. Ajuste de Saldos (SOLO VACACIONES)
-                    if ($newActivityStatus !== $oldActivityStatus) {
-                        $activityType = $dailyActivity['activity_type'] ?? null;
-                        $balance      = EmployeeVacationBalance::where('employee_id', $employeeId)->first();
+                    if ($tempUpdated) {
+                        $updated = true;
 
-                        // Lógica VACACIONES (MANTENIDA)
-                        if ($activityType === 'VAC') {
-                            if ($newActivityStatus === 'approved' && $oldActivityStatus !== 'approved') {
-                                $balance->decrement('vacation_days_available');
-                            } elseif ($newActivityStatus === 'rejected' && $oldActivityStatus === 'approved') {
-                                $balance->increment('vacation_days_available');
+                        $newActivityStatus   = strtolower($dailyActivity['activity_status'] ?? 'under_review');
+                        $newVespertinaStatus = strtolower($dailyActivity['activity_status_vespertina'] ?? 'under_review');
+
+                        $activityType = $dailyActivity['activity_type'] ?? 'N';
+                        $vType        = $dailyActivity['activity_type_vespertina'] ?? 'N';
+
+                        $isVacation = ($activityType === 'VAC' || $vType === 'VAC');
+
+                        if ($isVacation) {
+                            $wasApproved   = ($oldActivityStatus === 'approved' || $oldVespertinaStatus === 'approved');
+                            $isNowApproved = ($newActivityStatus === 'approved' || $newVespertinaStatus === 'approved');
+
+                            $balance = EmployeeVacationBalance::where('employee_id', $employeeId)->first();
+
+                            // ⭐ CORRECCIÓN: Descuenta 1 solo día garantizado, comparando el estado general del "Día"
+                            if ($balance) {
+                                if ($isNowApproved && !$wasApproved) {
+                                    $balance->decrement('vacation_days_available');
+                                } elseif (!$isNowApproved && $wasApproved) {
+                                    $balance->increment('vacation_days_available');
+                                }
+                                $balance->save();
                             }
-                        }
-
-                        // ❌ SE ELIMINA LÓGICA DESCANSOS (D)
-
-                        if ($balance) {
-                            $balance->save();
                         }
                     }
 
@@ -460,14 +519,17 @@ class ApprovalController extends Controller
                 return $dailyActivity;
             })->toArray();
 
-            // ... (Guardado y commit) ...
-            if ($updated) {$workLog->daily_activities = $dailyActivities;
-                $workLog->save();}
+            if ($updated) {
+                $workLog->daily_activities = $dailyActivities;
+                $workLog->save();
+            }
+
             $this->updateLogStatus($workLog, $newStatus, $userId);
             DB::commit();
 
             return response()->json([
-                'success' => true, 'message' => "Estado de la {$fortnight} actualizado a '{$newStatus}' correctamente.",
+                'success' => true,
+                'message' => "Estado de la {$fortnight} actualizado a '{$newStatus}' correctamente.",
                 'new_balances' => $this->getEmployeeBalances($employeeId),
             ]);
         } catch (\Exception $e) {
@@ -477,9 +539,10 @@ class ApprovalController extends Controller
         }
     }
 
-/**
- * Updates multiple daily work log items (individual modal save)
- */
+    /**
+     * Updates multiple daily work log items (individual modal save)
+     * CORREGIDO: Permite al Aprobador marcar como Revisado.
+     */
     public function updateMultipleStatuses(Request $request)
     {
         try {
@@ -501,14 +564,12 @@ class ApprovalController extends Controller
             $year       = $request->input('year');
             $userId     = auth()->id();
 
-            // Obtener empleado y asignación
             $assignment = LoadChartAssignment::where('employee_id', $employeeId)->where(function ($query) use ($userId) {
                 $query->where('reviewer_id', $userId)->orWhere('approver_id', $userId);
             })->first();
 
-            // Validación de Permisos
             if (! $assignment) {
-                return response()->json(['success' => false, 'message' => 'Acceso denegado. No tiene permisos para modificar el estado de este empleado.'], 403);
+                return response()->json(['success' => false, 'message' => 'Acceso denegado.'], 403);
             }
 
             $isReviewer = $assignment->reviewer_id === $userId;
@@ -525,10 +586,10 @@ class ApprovalController extends Controller
             $dailyActivities = $log->daily_activities;
             $updated         = false;
             $balance         = EmployeeVacationBalance::firstOrNew(['employee_id' => $employeeId]);
+            $rejectionData   = [];
 
-            // 👇 ESTRUCTURA PARA EL CORREO: Agrupar todos los rechazos por fecha
-            $rejectionData = [];
-            // 👆
+            $vacationDeductedForDate = [];
+            $vacationRefundedForDate = [];
 
             foreach ($changes as $change) {
                 $date               = $change['date'];
@@ -541,33 +602,62 @@ class ApprovalController extends Controller
                 if ($dailyActivityIndex !== false) {
                     $dailyActivity = &$dailyActivities[$dailyActivityIndex];
                     $activityType  = $dailyActivity['activity_type'] ?? null;
-                    $oldStatus     = ($itemType === 'activity') ? strtolower($dailyActivity['activity_status'] ?? 'under_review') : strtolower(($dailyActivity[$itemType][$itemIndex]['status'] ?? 'under_review'));
+                    $vType         = $dailyActivity['activity_type_vespertina'] ?? null;
 
-                    // --- VALIDACIÓN DE SALDO DE VACACIONES (MANTENIDA) ---
-                    if ($activityType === 'VAC' && $itemType === 'activity' && $newStatus === 'approved' && $oldStatus !== 'approved') {
-                        if ($balance->vacation_days_available <= 0) {
-                            DB::rollback();
-                            return response()->json(['success' => false, 'message' => 'No hay días de vacaciones disponibles para aprobar la actividad del día ' . $date . '.'], 422);
-                        }
+                    $oldStatus = 'under_review';
+                    if ($itemType === 'activity') {
+                        $oldStatus = strtolower($dailyActivity['activity_status'] ?? 'under_review');
+                    } elseif ($itemType === 'activity_vespertina') {
+                        $oldStatus = strtolower($dailyActivity['activity_status_vespertina'] ?? 'under_review');
+                    } else {
+                        $oldStatus = strtolower(($dailyActivity[$itemType][$itemIndex]['status'] ?? 'under_review'));
                     }
-
-                    // ❌ SE ELIMINA LA VALIDACIÓN DE SALDO DE DESCANSOS ('D')
 
                     $tempUpdated = false;
 
-                    if ($itemType === 'activity') {
-                        // REGLAS: Se mantiene la lógica de bloqueo para no degradar Aprobado
-                        $canUpdate = ($newStatus === 'rejected') ? ($isReviewer || $isApprover) : (($newStatus === 'reviewed' && $isReviewer) || ($newStatus === 'approved' && $isApprover) || ($newStatus === 'under_review' && ($isReviewer || $isApprover)));
+                    if ($itemType === 'activity' || $itemType === 'activity_vespertina') {
+                        // ⭐ CORRECCIÓN: ($isReviewer || $isApprover) ahora pueden poner "Revisado"
+                        $canUpdate = ($newStatus === 'rejected')
+                            ? ($isReviewer || $isApprover)
+                            : (($newStatus === 'reviewed' && ($isReviewer || $isApprover)) || ($newStatus === 'approved' && $isApprover) || ($newStatus === 'under_review' && ($isReviewer || $isApprover)));
+
                         if ($oldStatus === 'approved' && ($newStatus === 'reviewed' || $newStatus === 'under_review')) {$canUpdate = false;}
 
                         if ($canUpdate && $oldStatus !== $newStatus) {
-                            $dailyActivity['activity_status']  = ucfirst($newStatus);
-                            $dailyActivity['rejection_reason'] = $rejectionReason;
-                            $tempUpdated                       = true;
 
-                            // 👇 REGISTRAR RECHAZO PARA CORREO (Activity)
+                            if ($activityType === 'VAC' || $vType === 'VAC') {
+                                if ($newStatus === 'approved' && $oldStatus !== 'approved') {
+                                    if (! isset($vacationDeductedForDate[$date])) {
+                                        if ($balance->vacation_days_available <= 0) {
+                                            DB::rollback();
+                                            return response()->json(['success' => false, 'message' => 'No hay días de vacaciones suficientes para aprobar el día ' . $date], 422);
+                                        }
+                                        $balance->decrement('vacation_days_available');
+                                        $vacationDeductedForDate[$date] = true;
+                                    }
+                                } elseif ($newStatus === 'rejected' && $oldStatus === 'approved') {
+                                    if (! isset($vacationRefundedForDate[$date])) {
+                                        $balance->increment('vacation_days_available');
+                                        $vacationRefundedForDate[$date] = true;
+                                    }
+                                }
+                                $balance->save();
+                            }
+
+                            if ($itemType === 'activity_vespertina') {
+                                $dailyActivity['activity_status_vespertina']  = ucfirst($newStatus);
+                                $dailyActivity['rejection_reason_vespertina'] = $rejectionReason;
+                            } else {
+                                $dailyActivity['activity_status']  = ucfirst($newStatus);
+                                $dailyActivity['rejection_reason'] = $rejectionReason;
+                            }
+
+                            $tempUpdated = true;
+
                             if ($newStatus === 'rejected') {
-                                $itemTypeLabel = 'Actividad Principal (' . ($activityType ?: 'N') . ')';
+                                $itemTypeLabel = ($itemType === 'activity_vespertina')
+                                    ? 'Actividad Vespertina (' . ($dailyActivity['activity_type_vespertina'] ?? 'N') . ')'
+                                    : 'Actividad Principal (' . ($activityType ?: 'N') . ')';
 
                                 $rejectionData[$date][] = [
                                     'item_type'  => $itemType,
@@ -576,13 +666,16 @@ class ApprovalController extends Controller
                                     'reason'     => $rejectionReason,
                                 ];
                             }
-                            // 👆
                         }
 
                     } else if (isset($dailyActivity[$itemType]) && is_array($dailyActivity[$itemType]) && isset($dailyActivity[$itemType][$itemIndex])) {
                         $item = &$dailyActivity[$itemType][$itemIndex];
-                        // REGLAS: Se mantiene la lógica de bloqueo para no degradar Aprobado
-                        $canUpdate = ($newStatus === 'rejected') ? ($isReviewer || $isApprover) : (($newStatus === 'reviewed' && $isReviewer) || ($newStatus === 'approved' && $isApprover) || ($newStatus === 'under_review' && ($isReviewer || $isApprover)));
+
+                        // ⭐ CORRECCIÓN: Mismo ajuste de permisos para sub-ítems
+                        $canUpdate = ($newStatus === 'rejected')
+                            ? ($isReviewer || $isApprover)
+                            : (($newStatus === 'reviewed' && ($isReviewer || $isApprover)) || ($newStatus === 'approved' && $isApprover) || ($newStatus === 'under_review' && ($isReviewer || $isApprover)));
+
                         if ($oldStatus === 'approved' && ($newStatus === 'reviewed' || $newStatus === 'under_review')) {$canUpdate = false;}
 
                         if ($canUpdate && $oldStatus !== $newStatus) {
@@ -590,16 +683,12 @@ class ApprovalController extends Controller
                             $item['rejection_reason'] = $rejectionReason;
                             $tempUpdated              = true;
 
-                            // 👇 REGISTRAR RECHAZO PARA CORREO (Sub-item)
                             if ($newStatus === 'rejected') {
                                 $itemTypeLabel = $this->getItemTypeLabel($itemType);
 
-                                // Para servicios, mostrar el nombre del servicio si está disponible
                                 if ($itemType === 'services_list' && isset($item['service_name'])) {
                                     $itemTypeLabel .= ' - ' . $item['service_name'];
-                                }
-                                // Para bonos, mostrar el tipo si está disponible
-                                elseif (($itemType === 'food_bonuses' || $itemType === 'field_bonuses') && isset($item['bonus_type'])) {
+                                } elseif (($itemType === 'food_bonuses' || $itemType === 'field_bonuses') && isset($item['bonus_type'])) {
                                     $baseLabel = $this->getItemTypeLabel($itemType);
                                     $bonusType = $item['bonus_type'] ?? 'Genérico';
                                     if ($bonusType !== $baseLabel) {
@@ -614,24 +703,12 @@ class ApprovalController extends Controller
                                     'reason'     => $rejectionReason,
                                 ];
                             }
-                            // 👆
-
                         }
-
                         unset($item);
                     }
 
-                    // --- AJUSTE DE SALDOS ---
                     if ($tempUpdated) {
                         $updated = true;
-                        // Lógica VACACIONES (MANTENIDA)
-                        if ($activityType === 'VAC' && $itemType === 'activity') {
-                            if ($newStatus === 'approved' && $oldStatus !== 'approved') {$balance->decrement('vacation_days_available');} elseif ($newStatus === 'rejected' && $oldStatus === 'approved') {$balance->increment('vacation_days_available');}
-                            $balance->save();
-                        }
-
-                        // ❌ SE ELIMINA LÓGICA DESCANSOS (D)
-
                     }
 
                     $dailyActivity['day_status'] = $this->calculateDayStatus($dailyActivity);
@@ -644,14 +721,11 @@ class ApprovalController extends Controller
                 $log->save();
             }
 
-            // 👇 ENVIAR CORREOS DE NOTIFICACIÓN POR RECHAZOS - CAMBIO CLAVE
             $rejectionOccurred = ! empty($rejectionData);
             if ($rejectionOccurred) {
                 $this->sendRejectionEmails($employeeId, $rejectionData, $userId);
             }
-            // 👆
 
-            // Actualizar status del log (reviewed_at, approved_at)
             $this->updateLogStatus($log, 'approved', $userId);
             $this->updateLogStatus($log, 'reviewed', $userId);
 
@@ -662,7 +736,7 @@ class ApprovalController extends Controller
                 'message'         => 'Estados actualizados correctamente.',
                 'updated'         => $updated,
                 'new_balances'    => $this->getEmployeeBalances($employeeId),
-                'rejections_sent' => $rejectionOccurred, // <-- Bandera enviada al frontend
+                'rejections_sent' => $rejectionOccurred,
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -670,22 +744,21 @@ class ApprovalController extends Controller
             return response()->json(['success' => false, 'message' => 'Error al actualizar: ' . $e->getMessage()], 500);
         }
     }
-
     /**
      * Obtiene la etiqueta del tipo de ítem para el correo
      */
     private function getItemTypeLabel($itemType)
     {
         $labels = [
-            'activity'      => 'Actividad Principal',
-            'food_bonuses'  => 'Bono de Comida',
-            'field_bonuses' => 'Bono de Campo',
-            'services_list' => 'Servicio',
+            'activity'            => 'Actividad Principal (Matutina)',
+            'activity_vespertina' => 'Actividad Vespertina', // Agregado para el correo
+            'food_bonuses'        => 'Bono de Comida',
+            'field_bonuses'       => 'Bono de Campo',
+            'services_list'       => 'Servicio',
         ];
 
         return $labels[$itemType] ?? $itemType;
     }
-
     /**
      * Envía correos de notificación por rechazos - MEJORADO CON INFORMACIÓN DETALLADA
      */
@@ -736,48 +809,32 @@ class ApprovalController extends Controller
         }
     }
 
-    /**
-     * Obtiene información detallada de los elementos rechazados
-     * * @param array $rejectedItemsByDay Contiene ['item_type', 'item_index', 'label', 'reason']
-     */
+/**
+ * Obtiene información detallada de los elementos rechazados
+ */
     private function getRejectedItemsWithDetails(array $rejectedItemsByDay, int $employeeId, string $date)
     {
         $detailedItems = [];
-
-        // Obtener el work log para esta fecha
-        $monthAndYear = Carbon::parse($date)->format('Y-m');
-        $workLog      = EmployeeMonthlyWorkLog::where('employee_id', $employeeId)
+        $monthAndYear  = Carbon::parse($date)->format('Y-m');
+        $workLog       = EmployeeMonthlyWorkLog::where('employee_id', $employeeId)
             ->where('month_and_year', $monthAndYear)
             ->first();
 
-        // Si no hay log, devolvemos un array con información mínima
         if (! $workLog) {
             return collect($rejectedItemsByDay)->map(function ($item) {
-                return [
-                    'type'             => $item['label'] ?? 'Ítem desconocido',
-                    'description'      => 'Log mensual no encontrado',
-                    'details'          => null,
-                    'rejection_reason' => $item['reason'] ?? 'Sin motivo especificado',
-                ];
+                return ['type' => $item['label'] ?? 'Ítem desconocido', 'description' => 'Log no encontrado', 'details' => null, 'rejection_reason' => $item['reason'] ?? 'Sin motivo especificado'];
             })->toArray();
         }
 
         $dailyActivities = collect($workLog->daily_activities);
         $dailyActivity   = $dailyActivities->firstWhere('date', $date);
 
-        // Si no hay actividad para el día, devolvemos un array con información mínima
         if (! $dailyActivity) {
             return collect($rejectedItemsByDay)->map(function ($item) {
-                return [
-                    'type'             => $item['label'] ?? 'Ítem desconocido',
-                    'description'      => 'Actividad diaria no encontrada',
-                    'details'          => null,
-                    'rejection_reason' => $item['reason'] ?? 'Sin motivo especificado',
-                ];
+                return ['type' => $item['label'] ?? 'Ítem desconocido', 'description' => 'Actividad no encontrada', 'details' => null, 'rejection_reason' => $item['reason'] ?? 'Sin motivo especificado'];
             })->toArray();
         }
 
-        // Recorremos los ítems que fueron rechazados (provienen de updateMultipleStatuses)
         foreach ($rejectedItemsByDay as $rejectedItemInfo) {
             $itemType  = $rejectedItemInfo['item_type'];
             $itemIndex = $rejectedItemInfo['item_index'];
@@ -785,22 +842,22 @@ class ApprovalController extends Controller
             $reason    = $rejectedItemInfo['reason'];
 
             $detailedItem = [
-                'type'             => $itemLabel, // Ej: Actividad Principal (B) o Bono de Comida - Desayuno
+                'type'             => $itemLabel,
                 'description'      => null,
                 'details'          => null,
                 'rejection_reason' => $reason,
             ];
 
-            // Para actividad principal
-            if ($itemType === 'activity') {
-                $activityType = $dailyActivity['activity_type'] ?? 'N';
+            // 👉 SE AÑADE SOPORTE PARA IDENTIFICAR LA VESPERTINA
+            if ($itemType === 'activity' || $itemType === 'activity_vespertina') {
+                $activityType = ($itemType === 'activity_vespertina')
+                    ? ($dailyActivity['activity_type_vespertina'] ?? 'N')
+                    : ($dailyActivity['activity_type'] ?? 'N');
 
-                // AJUSTE 1: Unimos la descripción a la etiqueta principal para mayor cohesión.
                 $activityDesc                = $this->getActivityTypeDescription($activityType);
                 $detailedItem['type']        = 'Actividad: ' . $activityDesc;
-                $detailedItem['description'] = null; // Eliminamos la descripción separada
+                $detailedItem['description'] = null;
 
-                // Los detalles adicionales (proyecto, work_description) van en 'details'
                 $simpleActivities = ['D', 'VAC', 'M', 'PE', 'A', 'N'];
                 if (! in_array($activityType, $simpleActivities)) {
                     if (isset($dailyActivity['activity_details'])) {
@@ -811,37 +868,24 @@ class ApprovalController extends Controller
                         $detailedItem['details'] = 'Descripción: ' . $dailyActivity['work_description'];
                     }
                 }
-            }
-
-            // Para bonos de comida y campo
-            elseif ($itemType === 'food_bonuses' || $itemType === 'field_bonuses') {
-                // CORRECCIÓN CLAVE: Extraer solo el detalle del bono y usar solo 'Bono: ' como prefijo.
+            } elseif ($itemType === 'food_bonuses' || $itemType === 'field_bonuses') {
                 if (isset($rejectedItemInfo['label'])) {
                     $itemLabel = $rejectedItemInfo['label'];
-                    $baseFood  = $this->getItemTypeLabel('food_bonuses');  // 'Bono de Comida'
-                    $baseField = $this->getItemTypeLabel('field_bonuses'); // 'Bono de Campo'
+                    $baseFood  = $this->getItemTypeLabel('food_bonuses');
+                    $baseField = $this->getItemTypeLabel('field_bonuses');
 
                     $detalle = $itemLabel;
-
-                    // 1. Eliminar la etiqueta genérica y el separador ' - ' para obtener solo el detalle/tipo.
                     $detalle = str_replace($baseFood . ' - ', '', $detalle);
                     $detalle = str_replace($baseField . ' - ', '', $detalle);
 
-                    // 2. Si el detalle es idéntico a la etiqueta base (caso Bono de Comida - Bono de Comida), usar solo la base.
                     if ($detalle === $baseFood || $detalle === $baseField) {
-                        $detalle = $detalle; // Se deja el nombre del bono (ej: "Bono de Comida")
+                        $detalle = $detalle;
                     }
-
-                    // 3. Crear el formato final: Bono: [Detalle del Bono]
                     $detailedItem['type'] = 'Bono: ' . $detalle;
                 }
                 $detailedItem['description'] = null;
                 $detailedItem['details']     = null;
-            }
-
-            // Para servicios (se mantiene el formato Servicio: [Nombre])
-            elseif ($itemType === 'services_list') {
-                // AJUSTE 3: Hacemos la etiqueta más concisa para Servicios.
+            } elseif ($itemType === 'services_list') {
                 if (isset($rejectedItemInfo['label'])) {
                     $detailedItem['type'] = str_replace('Servicio - ', 'Servicio: ', $rejectedItemInfo['label']);
                 }

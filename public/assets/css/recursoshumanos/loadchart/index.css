@@ -104,7 +104,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* Añadido para móvil */
 }
 
 .logo-container {
@@ -259,7 +258,8 @@ body {
 
 .employee-header-content {
     flex: 1;
-    min-width: 0; /* Permite que el contenido se reduzca */
+    min-width: 0;
+    /* Permite que el contenido se reduzca */
 }
 
 .employee-header h2 {
@@ -274,10 +274,14 @@ body {
     font-size: 18px;
     font-weight: 700;
     /* --- INICIO DE AJUSTE PARA ENVOLVER EN VARIAS LÍNEAS --- */
-    white-space: normal; /* Permite que el texto se envuelva */
-    overflow: visible; /* Asegura que el texto sea visible aunque se envuelva */
-    text-overflow: clip; /* Quita el recorte con puntos suspensivos */
-    line-height: 1.2; /* Ajusta la altura de la línea para espacio de 2 filas */
+    white-space: normal;
+    /* Permite que el texto se envuelva */
+    overflow: visible;
+    /* Asegura que el texto sea visible aunque se envuelva */
+    text-overflow: clip;
+    /* Quita el recorte con puntos suspensivos */
+    line-height: 1.2;
+    /* Ajusta la altura de la línea para espacio de 2 filas */
     /* --- FIN DE AJUSTE --- */
 }
 
@@ -531,38 +535,7 @@ body {
     text-align: left;
 }
 
-/* En pantallas pequeñas: centrado y tamaño ajustado */
-@media (max-width: 768px) {
 
-    /* MODIFICACIÓN CLAVE: Ajuste del Contenedor de Tags */
-    .activity-tag {
-        text-align: center;
-        /* Centra el texto */
-        padding: 2px 1px;
-        /* Reduce el padding para más espacio */
-        font-size: 8px;
-        /* Reduce el tamaño de la fuente */
-        min-height: 14px;
-        line-height: 10px;
-        margin: 2px auto 0 auto;
-        /* Usa margen auto para centrar horizontalmente, 0 arriba */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 95%;
-
-        /* Ajusta el ancho para dejar un pequeño margen dentro de la celda */
-        max-width: 95%;
-        /* Asegura que no se exceda este tamaño */
-        box-sizing: border-box;
-        /* Asegura que padding y border no afecten el ancho */
-    }
-
-    .calendar td {
-        padding: 2px;
-        /* Reduce un poco el padding de las celdas para dar más espacio */
-    }
-}
 
 /* Colores de tags de actividad */
 .activity-tag.work-base {
@@ -1403,45 +1376,98 @@ body {
 /* Media Query para Móviles/Tabletas pequeñas (<= 768px) */
 @media (max-width: 768px) {
 
-    /* --- HEADER CORREGIDO --- */
+    /* --- HEADER ESTILO APP (UNA SOLA FILA) --- */
     .header {
-        padding: 8px 10px;
+        padding: 10px 15px;
+        flex-direction: row;
+        /* Fuerza a que se mantenga en línea horizontal */
+        flex-wrap: nowrap;
         align-items: center;
-        flex-direction: column; /* <-- **AJUSTE CLAVE 2: En móvil, apila logo y nav** */
+        gap: 15px;
+        height: 60px;
+        /* Altura fija para mantener el diseño consistente */
+    }
+
+    /* Logo ajustado y sin ocupar el 100% de la pantalla */
+    .logo-container {
+        width: auto;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        /* Evita que el logo se aplaste */
     }
 
     .logo-img {
-        width: 75px;
-        /* LOGO MÁS PEQUEÑO: 75px en lugar de 90px */
-        height: 30px;
+        width: auto;
+        height: 35px;
+        /* Altura idéntica al ejemplo que pasaste */
+        display: flex;
+        align-items: center;
     }
 
-    .logo-container {
-        width: 100%;
-        justify-content: center;
-        margin-bottom: 8px;
+    .logo-img img {
+        width: auto;
+        height: 100%;
+        object-fit: contain;
     }
 
+    /* Navegación alineada a la derecha o con scroll si son muchos botones */
     .nav-links {
-        width: 100%;
-        justify-content: space-around;
-        gap: 0;
+        width: auto;
+        /* Toma el espacio restante */
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+        /* Empuja los iconos a la derecha */
+        gap: 8px;
+        overflow-x: auto;
+        /* Permite scroll horizontal si hay muchos iconos */
+        scrollbar-width: none;
+        /* Oculta la barra en Firefox */
     }
 
+    .nav-links::-webkit-scrollbar {
+        display: none;
+        /* Oculta la barra en Chrome/Safari/Edge */
+    }
+
+    /* Botones circulares tipo App (solo icono) */
     .nav-links a {
-        font-size: 0;
-        padding: 8px 5px;
-        min-width: 40px;
+        font-size: 0 !important;
+        /* Oculta el texto */
+        padding: 0;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        /* Evita que se encojan */
+        border-radius: 50%;
+        display: flex;
         justify-content: center;
+        align-items: center;
+        flex-shrink: 0;
+        background: #f1f5f9;
+        /* Fondo gris claro para los botones */
+        border: 1px solid #e2e8f0;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+        background-color: var(--dark-gray);
+        border-color: var(--dark-gray);
     }
 
     .nav-links a i {
-        margin-right: 0;
-        font-size: 16px;
+        font-size: 16px !important;
+        margin: 0 !important;
+        display: block;
     }
 
-    /* ---------------------- */
+    /* Ajuste del badge de notificación para los botones circulares */
+    .notification-badge {
+        top: -2px;
+        right: -2px;
+    }
 
+    /* --- RESTO DEL CONTENIDO PARA MÓVILES --- */
     .container {
         padding: 0 8px;
     }
@@ -1466,7 +1492,6 @@ body {
         margin: 0 auto;
     }
 
-    /* En móvil, el contenedor se vuelve full width, no necesita min-width: 0 porque ya no es un flex-item con espacio restringido */
     .employee-header-content {
         flex: 1;
         min-width: auto;
@@ -1474,12 +1499,10 @@ body {
     }
 
     .employee-name-header {
-        /* Asegura centrado en la vista de columna si el nombre es corto, pero sigue recortando si es necesario */
         text-align: center;
         width: 100%;
-        line-height: 1.2; /* Permite que se envuelva en dos líneas en móvil también */
+        line-height: 1.2;
     }
-
 
     .employee-info {
         grid-template-columns: 1fr;
@@ -1511,9 +1534,9 @@ body {
 
     .btn {
         flex: 1;
+        justify-content: center;
     }
 
-    /* CALENDARIO */
     .calendar {
         min-width: 500px;
         table-layout: fixed;
@@ -1526,24 +1549,21 @@ body {
         width: 14.2857%;
     }
 
-    /* MODIFICACIÓN CLAVE SOLICITADA */
     .day-header-info {
         position: static;
-        /* CAMBIO: Eliminar la posición absoluta */
         top: initial;
         right: initial;
         justify-content: flex-end;
-        /* Alinear los iconos a la derecha del flujo normal */
         margin-bottom: 2px;
     }
 
     .day-number {
         position: relative;
-        /* Asegurar que el número tenga su propia capa y prioridad visual */
         top: 0;
         left: 0;
+        font-size: 12px;
+        margin-bottom: 2px;
     }
-
 
     .activity-tag {
         text-align: center;
@@ -1554,19 +1574,12 @@ body {
         margin: 1px auto 0 auto;
         display: block;
         width: 95%;
-        /* Mantiene el ancho controlado para que quepan */
         box-sizing: border-box;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .day-number {
-        font-size: 12px;
-        margin-bottom: 2px;
-    }
-
-    /* MODAL EN MÓVIL */
     .modal-content {
         margin: 5px;
         width: calc(100% - 10px);
@@ -1589,11 +1602,6 @@ body {
         flex-direction: column;
         padding: 10px;
     }
-
-    .btn {
-        width: 100%;
-        justify-content: center;
-    }
 }
 
 /* Responsive para Móviles Muy Pequeños (<= 480px) */
@@ -1607,22 +1615,27 @@ body {
     }
 
     .header {
-        padding: 6px 8px;
+        padding: 6px 10px;
+        gap: 8px;
     }
 
     .logo-img {
-        width: 65px;
-        /* LOGO AÚN MÁS PEQUEÑO: 65px */
-        height: 25px;
+        height: 28px;
+        /* Aún más pequeño pero proporcionado */
+    }
+
+    .nav-links {
+        gap: 5px;
     }
 
     .nav-links a {
-        font-size: 0;
-        padding: 5px 6px;
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
     }
 
     .nav-links a i {
-        font-size: 14px;
+        font-size: 14px !important;
     }
 
     .employee-details {
@@ -1656,26 +1669,16 @@ body {
         min-height: 65px;
     }
 
-
-    /* Ajuste de actividad para móviles muy pequeños */
     .activity-tag {
         font-size: 7px;
-        /* Fuente más pequeña para que quepa */
         padding: 1px;
         min-height: 10px;
         line-height: 8px;
-        margin: 1px auto 0 auto;
-        display: block;
-        width: 95%;
-        /* Mantiene el ancho controlado para que quepan */
-        box-sizing: border-box;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
-     .activity-legend {
-        grid-template-columns: repeat(4, 1fr);
+    .activity-legend {
+        grid-template-columns: repeat(3, 1fr);
+        /* 3 columnas en vez de 4 para que se lea mejor */
         font-size: 10px;
     }
 
@@ -1762,7 +1765,6 @@ body {
         max-width: 550px;
     }
 
-    /* En pantallas grandes los tags se alinean a la izquierda */
     .activity-tag {
         text-align: left;
     }

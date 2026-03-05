@@ -14,7 +14,7 @@
                     <div class="period-navigation">
                         <button class="period-btn active" id="quincena1">Quincena 1</button>
                         <button class="period-btn" id="quincena2">Quincena 2</button>
-                        <button class="period-btn" id="full-month">Mes Completo</button>
+                        <button class="period-btn" id="full-month">Mes</button>
                         <button class="period-btn" id="prev-period"><i class="fas fa-chevron-left"></i></button>
                         <span class="current-period-info" id="current-period">{{ now()->locale('es')->monthName }}
                             {{ now()->year }}</span>
@@ -22,22 +22,29 @@
                     </div>
                 </div>
 
-                <div class="approval-actions">
-                    {{-- NUEVO BOTÓN DE FILTROS --}}
+               <div class="approval-actions">
+                    {{-- BOTÓN DE FILTROS NORMALES --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
-                        <button class="back-btn" id="toggle-filters-btn" aria-expanded="false"
-                            aria-controls="filters-container">
+                        <button class="back-btn" id="toggle-filters-btn" aria-expanded="false" aria-controls="filters-container">
                             <i class="fas fa-filter"></i> Abrir Filtros
                         </button>
                     @endif
-                    {{-- ... (Resto de botones de acción: Control de Cuadrillas, Info Servicios, Días Quincena, Volver) ... --}}
+
+                    {{-- ⭐ NUEVO BOTÓN PARA AUXILIAR PAL (Solo para quienes tienen permiso ver_guardias) --}}
+                    @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_guardias'))
+                        <button class="back-btn" id="toggle-auxiliar-pal-btn" style="background-color: #4a5568; color: white;">
+                            <i class="fas fa-user-shield"></i> Ver Auxiliar PAL
+                        </button>
+                    @endif
+
+                    {{-- Control de Cuadrillas --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('control_cuadrillas'))
                         <button class="squad-btn" id="squad-control">
                             <i class="fas fa-users-cog"></i> Control de Cuadrillas
                         </button>
                     @endif
 
-                    {{-- Info de Servicios (Se mantiene visible) --}}
+                    {{-- Info de Servicios --}}
                     <button class="services-info-btn" id="services-info">
                         <i class="fas fa-tasks"></i> Info de Servicios
                     </button>
@@ -49,7 +56,7 @@
                         </button>
                     @endif
 
-                    {{-- Volver al Calendario (Se asume visible para todos) --}}
+                    {{-- Volver al Calendario --}}
                     <button class="back-btn" id="back-to-calendar" data-route="/calendar">
                         <i class="fas fa-arrow-left"></i> Volver al Calendario
                     </button>
@@ -167,11 +174,15 @@
 
             <div class="table-container">
                 <table class="approval-table" id="approval-table">
-                    <thead>
+                 <thead>
                         <tr class="header-row">
                             <th rowspan="2">Nombre</th>
                             <th rowspan="2">KPI</th>
-                            <th colspan="{{ count($monthlyDays) }}" id="days-columns">Días del Período</th>
+                            {{-- ⭐ CORRECCIÓN: Contar solo los días de la Q1 desde el principio --}}
+                            @php
+                                $q1DaysCount = collect($monthlyDays)->where('is_quincena_1', true)->count();
+                            @endphp
+                            <th colspan="{{ $q1DaysCount }}" id="days-columns">Días del Período ({{ $q1DaysCount }} días)</th>
                             <th rowspan="2">Total</th>
                             <th rowspan="2" class="vacations-header" title="Vacaciones">Vac.</th>
                             <th rowspan="2" class="breaks-header" title="Descansos/Otros">Desc.</th>
@@ -186,7 +197,8 @@
                                     data-quincena-2="{{ $dayInfo['is_quincena_2'] ? 'true' : 'false' }}"
                                     data-current-month="{{ $dayInfo['is_current_month'] ? 'true' : 'false' }}"
                                     data-month="{{ $dayInfo['month'] }}"
-                                    title="{{ \Carbon\Carbon::parse($dayInfo['date'])->format('d/m/Y') }}{{ !$dayInfo['is_current_month'] ? ' (Mes anterior)' : '' }}">
+                                    title="{{ \Carbon\Carbon::parse($dayInfo['date'])->format('d/m/Y') }}{{ !$dayInfo['is_current_month'] ? ' (Mes anterior)' : '' }}"
+                                    style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}"> {{-- ⭐ OCULTAR SI NO ES Q1 --}}
                                     {{ $dayInfo['day'] }}<br>{{ $dayInfo['day_name'] }}
                                 </th>
                             @endforeach
@@ -255,10 +267,10 @@
                                         {{ $employee->full_name }}
                                     </td>
                                     <td class="activity-label-cell">Actividad</td>
-                                    @foreach ($monthlyDays as $dayInfo)
+                                 @foreach ($monthlyDays as $dayInfo)
                                         <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
-                                            data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}">
-                                            {{-- IMPORTANTE: El modal individual se abrirá si el usuario tiene permiso (lógica en JS) --}}
+                                            data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
+                                            style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}"> {{-- ⭐ OCULTAR SI NO ES Q1 --}}
                                             <div class="status-indicator status-n">N</div>
                                         </td>
                                     @endforeach
@@ -305,7 +317,8 @@
                                         <td class="activity-label-cell">{{ $rowType }}</td>
                                         @foreach ($monthlyDays as $dayInfo)
                                             <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
-                                                data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}">0
+                                                data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
+                                                style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">0 {{-- ⭐ OCULTAR SI NO ES Q1 --}}
                                             </td>
                                         @endforeach
                                         <td class="data-cell total-{{ strtolower(str_replace(' ', '-', $rowType)) }}">0
@@ -318,9 +331,7 @@
                 </table>
             </div>
 
-            <button class="save-btn" onclick="guardarDatos()">
-                <i class="fas fa-save"></i> Guardar Cambios
-            </button>
+
         </div>
 
         <script>

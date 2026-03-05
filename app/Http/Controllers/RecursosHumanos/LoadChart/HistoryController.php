@@ -4,7 +4,6 @@ namespace App\Http\Controllers\RecursosHumanos\LoadChart;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\RecursosHumanos\LoadChart\EmployeeMonthlyWorkLog;
-use App\Models\RecursosHumanos\LoadChart\FortnightlyConfig;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -91,10 +90,10 @@ class HistoryController extends Controller
                     $matchesStatus = $statusFilter === 'all' ||
                                     ($activity['day_status'] ?? 'under_review') === $statusFilter;
 
+                    // ⭐ CORRECCIÓN: El filtro de tipo busca en Matutina O Vespertina
                     $matchesActivityType = $activityTypeFilter === 'all' ||
-                                        (($activity['activity_type'] ?? 'N') === $activityTypeFilter && $statusFilter === 'all') ||
-                                        ($activityTypeFilter !== 'all' && ($activity['activity_type'] ?? 'N') === $activityTypeFilter);
-
+                                        ($activity['activity_type'] ?? 'N') === $activityTypeFilter ||
+                                        ($activity['activity_type_vespertina'] ?? 'N') === $activityTypeFilter;
 
                     // Si ambos filtros son 'all', muestra la actividad
                     if ($statusFilter === 'all' && $activityTypeFilter === 'all') {
@@ -124,7 +123,6 @@ class HistoryController extends Controller
         });
     }
 
-
     /**
      * Formatea los datos del historial
      */
@@ -141,6 +139,7 @@ class HistoryController extends Controller
                 foreach ($log->daily_activities as $activity) {
                     $activityDate = Carbon::parse($activity['date']);
 
+                    // ⭐ CORRECCIÓN: Agregar variables de Vespertina
                     $history->push([
                         'date' => $activityDate->format('d/m/Y'),
                         'day_name' => $activityDate->locale('es')->dayName,
@@ -148,6 +147,8 @@ class HistoryController extends Controller
                         'year' => $year,
                         'activity_type' => $activity['activity_type'] ?? 'N',
                         'activity_description' => $this->getActivityDescription($activity['activity_type'] ?? 'N'),
+                        'activity_type_vespertina' => $activity['activity_type_vespertina'] ?? null,
+                        'activity_description_vespertina' => isset($activity['activity_type_vespertina']) ? $this->getActivityDescription($activity['activity_type_vespertina']) : null,
                         'overall_status' => $activity['day_status'] ?? 'under_review',
                         'well_name' => $activity['well_name'] ?? null,
                         'travel_destination' => $activity['travel_destination'] ?? null,
@@ -166,40 +167,66 @@ class HistoryController extends Controller
     }
 
     /**
-     * Extrae items diarios - MEJORADO: Ahora incluye detalles de la actividad principal con <br>
+     * Extrae items diarios - MEJORADO: Ahora separa Matutino y Vespertino
      */
     private function extractDailyItems($activity)
     {
         $items = [];
         $activityType = $activity['activity_type'] ?? 'N';
+        $vType = $activity['activity_type_vespertina'] ?? null;
+        $isGuardia = isset($activity['activity_type_vespertina']);
 
-        // Actividad principal - MEJORADO: Incluir detalles en este item
-        if ($activityType !== 'N') {
-            $details = $this->getActivityDescription($activityType); // Primera línea: Nombre de la actividad
+        // ⭐ 1. Actividad Matutina
+        if ($activityType !== 'N' || $isGuardia) {
+            $label = $isGuardia ? 'Act. Matutina' : 'Actividad';
+            $details = $this->getActivityDescription($activityType);
 
-            // Agregar detalles específicos de la actividad en líneas separadas usando <br>
-            if ($activityType === 'P') { // Trabajo en Pozo
-                // Se añade un <br> antes de cada detalle adicional
-                $details .= $activity['well_name'] ? "<br>Pozo: {$activity['well_name']}" : '';
-            } elseif ($activityType === 'V') { // Viaje
-                $details .= $activity['travel_destination'] ? "<br>Destino: {$activity['travel_destination']}" : '';
-                $details .= $activity['travel_reason'] ? "<br>Motivo: {$activity['travel_reason']}" : '';
-            } elseif ($activityType === 'C') { // Comisionado
-                $details .= $activity['commissioned_to'] ? "<br>Area: {$activity['commissioned_to']}" : '';
+            if ($activityType === 'P') {
+                $details .= !empty($activity['well_name']) ? "<br>Pozo: {$activity['well_name']}" : '';
+            } elseif ($activityType === 'V') {
+                $details .= !empty($activity['travel_destination']) ? "<br>Destino: {$activity['travel_destination']}" : '';
+                $details .= !empty($activity['travel_reason']) ? "<br>Motivo: {$activity['travel_reason']}" : '';
+            } elseif ($activityType === 'C') {
+                $details .= !empty($activity['commissioned_to']) ? "<br>Area: {$activity['commissioned_to']}" : '';
             }
 
             $items[] = $this->createItem(
-                'Actividad',
-                null, // No mostrar tipo redundante
+                $label,
+                null,
                 $activity['activity_status'] ?? 'under_review',
-                $details, // Contiene la descripción y los detalles adicionales separados por <br>
+                $details,
                 $activity['rejection_reason'] ?? null,
-                null, // ID
-                null  // Monto
+                null,
+                null
             );
         }
 
-        // Bonos de comida - MEJORADO
+        // ⭐ 2. Actividad Vespertina (Si existe)
+        if ($isGuardia && $vType !== 'N' && $vType !== null) {
+            $detailsVesp = $this->getActivityDescription($vType);
+
+            // Por si llegaran a tener pozo/viaje en vespertino (soporte a futuro)
+            if ($vType === 'P') {
+                $detailsVesp .= !empty($activity['well_name']) ? "<br>Pozo: {$activity['well_name']}" : '';
+            } elseif ($vType === 'V') {
+                $detailsVesp .= !empty($activity['travel_destination']) ? "<br>Destino: {$activity['travel_destination']}" : '';
+                $detailsVesp .= !empty($activity['travel_reason']) ? "<br>Motivo: {$activity['travel_reason']}" : '';
+            } elseif ($vType === 'C') {
+                $detailsVesp .= !empty($activity['commissioned_to']) ? "<br>Area: {$activity['commissioned_to']}" : '';
+            }
+
+            $items[] = $this->createItem(
+                'Act. Vespertina',
+                null,
+                $activity['activity_status_vespertina'] ?? ($activity['activity_status'] ?? 'under_review'), // Fallback seguro
+                $detailsVesp,
+                $activity['rejection_reason_vespertina'] ?? null,
+                null,
+                null
+            );
+        }
+
+        // Bonos de comida
         if (!empty($activity['food_bonuses'])) {
             foreach ($activity['food_bonuses'] as $item) {
                 $items[] = $this->createItem(
@@ -214,14 +241,14 @@ class HistoryController extends Controller
             }
         }
 
-        // Bonos de campo - MEJORADO
+        // Bonos de campo
         if (!empty($activity['field_bonuses'])) {
             foreach ($activity['field_bonuses'] as $item) {
                 $items[] = $this->createItem(
                     'Bono',
                     $item['bonus_type'] ?? 'Campo',
                     $item['status'] ?? 'under_review',
-                    $item['bonus_description'] ??null,
+                    $item['bonus_description'] ?? null,
                     $item['rejection_reason'] ?? null,
                     $item['bonus_identifier'] ?? null,
                     $item['daily_amount'] ?? null
@@ -229,14 +256,14 @@ class HistoryController extends Controller
             }
         }
 
-        // Servicios - MEJORADO
+        // Servicios
         if (!empty($activity['services_list'])) {
             foreach ($activity['services_list'] as $item) {
                 $items[] = $this->createItem(
                     'Servicio',
                     $item['service_name'] ?? null,
                     $item['status'] ?? 'under_review',
-                    $item['service_description'] ??null,
+                    $item['service_description'] ?? null,
                     $item['rejection_reason'] ?? null,
                     $item['service_identifier'] ?? null,
                     $item['amount'] ?? null
@@ -248,7 +275,7 @@ class HistoryController extends Controller
     }
 
     /**
-     * Crea un item del historial - MEJORADO
+     * Crea un item del historial
      */
     private function createItem($concept, $type, $status, $details = null, $rejectionReason = null, $id = null, $amount = null)
     {
@@ -286,6 +313,10 @@ class HistoryController extends Controller
     private function hasRejections($activity)
     {
         if (($activity['activity_status'] ?? 'under_review') === 'rejected') {
+            return true;
+        }
+        // ⭐ CORRECCIÓN: Verifica también rechazo en la Vespertina
+        if (($activity['activity_status_vespertina'] ?? 'under_review') === 'rejected') {
             return true;
         }
 

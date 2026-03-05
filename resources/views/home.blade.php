@@ -118,7 +118,7 @@
                             @if (in_array('gerenciamiento', $userPermissions['qhse']) || empty($userPermissions['qhse']))
                                 <li class="nav-item" data-route="/qhse/gerenciamiento">
                                     <i class="fas fa-road nav-icon"></i>
-                                    <span class="nav-text">Gerenciamiento</span>
+                                    <span class="nav-text">Gerenciamiento De Viajes</span>
                                 </li>
                             @endif
                             @if (in_array('incidencias', $userPermissions['qhse']) || empty($userPermissions['qhse']))

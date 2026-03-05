@@ -365,16 +365,12 @@
     /* **Ajuste para centrar columnas solicitadas (HORIZONTALMENTE)** */
     .history-table th:nth-child(1),
     .history-table td:nth-child(1),
-    /* Fecha */
     .history-table th:nth-child(2),
     .history-table td:nth-child(2),
-    /* Tipo */
     .history-table th:nth-child(3),
     .history-table td:nth-child(3),
-    /* Actividad */
     .history-table th:nth-child(4),
     .history-table td:nth-child(4) {
-        /* Estado */
         text-align: center;
     }
 
@@ -421,7 +417,6 @@
         flex-direction: column;
         gap: 4px;
         align-items: center;
-        /* Centrar contenido de la fecha */
     }
 
     .date-cell strong {
@@ -447,54 +442,21 @@
         font-weight: 700;
         text-transform: uppercase;
         color: var(--white);
-        /* ¡CONFIRMADO: El texto es blanco! */
         letter-spacing: 0.5px;
     }
 
     /* Colores para tipos de actividad */
-    .activity-type-badge.B {
-        background: var(--work-base);
-    }
-
-    .activity-type-badge.P {
-        background: var(--work-well);
-    }
-
-    .activity-type-badge.TC {
-        background: var(--home-office);
-    }
-
-    .activity-type-badge.V {
-        background: var(--traveling);
-    }
-
-    .activity-type-badge.D {
-        background: var(--rest);
-    }
-
-    .activity-type-badge.VAC {
-        background: var(--vacation);
-    }
-
-    .activity-type-badge.E {
-        background: var(--training);
-    }
-
-    .activity-type-badge.M {
-        background: var(--medical);
-    }
-
-    .activity-type-badge.A {
-        background: var(--absence);
-    }
-
-    .activity-type-badge.PE {
-        background: var(--permission);
-    }
-
-    .activity-type-badge.C {
-        background: var(--commissioned);
-    }
+    .activity-type-badge.B { background: var(--work-base); }
+    .activity-type-badge.P { background: var(--work-well); }
+    .activity-type-badge.TC { background: var(--home-office); }
+    .activity-type-badge.V { background: var(--traveling); }
+    .activity-type-badge.D { background: var(--rest); }
+    .activity-type-badge.VAC { background: var(--vacation); }
+    .activity-type-badge.E { background: var(--training); }
+    .activity-type-badge.M { background: var(--medical); }
+    .activity-type-badge.A { background: var(--absence); }
+    .activity-type-badge.PE { background: var(--permission); }
+    .activity-type-badge.C { background: var(--commissioned); }
 
     /* Actividad principal */
     .activity-main {
@@ -502,9 +464,7 @@
         flex-direction: column;
         gap: 4px;
         align-items: center;
-        /* Centrar contenido de la actividad */
         text-align: center;
-        /* Asegurar el centrado del texto */
     }
 
     .activity-main strong {
@@ -518,7 +478,6 @@
         color: var(--medium-text);
         line-height: 1.3;
         display: none;
-        /* Ocultar detalles aquí, se movieron a items */
     }
 
     /* Items de actividad - DISPOSICIÓN HORIZONTAL */
@@ -585,7 +544,6 @@
         color: var(--medium-text);
         font-size: 0.7rem;
         line-height: 1.3;
-        /* Asegurar que el <br> funcione correctamente */
         white-space: normal;
     }
 
@@ -684,142 +642,45 @@
     }
 
     @media (max-width: 768px) {
-        .history-container {
-            padding: 12px;
-        }
-
-        .compact-header {
-            padding: 16px 20px;
-        }
-
-        .header-content {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 16px;
-        }
-
-        .header-stats {
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        .stat-card {
-            min-width: calc(25% - 12px);
-            flex-direction: column;
-            text-align: center;
-            padding: 12px;
-        }
-
-        .stat-icon {
-            margin-right: 0;
-            margin-bottom: 8px;
-        }
-
-        .stat-info {
-            text-align: center;
-            align-items: center;
-            margin-left: 0;
-        }
-
-        .filters-section {
-            padding: 16px 20px;
-        }
-
-        .filters-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .filter-actions {
-            flex-direction: column;
-        }
-
-        .history-table {
-            font-size: 0.75rem;
-        }
-
-        .history-table th,
-        .history-table td {
-            padding: 10px 8px;
-        }
-
-        /* Ajustes para disposición horizontal en móviles */
-        .activity-items {
-            flex-direction: column;
-        }
+        .history-container { padding: 12px; }
+        .compact-header { padding: 16px 20px; }
+        .header-content { flex-direction: column; align-items: flex-start; gap: 16px; }
+        .header-stats { width: 100%; justify-content: space-between; }
+        .stat-card { min-width: calc(25% - 12px); flex-direction: column; text-align: center; padding: 12px; }
+        .stat-icon { margin-right: 0; margin-bottom: 8px; }
+        .stat-info { text-align: center; align-items: center; margin-left: 0; }
+        .filters-section { padding: 16px 20px; }
+        .filters-grid { grid-template-columns: 1fr; }
+        .filter-actions { flex-direction: column; }
+        .history-table { font-size: 0.75rem; }
+        .history-table th, .history-table td { padding: 10px 8px; }
+        .activity-items { flex-direction: column; }
     }
 
     @media (max-width: 576px) {
-        .header-stats {
-            flex-direction: column;
-            width: 100%;
-        }
-
-        /* Revertir el centrado en móvil para mejor lectura */
-        .stat-card {
-            width: 100%;
-            flex-direction: row;
-            text-align: left;
-        }
-
-        .stat-icon {
-            margin-right: 12px;
-            margin-bottom: 0;
-        }
-
-        .stat-info {
-            text-align: left;
-            align-items: flex-start;
-            margin-left: 0;
-        }
+        .header-stats { flex-direction: column; width: 100%; }
+        .stat-card { width: 100%; flex-direction: row; text-align: left; }
+        .stat-icon { margin-right: 12px; margin-bottom: 0; }
+        .stat-info { text-align: left; align-items: flex-start; margin-left: 0; }
     }
 
     @keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
-    /* Animaciones suaves */
-    .fade-in {
-        animation: fadeIn 0.5s ease-in-out;
-    }
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
 
     @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Scrollbar personalizado */
-    .table-responsive::-webkit-scrollbar {
-        height: 6px;
-    }
+    .table-responsive::-webkit-scrollbar { height: 6px; }
+    .table-responsive::-webkit-scrollbar-track { background: var(--light-color); border-radius: 3px; }
+    .table-responsive::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    .table-responsive::-webkit-scrollbar-thumb:hover { background: var(--medium-text); }
 
-    .table-responsive::-webkit-scrollbar-track {
-        background: var(--light-color);
-        border-radius: 3px;
-    }
-
-    .table-responsive::-webkit-scrollbar-thumb {
-        background: var(--border-color);
-        border-radius: 3px;
-    }
-
-    .table-responsive::-webkit-scrollbar-thumb:hover {
-        background: var(--medium-text);
-    }
-
-    /* Estilos para el ID de actividad */
     .activity-id {
         background: var(--accent-color);
         color: white;
@@ -830,7 +691,6 @@
         margin-right: 6px;
     }
 
-    /* --- ESTILOS DEL MODAL PERSONALIZADO (SIN BOOTSTRAP) --- */
     .custom-modal-backdrop {
         position: fixed;
         top: 0;
@@ -838,28 +698,21 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
-        /* Fondo oscuro semitransparente */
         display: none;
-        /* Oculto por defecto */
         justify-content: center;
         align-items: center;
         z-index: 1050;
-        /* Z-index alto para que esté encima de todo */
         opacity: 0;
         transition: opacity 0.3s ease;
     }
 
-    .custom-modal-backdrop.show {
-        display: flex;
-        opacity: 1;
-    }
+    .custom-modal-backdrop.show { display: flex; opacity: 1; }
 
     .custom-modal-dialog {
         background: var(--card-bg);
         border-radius: 12px;
         box-shadow: var(--shadow-hover);
         max-width: 900px;
-        /* Tamaño del modal-lg de Bootstrap */
         width: 90%;
         max-height: 90vh;
         overflow-y: auto;
@@ -867,9 +720,7 @@
         transition: transform 0.3s ease;
     }
 
-    .custom-modal-backdrop.show .custom-modal-dialog {
-        transform: translateY(0);
-    }
+    .custom-modal-backdrop.show .custom-modal-dialog { transform: translateY(0); }
 
     .custom-modal-header {
         display: flex;
@@ -895,13 +746,8 @@
         transition: color 0.2s ease;
     }
 
-    .custom-modal-header .close-btn:hover {
-        color: var(--rejected-red);
-    }
-
-    .custom-modal-body {
-        padding: 24px;
-    }
+    .custom-modal-header .close-btn:hover { color: var(--rejected-red); }
+    .custom-modal-body { padding: 24px; }
 
     .custom-modal-footer {
         padding: 16px 24px;
@@ -925,12 +771,8 @@
         font-size: 0.875rem;
     }
 
-    .btn-close-modal:hover {
-        background: var(--dark-color);
-        transform: translateY(-1px);
-    }
+    .btn-close-modal:hover { background: var(--dark-color); transform: translateY(-1px); }
 
-    /* Estilos para el contenido del modal de detalles */
     .detail-header {
         display: flex;
         justify-content: space-between;
@@ -940,12 +782,7 @@
         border-bottom: 1px solid var(--border-color);
     }
 
-    .detail-header h4 {
-        margin: 0;
-        font-size: 1.25rem;
-        color: var(--primary-color);
-        font-weight: 600;
-    }
+    .detail-header h4 { margin: 0; font-size: 1.25rem; color: var(--primary-color); font-weight: 600; }
 
     .detail-section {
         margin-bottom: 25px;
@@ -953,11 +790,7 @@
         border-bottom: 1px dotted var(--border-color);
     }
 
-    .detail-section:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
+    .detail-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 
     .detail-section h5 {
         color: var(--secondary-color);
@@ -966,42 +799,17 @@
         font-weight: 600;
     }
 
-    .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 15px;
-    }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
 
-    .detail-item {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
+    .detail-item { display: flex; flex-direction: column; gap: 5px; }
 
-    .detail-item label {
-        font-weight: 600;
-        color: var(--medium-text);
-        font-size: 0.85rem;
-    }
+    .detail-item label { font-weight: 600; color: var(--medium-text); font-size: 0.85rem; }
 
+    .fonttype .activity-type-badge { color: var(--white) !important; }
 
-    /* Y si quiere asegurar que afecte al badge interno: */
-    .fonttype .activity-type-badge {
-        color: var(--white) !important;
-        /* Reconfirma que el badge interno es blanco */
-    }
+    .detail-item span { color: var(--dark-color); font-size: 0.9rem; }
 
-    .detail-item span {
-        color: var(--dark-color);
-        font-size: 0.9rem;
-    }
-
-
-    .items-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 15px;
-    }
+    .items-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
 
     .detail-item-card {
         padding: 15px;
@@ -1023,11 +831,7 @@
         margin-bottom: 10px;
     }
 
-    .detail-item-card .item-body {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
+    .detail-item-card .item-body { display: flex; flex-direction: column; gap: 8px; }
 
     .rejection-note {
         color: var(--rejected-red);
@@ -1038,32 +842,10 @@
         border-left: 3px solid var(--rejected-red);
     }
 
-    /* Nuevos estilos para mejor presentación */
-    .item-id-amount {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        margin-top: 4px;
-    }
-
-    .item-id {
-        font-size: 0.65rem;
-        color: var(--medium-text);
-        font-weight: 600;
-    }
-
-    /* **Ajuste para resaltar el monto** */
-    .item-amount-separate {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: var(--dark-color);
-    }
-
-    /* Estilo para items sin concepto */
-    .item-no-concept {
-        font-style: italic;
-        color: var(--medium-text);
-    }
+    .item-id-amount { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+    .item-id { font-size: 0.65rem; color: var(--medium-text); font-weight: 600; }
+    .item-amount-separate { font-size: 0.75rem; font-weight: 700; color: var(--dark-color); }
+    .item-no-concept { font-style: italic; color: var(--medium-text); }
 </style>
 
 @section('content')
@@ -1242,12 +1024,14 @@
                     <div class="empty-icon">
                         <i class="fas fa-inbox"></i>
                     </div>
-                    <h3>No se encontraron registros</h3>
-                    <p>No hay actividades que coincidan con los filtros aplicados.</p>
-                    <button class="btn-clear-filters" onclick="window.historyManager.clearFilters()">
-                        <i class="fas fa-times"></i>
-                        Limpiar filtros
-                    </button>
+                    <div>
+                        <h3>No se encontraron registros</h3>
+                        <p>No hay actividades que coincidan con los filtros aplicados.</p>
+                        <button class="btn-clear-filters" style="margin: 0 auto;" onclick="window.historyManager.clearFilters()">
+                            <i class="fas fa-times"></i>
+                            Limpiar filtros
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1357,18 +1141,14 @@
                 }
 
                 bindEvents() {
-                    // Eventos de botones
                     document.getElementById('apply-filters').addEventListener('click', () => this.applyFilters());
                     document.getElementById('clear-filters').addEventListener('click', () => this.clearFilters());
 
-                    // Eventos de cambio en filtros
                     document.getElementById('start-date').addEventListener('change', (e) => this.onDateChange());
                     document.getElementById('end-date').addEventListener('change', (e) => this.onDateChange());
                     document.getElementById('status-filter').addEventListener('change', (e) => this.onFilterChange());
-                    document.getElementById('activity-type-filter').addEventListener('change', (e) => this
-                        .onFilterChange());
+                    document.getElementById('activity-type-filter').addEventListener('change', (e) => this.onFilterChange());
 
-                    // Eventos en tarjetas de estadísticas
                     document.querySelectorAll('.stat-card').forEach(card => {
                         card.addEventListener('click', (e) => {
                             const status = e.currentTarget.getAttribute('data-status');
@@ -1404,7 +1184,6 @@
                             page: page
                         });
 
-                        // Nota: Esta URL de API es la que se usaba en el código original.
                         const response = await fetch(`/recursoshumanos/loadchart/history/data?${params}`);
                         const data = await response.json();
 
@@ -1436,7 +1215,6 @@
                     this.bindRowEvents();
                     document.getElementById('empty-state').style.display = 'none';
 
-                    // Añadir animación de entrada
                     setTimeout(() => {
                         document.querySelectorAll('#history-table-body tr').forEach((row, index) => {
                             row.style.animationDelay = `${index * 0.05}s`;
@@ -1449,8 +1227,19 @@
                     const hasRejections = item.has_rejections;
                     const rowClass = hasRejections ? 'has-rejection' : '';
                     const statusClass = `status-${item.overall_status}`;
-                    // Reemplazamos los caracteres especiales para evitar errores de parseo en el atributo data-item
                     const itemDataString = JSON.stringify(item).replace(/"/g, '&#34;');
+
+                    // ⭐ LÓGICA PARA RENDERIZAR BADGES DOBLES SI ES GUARDIA
+                    let typeBadgesHTML = `<span class="activity-type-badge ${item.activity_type}" title="${this.getActivityTypeText(item.activity_type)}">${item.activity_type}</span>`;
+                    let descHTML = `<strong>${item.activity_description}</strong>`;
+
+                    if (item.activity_type_vespertina && item.activity_type_vespertina !== 'N') {
+                        typeBadgesHTML += `<br><span class="activity-type-badge ${item.activity_type_vespertina}" title="${this.getActivityTypeText(item.activity_type_vespertina)}" style="margin-top: 4px;">${item.activity_type_vespertina}</span>`;
+                        descHTML = `<div style="display:flex; flex-direction:column; gap:4px;">
+                                        <span><small class="text-muted">Mat:</small> <strong>${item.activity_description}</strong></span>
+                                        <span><small class="text-muted">Vesp:</small> <strong>${item.activity_description_vespertina}</strong></span>
+                                    </div>`;
+                    }
 
                     return `
                 <tr class="${rowClass}" data-item='${itemDataString}'>
@@ -1461,13 +1250,11 @@
                         </div>
                     </td>
                     <td class="activity-type-cell">
-                        <span class="activity-type-badge ${item.activity_type}" title="${this.getActivityTypeText(item.activity_type)}">
-                            ${item.activity_type}
-                        </span>
+                        ${typeBadgesHTML}
                     </td>
                     <td>
                         <div class="activity-main">
-                            <strong>${item.activity_description}</strong>
+                            ${descHTML}
                         </div>
                     </td>
                     <td>
@@ -1486,20 +1273,15 @@
                         </button>
                     </td>
                 </tr>
-        `;
+            `;
                 }
 
                 createSubItem(subItem) {
                     const hasRejection = subItem.rejection_reason;
                     const itemClass = hasRejection ? 'activity-item rejected' : 'activity-item';
+                    const conceptContent = subItem.concept ? `<span class="item-concept">${subItem.concept}</span>` : '<span class="item-no-concept">Sin Concepto</span>';
 
-                    // El concepto ya viene limpio y correcto del controlador
-                    const conceptContent = subItem.concept ? `<span class="item-concept">${subItem.concept}</span>` :
-                        '<span class="item-no-concept">Sin Concepto</span>';
-
-                    // NO mostrar el tipo si es "Actividad" o si es igual al concepto
                     let showType = subItem.type && subItem.type !== 'Actividad' && subItem.type !== subItem.concept;
-
                     const amountClass = `item-amount-separate`;
 
                     return `
@@ -1509,23 +1291,21 @@
                     </div>
                     <div class="item-body">
                         ${showType ? `<div class="item-type">${subItem.type}</div>` : ''}
-
                         ${subItem.details ? `<div class="item-details">${subItem.details}</div>` : ''}
-
                         ${subItem.comments ? `<div class="item-comment">${subItem.comments}</div>` : ''}
                         <div class="item-id-amount">
                             ${subItem.id ? `<div class="item-id">ID: ${subItem.id}</div>` : ''}
                             ${subItem.amount ? `<div class="${amountClass}">${this.formatCurrency(subItem.amount)}</div>` : ''}
                         </div>
                         ${hasRejection ? `
-                                                <div class="rejection-reason">
-                                                    <i class="fas fa-exclamation-circle"></i>
-                                                    ${subItem.rejection_reason}
-                                                </div>
-                                            ` : ''}
+                                        <div class="rejection-reason">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                            ${subItem.rejection_reason}
+                                        </div>
+                                    ` : ''}
                     </div>
                 </div>
-        `;
+            `;
                 }
 
                 formatCurrency(amount) {
@@ -1565,11 +1345,9 @@
                 }
 
                 bindRowEvents() {
-                    // Modificado para usar data-item-data y no depender del TR para obtener la info
                     document.querySelectorAll('.btn-view-details').forEach(btn => {
                         btn.addEventListener('click', (e) => {
-                            const itemDataString = e.currentTarget.getAttribute('data-item-data').replace(
-                                /&#34;/g, '"');
+                            const itemDataString = e.currentTarget.getAttribute('data-item-data').replace(/&#34;/g, '"');
                             const itemData = JSON.parse(itemDataString);
                             this.showDetailsModal(itemData);
                         });
@@ -1577,13 +1355,18 @@
                 }
 
                 showDetailsModal(item) {
-                    // ESTRUCTURA DEL BADGE DE TIPO DE ACTIVIDAD (Solo la letra, color blanco)
-                    const activityTypeBadge = `
-                    <span class="activity-type-badge ${item.activity_type}" title="${this.getActivityTypeText(item.activity_type)}">
-                        ${item.activity_type}
-                    </span>
-                `;
-                    // Generar el contenido del modal
+                    // ⭐ LÓGICA PARA RENDERIZAR BADGES Y DESC EN EL MODAL SI ES GUARDIA
+                    let typeBadges = `<span class="activity-type-badge ${item.activity_type}" title="${this.getActivityTypeText(item.activity_type)}">${item.activity_type}</span>`;
+                    let descModal = `<span>${item.activity_description}</span>`;
+
+                    if(item.activity_type_vespertina && item.activity_type_vespertina !== 'N') {
+                        typeBadges += ` <span class="activity-type-badge ${item.activity_type_vespertina}" title="${this.getActivityTypeText(item.activity_type_vespertina)}">${item.activity_type_vespertina}</span>`;
+                        descModal = `<div style="display:flex; flex-direction:column; gap:2px;">
+                                        <span><strong>Mat:</strong> ${item.activity_description}</span>
+                                        <span><strong>Vesp:</strong> ${item.activity_description_vespertina}</span>
+                                    </div>`;
+                    }
+
                     const modalHTML = `
             <div class="detail-header">
                 <h4>Actividad del ${item.date}</h4>
@@ -1601,11 +1384,11 @@
                     </div>
                     <div class="detail-item">
                         <label>Tipo:</label>
-                        <span class="fonttype">${activityTypeBadge}</span>
+                        <span class="fonttype">${typeBadges}</span>
                     </div>
                     <div class="detail-item">
                         <label>Actividad:</label>
-                        <span>${item.activity_description}</span>
+                        ${descModal}
                     </div>
                     ${item.well_name ? `
                                             <div class="detail-item">
@@ -1644,15 +1427,9 @@
                 <h5>Detalles del Día</h5>
                 <div class="items-list">
                     ${item.daily_items.map(subItem => {
-                        // El concepto ya viene limpio y correcto del controlador
                         const concept = subItem.concept;
-
-                        // Mostrar el concepto, o un espacio si está vacío
                         const conceptContent = concept ? `<strong>${concept}</strong>` : '<strong>Sin Concepto</strong>';
-
-                        // Clase para el monto (se mantiene para estilizado general)
                         const amountClass = `item-amount`;
-
                         let showType = subItem.type && subItem.type !== 'Actividad' && subItem.type !== concept;
 
                         return `
@@ -1681,7 +1458,6 @@
             </div>
         `;
 
-                    // Asignar contenido y mostrar el modal
                     detailModalInstance.setContent(modalHTML);
                     detailModalInstance.show();
                 }
@@ -1694,7 +1470,6 @@
                         under_review: history.filter(item => item.overall_status === 'under_review').length
                     };
 
-                    // Actualizar tarjetas principales
                     document.getElementById('approved-count').textContent = counts.approved;
                     document.getElementById('reviewed-count').textContent = counts.reviewed;
                     document.getElementById('rejected-count').textContent = counts.rejected;
@@ -1754,11 +1529,9 @@
                 }
 
                 clearFilters() {
-                    // Primero restablecer los valores de los inputs/selects
                     document.getElementById('status-filter').value = 'all';
                     document.getElementById('activity-type-filter').value = 'all';
 
-                    // Restablecer los valores por defecto del mes actual
                     this.setupDateDefaults();
 
                     this.filters = {
@@ -1782,7 +1555,6 @@
                 }
 
                 onFilterChange() {
-                    // Lógica adicional si se necesita
                 }
 
                 showLoading() {
@@ -1804,8 +1576,6 @@
                 }
 
                 showError(message) {
-                    // Se mantiene la dependencia de Swal, ya que es la herramienta de notificación del código original
-                    // y la solicitud era solo sobre el modal. Si Swal no está disponible, se usa alert.
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'error',
@@ -1823,7 +1593,6 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 historyManagerInstance = new HistoryManager();
-                // Esto se mantiene para que el botón "Limpiar filtros" del empty state funcione con el onclick
                 window.historyManager = historyManagerInstance;
             });
         </script>

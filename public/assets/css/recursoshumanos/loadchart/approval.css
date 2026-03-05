@@ -4,6 +4,7 @@
 ===================================================================
 */
 :root {
+    /* Actividades */
     --work-base: #334c95;
     --work-well: #6475aa;
     --home-office: #7293ff;
@@ -15,10 +16,26 @@
     --absence: #7d4e4e;
     --permission: #49c0c9;
     --commissioned: #249399;
+
+    /* Estados de Aprobación */
     --under-review: #ffdc13ef;
     --reviewed-yellow: #ffa723ef;
     --approved-green: #26b30e;
     --rejected-red: #f55134e5;
+
+    /* UI General */
+    --dark-blue: #2c3e50;
+    --medium-blue: #34495e;
+    --light-gray: #f8f9fa;
+    --border-color: #dfe6e9;
+    --white: #ffffff;
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+    /* ⭐ FIX: Ancho de columnas sticky — ajusta estos valores si cambias el tamaño de las columnas */
+    --col-name-width: 120px;
+    /* Ancho de la columna "Nombre" */
+    --col-kpi-width: 70px;
+    /* Ancho de la columna "KPI" / "Actividad" */
 }
 
 /*
@@ -27,32 +44,30 @@
 ===================================================================
 */
 
-/* Contenedor principal de los filtros */
 .filters-container {
     display: flex;
     gap: 20px;
-    padding: 15px 25px; /* Más padding para que respire */
-    background-color: #ffffff; /* Fondo blanco */
+    padding: 15px 25px;
+    background-color: var(--white);
     border-radius: 8px;
     margin-bottom: 20px;
-    border: 1px solid #dfe6e9; /* Borde más sutil */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Sombra ligera */
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
     flex-wrap: wrap;
-    align-items: flex-end; /* Alinea los inputs y selects por la base */
-    transition: all 0.3s ease-out;
+    align-items: flex-end;
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
-    min-width: 220px; /* Ancho mínimo para legibilidad */
+    min-width: 220px;
     flex-grow: 1;
 }
 
 .filter-group label {
-    font-size: 0.8rem; /* Tamaño de fuente más pequeño para etiqueta */
+    font-size: 0.8rem;
     font-weight: 600;
-    color: #5d6d7e; /* Gris profesional */
+    color: #5d6d7e;
     margin-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -67,7 +82,7 @@
     color: #2c3e50;
     background-color: #fcfcfc;
     box-shadow: none;
-    height: 40px; /* Altura uniforme */
+    height: 40px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -76,21 +91,6 @@
     outline: none;
     border-color: #3498db;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-
-/* Estilo del botón 'Abrir Filtros' */
-#toggle-filters-btn {
-    background-color: #2c3e50; /* Cambiado a un azul oscuro para integrarse con la cabecera */
-    color: white;
-    border: none;
-    padding: 10px 18px; /* Reducido para integrarse mejor en la barra de acciones */
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
 }
 
 #toggle-filters-btn:hover {
@@ -104,25 +104,14 @@
     transition: transform 0.2s;
 }
 
-/* Estilos para el botón cuando está activo/cerrando */
 #toggle-filters-btn[aria-expanded="true"] {
-    background-color: #e74c3c; /* Rojo para indicar cerrar/ocultar */
+    background-color: #e74c3c;
 }
+
 #toggle-filters-btn[aria-expanded="true"]:hover {
     background-color: #c0392b;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .filters-container {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 15px;
-    }
-    .filter-group {
-        min-width: 100%;
-    }
-}
 .activity-legend {
     display: flex;
     flex-wrap: wrap;
@@ -154,7 +143,6 @@
     font-size: 12px;
     font-weight: 500;
     line-height: 1;
-    /* Para un mejor centrado vertical */
 }
 
 .legend-divider {
@@ -163,8 +151,6 @@
     background-color: #ddd;
     margin: 4px;
 }
-
-/* Specific border styles for the new approval statuses */
 
 .under-review-border {
     border: 2.5px solid var(--under-review);
@@ -186,9 +172,6 @@
     background-color: transparent;
 }
 
-
-/* Ensure the main table indicators are also correctly styled */
-
 .status-indicator.under-review-border {
     border: 3px solid var(--under-review);
 }
@@ -198,14 +181,13 @@
 }
 
 .status-indicator.rejected-border {
-    border: 3PX solid var(--rejected-red);
+    border: 3px solid var(--rejected-red);
 }
 
 .status-indicator.approved-border {
     border: 3px solid var(--approved-green);
 }
 
-/* Estilos para el cálculo de utilización */
 .utilization-value {
     font-weight: bold;
     padding: 4px 8px;
@@ -214,28 +196,24 @@
     transition: all 0.3s ease;
 }
 
-/* Utilización baja (menos del 70%) - Color rojo */
 .utilization-low {
     background-color: #ffebee;
     color: #c62828;
     border: 1px solid #ef5350;
 }
 
-/* Utilización buena (70% - 84%) - Color verde */
 .utilization-good {
     background-color: #e8f5e8;
     color: #2e7d32;
     border: 1px solid #66bb6a;
 }
 
-/* Utilización de advertencia (85% - 100%) - Color naranja */
 .utilization-warning {
     background-color: #fff3e0;
     color: #ef6c00;
     border: 1px solid #ff9800;
 }
 
-/* Estilos adicionales para la tabla */
 .utilization-cell {
     text-align: center;
     vertical-align: middle;
@@ -246,14 +224,6 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-}
-
-/* Responsive para pantallas pequeñas */
-@media (max-width: 768px) {
-    .utilization-value {
-        font-size: 0.9em;
-        padding: 2px 4px;
-    }
 }
 
 .status-b {
@@ -294,7 +264,6 @@
 
 .status-pe {
     background-color: var(--permission);
-
 }
 
 .status-a {
@@ -305,19 +274,15 @@
     background-color: #ccc;
 }
 
-/* Estados de actividades */
 .status-indicator.status-n {
     background-color: #e0e0e0;
     color: #666;
 }
 
-
 .data-cell.field-bonus-usd {
     background-color: #d4edda;
-    /* Un color verde suave */
 }
 
-/* Tipos de actividades laborales */
 .status-indicator.status-b,
 .status-indicator.status-base {
     background-color: var(--work-base);
@@ -363,168 +328,115 @@
     background-color: var(--commissioned);
 }
 
-/* Contenedor principal de la tabla de aprobación */
+/*
+===================================================================
+# Contenedor Principal y Encabezado
+===================================================================
+*/
+
 .approval-container {
     background: #f8f9fa;
     border-radius: 8px;
     padding: 1px;
     margin-bottom: 30px;
-    overflow-x: auto;
 }
 
-/* Sección de encabezado (título, navegación y acciones) */
 .approval-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    gap: 15px;
-    flex-wrap: wrap;
-    /* Permite que los elementos se ajusten en pantallas pequeñas */
-}
-
-/* Estilo del título principal */
-.approval-header h2 {
-    color: #2c3e50;
-    font-size: 1.4rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    margin: 0;
-    white-space: nowrap;
-}
-
-/* Navegación central para el período */
-.center-navigation {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
+    margin-bottom: 15px;
+    background: var(--white);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
 }
 
 .period-navigation {
-    display: flex;
-    gap: 8px;
-    margin: 0 15px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 8px;
 }
 
-/* Contenedor de botones de acción */
-.approval-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    white-space: nowrap;
-}
-
-/*
-===================================================================
-# Estilos de los Botones
-===================================================================
-*/
-
-/* Estilo base para los botones de navegación de período y acciones */
-.period-btn,
-.action-btn {
-    padding: 8px 12px;
+.period-btn {
+    padding: 6px 12px;
     border-radius: 6px;
-    background-color: #e2e8f0;
     border: none;
+    font-size: 12px;
     cursor: pointer;
-    font-size: 13px;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    background: transparent;
 }
 
-.period-btn:hover,
-.action-btn:hover {
-    background-color: #cbd5e0;
+.period-btn:hover:not(.active) {
+    background-color: #e2e8f0;
+    color: #1e293b;
 }
 
 .period-btn.active {
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+}
+
+.current-period-info {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #334155;
+    padding: 0 10px;
+    text-transform: capitalize;
+}
+
+.approval-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.back-btn,
+.squad-btn,
+.services-info-btn {
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.back-btn,
+.services-info-btn {
     background-color: #2c3e50;
-    /* Usamos un color fijo para consistencia */
     color: white;
 }
 
-/* Estilo para el botón "Volver" */
-.back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
+.back-btn:hover,
+.services-info-btn:hover {
+    background-color: #1a252f;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
-.back-btn:hover {
-    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.back-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.back-btn i {
-    transition: transform 0.3s ease;
-}
-
-.back-btn:hover i {
-    transform: translateX(-3px);
-}
-
-/* Estilo para el botón de cuadrillas */
 .squad-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: #5D6D7E;
+    background-color: #5D6D7E;
     color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    text-decoration: none;
-    margin-right: 10px;
 }
 
 .squad-btn:hover {
-    background: #6c7d8f;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+    background-color: #4a5868;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
-.squad-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    background: #5D6D7E;
+.back-btn i,
+.squad-btn i,
+.services-info-btn i {
+    font-size: 13px;
 }
 
-.squad-btn i {
-    transition: transform 0.3s ease;
-}
-
-.squad-btn:hover i {
-    transform: translateX(-4px);
-}
-
-/* Botón de guardar */
 .save-btn {
     background-color: #2c3e50;
     color: white;
@@ -550,90 +462,93 @@
 
 /*
 ===================================================================
-# Estilos de la Tabla (Table)
+# Tabla — Contenedor y Base
 ===================================================================
 */
 
-/* Contenedor de la tabla con scroll */
 .table-container {
-    overflow-x: auto;
+    overflow: auto;
     max-width: 100%;
-    margin-bottom: 20px;
+    max-height: 80vh;
     border-radius: 8px;
     border: 1px solid #e0e0e0;
+    background: white;
 }
 
-/* Tabla principal de aprobación */
 .approval-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 0.7rem;
-    /* Tamaño de fuente reducido para las celdas de datos */
-    background: white;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Fila de encabezado principal */
-.header-row {
-    background-color: #34495e;
-    color: white;
-}
+/*
+===================================================================
+# ⭐ STICKY COLUMNS — Nombre + KPI/Actividad fijos a la izquierda
+===================================================================
+*/
 
-.header-row th {
-    padding: 7px 6px;
-    text-align: center;
-    font-weight: 500;
+/* --- THEAD: fila 1 sticky arriba --- */
+.approval-table thead th {
     position: sticky;
     top: 0;
-    z-index: 10;
-}
-
-/* Encabezado para cada día */
-.day-header {
-    background-color: #2c3e50;
+    z-index: 100;
+    background-color: var(--medium-blue);
     color: white;
-    font-size: 0.7rem;
-    padding: 5px;
-    text-align: center;
-    min-width: 30px;
-    position: relative;
-    font-weight: 400;
+    padding: 8px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.day-header.weekend {
-    background-color: #283848;
+/* --- THEAD: fila 2 (días) sticky debajo de fila 1 --- */
+#days-header-row th {
+    top: 32px;
+    /* ajusta si la altura de la fila 1 cambia */
+    background-color: var(--dark-blue);
+    z-index: 90;
 }
 
-¿/* Filas de empleados */
-.employee-row {
-    border-bottom: 1px solid #ecf0f1;
+/* --- THEAD: columna Nombre (col 1) sticky izquierda --- */
+.approval-table thead th:nth-child(1) {
+    left: 0;
+    z-index: 120;
+    /* máximo para la esquina */
+
 }
 
+/* --- THEAD: columna KPI (col 2) sticky izquierda, justo al lado de Nombre --- */
+.approval-table thead th:nth-child(2) {
+    left: var(--col-name-width);
+    z-index: 120;
+
+}
+
+/* --- TBODY: celda de nombre del empleado (rowspan 4, sticky izq) --- */
 .employee-info-cell {
+    position: sticky;
+    left: 0;
+    z-index: 50;
     background-color: #ecf0f1;
     text-align: center;
     vertical-align: middle;
     font-weight: 500;
     font-size: 0.8rem;
-    position: sticky;
-    left: 0;
     color: #000000;
     cursor: pointer;
-    transition: all 0.3s ease;
-    border-right: 2px solid #9f9f9f;
+    transition: background-color 0.3s ease;
+    border-right: 1px solid #b0b0b0;
+    border-top: 1px solid #4b4c4d;
     padding: 10px 5px;
-    position: relative;
+    min-width: var(--col-name-width);
+    width: var(--col-name-width);
 }
 
 .employee-info-cell:hover {
-    background-color: #9f9f9f3c;
+    background-color: #d5dbdb;
 }
 
+/* Tooltip "Ver Calendario" */
 .employee-info-cell::after {
-    content: "Ver Calendario"; /* Icono correcto de calendario */
+    content: "Ver Calendario";
     font-weight: 400;
     position: absolute;
     bottom: 60%;
@@ -649,16 +564,14 @@
     pointer-events: none;
     transition: all 0.2s ease;
     z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    text-transform: none;
-    font-weight: 400;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
 .employee-info-cell:hover::after {
     opacity: 1;
     transform: translateX(-50%) translateY(-4px);
 }
 
-/* Flecha muy pequeña */
 .employee-info-cell::before {
     content: '';
     position: absolute;
@@ -676,19 +589,71 @@
     opacity: 1;
     transform: translateX(-50%) translateY(-1px);
 }
-/* Celda de la etiqueta de actividad (sticky) */
+
+/* --- TBODY: celda "Actividad / Comida / Bono / Servicio" — sticky izq, junto a Nombre --- */
 .activity-label-cell {
+    position: sticky;
+    left: var(--col-name-width);
+    /* ⭐ se pega justo después de la columna Nombre */
+    z-index: 50;
     background-color: #dfe6e9;
+    border-right: 2px solid #9f9f9f;
     padding: 8px;
     font-weight: 500;
     font-size: 0.7rem;
     text-align: left;
-    position: sticky;
     color: #000000;
-
+    min-width: var(--col-kpi-width);
+    width: var(--col-kpi-width);
+    white-space: nowrap;
 }
 
-/* Celdas de datos para los días */
+/* Sombra sutil para marcar el límite de las columnas fijas */
+.activity-label-cell,
+.employee-info-cell {
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
+}
+
+/* La celda KPI del header también lleva sombra */
+.approval-table thead th:nth-child(2) {
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.15);
+}
+
+/*
+===================================================================
+# Resto de estilos de la tabla
+===================================================================
+*/
+
+.header-row {
+    background-color: #34495e;
+    color: white;
+}
+
+.header-row th {
+    padding: 7px 6px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.day-header {
+    background-color: #2c3e50;
+    color: white;
+    font-size: 0.7rem;
+    padding: 5px;
+    text-align: center;
+    min-width: 30px;
+    font-weight: 400;
+}
+
+.day-header.weekend {
+    background-color: #283848;
+}
+
+.employee-row {
+    border-bottom: 1px solid #ecf0f1;
+}
+
 .data-cell {
     padding: 4px;
     text-align: center;
@@ -702,8 +667,6 @@
     border-right: none;
 }
 
-
-/* Botones de acción dentro de la tabla */
 .btn-review,
 .btn-approve {
     border: none;
@@ -713,14 +676,11 @@
     font-weight: bold;
     transition: background-color 0.3s;
     font-size: 0.75rem;
-    /* Tamaño de fuente ajustado */
     color: white;
-    /* Color de texto blanco para todos los botones */
 }
 
 .btn-review {
     background-color: #ffc107;
-    /* Amarillo */
 }
 
 .btn-review:hover {
@@ -729,24 +689,18 @@
 
 .btn-approve {
     background-color: #28a745;
-    /* Verde */
 }
 
 .btn-approve:hover {
     background-color: #218838;
 }
 
-
-
-
-
 /*
 ===================================================================
-# Estilos para Indicadores de Estado y Celdas Especiales
+# Indicadores de Estado y Celdas Especiales
 ===================================================================
 */
 
-/* Indicador de estado dentro de las celdas */
 .status-indicator {
     height: 30px;
     margin: 1px;
@@ -757,16 +711,12 @@
     font-weight: bold;
     color: white;
     cursor: pointer;
-    /* Color de texto blanco para los indicadores */
 }
 
 .status-n {
     background-color: #727272;
 }
 
-
-
-/* Celdas para resúmenes (Vacaciones, Descansos, Utilización) */
 .vacations-cell,
 .breaks-cell,
 .utilization-cell {
@@ -776,7 +726,6 @@
     vertical-align: middle;
 }
 
-/* Contenedores internos para centrar el contenido */
 .vacations-container,
 .breaks-container,
 .utilization-container {
@@ -787,7 +736,6 @@
     height: 100%;
 }
 
-/* Valores numéricos en celdas especiales */
 .vacations-value,
 .breaks-value,
 .utilization-value {
@@ -812,25 +760,44 @@
     height: 100%;
 }
 
-/*
-===================================================================
-# Tipografía y Otros Estilos
-===================================================================
-*/
-
-/* Estilo para los números grandes dentro de las celdas de días */
 .large-number {
     font-size: 11px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
-    /* Asegura que el texto se trunque si es muy largo */
 }
 
-/* ==================================== */
-/* || Modal Principal */
-/* ==================================== */
+/*
+===================================================================
+# Estilos para filas de cuadrilla
+===================================================================
+*/
+
+.approval-table .squad-group-row {
+    background-color: #888a9283;
+}
+
+.approval-table .squad-group-label {
+    padding: 8px 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+    text-align: left;
+    color: #000000;
+    letter-spacing: 0.5px;
+}
+
+.approval-table .squad-group-row-none {
+    background-color: #fcebeb;
+    border-top: 3px solid #e74c3c;
+    border-bottom: 2px solid #e74c3c;
+}
+
+/*
+===================================================================
+# Modal de Cuadrillas
+===================================================================
+*/
 
 .squad-modal-container {
     position: fixed;
@@ -916,31 +883,11 @@
     color: white;
 }
 
-/* Estilos para la fila de grupo de cuadrilla */
-.approval-table .squad-group-row {
-    background-color: #888a9283; /* Fondo azul muy suave para distinguir */
-}
-
-.approval-table .squad-group-label {
-    padding: 8px 10px;
-    font-weight: bold;
-    font-size: 1.1em;
-    text-align: left;
-    color: #000000;
-    letter-spacing: 0.5px;
-}
-
-.approval-table .squad-group-row-none {
-    background-color: #fcebeb; /* Rojo suave para 'Sin Cuadrilla' */
-    border-top: 3px solid #e74c3c;
-    border-bottom: 2px solid #e74c3c;
-}
-
-
-
-/* ==================================== */
-/* || Barra de Herramientas */
-/* ==================================== */
+/*
+===================================================================
+# Barra de Herramientas
+===================================================================
+*/
 
 .toolbar {
     display: flex;
@@ -1022,9 +969,11 @@
     background-color: #2980b9;
 }
 
-/* ==================================== */
-/* || Tabla de Cuadrillas mejorada */
-/* ==================================== */
+/*
+===================================================================
+# Tabla de Cuadrillas
+===================================================================
+*/
 
 .responsive-table-container {
     padding: 0 25px 25px;
@@ -1037,7 +986,6 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin-top: 0;
     background-color: #fff;
     border-radius: 8px;
     overflow: hidden;
@@ -1084,8 +1032,6 @@
     background-color: #f8f9fa;
 }
 
-/* Color para cuadrillas incompletas */
-
 .squad-row.incomplete-row {
     background-color: #fff8e1;
 }
@@ -1095,8 +1041,6 @@
     color: #2c3e50;
     font-size: 0.95rem;
 }
-
-/* Grid de operadores */
 
 .operators-grid {
     display: grid;
@@ -1164,8 +1108,6 @@
     margin-top: 2px;
 }
 
-/* Botones de acción */
-
 .action-buttons {
     display: flex;
     gap: 8px;
@@ -1199,16 +1141,18 @@
     transform: scale(1.1);
 }
 
-/* Animaciones y estilos para la gestión de cuadrillas */
+/*
+===================================================================
+# Skeleton Loading
+===================================================================
+*/
 
-/* Skeleton loading */
 .skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 4px;
     color: transparent !important;
-    position: relative;
     overflow: hidden;
 }
 
@@ -1242,7 +1186,6 @@
     }
 }
 
-/* Loading form */
 .loading-form .form-body {
     position: relative;
 }
@@ -1258,18 +1201,6 @@
     z-index: 10;
 }
 
-.loading-form .form-body::before {
-    content: 'Cargando...';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 11;
-    font-size: 1.2rem;
-    color: #333;
-}
-
-/* Success animation */
 .success-animation .form-modal-content {
     animation: pulseSuccess 0.5s 2;
     position: relative;
@@ -1300,19 +1231,6 @@
     }
 }
 
-/* Transiciones suaves */
-.squad-row {
-    transition: all 0.3s ease;
-}
-
-.squad-modal-card {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.is-visible .squad-modal-card {
-    animation: modalEnter 0.4s ease forwards;
-}
-
 @keyframes modalEnter {
     from {
         opacity: 0;
@@ -1325,14 +1243,16 @@
     }
 }
 
-/* Operadores deshabilitados */
+.is-visible .squad-modal-card {
+    animation: modalEnter 0.4s ease forwards;
+}
+
 select option:disabled {
     color: #999;
     font-style: italic;
     background-color: #f8f9fa;
 }
 
-/* Error state */
 .error {
     color: #dc3545;
     text-align: center;
@@ -1360,20 +1280,11 @@ select option:disabled {
     background: #c82333;
 }
 
-/* Estilos para cuadrillas existentes deshabilitadas */
-select option[disabled] {
-    color: #6c757d;
-}
-
-/* Tooltip para opciones deshabilitadas */
-select option[disabled]:hover {
-    cursor: not-allowed;
-}
-
-
-/* ==================================== */
-/* || Modal de Formulario */
-/* ==================================== */
+/*
+===================================================================
+# Modal de Formulario
+===================================================================
+*/
 
 .form-modal {
     position: fixed;
@@ -1458,12 +1369,11 @@ select option[disabled]:hover {
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 0.95rem;
-    transition: none;
     background-color: white;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"  fill="%237f8c8d" viewBox="0 0 16 16" > <path fill-rule="evenodd"d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" /> </svg>');
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%237f8c8d" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
     background-repeat: no-repeat;
     background-position: right 15px center;
 }
@@ -1473,8 +1383,6 @@ select option[disabled]:hover {
     border-color: #3498db;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
     outline: none;
-    transition: all 0.3s;
-    /* REAGREGAMOS la transición solo en el foco */
 }
 
 .operator-selection {
@@ -1532,32 +1440,12 @@ select option[disabled]:hover {
     background-color: #219955;
 }
 
-.services-info-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-    position: relative;
-    overflow: hidden;
-}
+/*
+===================================================================
+# Modal de Servicios
+===================================================================
+*/
 
-.services-info-btn:hover {
-    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-/* Modal container and content */
 .services-modal {
     display: none;
     position: fixed;
@@ -1623,7 +1511,6 @@ select option[disabled]:hover {
     letter-spacing: -0.025em;
 }
 
-/* Tab styling - Específico para este modal */
 .modal-body {
     max-height: 40vh;
     overflow-y: auto;
@@ -1639,7 +1526,7 @@ select option[disabled]:hover {
     padding: 2px;
     gap: 4px;
     position: relative;
-    padding-right: 200px; /* Espacio para el buscador */
+    padding-right: 200px;
 }
 
 .modal-body .tab-btn {
@@ -1654,7 +1541,6 @@ select option[disabled]:hover {
     border-radius: 6px;
     color: #4a5568;
     flex: 0 1 auto;
-    position: relative;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     white-space: nowrap;
@@ -1681,7 +1567,6 @@ select option[disabled]:hover {
     display: block;
 }
 
-/* Buscador mejorado */
 .modal-body .search-container {
     position: absolute;
     right: 2px;
@@ -1695,7 +1580,6 @@ select option[disabled]:hover {
     border: 1px solid #cbd5e0;
     border-radius: 6px;
     font-size: 12px;
-    transition: all 0.2s ease;
     background-color: white;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
@@ -1710,7 +1594,6 @@ select option[disabled]:hover {
     color: #a0aec0;
 }
 
-/* Table styling */
 .services-section,
 .bonuses-section {
     background-color: var(--white);
@@ -1759,15 +1642,12 @@ select option[disabled]:hover {
 
 .table-row:hover {
     background-color: #edf2f7;
-    transform: none;
-    border-left: none;
 }
 
 .table-row:last-child {
     border-bottom: none;
 }
 
-/* Column widths for services table */
 .services-table .col-1 {
     flex: 0 0 12%;
     font-weight: 600;
@@ -1794,7 +1674,6 @@ select option[disabled]:hover {
     font-weight: 400;
 }
 
-/* Column widths for bonuses table */
 .bonuses-table .col-1 {
     flex: 0 0 30%;
     font-weight: 600;
@@ -1819,7 +1698,6 @@ select option[disabled]:hover {
     padding: 0 6px;
 }
 
-/* Loading and error states */
 .services-section p,
 .bonuses-section p {
     text-align: center;
@@ -1830,16 +1708,6 @@ select option[disabled]:hover {
     font-weight: 500;
 }
 
-.services-section p[style*="color: red"],
-.bonuses-section p[style*="color: red"] {
-    color: #e53e3e !important;
-    background-color: #fed7d7;
-    border: 1px solid #feb2b2;
-    border-radius: 6px;
-    padding: 8px;
-}
-
-/* Scrollbar styling */
 .modal-body::-webkit-scrollbar {
     width: 6px;
 }
@@ -1858,7 +1726,6 @@ select option[disabled]:hover {
     background: #a9b3c3;
 }
 
-/* Animations */
 @keyframes slideInUp {
     from {
         opacity: 0;
@@ -1873,11 +1740,10 @@ select option[disabled]:hover {
 
 /*
 ===================================================================
-# Estilos del Modal de Quincenas
+# Modal de Quincenas
 ===================================================================
 */
 
-/* Contenedor del modal */
 .quincena-modal-container {
     position: fixed;
     top: 0;
@@ -1891,7 +1757,6 @@ select option[disabled]:hover {
     z-index: 1050;
 }
 
-/* Tarjeta principal del modal */
 .quincena-modal-card {
     background-color: #f8f9fa;
     border-radius: 12px;
@@ -1901,7 +1766,6 @@ select option[disabled]:hover {
     overflow: hidden;
 }
 
-/* Encabezado del modal */
 .quincena-modal-header {
     padding: 18px 24px;
     background-color: #2c3e50;
@@ -1918,7 +1782,6 @@ select option[disabled]:hover {
     font-weight: 500;
 }
 
-/* Botón de cierre */
 .quincena-close-btn {
     background: none;
     border: none;
@@ -1936,18 +1799,10 @@ select option[disabled]:hover {
     transform: scale(1.1);
 }
 
-/* Contenido del modal dividido en dos secciones */
 .quincena-modal-content {
     display: flex;
     min-height: 400px;
 }
-
-
-/*
-===================================================================
-# Sección de Selección de Quincenas (Izquierda)
-===================================================================
-*/
 
 .quincena-selection-section {
     flex: 1;
@@ -2034,13 +1889,6 @@ select option[disabled]:hover {
     padding-top: 15px;
 }
 
-
-/*
-===================================================================
-# Sección de Calendario (Derecha)
-===================================================================
-*/
-
 .quincena-calendar-section {
     flex: 1;
     padding: 20px;
@@ -2048,7 +1896,6 @@ select option[disabled]:hover {
     flex-direction: column;
 }
 
-/* Barra de navegación del mes */
 .quincena-month-nav {
     display: flex;
     justify-content: space-between;
@@ -2082,7 +1929,6 @@ select option[disabled]:hover {
     background-color: #dee2e6;
 }
 
-/* Estructura de la cuadrícula del calendario */
 .quincena-calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -2090,7 +1936,6 @@ select option[disabled]:hover {
     flex-grow: 1;
 }
 
-/* Nombres de los días de la semana */
 .quincena-day-label {
     text-align: center;
     font-size: 0.8rem;
@@ -2100,14 +1945,6 @@ select option[disabled]:hover {
     text-transform: uppercase;
 }
 
-
-/*
-===================================================================
-# Estilos para los Días del Calendario y sus Estados
-===================================================================
-*/
-
-/* Celdas generales del día */
 .quincena-day-cell {
     padding: 10px 0;
     text-align: center;
@@ -2126,7 +1963,6 @@ select option[disabled]:hover {
     border-color: #ced4da;
 }
 
-/* Día de otro mes (desactivado visualmente) */
 .quincena-day-cell.other-month-day {
     color: #a0a0a0;
     background-color: #f0f0f0;
@@ -2134,13 +1970,11 @@ select option[disabled]:hover {
     border-color: transparent;
 }
 
-/* Celda vacía (para rellenar la cuadrícula) */
 .quincena-day-cell.empty-cell {
     visibility: hidden;
     cursor: default;
 }
 
-/* Días deshabilitados */
 .quincena-day-cell.disabled {
     color: #adb5bd;
     cursor: not-allowed;
@@ -2148,7 +1982,6 @@ select option[disabled]:hover {
     border-color: transparent;
 }
 
-/* Días seleccionados */
 .quincena-day-cell.quincena-selected {
     background-color: #e3f2fd;
     border-color: #2196f3;
@@ -2156,25 +1989,20 @@ select option[disabled]:hover {
     font-weight: 600;
 }
 
-/* Días de inicio de quincena */
 .quincena-day-cell.quincena-start {
     background-color: #f1f8e9;
     border-color: #8bc34a;
     color: #33691e;
     font-weight: 700;
-    position: relative;
 }
 
-/* Días de fin de quincena */
 .quincena-day-cell.quincena-end {
     background-color: #2c3e50;
     color: white;
     border-color: #2c3e50;
     font-weight: 700;
-    position: relative;
 }
 
-/* Combinaciones de estados */
 .quincena-day-cell.quincena-selected.quincena-end {
     background-color: #2c3e50;
     color: white;
@@ -2189,14 +2017,6 @@ select option[disabled]:hover {
     box-shadow: 0 0 0 2px #2196f3;
 }
 
-
-/*
-===================================================================
-# Estilos para Botones y Notificaciones
-===================================================================
-*/
-
-/* Estilo base para todos los botones del modal */
 .quincena-btn {
     padding: 10px 20px;
     border-radius: 6px;
@@ -2215,7 +2035,6 @@ select option[disabled]:hover {
     cursor: not-allowed;
 }
 
-/* Botón de cancelar */
 .quincena-cancel-btn {
     background-color: #f8f9fa;
     color: #495057;
@@ -2226,7 +2045,6 @@ select option[disabled]:hover {
     background-color: #e9ecef;
 }
 
-/* Botón de guardar */
 .quincena-save-btn {
     background-color: #2c3e50;
     color: white;
@@ -2237,7 +2055,6 @@ select option[disabled]:hover {
     transform: translateY(-1px);
 }
 
-/* Botón de editar */
 .quincena-edit-btn {
     background-color: #17a2b8;
     color: white;
@@ -2247,7 +2064,6 @@ select option[disabled]:hover {
     background-color: #138496;
 }
 
-/* Notificaciones (toast) */
 .notification {
     position: fixed;
     top: 20px;
@@ -2290,34 +2106,10 @@ select option[disabled]:hover {
     transform: translateX(400px);
 }
 
-
-/*
-===================================================================
-# Animaciones y Utilidades
-===================================================================
-*/
-
-/* Animación de spinner */
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.fa-spinner.fa-spin {
-    animation: spin 1s linear infinite;
-}
-
-/* Tooltip (mensaje flotante al pasar el mouse) */
 .quincena-day-cell::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: calc(100% + 10px);
-    /* Posición encima de la celda */
     left: 50%;
     transform: translateX(-50%);
     background-color: #2c3e50;
@@ -2337,13 +2129,26 @@ select option[disabled]:hover {
     visibility: visible;
 }
 
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spinner.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
 /*
 ===================================================================
-# Estilos del Modal de Aprobación (approvalModal) - MEJORADO PARA LEGIBILIDAD
+# Modal de Aprobación
 ===================================================================
 */
 
-/* Base del modal */
 .modal-approval-custom {
     display: none;
     position: fixed;
@@ -2358,7 +2163,6 @@ select option[disabled]:hover {
     font-family: 'Roboto', 'Arial', sans-serif;
 }
 
-/* Contenido del modal */
 .modal-approval-content {
     background-color: var(--white);
     margin: 3% auto;
@@ -2366,7 +2170,6 @@ select option[disabled]:hover {
     border-radius: 10px;
     width: 95%;
     max-width: 1000px;
-    /* Aumentado el ancho máximo para más espacio */
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     animation: slideIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: flex;
@@ -2374,26 +2177,22 @@ select option[disabled]:hover {
     gap: 1rem;
 }
 
-/* Encabezado del modal */
 .modal-approval-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #e0e0e0;
-    /* Usamos un color de borde fijo */
     padding-bottom: 0.8rem;
 }
 
 .modal-approval-title {
     font-size: 1.5rem;
-    /* Ligeramente más grande */
     font-weight: 700;
     color: #2c3e50;
 }
 
 .modal-approval-subtitle {
     font-size: 0.9rem;
-    /* Ligeramente más grande */
     color: #7f8c8d;
     margin-top: 0.2rem;
 }
@@ -2412,13 +2211,11 @@ select option[disabled]:hover {
     transform: rotate(90deg);
 }
 
-/* Cuerpo del modal */
 .modal-approval-body {
     flex-grow: 1;
     overflow-y: auto;
 }
 
-/* Tabla de actividades */
 .approval-table-custom {
     width: 100%;
     border-collapse: collapse;
@@ -2430,12 +2227,10 @@ select option[disabled]:hover {
 
 .approval-table-custom thead th {
     background-color: #34495e;
-    /* Color oscuro para contraste */
     color: white;
     padding: 0.7rem 0.5rem;
     text-align: left;
     font-size: 0.85rem;
-    /* Tamaño de fuente mejorado para cabecera */
     font-weight: 600;
     white-space: nowrap;
 }
@@ -2445,12 +2240,9 @@ select option[disabled]:hover {
     border-bottom: 1px solid #e0e0e0;
     color: #2c3e50;
     font-size: 0.8rem;
-    /* Tamaño de fuente mejorado para el contenido */
     vertical-align: top;
     line-height: 1.4;
-    /* Espaciado de línea para mejor lectura */
     word-break: break-word;
-    /* Evita desbordamiento con texto largo */
 }
 
 .approval-table-custom tbody tr:last-child td {
@@ -2459,22 +2251,22 @@ select option[disabled]:hover {
 
 .approval-table-custom tbody tr:hover {
     background-color: #f8f9fa;
-    /* Color de hover más sutil */
 }
 
-/* Selectores y campos de texto */
+.approval-table-custom strong {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
 .item-approval-selector,
 .modal-comment {
     width: 100%;
     padding: 0.5rem;
-    /* Aumentado el padding para mejor clic */
     border: 1px solid #ced4da;
     border-radius: 6px;
     font-size: 0.8rem;
-    /* Tamaño de fuente mejorado */
     color: #495057;
     background-color: white;
-    transition: border-color 0.2s, box-shadow 0.2s;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -2490,16 +2282,8 @@ select option[disabled]:hover {
 .modal-comment {
     resize: vertical;
     min-height: 50px;
-    /* Altura mínima aumentada para comentarios */
 }
 
-/* Estilo para los detalles importantes (se usa en JS con <strong>) */
-.approval-table-custom strong {
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-/* Pie de página del modal */
 .modal-approval-footer {
     border-top: 1px solid #e0e0e0;
     padding-top: 1rem;
@@ -2509,7 +2293,6 @@ select option[disabled]:hover {
     gap: 10px;
 }
 
-/* Botones del modal (ligeros ajustes de padding) */
 .modal-approval-footer .btn {
     padding: 0.7rem 1.4rem;
     border-radius: 6px;
@@ -2541,12 +2324,6 @@ select option[disabled]:hover {
     background-color: #218838;
 }
 
-
-/*
-===================================================================
-# Estilos para el Overlay de Guardado/Notificación en el Modal
-===================================================================
-*/
 .modal-save-overlay {
     position: absolute;
     top: 0;
@@ -2554,11 +2331,11 @@ select option[disabled]:hover {
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.9);
-    display: none; /* Inicialmente oculto, JS lo muestra */
+    display: none;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 1001; /* Encima de todo el contenido del modal */
+    z-index: 1001;
     border-radius: 10px;
     gap: 15px;
     text-align: center;
@@ -2568,7 +2345,7 @@ select option[disabled]:hover {
     width: 40px;
     height: 40px;
     border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db; /* Azul para la animación de giro */
+    border-top: 4px solid #3498db;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -2578,9 +2355,7 @@ select option[disabled]:hover {
     font-weight: 500;
     color: #2c3e50;
 }
-/* Reutiliza la keyframe @keyframes spin de tu CSS */
 
-/* Animaciones */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -2603,123 +2378,12 @@ select option[disabled]:hover {
     }
 }
 
+/*
+===================================================================
+# Modal de Detalles del Empleado
+===================================================================
+*/
 
-.employee-info-cell {
-    background-color: #ecf0f1;
-    text-align: center;
-    vertical-align: middle;
-    font-weight: 500;
-    font-size: 0.8rem;
-    position: sticky;
-    left: 0;
-    color: #000000;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border-right: 2px solid #9f9f9f;
-    border-top: 1px solid #4b4c4d; /* 🆕 Color que combina con el gris */
-    padding: 10px 5px;
-    position: relative;
-}
-
-.employee-detail-modal-content {
-    background-color: #fff;
-    margin: 2% auto;
-    border-radius: 12px;
-    width: 95%;
-    height: 90%;
-    max-width: 1400px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.employee-detail-modal-header {
-    background: #34495e;
-    color: white;
-    padding: 20px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #34495e;
-}
-
-.employee-detail-modal-header .header-content {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.employee-detail-modal-header .header-icon {
-    font-size: 24px;
-    color: #fcfeff;
-}
-
-.employee-detail-modal-header h3 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
-.employee-detail-modal-header .subtitle {
-    margin: 5px 0 0 0;
-    opacity: 0.9;
-    font-size: 0.9rem;
-}
-
-.employee-detail-close-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 28px;
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-.employee-detail-close-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.employee-detail-modal-body {
-    overflow: auto;
-    padding: 0;
-}
-
-.loading-spinner-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 20px;
-}
-
-.loading-spinner-lg {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-.loading-message {
-    color: #666;
-    font-size: 1.1rem;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-/* Estilos para el modal de detalles del empleado */
 .employee-detail-modal {
     display: none;
     position: fixed;
@@ -2806,7 +2470,6 @@ select option[disabled]:hover {
     overflow: auto;
 }
 
-/* Loading states */
 .loading-spinner-container {
     display: flex;
     flex-direction: column;
@@ -2851,41 +2514,239 @@ select option[disabled]:hover {
     color: #666;
 }
 
-/* Animaciones */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
+/*
+===================================================================
+# RESPONSIVE
+===================================================================
+*/
+
+@media (max-width: 1100px) {
+    .approval-header {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    .period-navigation-container,
+    .approval-actions {
+        width: 100%;
+        justify-content: center;
     }
 }
 
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
+@media (max-width: 992px) {
+    .approval-table {
+        font-size: 0.65rem;
     }
 
-    100% {
-        transform: rotate(360deg);
+    .day-header {
+        font-size: 0.65rem;
+        padding: 4px 2px;
+        min-width: 25px;
+    }
+
+    .data-cell {
+        min-width: 25px;
+        padding: 3px;
+        font-size: 0.7rem;
+    }
+
+    .status-indicator {
+        height: 25px;
+        font-size: 0.65rem;
     }
 }
 
-/* Responsive */
 @media (max-width: 768px) {
+    .filters-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .filter-group {
+        min-width: 100%;
+    }
+
+    .back-btn,
+    .squad-btn,
+    .services-info-btn {
+        flex: 1 1 calc(50% - 8px);
+        justify-content: center;
+    }
+
+    /* En móvil quitamos sticky de nombre para aprovechar espacio */
+    .employee-info-cell,
+    .activity-label-cell {
+        position: static;
+    }
+
+    .utilization-value {
+        font-size: 0.9em;
+        padding: 2px 4px;
+    }
+
+    .employee-info-cell {
+        font-size: 0.7rem;
+        padding: 8px 3px;
+    }
+
+    .employee-info-cell::after {
+        font-size: 0.55rem;
+        padding: 3px 4px;
+    }
+
+    .activity-label-cell {
+        font-size: 0.65rem;
+        padding: 6px;
+    }
+
+    .squad-modal-card {
+        width: 98%;
+        max-height: 98vh;
+    }
+
+    .squad-modal-header {
+        padding: 12px 15px;
+    }
+
+    .squad-modal-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .header-icon {
+        font-size: 1.4rem;
+    }
+
+    .responsive-table-container {
+        padding: 0 10px 15px;
+    }
+
+    .squad-table th,
+    .squad-table td {
+        padding: 10px 8px;
+        font-size: 0.8rem;
+    }
+
+    .operators-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .operator-card {
+        padding: 6px;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px 15px;
+    }
+
+    .search-container {
+        width: 100%;
+    }
+
+    .toolbar-buttons {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .toolbar-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .services-modal-content {
+        width: 100%;
+        padding: 8px;
+    }
+
+    .services-title {
+        font-size: 16px;
+    }
+
+    .modal-body .form-tabs {
+        flex-wrap: wrap;
+        padding-right: 0;
+    }
+
+    .modal-body .tab-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+        white-space: normal;
+    }
+
+    .modal-body .search-container {
+        position: relative;
+        width: 100%;
+        right: auto;
+        top: auto;
+        margin-top: 8px;
+    }
+
+    .quincena-modal-content {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .quincena-selection-section {
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+        padding: 15px;
+    }
+
+    .quincena-calendar-section {
+        padding: 15px;
+    }
+
+    .quincena-date-range {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .quincena-calendar-grid {
+        gap: 2px;
+    }
+
+    .quincena-day-cell {
+        padding: 6px 0;
+        font-size: 0.8rem;
+    }
+
+    .quincena-day-label {
+        font-size: 0.7rem;
+        padding: 4px 0;
+    }
+
+    .modal-approval-content {
+        margin: 2% auto;
+        padding: 1rem;
+        width: 98%;
+    }
+
+    .modal-approval-title {
+        font-size: 1.2rem;
+    }
+
+    .approval-table-custom thead th,
+    .approval-table-custom tbody td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.7rem;
+    }
+
+    .modal-approval-footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .modal-approval-footer .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.6rem;
+        font-size: 0.8rem;
+    }
+
     .employee-detail-modal-content {
         width: 98%;
         height: 95vh;
@@ -2893,10 +2754,77 @@ select option[disabled]:hover {
     }
 
     .employee-detail-modal-header {
-        padding: 15px 20px;
+        padding: 12px 15px;
     }
 
     .employee-detail-modal-header h3 {
-        font-size: 20px;
+        font-size: 1.1rem;
     }
+}
+
+@media (max-width: 480px) {
+    .approval-actions {
+        flex-direction: column;
+    }
+
+    .back-btn,
+    .squad-btn,
+    .services-info-btn {
+        width: 100%;
+        flex: 1 1 100%;
+    }
+
+    .period-btn {
+        padding: 4px 6px;
+        font-size: 11px;
+    }
+
+    .notification {
+        min-width: auto;
+        width: 90%;
+        right: 5%;
+        left: 5%;
+    }
+}
+
+@media (min-width: 1400px) {
+    .container {
+        margin: 0;
+    }
+
+    .approval-header {
+        padding: 15px 20px;
+    }
+
+    .period-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    .back-btn,
+    .squad-btn,
+    .services-info-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
+
+
+/* Cursor mano al hacer hover en la tabla */
+.table-container {
+    cursor: grab;
+}
+
+/* Cursor mientras arrastra */
+.table-container.is-grabbing {
+    cursor: grabbing;
+    user-select: none; /* Evita seleccionar texto al arrastrar */
+}
+
+/* Restaurar cursor normal en celdas interactivas */
+.table-container button,
+.table-container .status-indicator,
+.table-container input,
+.table-container select {
+    cursor: pointer;
 }
