@@ -105,13 +105,21 @@ function initializeModalCalendarScripts(employeeId) {
         const statusIcon = getStatusIcon(activity.day_status || 'under_review');
         let html = `<div class="day-header-info">`;
 
+        // 1. Abrimos un contenedor para apilar los tags
+        html += `<div class="tags-wrapper">`;
+
         html += `<div class="activity-tag" style="background-color: ${color};">${activity.activity_description || activity.activity_type}</div>`;
 
         if (activity.activity_type_vespertina && activity.activity_type_vespertina !== 'N') {
             const colorVesp = getActivityTagColor(activity.activity_type_vespertina);
-            html += `<div class="activity-tag" style="background-color: ${colorVesp}; margin-top: 2px;">${activity.activity_description_vespertina || activity.activity_type_vespertina}</div>`;
+            // El margin ahora lo controlará el CSS
+            html += `<div class="activity-tag" style="background-color: ${colorVesp};">${activity.activity_description_vespertina || activity.activity_type_vespertina}</div>`;
         }
 
+        // 2. Cerramos el contenedor de tags
+        html += `</div>`;
+
+        // 3. Imprimimos el icono a la derecha
         html += `${statusIcon}</div>`;
         return html;
     }
@@ -287,7 +295,7 @@ function initializeModalCalendarScripts(employeeId) {
         if (hasServiceBonus === 'si' && isActivityP) {
             serviceTabBtn.style.display = 'block';
             if (serviceRealDateInput.value === '' && currentSelectedDate) {
-                 serviceRealDateInput.value = currentSelectedDate;
+                serviceRealDateInput.value = currentSelectedDate;
             }
         } else {
             serviceTabBtn.style.display = 'none';
@@ -296,11 +304,11 @@ function initializeModalCalendarScripts(employeeId) {
             }
             if (hasServiceBonus === 'no' || !isActivityP) {
                 const radioNo = document.getElementById('service-bonus-no');
-                if(radioNo) radioNo.checked = true;
+                if (radioNo) radioNo.checked = true;
                 const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
-                if(optionNo) optionNo.classList.add('selected');
+                if (optionNo) optionNo.classList.add('selected');
                 const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
-                if(optionSi) optionSi.classList.remove('selected');
+                if (optionSi) optionSi.classList.remove('selected');
             }
             resetServiceForm();
         }
@@ -373,7 +381,7 @@ function initializeModalCalendarScripts(employeeId) {
         unlockAllFields();
     }
 
-function unlockAllFields() {
+    function unlockAllFields() {
         const activityElements = [
             document.getElementById('activity-type-select'), ...document.querySelectorAll('.activity-option'),
             document.getElementById('commissioned-select'), document.getElementById('well-name'),
@@ -629,13 +637,13 @@ function unlockAllFields() {
 
             // Estilizar Selectores Personalizados (Guardia)
             const matOpt = document.querySelector(`#activity-matutina-options .activity-option[data-value="${activity.activity_type || 'N'}"]`);
-            if(matOpt) {
+            if (matOpt) {
                 matOpt.classList.add('selected');
                 document.querySelector('#activity-matutina-header .placeholder').textContent = matOpt.querySelector('.activity-label').textContent;
             }
 
             const vespOpt = document.querySelector(`#activity-vespertina-options .activity-option[data-value="${activity.activity_type_vespertina || 'N'}"]`);
-            if(vespOpt) {
+            if (vespOpt) {
                 vespOpt.classList.add('selected');
                 document.querySelector('#activity-vespertina-header .placeholder').textContent = vespOpt.querySelector('.activity-label').textContent;
             }
@@ -932,7 +940,7 @@ function unlockAllFields() {
         currentSelectedDate = null;
         currentActivity = null;
 
-        if(!isGuardia){
+        if (!isGuardia) {
             conditionalFields.style.display = 'none';
         }
 
@@ -949,8 +957,8 @@ function unlockAllFields() {
 
     function resetActivityOptions() {
         if (isGuardia) {
-            if(matutinaSelect) matutinaSelect.value = '';
-            if(vespertinaSelect) vespertinaSelect.value = '';
+            if (matutinaSelect) matutinaSelect.value = '';
+            if (vespertinaSelect) vespertinaSelect.value = '';
 
             document.querySelectorAll('#activity-matutina-options .activity-option').forEach(opt => opt.classList.remove('selected'));
             document.querySelectorAll('#activity-vespertina-options .activity-option').forEach(opt => opt.classList.remove('selected'));
@@ -958,8 +966,8 @@ function unlockAllFields() {
             const matHeader = document.querySelector('#activity-matutina-header .placeholder');
             const vespHeader = document.querySelector('#activity-vespertina-header .placeholder');
 
-            if(matHeader) matHeader.textContent = 'Seleccionar...';
-            if(vespHeader) vespHeader.textContent = 'Seleccionar...';
+            if (matHeader) matHeader.textContent = 'Seleccionar...';
+            if (vespHeader) vespHeader.textContent = 'Seleccionar...';
 
             document.getElementById('activity-matutina-error').style.display = 'none';
             document.getElementById('activity-vespertina-error').style.display = 'none';
@@ -976,7 +984,7 @@ function unlockAllFields() {
         document.getElementById('well-name-field').style.display = 'none';
         document.getElementById('well-name').value = '';
 
-        if(!isGuardia){
+        if (!isGuardia) {
             conditionalFields.style.display = 'none';
         }
 
@@ -1107,11 +1115,11 @@ function unlockAllFields() {
         const header = document.getElementById(`activity-${prefix}-header`);
         const optionsEl = document.getElementById(`activity-${prefix}-options`);
         const realSelect = document.getElementById(`activity-${prefix}`);
-        if(!header || !optionsEl) return;
+        if (!header || !optionsEl) return;
 
         const options = optionsEl.querySelectorAll('.activity-option');
 
-        header.addEventListener('click', function(e) {
+        header.addEventListener('click', function (e) {
             e.stopPropagation();
             if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
             if (currentActivity && statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'))) return;
@@ -1121,7 +1129,7 @@ function unlockAllFields() {
         });
 
         options.forEach(opt => {
-            opt.addEventListener('click', function(e) {
+            opt.addEventListener('click', function (e) {
                 e.stopPropagation();
                 if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
                 if (currentActivity && statusesToBlockField.includes(getFieldStatus(currentActivity, 'activity'))) return;
@@ -1319,17 +1327,17 @@ function unlockAllFields() {
                 }
 
                 if (formData.activity_type === 'VAC' || formData.activity_type_vespertina === 'VAC') {
-                     if (vacationDaysAvailable <= 0) {
-                         document.getElementById('vacation-balance-error').style.display = 'block';
-                         isValid = false;
-                         Swal.fire({
-                             icon: 'warning',
-                             title: 'Límite alcanzado',
-                             text: `El límite de tus vacaciones ha sido alcanzado.`,
-                             confirmButtonText: 'Aceptar'
-                         });
-                         return;
-                     }
+                    if (vacationDaysAvailable <= 0) {
+                        document.getElementById('vacation-balance-error').style.display = 'block';
+                        isValid = false;
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Límite alcanzado',
+                            text: `El límite de tus vacaciones ha sido alcanzado.`,
+                            confirmButtonText: 'Aceptar'
+                        });
+                        return;
+                    }
                 }
             }
         } else {
@@ -1468,7 +1476,7 @@ function unlockAllFields() {
             }
         }
 
-       if (!isValid) {
+        if (!isValid) {
             Swal.fire({
                 icon: 'error',
                 title: 'Campos incompletos',

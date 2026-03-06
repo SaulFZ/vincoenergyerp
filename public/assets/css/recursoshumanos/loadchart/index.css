@@ -670,8 +670,32 @@ body {
     top: 5px;
     right: 5px;
     display: flex;
+    /* Flexbox básico y seguro */
     align-items: center;
-    gap: 3px;
+    /* Centra el icono verticalmente respecto a los tags */
+    gap: 4px;
+    max-width: calc(100% - 15px);
+    /* Evita que tape el número del día */
+}
+
+/* Nuevo contenedor que apila los tags */
+.tags-wrapper {
+    display: flex;
+    flex-direction: column;
+    /* Apila un tag arriba del otro */
+    gap: 2px;
+    /* Espacio vertical entre los dos tags */
+    align-items: flex-end;
+    /* Los recarga hacia la derecha junto al icono */
+    min-width: 0;
+    /* Obliga a que funcionen los puntos suspensivos si el texto es muy largo */
+}
+
+/* Forzamos el ancho en pantallas grandes */
+.tags-wrapper .activity-tag {
+    width: max-content;
+    max-width: 100%;
+    margin-top: 0 !important;
 }
 
 /* Iconos de Estado */
@@ -1578,6 +1602,17 @@ body {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .tags-wrapper {
+        width: 100%;
+        align-items: center;
+        /* Centra los tags en móviles */
+    }
+
+    .tags-wrapper .activity-tag {
+        width: 95%;
+        /* Mantiene el tamaño largo en teléfonos */
     }
 
     .modal-content {
