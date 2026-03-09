@@ -65,7 +65,7 @@ class DriverLicenseController extends Controller
         }
 
         // Carga inicial normal
-        return view('modulos.qhse.sistemas.gerenciamiento.driver_licenses', compact('empleados', 'perPage'));
+        return view('modulos.qhse.gerenciamiento.driver_licenses', compact('empleados', 'perPage'));
     }
     /**
      * Recibe la petición AJAX para actualizar las fechas de los cursos y licencias

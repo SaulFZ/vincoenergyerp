@@ -1,4 +1,4 @@
-@extends('modulos.qhse.sistemas.gerenciamiento.index')
+@extends('modulos.qhse.gerenciamiento.index')
 
 @section('content')
     <div class="dashboard-container">
@@ -165,7 +165,7 @@
                         style="stroke-dasharray: 125; stroke-dashoffset: 125; animation: dash 1.5s ease-in-out infinite;" />
                 </svg>
             </div>
-            <p style="color: #1e3a8a; font-weight: 500;">Cargando viajes...</p>
+            <p style="color: #0c1d4ddf; font-weight: 500;">Cargando viajes...</p>
         </div>
     </div>
 
@@ -332,7 +332,7 @@
         <div class="modal-content">
             <div class="form-header-modal">
                 <div class="form-header-info">
-                    <div class="logo-img-viajes">
+                    <div class="logo-img">
                         <img src="{{ asset('assets/img/logovinco1.png') }}" alt="Vinco Energy">
                     </div>
                     <div class="form-header-title">
@@ -465,7 +465,7 @@
                                 <i class="fas fa-clock"></i>
                             </div>
                         </div>
-                         <div class="form-group">
+                        <div class="form-group">
                             <label>
                                 <i class="fas fa-clock"></i>
                                 Hora de Término
@@ -488,7 +488,7 @@
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
                         </div>
-<div class="form-group">
+                        <div class="form-group">
                             <label>
                                 <i class="fas fa-map-marker"></i>
                                 Llegando a
@@ -718,12 +718,15 @@
                         <div class="evaluacion-item">
                             <div class="evaluacion-titulo">8. Otras Cond. de la carretera</div>
                             <div class="evaluacion-opciones">
+                                 <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="0">
+                                    No aplica</label>
                                 <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="10"
                                         required> Zona con curvas y pendientes</label>
                                 <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="15">
                                     Carretera con superficies mojadas; vados</label>
                                 <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="15">
                                     Carretera solitaria (unidad no puede detenerse)</label>
+
                             </div>
                         </div>
 
@@ -1101,8 +1104,8 @@
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="doc_tarjeta" value="si" required>
                                 Sí</label>
-                            <label class="no"><input type="radio" name="doc_tarjeta" value="no">
-                                No</label>
+                            <label class="no"><input type="radio" name="doc_tarjeta" value="no"> No</label>
+                            <label class="na"><input type="radio" name="doc_tarjeta" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1113,6 +1116,7 @@
                             <label class="si"><input type="radio" name="doc_poliza" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="doc_poliza" value="no"> No</label>
+                            <label class="na"><input type="radio" name="doc_poliza" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1124,6 +1128,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="doc_tel_emergencia" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="doc_tel_emergencia" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1133,15 +1139,15 @@
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="doc_licencia" value="si" required>
                                 Sí</label>
-                            <label class="no"><input type="radio" name="doc_licencia" value="no">
-                                No</label>
+                            <label class="no"><input type="radio" name="doc_licencia" value="no"> No</label>
+                            <label class="na"><input type="radio" name="doc_licencia" value="na"> N/A</label>
                         </div>
                     </div>
                 </div>
 
                 {{-- SECCIÓN 2: INSPECCIÓN VISUAL --}}
                 <h3 class="inspeccion-modal-title" style="margin-top: 25px;">
-                    <i class="fas fa-eye"></i> II. INSPECCIÓN VISUAL
+                    <i class="fas fa-eye"></i> II. INSPECCIÓN VISUAL (Marcar si está en buen estado o no)
                 </h3>
                 <div class="inspeccion-grid">
                     <div class="inspeccion-item">
@@ -1151,8 +1157,8 @@
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_botiquin" value="si" required>
                                 Sí</label>
-                            <label class="no"><input type="radio" name="vis_botiquin" value="no">
-                                No</label>
+                            <label class="no"><input type="radio" name="vis_botiquin" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_botiquin" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1163,6 +1169,7 @@
                             <label class="si"><input type="radio" name="vis_triangulo" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_triangulo" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_triangulo" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1172,8 +1179,8 @@
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_extintor" value="si" required>
                                 Sí</label>
-                            <label class="no"><input type="radio" name="vis_extintor" value="no">
-                                No</label>
+                            <label class="no"><input type="radio" name="vis_extintor" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_extintor" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1184,6 +1191,7 @@
                             <label class="si"><input type="radio" name="vis_gato" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_gato" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_gato" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1194,6 +1202,8 @@
                             <label class="si"><input type="radio" name="vis_cables" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_cables" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_cables" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1201,10 +1211,12 @@
                             <i class="fas fa-toolbox"></i> <span>Kit de herramientas básicas</span>
                         </div>
                         <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="vis_herramientas" value="si" required>
-                                Sí</label>
+                            <label class="si"><input type="radio" name="vis_herramientas" value="si"
+                                    required> Sí</label>
                             <label class="no"><input type="radio" name="vis_herramientas" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_herramientas" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1216,6 +1228,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_linterna" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_linterna" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1227,6 +1241,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_espejos" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_espejos" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1235,10 +1251,11 @@
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_refaccion" value="si"
-                                    required>
-                                Sí</label>
+                                    required> Sí</label>
                             <label class="no"><input type="radio" name="vis_refaccion" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_refaccion" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1247,10 +1264,11 @@
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_neumaticos" value="si"
-                                    required>
-                                Sí</label>
+                                    required> Sí</label>
                             <label class="no"><input type="radio" name="vis_neumaticos" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_neumaticos" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1262,6 +1280,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_pintura" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_pintura" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1270,10 +1290,11 @@
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_parabrisas" value="si"
-                                    required>
-                                Sí</label>
+                                    required> Sí</label>
                             <label class="no"><input type="radio" name="vis_parabrisas" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_parabrisas" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1285,6 +1306,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_defensas" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_defensas" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1293,10 +1316,11 @@
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_luces_gral" value="si"
-                                    required>
-                                Sí</label>
+                                    required> Sí</label>
                             <label class="no"><input type="radio" name="vis_luces_gral" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_luces_gral" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1305,10 +1329,11 @@
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_luces_stop" value="si"
-                                    required>
-                                Sí</label>
+                                    required> Sí</label>
                             <label class="no"><input type="radio" name="vis_luces_stop" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_luces_stop" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1319,6 +1344,8 @@
                             <label class="si"><input type="radio" name="vis_claxon" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_claxon" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_claxon" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1329,6 +1356,7 @@
                             <label class="si"><input type="radio" name="vis_logos" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_logos" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_logos" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1340,6 +1368,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_asientos" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_asientos" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1349,8 +1379,8 @@
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_panel" value="si" required>
                                 Sí</label>
-                            <label class="no"><input type="radio" name="vis_panel" value="no">
-                                No</label>
+                            <label class="no"><input type="radio" name="vis_panel" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_panel" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1359,10 +1389,11 @@
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="vis_cinturones" value="si"
-                                    required>
-                                Sí</label>
+                                    required> Sí</label>
                             <label class="no"><input type="radio" name="vis_cinturones" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_cinturones" value="na">
+                                N/A</label>
                         </div>
                     </div>
                 </div>
@@ -1378,10 +1409,11 @@
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="mant_fecha_km" value="si"
-                                    required>
-                                Sí</label>
+                                    required> Sí</label>
                             <label class="no"><input type="radio" name="mant_fecha_km" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_fecha_km" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1391,8 +1423,9 @@
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="mant_fugas" value="si" required>
                                 Sí</label>
-                            <label class="no"><input type="radio" name="mant_fugas" value="no">
-                                No</label>
+                            <label class="no"><input type="radio" name="mant_fugas" value="no"> No</label>
+                            <label class="na"><input type="radio" name="mant_fugas" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1404,6 +1437,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="mant_niveles" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_niveles" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1415,6 +1450,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="mant_bandas" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_bandas" value="na">
+                                N/A</label>
                         </div>
                     </div>
                 </div>
@@ -1516,13 +1553,14 @@
             </div>
         </div>
     </div>
+
     {{-- MODAL DE INSPECCIÓN PARA UNIDADES PESADAS --}}
     <div class="modal-overlay" id="modalInspeccionPesada">
         <div class="modal-content">
             <div class="form-header-modal">
                 <div class="form-header-info">
                     <div class="form-header-title">
-                        <h2>INSPECCIÓN DEw UNIDADES PESADAS</h2>
+                        <h2>INSPECCIÓN DE UNIDADES PESADAS</h2>
                     </div>
                 </div>
 
@@ -1646,6 +1684,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="doc_tarjeta" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="doc_tarjeta" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1656,6 +1696,8 @@
                             <label class="si"><input type="radio" name="doc_poliza" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="doc_poliza" value="no"> No</label>
+                            <label class="na"><input type="radio" name="doc_poliza" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     {{-- Específicos Pesados --}}
@@ -1668,6 +1710,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="doc_permiso_carga" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="doc_permiso_carga" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1679,6 +1723,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="doc_bajos_contam" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="doc_bajos_contam" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1690,6 +1736,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="doc_fisico_mec" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="doc_fisico_mec" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1701,6 +1749,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="doc_carta_porte" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="doc_carta_porte" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1712,6 +1762,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="doc_tel_emergencia" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="doc_tel_emergencia" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1723,13 +1775,15 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="doc_licencia" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="doc_licencia" value="na">
+                                N/A</label>
                         </div>
                     </div>
                 </div>
 
                 {{-- SECCIÓN 2: INSPECCIÓN VISUAL --}}
                 <h3 class="inspeccion-modal-title" style="margin-top: 25px;">
-                    <i class="fas fa-eye"></i> II. INSPECCIÓN VISUAL
+                    <i class="fas fa-eye"></i> II. INSPECCIÓN VISUAL (Marcar si está en buen estado o no)
                 </h3>
                 <div class="inspeccion-grid">
                     <div class="inspeccion-item">
@@ -1741,6 +1795,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_botiquin" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_botiquin" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1751,6 +1807,7 @@
                             <label class="si"><input type="radio" name="vis_conos" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_conos" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_conos" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1762,6 +1819,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_extintor" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_extintor" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1772,6 +1831,7 @@
                             <label class="si"><input type="radio" name="vis_gato" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_gato" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_gato" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1782,6 +1842,8 @@
                             <label class="si"><input type="radio" name="vis_cables" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_cables" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_cables" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1793,6 +1855,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_linterna" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_linterna" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1804,6 +1868,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_espejos" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_espejos" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1815,6 +1881,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_refaccion" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_refaccion" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1826,6 +1894,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_llantas_estado" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_llantas_estado" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1837,6 +1907,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_llantas_calib" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_llantas_calib" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1848,6 +1920,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_puertas" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_puertas" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1858,6 +1932,8 @@
                             <label class="si"><input type="radio" name="vis_golpes" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_golpes" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_golpes" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1869,6 +1945,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_limpiaparabrisas" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_limpiaparabrisas" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1880,6 +1958,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_aire_acond" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_aire_acond" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     {{-- Específicos Suspensión --}}
@@ -1892,6 +1972,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_resortes" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_resortes" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1903,6 +1985,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_bolsas_aire" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_bolsas_aire" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1914,6 +1998,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_luces_gral" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_luces_gral" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1924,6 +2010,8 @@
                             <label class="si"><input type="radio" name="vis_claxon" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_claxon" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_claxon" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1935,6 +2023,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_alarma_reversa" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_alarma_reversa" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1945,6 +2035,7 @@
                             <label class="si"><input type="radio" name="vis_logos" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_logos" value="no"> No</label>
+                            <label class="na"><input type="radio" name="vis_logos" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1956,6 +2047,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_asientos" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_asientos" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1967,6 +2060,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="vis_cinturones" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_cinturones" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -1978,6 +2073,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="vis_torreta" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="vis_torreta" value="na">
+                                N/A</label>
                         </div>
                     </div>
                 </div>
@@ -1997,6 +2094,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_fecha_km" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_fecha_km" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2008,6 +2107,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_encendido" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_encendido" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2019,6 +2120,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_presion_aceite" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_presion_aceite" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2030,6 +2133,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_temp_motor" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_temp_motor" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2041,6 +2146,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_presion_aire" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_presion_aire" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2052,6 +2159,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_fan_clutch" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_fan_clutch" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2063,6 +2172,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_baterias" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_baterias" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2074,6 +2185,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_velocimetro" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_velocimetro" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2084,6 +2197,7 @@
                             <label class="si"><input type="radio" name="mant_rpm" value="si" required>
                                 Sí</label>
                             <label class="no"><input type="radio" name="mant_rpm" value="no"> No</label>
+                            <label class="na"><input type="radio" name="mant_rpm" value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2095,6 +2209,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_nivel_aceite" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_nivel_aceite" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2106,6 +2222,8 @@
                                     value="si" required> Sí</label>
                             <label class="no"><input type="radio" name="mant_nivel_anticongelante"
                                     value="no"> No</label>
+                            <label class="na"><input type="radio" name="mant_nivel_anticongelante"
+                                    value="na"> N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2117,6 +2235,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_nivel_hidraulico" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_nivel_hidraulico" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2128,6 +2248,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_nivel_diesel" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_nivel_diesel" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2139,6 +2261,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_freno_motor" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_freno_motor" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2150,6 +2274,8 @@
                                     required> Sí</label>
                             <label class="no"><input type="radio" name="mant_freno_parqueo" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_freno_parqueo" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2161,6 +2287,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="mant_bandas" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_bandas" value="na">
+                                N/A</label>
                         </div>
                     </div>
                     <div class="inspeccion-item">
@@ -2172,6 +2300,8 @@
                                 Sí</label>
                             <label class="no"><input type="radio" name="mant_purgado" value="no">
                                 No</label>
+                            <label class="na"><input type="radio" name="mant_purgado" value="na">
+                                N/A</label>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-@extends('modulos.sistemas.sistemas.tickets.index')
+@extends('modulos.sistemas.tickets.index')
 
 @section('content')
     <style>

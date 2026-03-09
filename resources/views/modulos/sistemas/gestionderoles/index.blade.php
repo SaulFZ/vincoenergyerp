@@ -207,11 +207,12 @@
                                             <span class="slider"></span>
                                         </label>
                                     </div>
+
                                     <div class="module-body" id="administracion-body">
                                         <div class="permission-item">
-                                            <span>Configuración general</span>
+                                            <span>Gestión de reembolsos</span>
                                             <label class="switch">
-                                                <input type="checkbox" name="permissions[administracion][config]">
+                                                <input type="checkbox" name="permissions[administracion][reembolsos]">
                                                 <span class="slider"></span>
                                             </label>
                                         </div>

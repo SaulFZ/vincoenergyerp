@@ -6,11 +6,11 @@ use App\Mail\Qhse\Gerenciamiento\JourneyApprovalMail;
 use App\Models\Auth\User;
 use App\Models\Qhse\Gerenciamiento\HeavyInspection;
 use App\Models\Qhse\Gerenciamiento\Journey;
+use App\Models\Qhse\Gerenciamiento\JourneyLog;
 use App\Models\Qhse\Gerenciamiento\JourneyUnit;
 use App\Models\Qhse\Gerenciamiento\LightInspection;
 use App\Models\Qhse\Gerenciamiento\PreConvoyMeeting;
 use App\Models\Qhse\Gerenciamiento\RiskAssessment;
-use App\Models\Qhse\Gerenciamiento\JourneyLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -58,7 +58,7 @@ class JourneyStoreController extends Controller
                 'event_type'  => 'created',
                 'title'       => 'Solicitud Creada',
                 'description' => 'El viaje ha sido registrado exitosamente y está a la espera de autorización.',
-                'event_time'  => now()
+                'event_time'  => now(),
             ]);
 
             DB::commit();
@@ -261,112 +261,120 @@ class JourneyStoreController extends Controller
 
         return $passengers;
     }
-    /**
+/**
      * Crear inspección ligera
      */
     private function createLightInspection($journeyUnit, $inspectionData)
     {
         // Procesar fotos si existen
-// Pasamos el folio del viaje relacionado
         $photoPaths = $this->processPhotos($inspectionData['fotos'] ?? [], 'L', $journeyUnit->journey->folio);
+
         LightInspection::create([
             'journey_unit_id'           => $journeyUnit->id,
             'fuel_level'                => $inspectionData['nivel_gasolina'] ?? '',
             'mileage'                   => isset($inspectionData['kilometraje']) ? (int) str_replace(',', '', $inspectionData['kilometraje']) : 0,
-            'doc_registration_card'     => ($inspectionData['doc_tarjeta'] ?? 'no') === 'si',
-            'doc_insurance_policy'      => ($inspectionData['doc_poliza'] ?? 'no') === 'si',
-            'doc_emergency_phones'      => ($inspectionData['doc_tel_emergencia'] ?? 'no') === 'si',
-            'doc_driving_license'       => ($inspectionData['doc_licencia'] ?? 'no') === 'si',
-            'vis_first_aid_kit'         => ($inspectionData['vis_botiquin'] ?? 'no') === 'si',
-            'vis_safety_triangles'      => ($inspectionData['vis_triangulo'] ?? 'no') === 'si',
-            'vis_fire_extinguisher'     => ($inspectionData['vis_extintor'] ?? 'no') === 'si',
-            'vis_jack_wrench'           => ($inspectionData['vis_gato'] ?? 'no') === 'si',
-            'vis_jumper_cables'         => ($inspectionData['vis_cables'] ?? 'no') === 'si',
-            'vis_basic_tools'           => ($inspectionData['vis_herramientas'] ?? 'no') === 'si',
-            'vis_flashlight'            => ($inspectionData['vis_linterna'] ?? 'no') === 'si',
-            'vis_mirrors'               => ($inspectionData['vis_espejos'] ?? 'no') === 'si',
-            'vis_spare_tire'            => ($inspectionData['vis_refaccion'] ?? 'no') === 'si',
-            'vis_tires_condition'       => ($inspectionData['vis_neumaticos'] ?? 'no') === 'si',
-            'vis_paint_condition'       => ($inspectionData['vis_pintura'] ?? 'no') === 'si',
-            'vis_windshield_wipers'     => ($inspectionData['vis_parabrisas'] ?? 'no') === 'si',
-            'vis_bumpers'               => ($inspectionData['vis_defensas'] ?? 'no') === 'si',
-            'vis_main_lights'           => ($inspectionData['vis_luces_gral'] ?? 'no') === 'si',
-            'vis_stop_reverse_lights'   => ($inspectionData['vis_luces_stop'] ?? 'no') === 'si',
-            'vis_horn'                  => ($inspectionData['vis_claxon'] ?? 'no') === 'si',
-            'vis_company_logos'         => ($inspectionData['vis_logos'] ?? 'no') === 'si',
-            'vis_seats_condition'       => ($inspectionData['vis_asientos'] ?? 'no') === 'si',
-            'vis_dashboard_panel'       => ($inspectionData['vis_panel'] ?? 'no') === 'si',
-            'vis_seatbelts'             => ($inspectionData['vis_cinturones'] ?? 'no') === 'si',
-            'maint_last_check_verified' => ($inspectionData['mant_fecha_km'] ?? 'no') === 'si',
-            'maint_leaks_check'         => ($inspectionData['mant_fugas'] ?? 'no') === 'si',
-            'maint_fluid_levels'        => ($inspectionData['mant_niveles'] ?? 'no') === 'si',
-            'maint_belts_condition'     => ($inspectionData['mant_bandas'] ?? 'no') === 'si',
+
+            // --- PASAMOS EL STRING DIRECTO, POR DEFECTO 'na' ---
+            'doc_registration_card'     => $inspectionData['doc_tarjeta'] ?? 'na',
+            'doc_insurance_policy'      => $inspectionData['doc_poliza'] ?? 'na',
+            'doc_emergency_phones'      => $inspectionData['doc_tel_emergencia'] ?? 'na',
+            'doc_driving_license'       => $inspectionData['doc_licencia'] ?? 'na',
+            'vis_first_aid_kit'         => $inspectionData['vis_botiquin'] ?? 'na',
+            'vis_safety_triangles'      => $inspectionData['vis_triangulo'] ?? 'na',
+            'vis_fire_extinguisher'     => $inspectionData['vis_extintor'] ?? 'na',
+            'vis_jack_wrench'           => $inspectionData['vis_gato'] ?? 'na',
+            'vis_jumper_cables'         => $inspectionData['vis_cables'] ?? 'na',
+            'vis_basic_tools'           => $inspectionData['vis_herramientas'] ?? 'na',
+            'vis_flashlight'            => $inspectionData['vis_linterna'] ?? 'na',
+            'vis_mirrors'               => $inspectionData['vis_espejos'] ?? 'na',
+            'vis_spare_tire'            => $inspectionData['vis_refaccion'] ?? 'na',
+            'vis_tires_condition'       => $inspectionData['vis_neumaticos'] ?? 'na',
+            'vis_paint_condition'       => $inspectionData['vis_pintura'] ?? 'na',
+            'vis_windshield_wipers'     => $inspectionData['vis_parabrisas'] ?? 'na',
+            'vis_bumpers'               => $inspectionData['vis_defensas'] ?? 'na',
+            'vis_main_lights'           => $inspectionData['vis_luces_gral'] ?? 'na',
+            'vis_stop_reverse_lights'   => $inspectionData['vis_luces_stop'] ?? 'na',
+            'vis_horn'                  => $inspectionData['vis_claxon'] ?? 'na',
+            'vis_company_logos'         => $inspectionData['vis_logos'] ?? 'na',
+            'vis_seats_condition'       => $inspectionData['vis_asientos'] ?? 'na',
+            'vis_dashboard_panel'       => $inspectionData['vis_panel'] ?? 'na',
+            'vis_seatbelts'             => $inspectionData['vis_cinturones'] ?? 'na',
+            'maint_last_check_verified' => $inspectionData['mant_fecha_km'] ?? 'na',
+            'maint_leaks_check'         => $inspectionData['mant_fugas'] ?? 'na',
+            'maint_fluid_levels'        => $inspectionData['mant_niveles'] ?? 'na',
+            'maint_belts_condition'     => $inspectionData['mant_bandas'] ?? 'na',
+
+            // --- ESTA SE QUEDA IGUAL (es la única booleana en la BD) ---
             'has_anomalies'             => ($inspectionData['anomalias_detectadas'] ?? 'no') === 'si',
             'anomaly_comments'          => $inspectionData['comentarios'] ?? null,
             'photo_evidence'            => $photoPaths,
         ]);
     }
 
-    /**
+/**
      * Crear inspección pesada
      */
     private function createHeavyInspection($journeyUnit, $inspectionData)
     {
         // Procesar fotos si existen
-        // Pasamos 'P' y el folio
         $photoPaths = $this->processPhotos($inspectionData['fotos'] ?? [], 'P', $journeyUnit->journey->folio);
+
         HeavyInspection::create([
             'journey_unit_id'         => $journeyUnit->id,
             'fuel_level'              => $inspectionData['nivel_diesel'] ?? '',
             'mileage'                 => isset($inspectionData['kilometraje']) ? (int) str_replace(',', '', $inspectionData['kilometraje']) : 0,
-            'doc_registration_card'   => ($inspectionData['doc_tarjeta'] ?? 'no') === 'si',
-            'doc_insurance_policy'    => ($inspectionData['doc_poliza'] ?? 'no') === 'si',
-            'doc_cargo_permit'        => ($inspectionData['doc_permiso_carga'] ?? 'no') === 'si',
-            'doc_emissions_cert'      => ($inspectionData['doc_bajos_contam'] ?? 'no') === 'si',
-            'doc_mechanical_cert'     => ($inspectionData['doc_fisico_mec'] ?? 'no') === 'si',
-            'doc_waybill'             => ($inspectionData['doc_carta_porte'] ?? 'no') === 'si',
-            'doc_emergency_phones'    => ($inspectionData['doc_tel_emergencia'] ?? 'no') === 'si',
-            'doc_driving_license'     => ($inspectionData['doc_licencia'] ?? 'no') === 'si',
-            'vis_first_aid_kit'       => ($inspectionData['vis_botiquin'] ?? 'no') === 'si',
-            'vis_safety_cones'        => ($inspectionData['vis_conos'] ?? 'no') === 'si',
-            'vis_fire_extinguisher'   => ($inspectionData['vis_extintor'] ?? 'no') === 'si',
-            'vis_jack'                => ($inspectionData['vis_gato'] ?? 'no') === 'si',
-            'vis_jumper_cables'       => ($inspectionData['vis_cables'] ?? 'no') === 'si',
-            'vis_flashlight'          => ($inspectionData['vis_linterna'] ?? 'no') === 'si',
-            'vis_mirrors'             => ($inspectionData['vis_espejos'] ?? 'no') === 'si',
-            'vis_spare_tire'          => ($inspectionData['vis_refaccion'] ?? 'no') === 'si',
-            'vis_tires_condition'     => ($inspectionData['vis_llantas_estado'] ?? 'no') === 'si',
-            'vis_tires_calibrated'    => ($inspectionData['vis_llantas_calib'] ?? 'no') === 'si',
-            'vis_doors_windows'       => ($inspectionData['vis_puertas'] ?? 'no') === 'si',
-            'vis_body_dents'          => ($inspectionData['vis_golpes'] ?? 'no') === 'si',
-            'vis_windshield_wipers'   => ($inspectionData['vis_limpiaparabrisas'] ?? 'no') === 'si',
-            'vis_air_conditioning'    => ($inspectionData['vis_aire_acond'] ?? 'no') === 'si',
-            'vis_springs_suspension'  => ($inspectionData['vis_resortes'] ?? 'no') === 'si',
-            'vis_air_bags_suspension' => ($inspectionData['vis_bolsas_aire'] ?? 'no') === 'si',
-            'vis_general_lights'      => ($inspectionData['vis_luces_gral'] ?? 'no') === 'si',
-            'vis_horn'                => ($inspectionData['vis_claxon'] ?? 'no') === 'si',
-            'vis_reverse_alarm'       => ($inspectionData['vis_alarma_reversa'] ?? 'no') === 'si',
-            'vis_logos'               => ($inspectionData['vis_logos'] ?? 'no') === 'si',
-            'vis_seats'               => ($inspectionData['vis_asientos'] ?? 'no') === 'si',
-            'vis_seatbelts'           => ($inspectionData['vis_cinturones'] ?? 'no') === 'si',
-            'vis_beacon_light'        => ($inspectionData['vis_torreta'] ?? 'no') === 'si',
-            'maint_date_km_check'     => ($inspectionData['mant_fecha_km'] ?? 'no') === 'si',
-            'maint_engine_start'      => ($inspectionData['mant_encendido'] ?? 'no') === 'si',
-            'maint_oil_pressure'      => ($inspectionData['mant_presion_aceite'] ?? 'no') === 'si',
-            'maint_engine_temp'       => ($inspectionData['mant_temp_motor'] ?? 'no') === 'si',
-            'maint_air_pressure'      => ($inspectionData['mant_presion_aire'] ?? 'no') === 'si',
-            'maint_fan_clutch'        => ($inspectionData['mant_fan_clutch'] ?? 'no') === 'si',
-            'maint_batteries'         => ($inspectionData['mant_baterias'] ?? 'no') === 'si',
-            'maint_speedometer'       => ($inspectionData['mant_velocimetro'] ?? 'no') === 'si',
-            'maint_rpm_indicator'     => ($inspectionData['mant_rpm'] ?? 'no') === 'si',
-            'maint_oil_level'         => ($inspectionData['mant_nivel_aceite'] ?? 'no') === 'si',
-            'maint_coolant_level'     => ($inspectionData['mant_nivel_anticongelante'] ?? 'no') === 'si',
-            'maint_hydraulic_level'   => ($inspectionData['mant_nivel_hidraulico'] ?? 'no') === 'si',
-            'maint_diesel_level'      => ($inspectionData['mant_nivel_diesel'] ?? 'no') === 'si',
-            'maint_engine_brake'      => ($inspectionData['mant_freno_motor'] ?? 'no') === 'si',
-            'maint_parking_brake'     => ($inspectionData['mant_freno_parqueo'] ?? 'no') === 'si',
-            'maint_belts'             => ($inspectionData['mant_bandas'] ?? 'no') === 'si',
-            'maint_air_tank_purge'    => ($inspectionData['mant_purgado'] ?? 'no') === 'si',
+
+            // --- PASAMOS EL STRING DIRECTO, POR DEFECTO 'na' ---
+            'doc_registration_card'   => $inspectionData['doc_tarjeta'] ?? 'na',
+            'doc_insurance_policy'    => $inspectionData['doc_poliza'] ?? 'na',
+            'doc_cargo_permit'        => $inspectionData['doc_permiso_carga'] ?? 'na',
+            'doc_emissions_cert'      => $inspectionData['doc_bajos_contam'] ?? 'na',
+            'doc_mechanical_cert'     => $inspectionData['doc_fisico_mec'] ?? 'na',
+            'doc_waybill'             => $inspectionData['doc_carta_porte'] ?? 'na',
+            'doc_emergency_phones'    => $inspectionData['doc_tel_emergencia'] ?? 'na',
+            'doc_driving_license'     => $inspectionData['doc_licencia'] ?? 'na',
+            'vis_first_aid_kit'       => $inspectionData['vis_botiquin'] ?? 'na',
+            'vis_safety_cones'        => $inspectionData['vis_conos'] ?? 'na',
+            'vis_fire_extinguisher'   => $inspectionData['vis_extintor'] ?? 'na',
+            'vis_jack'                => $inspectionData['vis_gato'] ?? 'na',
+            'vis_jumper_cables'       => $inspectionData['vis_cables'] ?? 'na',
+            'vis_flashlight'          => $inspectionData['vis_linterna'] ?? 'na',
+            'vis_mirrors'             => $inspectionData['vis_espejos'] ?? 'na',
+            'vis_spare_tire'          => $inspectionData['vis_refaccion'] ?? 'na',
+            'vis_tires_condition'     => $inspectionData['vis_llantas_estado'] ?? 'na',
+            'vis_tires_calibrated'    => $inspectionData['vis_llantas_calib'] ?? 'na',
+            'vis_doors_windows'       => $inspectionData['vis_puertas'] ?? 'na',
+            'vis_body_dents'          => $inspectionData['vis_golpes'] ?? 'na',
+            'vis_windshield_wipers'   => $inspectionData['vis_limpiaparabrisas'] ?? 'na',
+            'vis_air_conditioning'    => $inspectionData['vis_aire_acond'] ?? 'na',
+            'vis_springs_suspension'  => $inspectionData['vis_resortes'] ?? 'na',
+            'vis_air_bags_suspension' => $inspectionData['vis_bolsas_aire'] ?? 'na',
+            'vis_general_lights'      => $inspectionData['vis_luces_gral'] ?? 'na',
+            'vis_horn'                => $inspectionData['vis_claxon'] ?? 'na',
+            'vis_reverse_alarm'       => $inspectionData['vis_alarma_reversa'] ?? 'na',
+            'vis_logos'               => $inspectionData['vis_logos'] ?? 'na',
+            'vis_seats'               => $inspectionData['vis_asientos'] ?? 'na',
+            'vis_seatbelts'           => $inspectionData['vis_cinturones'] ?? 'na',
+            'vis_beacon_light'        => $inspectionData['vis_torreta'] ?? 'na',
+            'maint_date_km_check'     => $inspectionData['mant_fecha_km'] ?? 'na',
+            'maint_engine_start'      => $inspectionData['mant_encendido'] ?? 'na',
+            'maint_oil_pressure'      => $inspectionData['mant_presion_aceite'] ?? 'na',
+            'maint_engine_temp'       => $inspectionData['mant_temp_motor'] ?? 'na',
+            'maint_air_pressure'      => $inspectionData['mant_presion_aire'] ?? 'na',
+            'maint_fan_clutch'        => $inspectionData['mant_fan_clutch'] ?? 'na',
+            'maint_batteries'         => $inspectionData['mant_baterias'] ?? 'na',
+            'maint_speedometer'       => $inspectionData['mant_velocimetro'] ?? 'na',
+            'maint_rpm_indicator'     => $inspectionData['mant_rpm'] ?? 'na',
+            'maint_oil_level'         => $inspectionData['mant_nivel_aceite'] ?? 'na',
+            'maint_coolant_level'     => $inspectionData['mant_nivel_anticongelante'] ?? 'na',
+            'maint_hydraulic_level'   => $inspectionData['mant_nivel_hidraulico'] ?? 'na',
+            'maint_diesel_level'      => $inspectionData['mant_nivel_diesel'] ?? 'na',
+            'maint_engine_brake'      => $inspectionData['mant_freno_motor'] ?? 'na',
+            'maint_parking_brake'     => $inspectionData['mant_freno_parqueo'] ?? 'na',
+            'maint_belts'             => $inspectionData['mant_bandas'] ?? 'na',
+            'maint_air_tank_purge'    => $inspectionData['mant_purgado'] ?? 'na',
+
+            // --- ESTA SE QUEDA IGUAL ---
             'has_anomalies'           => ($inspectionData['anomalias_detectadas'] ?? 'no') === 'si',
             'anomaly_comments'        => $inspectionData['comentarios'] ?? null,
             'photo_evidence'          => $photoPaths,
@@ -603,29 +611,3 @@ class JourneyStoreController extends Controller
         return 'Ligera'; // Valor por defecto
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

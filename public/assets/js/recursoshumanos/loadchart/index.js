@@ -1,24 +1,41 @@
-function initNavigation() {
-    // Obtener la ruta actual (ej: "calendar", "history", "stats")
+/**
+ * Inicialización de la Interfaz de Load Chart - Vinco Energy
+ */
+function initApp() {
+    // 1. Actualizar año dinámico en el footer
+    const yearSpan = document.getElementById('current-year');
+    if (yearSpan) {
+        yearSpan.textContent = new Date().getFullYear();
+    }
+
+    // 2. Lógica de Navegación Activa
+    // Obtenemos la ruta actual (ej: 'calendar', 'history', 'stats')
     const currentPath = window.location.pathname.split('/').pop() || 'calendar';
 
-    // Manejar clics en los enlaces del header
-    document.querySelectorAll('.nav-links a').forEach(link => {
+    // Seleccionamos todos los enlaces de navegación
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    navLinks.forEach(link => {
         const linkRoute = link.getAttribute('data-route');
 
-        // Marcar como activo si coincide con la ruta actual
+        // Si la ruta del link coincide con la URL actual, añadimos 'active'
         if (linkRoute === currentPath) {
             link.classList.add('active');
         } else {
             link.classList.remove('active');
         }
 
-        // Manejar el clic
+        // Manejador de clics para redirección limpia
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            window.location.href = `/recursoshumanos/loadchart/${linkRoute}`;
+            const route = this.getAttribute('data-route');
+            if (route) {
+                // Importante: Ruta apuntando al módulo de Load Chart
+                window.location.href = `/recursoshumanos/loadchart/${route}`;
+            }
         });
     });
 }
 
-document.addEventListener('DOMContentLoaded', initNavigation);
+// Ejecutar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', initApp);

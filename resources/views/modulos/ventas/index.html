@@ -2,87 +2,541 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reloj 24 Horas Estricto</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vinco | Gestión de Reembolsos</title>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/clockpicker/0.0.7/bootstrap-clockpicker.min.css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
 
     <style>
-        body {
-            background-color: #f0f4f8;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: 'Segoe UI', sans-serif;
-        }
-        .reloj-card {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        /* Estilo para el input de hora */
-        #hora24h {
-            font-size: 2.5rem;
-            height: auto;
-            text-align: center;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            color: #2d3748;
-            cursor: pointer;
-            width: 200px;
-            margin: 0 auto;
-        }
-        #hora24h:focus {
-            border-color: #4a90e2;
-            box-shadow: none;
-        }
-        label {
-            font-weight: bold;
-            color: #4a5568;
-            margin-bottom: 20px;
-            display: block;
-            letter-spacing: 1px;
-        }
-        /* Personalización del panel del reloj para que se vea más moderno */
-        .clockpicker-popover .popover-title {
-            text-align: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        .toast-enter { animation: slideIn 0.3s ease-out forwards; }
+        .toast-exit { animation: fadeOut 0.5s ease-out forwards; }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+
+        .spinner { border-top-color: #0d9488; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen relative overflow-x-hidden">
 
-<div class="reloj-card">
-    <label>HORA FORMATO 24H</label>
-    <div class="input-group clockpicker">
-        <input type="text" id="hora24h" class="form-control" value="15:00" readonly>
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 text-white shadow-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-teal-500 rounded-xl flex items-center justify-center text-slate-900 font-bold text-xl shadow-lg shadow-teal-500/20">
+                    <i class="ph-bold ph-wallet"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight">VINCO <span class="font-normal text-slate-400">Reembolsos</span></h1>
+            </div>
+            <div class="flex items-center gap-3 text-sm font-medium text-slate-300">
+                <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-teal-400">
+                    SF
+                </div>
+                <span>Hola, Saul Falcon Perez</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto py-10 px-6">
+        <header class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+            <div>
+                <h2 class="text-3xl font-light text-slate-800">Panel de <span class="font-bold text-slate-900">Movimientos</span></h2>
+                <p class="text-slate-500 mt-1 flex items-center gap-2">
+                    <i class="ph ph-chart-line-up text-teal-600"></i>
+                    Administra el historial y registra nuevas comprobaciones.
+                </p>
+            </div>
+            <button onclick="toggleModal()" class="bg-teal-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:bg-teal-500 hover:shadow-teal-500/30 transition-all flex items-center gap-2 transform hover:-translate-y-0.5">
+                <i class="ph-bold ph-plus-circle text-lg"></i>
+                Nuevo Reembolso
+            </button>
+        </header>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                    <i class="ph-fill ph-clock-counter-clockwise text-slate-400"></i> Historial Reciente
+                </h3>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-slate-500">Total acumulado:</span>
+                    <span id="dashboard-total" class="text-lg font-bold text-slate-900 bg-slate-100 px-4 py-1.5 rounded-lg border border-slate-200">$0.00</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-900 text-slate-300 text-xs uppercase tracking-wider">
+                            <th class="p-4 font-semibold rounded-tl-lg">Folio / Motivo</th>
+                            <th class="p-4 font-semibold">Departamento</th>
+                            <th class="p-4 font-semibold">Monto Total</th>
+                            <th class="p-4 font-semibold">Estado</th>
+                            <th class="p-4 font-semibold text-right rounded-tr-lg">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboard-list" class="divide-y divide-slate-100">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="reimbursement-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center overflow-y-auto p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col relative border border-slate-700">
+
+            <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10 rounded-t-2xl">
+                <h2 class="text-2xl font-light text-slate-800 flex items-center gap-3">
+                    <i class="ph-duotone ph-file-text text-teal-600 text-3xl"></i>
+                    Formato de <span class="font-bold text-slate-900">Reembolso</span>
+                </h2>
+                <button onclick="toggleModal()" class="text-slate-400 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-8 overflow-y-auto bg-slate-50/50 flex-grow">
+
+                <div class="bg-slate-900 p-6 rounded-xl shadow-lg border border-slate-800 relative overflow-hidden mb-8">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-teal-600"></div>
+                    <label class="block text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">
+                        Pega el Folio Fiscal (UUID) del comprobante
+                    </label>
+                    <div class="flex gap-3">
+                        <div class="relative flex-grow">
+                            <i class="ph-bold ph-barcode absolute left-4 top-3.5 text-slate-400 text-xl"></i>
+                            <input type="text" id="search-uuid" class="w-full pl-12 pr-4 py-3 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-teal-500 outline-none font-mono text-sm uppercase" placeholder="Ej. 550E8400-E29B-41D4-A716-446655440000" autocomplete="off">
+                        </div>
+                        <button type="button" onclick="buscarFactura()" id="btn-buscar" class="bg-teal-600 hover:bg-teal-500 text-white px-6 py-3 rounded-xl font-bold transition-colors flex items-center gap-2 min-w-[140px] justify-center">
+                            <i class="ph-bold ph-magnifying-glass"></i> Buscar
+                        </button>
+                    </div>
+                    <p id="search-message" class="text-xs text-slate-400 mt-3 flex items-center gap-1 hidden"></p>
+
+                    <div id="drop-zone-container" class="hidden mt-6 pt-6 border-t border-slate-700">
+                        <div id="drop-zone" class="border-2 border-dashed border-teal-500/50 bg-teal-500/10 p-6 rounded-xl text-center cursor-pointer hover:bg-teal-500/20 transition-all">
+                            <i class="ph-duotone ph-cloud-arrow-up text-4xl text-teal-400"></i>
+                            <p class="text-slate-300 mt-2 text-sm font-medium">No lo encontramos en nuestra base de datos local.</p>
+                            <p class="text-teal-400 font-bold text-xs uppercase mt-1">Arrastra tu archivo .XML aquí para autocompletar</p>
+                            <input type="file" id="xml-input" accept=".xml" class="hidden">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="invoice-data" class="hidden space-y-8 opacity-0 transition-opacity duration-500">
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-6 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-teal-500"></div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Emisor (SAT)</label>
+                            <div id="res-emisor" class="text-sm font-bold text-slate-800 truncate">---</div>
+                            <div id="res-rfc" class="text-xs text-slate-500 font-mono mt-0.5">---</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Facturado</label>
+                            <div id="res-total" class="text-lg font-black text-teal-600">---</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lugar</label>
+                            <input type="text" value="VHSA, TAB." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tipo de Gasto</label>
+                            <select class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm transition-all">
+                                <option>Gastos por Viaje</option>
+                                <option>Gastos por Operación</option>
+                                <option>Otros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nombre</label>
+                                <input type="text" value="Saul Falcon Perez" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none text-sm" readonly>
+                            </div>
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Departamento</label>
+                                <input type="text" id="modal-depto" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none text-sm" value="Sistemas">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Motivo General del Reembolso</label>
+                                <input type="text" id="modal-motivo" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm transition-all" placeholder="Ej. Comida con el proveedor de internet">
+                            </div>
+                        </div>
+                        <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 text-white shadow-inner">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <i class="ph-fill ph-credit-card"></i> Método de Reembolso
+                            </label>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 text-sm cursor-pointer group">
+                                    <input type="radio" name="payment" checked class="w-4 h-4 text-teal-500 bg-slate-800 border-slate-600 focus:ring-teal-500">
+                                    <span class="group-hover:text-teal-400 transition-colors">Efectivo</span>
+                                </label>
+                                <label class="flex items-center gap-3 text-sm cursor-pointer group">
+                                    <input type="radio" name="payment" class="w-4 h-4 text-teal-500 bg-slate-800 border-slate-600 focus:ring-teal-500">
+                                    <span class="group-hover:text-teal-400 transition-colors">Transferencia / Tarjeta</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <i class="ph-fill ph-list-numbers text-teal-600 text-lg"></i> Desglose de Gastos
+                            </h3>
+                            <button type="button" onclick="addRow()" class="text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-lg border border-teal-200 transition-all flex items-center gap-1">
+                                <i class="ph-bold ph-plus"></i> Agregar Fila
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[1000px]">
+                                <thead>
+                                    <tr class="bg-slate-900 text-slate-300 text-[10px] uppercase tracking-wider text-center">
+                                        <th colspan="3" class="p-2 border-r border-slate-700">Comprobante</th>
+                                        <th colspan="3" class="p-2 border-r border-slate-700 text-teal-400">Importes (Subtotales)</th>
+                                        <th colspan="2" class="p-2 border-r border-slate-700">Impuestos</th>
+                                        <th rowspan="2" class="p-2 font-bold bg-slate-800 text-white border-r border-slate-700">Total</th>
+                                        <th rowspan="2" class="p-2 bg-slate-800"></th>
+                                    </tr>
+                                    <tr class="bg-slate-800 text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-700">
+                                        <th class="p-3 border-r border-slate-700 w-32">Fecha</th>
+                                        <th class="p-3 border-r border-slate-700">Concepto</th>
+                                        <th class="p-3 border-r border-slate-700 w-36">Categoría</th>
+                                        <th class="p-3 border-r border-slate-700 w-24 text-right">Fiscal</th>
+                                        <th class="p-3 border-r border-slate-700 w-24 text-right">No Fiscal</th>
+                                        <th class="p-3 border-r border-slate-700 w-24 text-right">Sin Comp.</th>
+                                        <th class="p-3 border-r border-slate-700 w-20 text-right">I.S.H.</th>
+                                        <th class="p-3 border-r border-slate-700 w-20 text-right">I.V.A.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="text-sm divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <div class="w-full md:w-80 bg-slate-900 text-white rounded-xl shadow-xl overflow-hidden border border-slate-700 relative">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-teal-600"></div>
+                            <div class="p-5 border-b border-slate-800 flex items-center gap-2">
+                                <i class="ph-fill ph-calculator text-teal-400 text-xl"></i>
+                                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-200">Resumen Total</h4>
+                            </div>
+                            <div class="p-5 space-y-4 text-sm">
+                                <div class="flex justify-between text-slate-400">
+                                    <span>Sub-Total:</span><span id="sum-subtotal" class="font-medium text-slate-200">$0.00</span>
+                                </div>
+                                <div class="flex justify-between text-slate-400">
+                                    <span>I.V.A.:</span><span id="sum-iva" class="font-medium text-slate-200">$0.00</span>
+                                </div>
+                                <div class="flex justify-between text-slate-400">
+                                    <span>I.S.H / Otros:</span><span id="sum-ish" class="font-medium text-slate-200">$0.00</span>
+                                </div>
+                                <div class="pt-4 border-t border-slate-700 flex justify-between items-center">
+                                    <span class="font-bold text-teal-400 text-base">TOTAL:</span>
+                                    <span id="sum-total" class="text-2xl font-bold text-white tracking-tight" data-value="0">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-8 py-5 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex justify-end gap-3 sticky bottom-0 z-10">
+                <button type="button" onclick="toggleModal()" class="px-6 py-2.5 rounded-xl text-slate-600 font-bold hover:bg-slate-200 transition-colors">Cancelar</button>
+                <button type="button" id="btn-enviar" onclick="submitReimbursement()" class="px-6 py-2.5 rounded-xl bg-slate-300 text-slate-500 font-bold cursor-not-allowed transition-all flex items-center gap-2" disabled>
+                    <i class="ph-bold ph-paper-plane-right"></i> Guardar y Enviar
+                </button>
+            </div>
+        </div>
     </div>
-    <small class="text-muted d-block mt-3">Haz clic para cambiar la hora</small>
-</div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clockpicker/0.0.7/bootstrap-clockpicker.min.js"></script>
+    <script>
+        // --- 1. ESTADO GLOBAL ---
+        let requests = [
+            { id: 1001, motivo: 'Visita a cliente externo', depto: 'Sistemas', amount: 3500.00, status: 'Aprobado' },
+            { id: 1002, motivo: 'Compra equipo menor', depto: 'Sistemas', amount: 850.50, status: 'Pendiente' }
+        ];
+        let currentId = 1003;
+        const formatMoney = (amount) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
 
-<script>
-    $(document).ready(function() {
-        $('#hora24h').clockpicker({
-            placement: 'bottom',
-            align: 'left',
-            autoclose: true,
-            'default': 'now',
-            twelvehour: false, // DESACTIVA EL FORMATO AM/PM
-            vibrate: true,
-            afterDone: function() {
-                console.log("Hora seleccionada correctamente: " + $('#hora24h').val());
+        // --- 2. UTILIDADES VISUALES ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const config = {
+                success: { bg: 'bg-teal-600', icon: '<i class="ph-fill ph-check-circle text-xl"></i>' },
+                error: { bg: 'bg-red-500', icon: '<i class="ph-fill ph-warning-circle text-xl"></i>' }
+            };
+            toast.className = `${config[type].bg} text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 toast-enter text-sm font-bold border border-white/10`;
+            toast.innerHTML = `${config[type].icon} <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-exit');
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        // --- 3. LÓGICA DEL DASHBOARD ---
+        function renderDashboard() {
+            const list = document.getElementById('dashboard-list');
+            list.innerHTML = '';
+            let total = 0;
+
+            requests.forEach(req => {
+                total += parseFloat(req.amount);
+                let badge = req.status === 'Aprobado'
+                    ? `<span class="px-3 py-1.5 rounded-md text-xs font-bold bg-teal-100 text-teal-800 flex items-center gap-1 w-max"><i class="ph-bold ph-check"></i> Aprobado</span>`
+                    : req.status === 'Rechazado'
+                    ? `<span class="px-3 py-1.5 rounded-md text-xs font-bold bg-red-100 text-red-800 flex items-center gap-1 w-max"><i class="ph-bold ph-x"></i> Rechazado</span>`
+                    : `<span class="px-3 py-1.5 rounded-md text-xs font-bold bg-amber-100 text-amber-800 flex items-center gap-1 w-max"><i class="ph-bold ph-hourglass-high"></i> Pendiente</span>`;
+
+                let actions = req.status === 'Pendiente' ? `
+                    <div class="flex justify-end gap-2">
+                        <button onclick="updateStatus(${req.id}, 'Aprobado')" class="w-8 h-8 flex items-center justify-center text-teal-600 bg-teal-50 hover:bg-teal-600 hover:text-white rounded-lg transition-colors border border-teal-200" title="Aprobar"><i class="ph-bold ph-check"></i></button>
+                        <button onclick="updateStatus(${req.id}, 'Rechazado')" class="w-8 h-8 flex items-center justify-center text-red-600 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg transition-colors border border-red-200" title="Rechazar"><i class="ph-bold ph-x"></i></button>
+                    </div>` : `<span class="text-xs font-bold text-slate-400 flex justify-end items-center gap-1"><i class="ph-fill ph-lock-key"></i> Procesado</span>`;
+
+                list.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors group border-b border-slate-50">
+                        <td class="p-4">
+                            <p class="font-bold text-slate-800">${req.motivo}</p>
+                            <p class="text-xs text-slate-400 mt-1 font-medium"><i class="ph-bold ph-hash"></i> VIN-${req.id}</p>
+                        </td>
+                        <td class="p-4"><span class="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-md">${req.depto}</span></td>
+                        <td class="p-4 font-bold text-slate-900">${formatMoney(req.amount)}</td>
+                        <td class="p-4">${badge}</td>
+                        <td class="p-4 text-right">${actions}</td>
+                    </tr>`;
+            });
+            document.getElementById('dashboard-total').innerText = formatMoney(total);
+        }
+
+        function updateStatus(id, newStatus) {
+            const index = requests.findIndex(r => r.id === id);
+            if (index !== -1) { requests[index].status = newStatus; renderDashboard(); showToast(`Solicitud ${newStatus.toLowerCase()}`, newStatus === 'Aprobado' ? 'success' : 'error'); }
+        }
+
+        // --- 4. LÓGICA DEL MODAL Y BÚSQUEDA ---
+        function toggleModal() {
+            const modal = document.getElementById('reimbursement-modal');
+            modal.classList.toggle('hidden');
+            if(!modal.classList.contains('hidden')) {
+                // Reset visual al abrir
+                document.getElementById('search-uuid').value = '';
+                document.getElementById('invoice-data').classList.add('hidden', 'opacity-0');
+                document.getElementById('search-message').classList.add('hidden');
+                document.getElementById('drop-zone-container').classList.add('hidden');
+                document.getElementById('table-body').innerHTML = '';
+                document.getElementById('modal-motivo').value = '';
+                calcTotal();
+
+                const btn = document.getElementById('btn-enviar');
+                btn.className = "px-6 py-2.5 rounded-xl bg-slate-300 text-slate-500 font-bold cursor-not-allowed transition-all flex items-center gap-2";
+                btn.disabled = true;
             }
-        });
-    });
-</script>
+        }
 
+        function buscarFactura() {
+            const uuid = document.getElementById('search-uuid').value.trim();
+            const btnBuscar = document.getElementById('btn-buscar');
+            const msgBox = document.getElementById('search-message');
+            const dataContainer = document.getElementById('invoice-data');
+            const dropZone = document.getElementById('drop-zone-container');
+
+            if (uuid.length < 10) {
+                msgBox.innerHTML = '<i class="ph-fill ph-warning-circle text-red-500"></i> <span class="text-red-400">Ingresa un UUID válido</span>';
+                msgBox.classList.remove('hidden'); return;
+            }
+
+            // Simulador de carga de BD
+            btnBuscar.innerHTML = '<div class="w-5 h-5 border-2 border-white/30 rounded-full spinner"></div> Buscando...';
+            btnBuscar.disabled = true;
+            msgBox.classList.add('hidden');
+            dataContainer.classList.add('hidden', 'opacity-0');
+            dropZone.classList.add('hidden');
+
+            // Simulamos respuesta fallida de Laravel para activar el "Fallback" (Carga de XML)
+            setTimeout(() => {
+                btnBuscar.innerHTML = '<i class="ph-bold ph-magnifying-glass"></i> Buscar';
+                btnBuscar.disabled = false;
+
+                // Simulamos que la BD respondió: "No encontrado"
+                dropZone.classList.remove('hidden');
+                showToast("UUID no encontrado en la base de datos. Por favor usa el archivo XML.", "error");
+
+            }, 800);
+        }
+
+        // --- 5. LÓGICA DE ARRASTRE Y LECTURA DE XML (El Fallback) ---
+        const dropZoneUI = document.getElementById('drop-zone');
+        const xmlInput = document.getElementById('xml-input');
+
+        dropZoneUI.onclick = () => xmlInput.click();
+        xmlInput.addEventListener('change', (e) => leerArchivoXML(e.target.files[0]));
+
+        // Efectos Drag & Drop
+        dropZoneUI.addEventListener('dragover', (e) => { e.preventDefault(); dropZoneUI.classList.add('bg-teal-500/30', 'border-teal-400'); });
+        dropZoneUI.addEventListener('dragleave', (e) => { e.preventDefault(); dropZoneUI.classList.remove('bg-teal-500/30', 'border-teal-400'); });
+        dropZoneUI.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneUI.classList.remove('bg-teal-500/30', 'border-teal-400');
+            if (e.dataTransfer.files.length) leerArchivoXML(e.dataTransfer.files[0]);
+        });
+
+        function leerArchivoXML(file) {
+            if (!file || file.type !== "text/xml") {
+                showToast("Por favor, sube un archivo con extensión .xml", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+
+                // Extractor seguro contra diferentes prefijos (cfdi:, tfd:)
+                const getAttr = (tag, attr) => {
+                    const node = xmlDoc.getElementsByTagNameNS("*", tag)[0] ||
+                                 xmlDoc.getElementsByTagName(tag)[0] ||
+                                 xmlDoc.getElementsByTagName("cfdi:" + tag)[0];
+                    return node ? node.getAttribute(attr) : null;
+                };
+
+                const datos = {
+                    uuid: getAttr("TimbreFiscalDigital", "UUID"),
+                    emisor: getAttr("Emisor", "Nombre") || "No especificado",
+                    rfc: getAttr("Emisor", "Rfc") || "Sin RFC",
+                    total: parseFloat(getAttr("Comprobante", "Total") || 0),
+                    fecha: getAttr("Comprobante", "Fecha")?.split('T')[0] || new Date().toISOString().split('T')[0]
+                };
+
+                if (datos.uuid) {
+                    llenarFormularioXML(datos);
+                } else {
+                    showToast("El archivo no parece ser un XML del SAT válido.", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function llenarFormularioXML(datos) {
+            document.getElementById('search-uuid').value = datos.uuid;
+            document.getElementById('res-emisor').innerText = datos.emisor;
+            document.getElementById('res-rfc').innerText = datos.rfc;
+            document.getElementById('res-total').innerText = formatMoney(datos.total);
+
+            // Ocultar Dropzone y mostrar datos
+            document.getElementById('drop-zone-container').classList.add('hidden');
+            const dataContainer = document.getElementById('invoice-data');
+            dataContainer.classList.remove('hidden');
+            setTimeout(() => dataContainer.classList.remove('opacity-0'), 50);
+
+            // Activar botón Enviar
+            const btnEnviar = document.getElementById('btn-enviar');
+            btnEnviar.disabled = false;
+            btnEnviar.className = "px-6 py-2.5 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-500 shadow-lg shadow-teal-500/30 transition-all flex items-center gap-2";
+
+            // Llenar tabla
+            document.getElementById('table-body').innerHTML = '';
+            addRow(datos.fecha, datos.total);
+
+            showToast("Comprobante cargado y procesado", "success");
+        }
+
+
+        // --- 6. LÓGICA DE LA TABLA DINÁMICA ---
+        function addRow(fechaPorDefecto = "", totalPorDefecto = "") {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-teal-50/20 transition group row-calc";
+            const dateInputId = `date-${Date.now()}`;
+
+            tr.innerHTML = `
+                <td class="p-2 border-r border-slate-100">
+                    <div class="relative">
+                        <i class="ph-bold ph-calendar-blank absolute left-2 top-2.5 text-slate-400"></i>
+                        <input type="text" id="${dateInputId}" value="${fechaPorDefecto}" class="w-full bg-slate-50 border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-teal-500 rounded-md py-1.5 pl-7 pr-2 cursor-pointer" placeholder="Fecha">
+                    </div>
+                </td>
+                <td class="p-2 border-r border-slate-100"><input type="text" class="w-full bg-slate-50 border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-teal-500 rounded-md p-1.5" placeholder="Descripción"></td>
+                <td class="p-2 border-r border-slate-100">
+                    <select class="w-full bg-slate-50 border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-teal-500 rounded-md p-1.5 font-medium text-slate-700">
+                        <option>Transporte</option><option>Alimentos</option><option>Materiales</option><option>Otros</option>
+                    </select>
+                </td>
+                <td class="p-2 border-r border-slate-100"><input type="number" oninput="calcTotal()" value="${totalPorDefecto}" class="c-sub w-full bg-slate-50 border border-slate-200 text-xs text-right outline-none focus:ring-2 focus:ring-teal-500 rounded-md p-1.5 font-bold text-slate-700" placeholder="0.00"></td>
+                <td class="p-2 border-r border-slate-100"><input type="number" oninput="calcTotal()" class="c-sub w-full bg-slate-50 border border-slate-200 text-xs text-right outline-none focus:ring-2 focus:ring-teal-500 rounded-md p-1.5 font-bold text-slate-700" placeholder="0.00"></td>
+                <td class="p-2 border-r border-slate-100"><input type="number" oninput="calcTotal()" class="c-sub w-full bg-slate-50 border border-slate-200 text-xs text-right outline-none focus:ring-2 focus:ring-teal-500 rounded-md p-1.5 font-bold text-slate-700" placeholder="0.00"></td>
+                <td class="p-2 border-r border-slate-100"><input type="number" oninput="calcTotal()" class="c-ish w-full bg-slate-50 border border-slate-200 text-xs text-right outline-none focus:ring-2 focus:ring-teal-500 rounded-md p-1.5 font-bold text-slate-700" placeholder="0.00"></td>
+                <td class="p-2 border-r border-slate-100"><input type="number" oninput="calcTotal()" class="c-iva w-full bg-slate-50 border border-slate-200 text-xs text-right outline-none focus:ring-2 focus:ring-teal-500 rounded-md p-1.5 font-bold text-slate-700" placeholder="0.00"></td>
+                <td class="p-2 text-right font-bold text-slate-900 text-sm row-t bg-slate-50/50">$0.00</td>
+                <td class="p-2 text-center">
+                    <button onclick="this.closest('tr').remove(); calcTotal();" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-red-500 rounded-md transition-colors opacity-0 group-hover:opacity-100 mx-auto" title="Eliminar fila">
+                        <i class="ph-bold ph-trash"></i>
+                    </button>
+                </td>
+            `;
+            document.getElementById('table-body').appendChild(tr);
+            flatpickr(`#${dateInputId}`, { locale: "es", dateFormat: "Y-m-d", defaultDate: fechaPorDefecto || "today" });
+            calcTotal();
+        }
+
+        function calcTotal() {
+            let gSub = 0, gIva = 0, gIsh = 0;
+            document.querySelectorAll('.row-calc').forEach(row => {
+                let rSub = 0, rIva = parseFloat(row.querySelector('.c-iva').value)||0, rIsh = parseFloat(row.querySelector('.c-ish').value)||0;
+                row.querySelectorAll('.c-sub').forEach(inp => rSub += parseFloat(inp.value)||0);
+                row.querySelector('.row-t').innerText = formatMoney(rSub + rIva + rIsh);
+                gSub += rSub; gIva += rIva; gIsh += rIsh;
+            });
+            const gTotal = gSub + gIva + gIsh;
+            document.getElementById('sum-subtotal').innerText = formatMoney(gSub);
+            document.getElementById('sum-iva').innerText = formatMoney(gIva);
+            document.getElementById('sum-ish').innerText = formatMoney(gIsh);
+
+            const sumTotalEl = document.getElementById('sum-total');
+            sumTotalEl.innerText = formatMoney(gTotal);
+            sumTotalEl.setAttribute('data-value', gTotal);
+        }
+
+        // --- 7. ENVIAR FORMULARIO ---
+        function submitReimbursement() {
+            const totalToReimburse = parseFloat(document.getElementById('sum-total').getAttribute('data-value'));
+            const motivo = document.getElementById('modal-motivo').value.trim();
+
+            if(totalToReimburse <= 0) { showToast('El desglose debe ser mayor a $0.', 'error'); return; }
+            if(motivo === '') { showToast('Por favor escribe el motivo del gasto.', 'error'); return; }
+
+            const newRequest = {
+                id: currentId++,
+                motivo: motivo,
+                depto: document.getElementById('modal-depto').value || 'Sistemas',
+                amount: totalToReimburse,
+                status: 'Pendiente'
+            };
+
+            requests.unshift(newRequest);
+            toggleModal();
+            renderDashboard();
+            showToast('Reembolso solicitado exitosamente', 'success');
+        }
+
+        // INICIALIZACIÓN DE LA VISTA
+        renderDashboard();
+    </script>
 </body>
 </html>

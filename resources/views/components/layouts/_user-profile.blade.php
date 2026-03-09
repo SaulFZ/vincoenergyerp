@@ -74,6 +74,8 @@
         align-items: center;
         gap: 15px;
         position: relative;
+            font-family: "Poppins", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+
     }
 
     /* --- Icono de Notificación / Icono de Inicio --- */

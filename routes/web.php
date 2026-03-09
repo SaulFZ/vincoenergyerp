@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+
+
+/* CONTROLADORES DE RECURSOS Administracion */
+use App\Http\Controllers\Administracion\Reembolsos\ReimbursementController;
+
 /* CONTROLADORES DE RECURSOS QHSE */
 use App\Http\Controllers\Qhse\Gerenciamiento\DriverLicenseController;
 use App\Http\Controllers\Qhse\Gerenciamiento\JourneyController;
@@ -8,7 +13,6 @@ use App\Http\Controllers\Qhse\Gerenciamiento\JourneyQueryController;
 use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStatusController;
 use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStoreController;
 use App\Http\Controllers\Qhse\Gerenciamiento\StatsController;
-
 
 /* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
@@ -85,14 +89,73 @@ Route::middleware(['web', 'auth'])->group(function () {
         return view('home');
     })->name('home');
 
-    // ===================================================
+// ===================================================
     // MÓDULO: ADMINISTRACIÓN
     // ===================================================
-    Route::get('/administracion', function () {
-        return view('modulos.administracion.administracionhome');
-    })
-        ->middleware('check.permission:administracion')
-        ->name('modulo.administracion');
+    Route::prefix('administracion')
+        ->middleware(['auth', 'check.permission:administracion']) // Seguridad global del módulo
+        ->group(function () {
+
+          // ===================================================
+            // GRUPO GESTIÓN DE REEMBOLSOS (REIMBURSEMENTS)
+            // Prefijo URL: /administracion/reembolsos
+            // ===================================================
+            Route::prefix('reembolsos')->group(function () {
+
+            // 1. Redirección automática
+                Route::get('/', function () {
+                    return redirect()->route('reembolsos.reimbursements');
+                })
+                    ->name('administracion.reembolsos')
+                    ->middleware('check.permission:administracion,reembolsos');
+                // ---------------------------------------------------
+                // 2. VISTAS Y CARGA DE DATOS (Catálogos, Empleados)
+                // Controlador: ReimbursementController
+                // ---------------------------------------------------
+                Route::controller(ReimbursementController::class)->group(function () {
+                    // Cambiamos 'inicio' por 'reimbursements' internamente
+                    Route::get('/reimbursements', 'index')->name('reembolsos.reimbursements');
+                    Route::get('/employees', 'getEmployees')->name('reimbursements.employees');
+                    Route::get('/departments', 'getDepartments')->name('reimbursements.departments');
+                    Route::get('/concepts', 'getConcepts')->name('reimbursements.concepts');
+                });
+
+                // ---------------------------------------------------
+                // 3. GUARDADO DE NUEVO REEMBOLSO Y ARCHIVOS
+                // Controlador: ReimbursementStoreController
+                // ---------------------------------------------------
+                Route::post('/store', [ReimbursementStoreController::class, 'store'])
+                    ->name('reimbursements.store');
+
+                // Ruta para recibir el XML y validarlo
+                Route::post('/validate-xml', [ReimbursementStoreController::class, 'validateXmlSat'])
+                    ->name('reimbursements.validate_xml');
+
+                // ---------------------------------------------------
+                // 4. CONSULTAS Y ESTADÍSTICAS (Tablas y Folios)
+                // Controlador: ReimbursementQueryController
+                // ---------------------------------------------------
+                Route::controller(ReimbursementQueryController::class)->group(function () {
+                    Route::get('/list', 'list')->name('reimbursements.list');
+                    Route::get('/next-folio', 'getNextFolio')->name('reimbursements.next-folio');
+                    Route::get('/stats', 'getStats')->name('reimbursements.stats');
+                    Route::get('/{id}', 'show')->name('reimbursements.show');
+                });
+
+                // ---------------------------------------------------
+                // 5. ACTUALIZACIÓN DE ESTADOS Y FIRMAS (Flujo de aprobación)
+                // Controlador: ReimbursementStatusController
+                // ---------------------------------------------------
+                Route::controller(ReimbursementStatusController::class)->group(function () {
+                    // Manejo de estados: Requested -> Authorized -> Approved -> Paid
+                    Route::put('/{id}/approval-status', 'updateApprovalStatus')->name('reimbursements.approval_status');
+                    Route::post('/{id}/log-event', 'logEvent')->name('reimbursements.log_event');
+                });
+            });
+
+            // Aquí puedes agregar futuros submódulos de administración (ej. /nomina, /facturacion)
+        });
+
 
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS
@@ -206,7 +269,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/journeys/{id}', 'show')->name('gerenciamiento.show');
                 });
 
-
                 // ---------------------------------------------------
                 // 5. ACTUALIZACIÓN DE ESTADOS Y BITÁCORA EN RUTA
                 // Controlador: JourneyStatusController
@@ -215,6 +277,9 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::put('/journeys/{id}/approval-status', 'updateApprovalStatus')->name('gerenciamiento.approval_status');
                     Route::put('/journeys/{id}/journey-status', 'updateJourneyStatus')->name('gerenciamiento.journey_status');
                     Route::post('/journeys/{id}/log-event', 'logEvent')->name('gerenciamiento.log_event');
+                    Route::put('/journeys/{id}/change-approver', 'changeApprover')
+                        ->name('gerenciamiento.change_approver');
+
                 });
 
                 // ---------------------------------------------------

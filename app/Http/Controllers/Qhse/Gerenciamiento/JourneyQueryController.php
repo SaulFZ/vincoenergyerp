@@ -10,22 +10,22 @@ use Illuminate\Support\Facades\Log;
 class JourneyQueryController extends Controller
 {
 
-
-
 /**
-     * Obtener lista de viajes con filtros y paginación
-     */
+ * Obtener lista de viajes con filtros y paginación
+ */
     public function index(Request $request)
     {
         try {
             $user = auth()->user();
 
-            // 1. EVALUAR VISIBILIDAD GLOBAL Y PERMISO DE HISTORIAL
+            // Obtener el employee_id del usuario autenticado
+            $employeeId = $user->employee_id;
+
             $canSeeAll = PermissionHelper::hasDirectPermission('ver_gv_todos') ||
-                         PermissionHelper::hasDirectPermission('aprobar_gv_bajo') ||
-                         PermissionHelper::hasDirectPermission('aprobar_gv_medio') ||
-                         PermissionHelper::hasDirectPermission('aprobar_gv_alto') ||
-                         PermissionHelper::hasDirectPermission('aprobar_gv_muy_alto');
+            PermissionHelper::hasDirectPermission('aprobar_gv_bajo') ||
+            PermissionHelper::hasDirectPermission('aprobar_gv_medio') ||
+            PermissionHelper::hasDirectPermission('aprobar_gv_alto') ||
+            PermissionHelper::hasDirectPermission('aprobar_gv_muy_alto');
 
             $perPage        = $request->get('per_page', 10);
             $search         = $request->get('search', '');
@@ -35,15 +35,30 @@ class JourneyQueryController extends Controller
             $destination    = $request->get('destination', 'all');
             $fechaSolicitud = $request->get('fecha_solicitud', '');
 
-            $query = Journey::with(['creator', 'approver'])
+            $query = Journey::with(['creator', 'approver', 'units'])
                 ->orderBy('created_at', 'desc');
 
-            // 2. APLICAR REGLA: Si no puede ver todos, solo ve los suyos
-            if (!$canSeeAll) {
-                $query->where('created_by', $user->id);
+            if (! $canSeeAll) {
+                $query->where(function ($q) use ($user, $employeeId) {
+                    // Es el creador del viaje
+                    $q->where('created_by', $user->id)
+                    // O es el aprobador asignado
+                        ->orWhere('approver_id', $user->id);
+
+                    // O es conductor principal (driver_id guarda employee_id)
+                    if ($employeeId) {
+                        $q->orWhereHas('units', function ($uq) use ($employeeId) {
+                            $uq->where('driver_id', $employeeId)
+                            // O es pasajero/segundo conductor en el JSON
+                                ->orWhereRaw(
+                                    "JSON_SEARCH(passengers, 'one', ?) IS NOT NULL",
+                                    [(string) $employeeId]
+                                );
+                        });
+                    }
+                });
             }
 
-            // Búsqueda por texto
             if (! empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('folio', 'like', "%{$search}%")
@@ -54,29 +69,26 @@ class JourneyQueryController extends Controller
                 });
             }
 
-            // Filtro SEPARADO por estado de aprobación (GV)
             if ($statusGv !== 'all') {
                 if (in_array($statusGv, ['pending', 'approved', 'rejected', 'cancelled'])) {
                     $query->where('approval_status', $statusGv);
                 }
             }
 
-            // Filtro SEPARADO por estado de viaje operativo
             if ($statusViaje !== 'all') {
                 if (in_array($statusViaje, ['not_started', 'in_progress', 'completed', 'cancelled', 'no_procede'])) {
                     $query->where('journey_status', $statusViaje);
                 }
             }
+
             if ($request->filled('fecha_solicitud')) {
                 $query->whereDate('request_date', $request->input('fecha_solicitud'));
             }
 
-            // Filtro por nivel de riesgo
             if ($riskLevel !== 'all') {
                 $query->where('risk_level', $riskLevel);
             }
 
-            // Filtro por destino
             if ($destination !== 'all' && $destination !== '') {
                 if ($destination === 'OTRO') {
                     $query->whereNotIn('destination_region', ['Coatzacoalcos, Ver.', 'Paraíso, Tab.', 'Ciudad del Carmen, Camp.']);
@@ -91,7 +103,6 @@ class JourneyQueryController extends Controller
                 }
             }
 
-            // Filtro por fecha de solicitud
             if (! empty($fechaSolicitud)) {
                 try {
                     $fechaParts = explode('/', $fechaSolicitud);
@@ -106,37 +117,71 @@ class JourneyQueryController extends Controller
 
             $journeys = $query->paginate($perPage);
 
-            // Formatear datos para la vista Y AÑADIR BANDERAS DE PERMISOS
-            $formattedJourneys = collect($journeys->items())->map(function ($journey) use ($user, $canSeeAll) {
-                return [
-                    'id'                 => $journey->id,
-                    'folio'              => $journey->folio,
-                    'solicitante'        => $journey->creator_name,
-                    'departamento'       => $journey->department,
-                    'destino'            => $journey->destination_region,
-                    'destino_especifico' => $journey->specific_destination,
-                    'fechas'             => $this->formatDates($journey),
-                    'fecha_solicitud'    => $journey->request_date ? \Carbon\Carbon::parse($journey->request_date)->format('d/m/Y') : '',
-                    'tipo_viaje'         => $journey->fleet_type ?? 'Unidad Única',
-                    'riesgo'             => [
-                        'nivel' => $journey->risk_level ?? 'bajo',
-                        'texto' => $this->getRiskText($journey->risk_level),
-                        'clase' => $this->getRiskClass($journey->risk_level),
-                    ],
-                    'estado_gv'          => [
-                        'texto' => $this->getApprovalStatusText($journey->approval_status),
-                        'clase' => $this->getStatusClass($journey->approval_status),
-                    ],
-                    'estado_viaje'       => [
-                        'texto' => $this->getJourneyStatusText($journey->journey_status),
-                        'clase' => $this->getStatusClass($journey->journey_status),
-                    ],
-                    // 👇 NUEVAS BANDERAS PARA CONTROLAR BOTONES EN EL FRONTEND 👇
-                    'is_creator'         => $journey->created_by === $user->id,
-                    'can_approve'        => $journey->approver_id === $user->id,
-                    'can_see_history'    => $canSeeAll, // Si ve todo, puede ver el historial
-                ];
-            });
+            $formattedJourneys = collect($journeys->items())->map(
+                function ($journey) use ($user, $employeeId, $canSeeAll) {
+
+                    // ✅ DETECTAR PARTICIPACIÓN COMPARANDO CONTRA employee_id
+                    $isParticipant = false;
+
+                    if ($employeeId) {
+                        $isParticipant = $journey->units->contains(
+                            function ($unit) use ($employeeId) {
+                                // Es conductor principal
+                                if ($unit->driver_id == $employeeId) {
+                                    return true;
+                                }
+
+                                // Es pasajero o segundo conductor en el JSON
+                                $passengers = [];
+                                if (is_string($unit->passengers)) {
+                                    $passengers = json_decode($unit->passengers, true) ?? [];
+                                } elseif (is_array($unit->passengers)) {
+                                    $passengers = $unit->passengers;
+                                }
+
+                                foreach ($passengers as $p) {
+                                    if (isset($p['id']) && (string) $p['id'] === (string) $employeeId) {
+                                        return true;
+                                    }
+                                }
+
+                                return false;
+                            }
+                        );
+                    }
+
+                    return [
+                        'id'                 => $journey->id,
+                        'folio'              => $journey->folio,
+                        'solicitante'        => $journey->creator_name,
+                        'departamento'       => $journey->department,
+                        'destino'            => $journey->destination_region,
+                        'destino_especifico' => $journey->specific_destination,
+                        'fechas'             => $this->formatDates($journey),
+                        'fecha_solicitud'    => $journey->request_date
+                            ? \Carbon\Carbon::parse($journey->request_date)->format('d/m/Y')
+                            : '',
+                        'tipo_viaje'         => $journey->fleet_type ?? 'Unidad Única',
+                        'riesgo'             => [
+                            'nivel' => $journey->risk_level ?? 'bajo',
+                            'texto' => $this->getRiskText($journey->risk_level),
+                            'clase' => $this->getRiskClass($journey->risk_level),
+                        ],
+                        'estado_gv'          => [
+                            'texto' => $this->getApprovalStatusText($journey->approval_status),
+                            'clase' => $this->getStatusClass($journey->approval_status),
+                        ],
+                        'estado_viaje'       => [
+                            'texto' => $this->getJourneyStatusText($journey->journey_status),
+                            'clase' => $this->getStatusClass($journey->journey_status),
+                        ],
+                        'is_creator'         => $journey->created_by === $user->id,
+                        'can_approve'        => $journey->approver_id === $user->id,
+                        'can_see_history'    => $canSeeAll,
+                        'is_participant'     => $isParticipant, // ✅ Basado en employee_id
+                    ];
+                }
+            );
 
             return response()->json([
                 'success'    => true,
@@ -159,7 +204,6 @@ class JourneyQueryController extends Controller
             ], 500);
         }
     }
-
     public function getNextFolio()
     {
         try {
@@ -240,60 +284,88 @@ class JourneyQueryController extends Controller
                 'preConvoyMeeting',
                 'creator',
                 'approver',
-                'logs'
+                'logs',
             ])->findOrFail($id);
 
-            // =========================================================================
-            // LÓGICA PARA FORMATEAR LAS FOTOS ANTES DE ENVIARLAS AL FRONTEND
-            // =========================================================================
+            // Formatear fotos de inspecciones
             $journey->units->transform(function ($unit) {
-                // Formatear fotos de inspección ligera
                 if ($unit->lightInspection && ! empty($unit->lightInspection->photo_evidence)) {
                     $photos = is_string($unit->lightInspection->photo_evidence)
                         ? json_decode($unit->lightInspection->photo_evidence, true)
                         : $unit->lightInspection->photo_evidence;
 
-                    $unit->lightInspection->formatted_photos = collect($photos)->map(function ($path) {
-                        return [
-                            'id'   => uniqid('photo_'),
-                            'name' => basename($path),
-                            'url'  => asset('storage/' . $path),
-                            'type' => str_ends_with(strtolower($path), '.pdf') ? 'application/pdf' : 'image/jpeg',
-                        ];
-                    })->toArray();
+                    $unit->lightInspection->formatted_photos = collect($photos)
+                        ->map(function ($path) {
+                            return [
+                                'id'   => uniqid('photo_'),
+                                'name' => basename($path),
+                                'url'  => asset('storage/' . $path),
+                                'type' => str_ends_with(strtolower($path), '.pdf')
+                                    ? 'application/pdf'
+                                    : 'image/jpeg',
+                            ];
+                        })->toArray();
                 }
 
-                // Formatear fotos de inspección pesada
                 if ($unit->heavyInspection && ! empty($unit->heavyInspection->photo_evidence)) {
                     $photos = is_string($unit->heavyInspection->photo_evidence)
                         ? json_decode($unit->heavyInspection->photo_evidence, true)
                         : $unit->heavyInspection->photo_evidence;
 
-                    $unit->heavyInspection->formatted_photos = collect($photos)->map(function ($path) {
-                        return [
-                            'id'   => uniqid('photo_'),
-                            'name' => basename($path),
-                            'url'  => asset('storage/' . $path),
-                            'type' => str_ends_with(strtolower($path), '.pdf') ? 'application/pdf' : 'image/jpeg',
-                        ];
-                    })->toArray();
+                    $unit->heavyInspection->formatted_photos = collect($photos)
+                        ->map(function ($path) {
+                            return [
+                                'id'   => uniqid('photo_'),
+                                'name' => basename($path),
+                                'url'  => asset('storage/' . $path),
+                                'type' => str_ends_with(strtolower($path), '.pdf')
+                                    ? 'application/pdf'
+                                    : 'image/jpeg',
+                            ];
+                        })->toArray();
                 }
 
                 return $unit;
             });
 
-            // =========================================================================
-            // 2. EVALUACIÓN DE PERMISOS PARA EL FRONTEND (REGLA ESTRICTA)
-            // =========================================================================
-            $user = auth()->user();
-            $isCreator = $journey->created_by === $user->id;
-            $canApprove = false;
+            $user       = auth()->user();
+            $employeeId = $user->employee_id; // ✅ Usamos employee_id
+            $isCreator  = $journey->created_by === $user->id;
 
-            // EL USUARIO SOLO PUEDE APROBAR SI FUE EL ASIGNADO EXPLÍCITAMENTE A ESTE VIAJE
+            // ✅ DETECTAR PARTICIPACIÓN COMPARANDO CONTRA employee_id
+            $isParticipant = false;
+
+            if ($employeeId) {
+                $isParticipant = $journey->units->contains(
+                    function ($unit) use ($employeeId) {
+                        // Es conductor principal
+                        if ($unit->driver_id == $employeeId) {
+                            return true;
+                        }
+
+                        // Es pasajero o segundo conductor en el JSON
+                        $passengers = [];
+                        if (is_string($unit->passengers)) {
+                            $passengers = json_decode($unit->passengers, true) ?? [];
+                        } elseif (is_array($unit->passengers)) {
+                            $passengers = $unit->passengers;
+                        }
+
+                        foreach ($passengers as $p) {
+                            if (isset($p['id']) && (string) $p['id'] === (string) $employeeId) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    }
+                );
+            }
+
+            // Evaluar permiso de aprobación
+            $canApprove = false;
             if ($journey->approver_id === $user->id) {
                 $riskLevel = $journey->risk_level ?? 'bajo';
-
-                // Y verificamos que (por seguridad) siga teniendo el permiso de su nivel
                 if ($riskLevel === 'bajo' && PermissionHelper::hasDirectPermission('aprobar_gv_bajo')) {
                     $canApprove = true;
                 } elseif ($riskLevel === 'medio' && PermissionHelper::hasDirectPermission('aprobar_gv_medio')) {
@@ -307,18 +379,21 @@ class JourneyQueryController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $journey,
-                'auth' => [
-                    'is_creator' => $isCreator,
-                    'can_approve' => $canApprove
-                ]
+                'data'    => $journey,
+                'auth'    => [
+                    'is_creator'     => $isCreator,
+                    'can_approve'    => $canApprove,
+                    'is_participant' => $isParticipant, // ✅ Basado en employee_id
+                ],
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Viaje no encontrado: ' . $e->getMessage()], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Viaje no encontrado: ' . $e->getMessage(),
+            ], 404);
         }
     }
-
     public function getStats()
     {
         try {
@@ -326,15 +401,15 @@ class JourneyQueryController extends Controller
 
             // Replicamos la regla de visibilidad para que los contadores coincidan con lo que ve el usuario
             $canSeeAll = PermissionHelper::hasDirectPermission('ver_gv_todos') ||
-                         PermissionHelper::hasDirectPermission('aprobar_gv_bajo') ||
-                         PermissionHelper::hasDirectPermission('aprobar_gv_medio') ||
-                         PermissionHelper::hasDirectPermission('aprobar_gv_alto') ||
-                         PermissionHelper::hasDirectPermission('aprobar_gv_muy_alto');
+            PermissionHelper::hasDirectPermission('aprobar_gv_bajo') ||
+            PermissionHelper::hasDirectPermission('aprobar_gv_medio') ||
+            PermissionHelper::hasDirectPermission('aprobar_gv_alto') ||
+            PermissionHelper::hasDirectPermission('aprobar_gv_muy_alto');
 
             $query = Journey::query();
 
             // Si no puede ver todo, filtramos las estadísticas solo para sus viajes
-            if (!$canSeeAll) {
+            if (! $canSeeAll) {
                 $query->where('created_by', $user->id);
             }
 
@@ -398,7 +473,7 @@ class JourneyQueryController extends Controller
         return $statuses[$status] ?? 'Pendiente';
     }
 
-private function getJourneyStatusText($status)
+    private function getJourneyStatusText($status)
     {
         $statuses = [
             'not_started' => 'Por Iniciar',
@@ -406,7 +481,7 @@ private function getJourneyStatusText($status)
             'stopped'     => 'Detenido', // 👈 NUEVO
             'completed'   => 'Finalizado',
             'cancelled'   => 'Cancelado',
-            'no_procede'  => 'No Procede'
+            'no_procede'  => 'No Procede',
         ];
         return $statuses[$status] ?? 'Por Iniciar';
     }

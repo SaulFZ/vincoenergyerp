@@ -6,24 +6,109 @@
                              document.querySelector('#forgotPasswordLink') !== null ||
                              document.querySelector('.toggle-password') !== null;
 
-    // Si estamos en la página de login o similares, NO ejecutamos este script
     const shouldSkip = excludedPaths.some(path => currentPath.includes(path)) || hasLoginElements;
     if (shouldSkip) return;
 
     // ====== CONFIGURACIÓN ======
-    const SESSION_TIMEOUT_MINUTES = 10; // Tiempo total de inactividad
-    const WARNING_TIME_MINUTES = 1;     // Cuándo mostrar la advertencia (1 minuto antes)
+    const SESSION_TIMEOUT_MINUTES = 15;
+    const WARNING_TIME_MINUTES    = 1;
 
-    const EXPIRY_TIME_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
-    const ALERT_THRESHOLD_MS = (SESSION_TIMEOUT_MINUTES - WARNING_TIME_MINUTES) * 60 * 1000;
-    const FINAL_ALERT_DURATION_MS = 5000;
+    const EXPIRY_TIME_MS       = SESSION_TIMEOUT_MINUTES * 60 * 1000;
+    const ALERT_THRESHOLD_MS   = (SESSION_TIMEOUT_MINUTES - WARNING_TIME_MINUTES) * 60 * 1000;
+    const FINAL_ALERT_DURATION = 6000;
 
-    let lastActivityTime = Date.now();
-    let isWarningShown = false;
+    let lastActivityTime  = Date.now();
+    let isWarningShown    = false;
     let isFinalAlertShown = false;
-    let checkInterval;
+    let checkInactivityInterval;
 
-    // ====== FUNCIONES AUXILIARES ======
+    // ====== ESTILOS GLOBALES ======
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
+        .swal-session-popup {
+            border-radius: 16px !important;
+            padding: 28px 24px 24px !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18) !important;
+            font-family: 'Segoe UI', system-ui, sans-serif !important;
+        }
+        .swal-session-title {
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            color: #1e293b !important;
+            margin-bottom: 4px !important;
+        }
+        .swal-session-confirm {
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            font-size: 0.9rem !important;
+            padding: 10px 24px !important;
+            letter-spacing: 0.3px !important;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.35) !important;
+            transition: transform 0.15s, box-shadow 0.15s !important;
+        }
+        .swal-session-confirm:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 16px rgba(59,130,246,0.45) !important;
+        }
+        .session-timer-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe4e4 100%);
+            border: 1.5px solid #fca5a5;
+            border-radius: 14px;
+            padding: 14px 40px;
+            margin: 10px 0 16px;
+        }
+        .session-timer-number {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #dc2626;
+            line-height: 1;
+            min-width: 64px;
+            text-align: center;
+            transition: transform 0.2s, color 0.2s;
+            font-variant-numeric: tabular-nums;
+        }
+        .session-timer-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            text-align: center;
+        }
+        .session-divider {
+            width: 36px;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #6366f1);
+            border-radius: 99px;
+            margin: 0 auto 14px;
+        }
+        .session-subtitle {
+            color: #64748b;
+            font-size: 0.92rem;
+            margin: 0 0 4px;
+            line-height: 1.6;
+        }
+        .session-hint {
+            color: #94a3b8;
+            font-size: 0.78rem;
+            margin: 0;
+        }
+    `;
+    document.head.appendChild(styleEl);
+
+    // ====== DETECCIÓN DE MODALES AJENOS ======
+    function isExternalSwalOpen() {
+        const swalVisible = Swal.isVisible();
+        if (!swalVisible) return false;
+        const ourModal = document.querySelector('.swal2-container [data-session-modal="true"]');
+        return swalVisible && !ourModal;
+    }
+
+    // ====== AUXILIARES ======
     function isTabActive() { return !document.hidden; }
 
     function getCsrfToken() {
@@ -48,143 +133,181 @@
     }
 
     function resetActivity() {
-        // No resetear si el modal de advertencia o el de cierre final están en pantalla
         if (isWarningShown || isFinalAlertShown) return;
         lastActivityTime = Date.now();
     }
 
     async function extendSession() {
+        await pingSession();
         lastActivityTime = Date.now();
-        isWarningShown = false;
-
-        Swal.close(); // Cierra la advertencia
+        isWarningShown   = false;
+        Swal.close();
     }
 
-    // ====== MODALES ======
+    // ====== MODAL: ADVERTENCIA (1 min antes) ======
     function showTimeoutWarning() {
         if (isWarningShown || isFinalAlertShown) return;
+        if (isExternalSwalOpen()) return;
+
         isWarningShown = true;
 
         Swal.fire({
-            title: "¿Sigues ahí?",
+            icon: 'warning',
+            title: 'Sesión a punto de expirar',
             html: `
-                <div style="text-align: center; padding: 10px;">
-                    <p>Tu sesión expirará por inactividad.</p>
-                    <p>Tiempo restante: <strong style="color: #d63031; font-size: 1.5em;" id="sessionTimer">--</strong></p>
-                    <p>Haz clic en el botón para continuar.</p>
+                <div data-session-modal="true">
+                    <div class="session-divider"></div>
+                    <p class="session-subtitle">
+                        Tu sesión cerrará pronto por <strong>inactividad</strong>.<br>
+                        Tiempo restante:
+                    </p>
+                    <div class="session-timer-pill">
+                        <div>
+                            <div id="sessionTimer" class="session-timer-number">--</div>
+                            <div class="session-timer-label">segundos</div>
+                        </div>
+                    </div>
+                    <p class="session-hint">Haz clic en el botón para continuar trabajando.</p>
                 </div>
             `,
-            icon: "warning",
-            showCancelButton: false,
-            confirmButtonText: "SÍ, CONTINUAR TRABAJANDO",
-            confirmButtonColor: "#3085d6",
-            allowOutsideClick: false,
-            allowEscapeKey: false,
             didOpen: () => {
-                const timerEl = document.getElementById("sessionTimer");
+                const popup = Swal.getPopup();
+                if (popup) popup.setAttribute('data-session-modal', 'true');
+
+                const timerEl  = document.getElementById('sessionTimer');
                 const timerInt = setInterval(() => {
-                    const now = Date.now();
-                    const timeLeft = Math.max(0, Math.ceil((EXPIRY_TIME_MS - (now - lastActivityTime)) / 1000));
+                    const elapsed  = Date.now() - lastActivityTime;
+                    const timeLeft = Math.max(0, Math.ceil((EXPIRY_TIME_MS - elapsed) / 1000));
 
-                    if (timerEl) timerEl.textContent = `${timeLeft}s`;
+                    if (timerEl) {
+                        timerEl.textContent = timeLeft;
+                        if (timeLeft <= 10) {
+                            timerEl.style.color     = '#b91c1c';
+                            timerEl.style.transform = 'scale(1.12)';
+                        } else {
+                            timerEl.style.color     = '#dc2626';
+                            timerEl.style.transform = 'scale(1)';
+                        }
+                    }
 
-                    // Si el tiempo llega a 0 estando el modal abierto, forzamos el cierre
                     if (timeLeft <= 0) {
                         clearInterval(timerInt);
                         showFinalAlert();
                     }
-                }, 480000);
+                }, 1000);
+
+                if (popup) popup._timerInt = timerInt;
+            },
+            willClose: () => {
+                const popup = Swal.getPopup();
+                if (popup && popup._timerInt) clearInterval(popup._timerInt);
+            },
+            showCancelButton: false,
+            confirmButtonText: 'Continuar trabajando',
+            confirmButtonColor: '#3b82f6',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            customClass: {
+                popup:         'swal-session-popup',
+                title:         'swal-session-title',
+                confirmButton: 'swal-session-confirm',
             }
         }).then((result) => {
-            if (result.isConfirmed) {
-                extendSession();
-            }
+            if (result.isConfirmed) extendSession();
         });
     }
 
+    // ====== MODAL: SESIÓN EXPIRADA ======
     function showFinalAlert() {
         if (isFinalAlertShown) return;
         isFinalAlertShown = true;
-        isWarningShown = false;
+        isWarningShown    = false;
 
-        Swal.close(); // Cerramos cualquier alerta previa
+        Swal.close();
 
-        const now = Date.now();
-        const overTime = now - lastActivityTime;
-
-        // Si el usuario regresa y se pasó del límite por más de 5 segundos,
-        // lo mandamos directo al login sin mostrarle el modal de los 5 segundos.
-        if (overTime > (EXPIRY_TIME_MS + 5000)) {
+        const overTime = Date.now() - lastActivityTime;
+        if (overTime > EXPIRY_TIME_MS + 5000) {
             window.location.href = '/login';
             return;
         }
 
-        // Si está en la pestaña viendo cómo se acaba el tiempo, le mostramos el conteo final
         Swal.fire({
-            title: "🔴 Sesión Agotada",
+            icon: 'error',
+            title: 'Sesión cerrada',
             html: `
-                <div style="text-align: center; padding: 10px;">
-                    <p><strong style="color: #d63031;">Tu tiempo de inactividad ha superado el límite.</strong></p>
-                    <p>Redirigiendo al login en <strong id="finalTimer">${FINAL_ALERT_DURATION_MS / 1000}</strong>...</p>
+                <div data-session-modal="true">
+                    <div class="session-divider" style="background: linear-gradient(90deg, #ef4444, #dc2626);"></div>
+                    <p class="session-subtitle" style="margin-bottom: 10px;">
+                        Tu sesión fue cerrada por <strong>inactividad</strong>.<br>
+                        Serás redirigido al inicio de sesión.
+                    </p>
+                    <div class="session-timer-pill" style="
+                        background: linear-gradient(135deg, #fff5f5, #fee2e2);
+                        border-color: #fca5a5;
+                    ">
+                        <div>
+                            <div id="finalTimer" class="session-timer-number">
+                                ${Math.ceil(FINAL_ALERT_DURATION / 1000)}
+                            </div>
+                            <div class="session-timer-label">segundos</div>
+                        </div>
+                    </div>
                 </div>
             `,
-            icon: "error",
-            timer: FINAL_ALERT_DURATION_MS,
+            didOpen: () => {
+                const popup = Swal.getPopup();
+                if (popup) popup.setAttribute('data-session-modal', 'true');
+
+                const timerEl  = document.getElementById('finalTimer');
+                const interval = setInterval(() => {
+                    const left = Swal.getTimerLeft();
+                    if (timerEl && left !== undefined) timerEl.textContent = Math.ceil(left / 1000);
+                    if (!left) clearInterval(interval);
+                }, 100);
+            },
+            timer: FINAL_ALERT_DURATION,
             timerProgressBar: true,
             showConfirmButton: false,
             allowOutsideClick: false,
             allowEscapeKey: false,
-            didOpen: () => {
-                const timerEl = document.getElementById("finalTimer");
-                const interval = setInterval(() => {
-                    const left = Swal.getTimerLeft();
-                    if (timerEl && left) timerEl.textContent = Math.ceil(left / 1000);
-                    if (!left) clearInterval(interval);
-                }, 100);
+            customClass: {
+                popup: 'swal-session-popup',
+                title: 'swal-session-title',
             }
         }).then(() => {
             window.location.href = '/login';
         });
     }
 
-    // ====== MONITOR DE INACTIVIDAD ======
+    // ====== MONITOR PRINCIPAL ======
     function checkInactivity() {
-        const now = Date.now();
-        const inactiveTime = now - lastActivityTime;
+        if (isFinalAlertShown) return;
 
-        if (inactiveTime >= EXPIRY_TIME_MS) {
+        const elapsed = Date.now() - lastActivityTime;
+
+        if (elapsed >= EXPIRY_TIME_MS) {
             showFinalAlert();
-        } else if (inactiveTime >= ALERT_THRESHOLD_MS && !isWarningShown && !isFinalAlertShown) {
-            showTimeoutWarning();
+        } else if (elapsed >= ALERT_THRESHOLD_MS && !isWarningShown) {
+            if (!isExternalSwalOpen()) showTimeoutWarning();
         }
     }
 
+    // ====== INICIALIZACIÓN ======
     function init() {
-        // Eventos que reinician la actividad del usuario
-        const events = ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'];
-        events.forEach(e => document.addEventListener(e, resetActivity, { passive: true }));
+        const activityEvents = ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'];
+        activityEvents.forEach(e => document.addEventListener(e, resetActivity, { passive: true }));
 
-        // Validar inactividad cada segundo
         checkInactivityInterval = setInterval(checkInactivity, 1000);
 
-        // ESTO ES LO NUEVO Y MÁS IMPORTANTE:
-        // Se dispara en el milisegundo exacto en que el usuario vuelve a la pestaña
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                checkInactivity();
-            }
+            if (!document.hidden) checkInactivity();
         });
 
-        // Ping de mantenimiento cada 5 min (solo si está activo)
         setInterval(() => {
-            if (isTabActive() && !isWarningShown && !isFinalAlertShown) {
-                pingSession();
-            }
+            if (isTabActive() && !isWarningShown && !isFinalAlertShown) pingSession();
         }, 300000);
-
     }
 
-    // Esperar a que SweetAlert2 cargue si aún no lo ha hecho
     if (typeof Swal === 'undefined') {
         const checkSwal = setInterval(() => {
             if (typeof Swal !== 'undefined') {

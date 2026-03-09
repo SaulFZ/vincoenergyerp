@@ -83,60 +83,60 @@
 
             // 1. Desaparecer Preloader
             tl.to("#preloader", {
-                duration: 0.6,
-                opacity: 0,
-                ease: "power2.inOut",
-                onComplete: () => {
-                    document.querySelector("#preloader").style.display = "none";
-                }
-            })
-            // 2. Aparecer Video suavemente (evita el glitch visual)
-            .to("#video-bg", {
-                duration: 1.5,
-                opacity: 1,
-                visibility: "visible",
-                ease: "power2.out"
-            }, "-=0.2")
-            // 3. Revelar el contenedor del login
-            .to(".login-wrapper", {
-                duration: 1,
-                opacity: 1,
-                y: 0,
-                visibility: "visible",
-                ease: "power3.out"
-            }, "-=1")
-            // 4. Animación en cascada de los elementos internos
-            .from(".logo-img", {
-                duration: 0.8,
-                scale: 0.8,
-                opacity: 0,
-                ease: "back.out(1.7)"
-            }, "-=0.6")
-            .from(".animate-text", {
-                duration: 0.6,
-                y: 20,
-                opacity: 0,
-                stagger: 0.1,
-                ease: "power2.out"
-            }, "-=0.4")
-            .from(".input-group", {
-                duration: 0.6,
-                x: -30,
-                opacity: 0,
-                stagger: 0.15,
-                ease: "power2.out"
-            }, "-=0.4")
-            .from(".btn-login", {
-                duration: 0.6,
-                y: 20,
-                opacity: 0,
-                ease: "power2.out"
-            }, "-=0.2")
-            .from(".forgot-container, .footer-copyright", {
-                duration: 0.6,
-                opacity: 0,
-                ease: "power2.out"
-            }, "-=0.4");
+                    duration: 0.6,
+                    opacity: 0,
+                    ease: "power2.inOut",
+                    onComplete: () => {
+                        document.querySelector("#preloader").style.display = "none";
+                    }
+                })
+                // 2. Aparecer Video suavemente (evita el glitch visual)
+                .to("#video-bg", {
+                    duration: 1.5,
+                    opacity: 1,
+                    visibility: "visible",
+                    ease: "power2.out"
+                }, "-=0.2")
+                // 3. Revelar el contenedor del login
+                .to(".login-wrapper", {
+                    duration: 1,
+                    opacity: 1,
+                    y: 0,
+                    visibility: "visible",
+                    ease: "power3.out"
+                }, "-=1")
+                // 4. Animación en cascada de los elementos internos
+                .from(".logo-img", {
+                    duration: 0.8,
+                    scale: 0.8,
+                    opacity: 0,
+                    ease: "back.out(1.7)"
+                }, "-=0.6")
+                .from(".animate-text", {
+                    duration: 0.6,
+                    y: 20,
+                    opacity: 0,
+                    stagger: 0.1,
+                    ease: "power2.out"
+                }, "-=0.4")
+                .from(".input-group", {
+                    duration: 0.6,
+                    x: -30,
+                    opacity: 0,
+                    stagger: 0.15,
+                    ease: "power2.out"
+                }, "-=0.4")
+                .from(".btn-login", {
+                    duration: 0.6,
+                    y: 20,
+                    opacity: 0,
+                    ease: "power2.out"
+                }, "-=0.2")
+                .from(".forgot-container, .footer-copyright", {
+                    duration: 0.6,
+                    opacity: 0,
+                    ease: "power2.out"
+                }, "-=0.4");
         });
 
         $(document).ready(function() {
@@ -144,7 +144,7 @@
             // --- 0. RECARGA AUTOMÁTICA (Cada 10 Minutos) ---
             setTimeout(function() {
                 window.location.reload();
-            }, 600000);
+            }, 900000); // 15 minutos
 
             // --- 1. AÑO AUTOMÁTICO ---
             $('#yearSpan').text(new Date().getFullYear());
@@ -192,8 +192,15 @@
                     success: function(resp) {
                         if (resp.success) {
                             // Animación de salida exitosa antes de redirigir
-                            gsap.to(".login-wrapper", { duration: 0.5, opacity: 0, y: -20, ease: "power2.in" });
-                            setTimeout(() => { window.location.href = "{{ route('splash') }}"; }, 500);
+                            gsap.to(".login-wrapper", {
+                                duration: 0.5,
+                                opacity: 0,
+                                y: -20,
+                                ease: "power2.in"
+                            });
+                            setTimeout(() => {
+                                window.location.href = "{{ route('splash') }}";
+                            }, 500);
                         } else {
                             showError(resp.message);
                             btn.removeClass('loading').prop('disabled', false);
@@ -213,7 +220,15 @@
 
             function showError(msg) {
                 // Pequeña animación de "shake" en el formulario si falla
-                gsap.fromTo(".login-wrapper", { x: -10 }, { x: 10, duration: 0.1, repeat: 3, yoyo: true, ease: "power1.inOut" });
+                gsap.fromTo(".login-wrapper", {
+                    x: -10
+                }, {
+                    x: 10,
+                    duration: 0.1,
+                    repeat: 3,
+                    yoyo: true,
+                    ease: "power1.inOut"
+                });
 
                 Swal.fire({
                     icon: 'error',
@@ -284,7 +299,8 @@
                                 if (this.value && idx < 5) i[idx + 1].focus();
                             });
                             el.addEventListener('keydown', function(e) {
-                                if (e.key === 'Backspace' && !this.value && idx > 0) i[idx - 1].focus();
+                                if (e.key === 'Backspace' && !this.value && idx > 0) i[
+                                    idx - 1].focus();
                             });
                         });
                     },
@@ -296,7 +312,8 @@
                             _token: "{{ csrf_token() }}",
                             email: userEmail,
                             code: c
-                        }).then(r => r.redirect).catch(() => Swal.showValidationMessage('Código incorrecto'));
+                        }).then(r => r.redirect).catch(() => Swal.showValidationMessage(
+                            'Código incorrecto'));
                     }
                 }).then(r => {
                     if (r.isConfirmed && r.value) window.location.href = r.value;
@@ -304,12 +321,19 @@
             }
 
             @if (session('success'))
-                Swal.fire({ icon: 'success', text: "{{ session('success') }}" });
+                Swal.fire({
+                    icon: 'success',
+                    text: "{{ session('success') }}"
+                });
             @endif
             @if (session('error'))
-                Swal.fire({ icon: 'error', text: "{{ session('error') }}" });
+                Swal.fire({
+                    icon: 'error',
+                    text: "{{ session('error') }}"
+                });
             @endif
         });
     </script>
 </body>
+
 </html>

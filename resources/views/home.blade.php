@@ -9,7 +9,8 @@
 
     {{-- FontAwesome --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
+    <link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
     {{-- CSS Principal --}}
     <link href="{{ asset('assets/css/home.css') }}" rel="stylesheet">
     @stack('styles')
@@ -66,6 +67,12 @@
                             <i class="fas fa-chevron-right arrow-icon"></i>
                         </div>
                         <ul class="nav-list active">
+                            @if (in_array('reembolsos', $userPermissions['administracion']) || empty($userPermissions['administracion']))
+                                <li class="nav-item" data-route="/administracion/reembolsos">
+                                    <i class="fas fa-receipt nav-icon"></i>
+                                    <span class="nav-text">Reembolsos</span>
+                                </li>
+                            @endif
                             @if (in_array('facturacion', $userPermissions['administracion']) || empty($userPermissions['administracion']))
                                 <li class="nav-item" data-route="/administracion">
                                     <i class="fas fa-file-invoice nav-icon"></i>
@@ -235,10 +242,10 @@
             const navItems = document.querySelectorAll('.nav-item');
             const currentPath = window.location.pathname;
             navItems.forEach(item => {
-                if(item.dataset.route === currentPath) {
+                if (item.dataset.route === currentPath) {
                     item.classList.add('active');
                     const parentGroup = item.closest('.nav-group');
-                    if(parentGroup){
+                    if (parentGroup) {
                         const header = parentGroup.querySelector('.nav-header');
                         const list = parentGroup.querySelector('.nav-list');
                         header.classList.add('active');
@@ -262,7 +269,7 @@
                 overlay.classList.toggle('show');
             }
 
-            if(menuToggle){
+            if (menuToggle) {
                 menuToggle.addEventListener('click', toggleMenu);
                 overlay.addEventListener('click', toggleMenu);
             }
@@ -270,4 +277,5 @@
     </script>
     @stack('scripts')
 </body>
+
 </html>

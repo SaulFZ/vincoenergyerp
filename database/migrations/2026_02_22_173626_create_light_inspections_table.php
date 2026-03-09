@@ -13,55 +13,50 @@ return new class extends Migration {
             $table->foreignId('journey_unit_id')->constrained('journey_units')->cascadeOnDelete();
 
             // --- CABECERA (DATOS GENERALES) ---
-            $table->string('fuel_level');      // nivel_gasolina
-            $table->integer('mileage');       // kilometraje
+            $table->string('fuel_level', 50);      // nivel_gasolina
+            $table->integer('mileage');            // kilometraje
 
-            // --- I. DOCUMENTACIÓN (Sección 1 del modal) ---
-            $table->boolean('doc_registration_card')->default(false); // doc_tarjeta
-            $table->boolean('doc_insurance_policy')->default(false);  // doc_poliza
-            $table->boolean('doc_emergency_phones')->default(false);  // doc_tel_emergencia
-            $table->boolean('doc_driving_license')->default(false);   // doc_licencia
+            // --- I. DOCUMENTACIÓN (String de 15 caracteres, SIN default) ---
+            $table->string('doc_registration_card', 15); // doc_tarjeta
+            $table->string('doc_insurance_policy', 15);  // doc_poliza
+            $table->string('doc_emergency_phones', 15);  // doc_tel_emergencia
+            $table->string('doc_driving_license', 15);   // doc_licencia
 
-            // --- II. INSPECCIÓN VISUAL (Sección 2 del modal) ---
-            $table->boolean('vis_first_aid_kit')->default(false);     // vis_botiquin
-            $table->boolean('vis_safety_triangles')->default(false);  // vis_triangulo
-            $table->boolean('vis_fire_extinguisher')->default(false); // vis_extintor
-            $table->boolean('vis_jack_wrench')->default(false);       // vis_gato
-            $table->boolean('vis_jumper_cables')->default(false);     // vis_cables
-            $table->boolean('vis_basic_tools')->default(false);       // vis_herramientas
-            $table->boolean('vis_flashlight')->default(false);        // vis_linterna
-            $table->boolean('vis_mirrors')->default(false);           // vis_espejos
-            $table->boolean('vis_spare_tire')->default(false);        // vis_refaccion
-            $table->boolean('vis_tires_condition')->default(false);   // vis_neumaticos
-            $table->boolean('vis_paint_condition')->default(false);   // vis_pintura
-            $table->boolean('vis_windshield_wipers')->default(false); // vis_parabrisas
-            $table->boolean('vis_bumpers')->default(false);           // vis_defensas
-            $table->boolean('vis_main_lights')->default(false);       // vis_luces_gral
-            $table->boolean('vis_stop_reverse_lights')->default(false); // vis_luces_stop
-            $table->boolean('vis_horn')->default(false);              // vis_claxon
-            $table->boolean('vis_company_logos')->default(false);     // vis_logos
-            $table->boolean('vis_seats_condition')->default(false);   // vis_asientos
-            $table->boolean('vis_dashboard_panel')->default(false);   // vis_panel
-            $table->boolean('vis_seatbelts')->default(false);         // vis_cinturones
+            // --- II. INSPECCIÓN VISUAL ---
+            $table->string('vis_first_aid_kit', 15);     // vis_botiquin
+            $table->string('vis_safety_triangles', 15);  // vis_triangulo
+            $table->string('vis_fire_extinguisher', 15); // vis_extintor
+            $table->string('vis_jack_wrench', 15);       // vis_gato
+            $table->string('vis_jumper_cables', 15);     // vis_cables
+            $table->string('vis_basic_tools', 15);       // vis_herramientas
+            $table->string('vis_flashlight', 15);        // vis_linterna
+            $table->string('vis_mirrors', 15);           // vis_espejos
+            $table->string('vis_spare_tire', 15);        // vis_refaccion
+            $table->string('vis_tires_condition', 15);   // vis_neumaticos
+            $table->string('vis_paint_condition', 15);   // vis_pintura
+            $table->string('vis_windshield_wipers', 15); // vis_parabrisas
+            $table->string('vis_bumpers', 15);           // vis_defensas
+            $table->string('vis_main_lights', 15);       // vis_luces_gral
+            $table->string('vis_stop_reverse_lights', 15); // vis_luces_stop
+            $table->string('vis_horn', 15);              // vis_claxon
+            $table->string('vis_company_logos', 15);     // vis_logos
+            $table->string('vis_seats_condition', 15);   // vis_asientos
+            $table->string('vis_dashboard_panel', 15);   // vis_panel
+            $table->string('vis_seatbelts', 15);         // vis_cinturones
 
-            // --- III. MANTENIMIENTO (Sección 3 del modal) ---
-            $table->boolean('maint_last_check_verified')->default(false); // mant_fecha_km
-            $table->boolean('maint_leaks_check')->default(false);      // mant_fugas
-            $table->boolean('maint_fluid_levels')->default(false);     // mant_niveles
-            $table->boolean('maint_belts_condition')->default(false);  // mant_bandas
+            // --- III. MANTENIMIENTO ---
+            $table->string('maint_last_check_verified', 15); // mant_fecha_km
+            $table->string('maint_leaks_check', 15);      // mant_fugas
+            $table->string('maint_fluid_levels', 15);     // mant_niveles
+            $table->string('maint_belts_condition', 15);  // mant_bandas
 
-            // --- IV. ANOMALÍAS Y EVIDENCIA (Sección 4 del modal) ---
-            $table->boolean('has_anomalies')->default(false);          // anomalias_ligera
-            $table->text('anomaly_comments')->nullable();              // comentarios
+            // --- IV. ANOMALÍAS Y EVIDENCIA ---
+            $table->boolean('has_anomalies');             // anomalias_ligera (1 = si, 0 = no)
+            $table->text('anomaly_comments')->nullable(); // comentarios
 
-            // Rutas de fotos en JSON (Estructura: ["qhse/gerenciamiento/anomaliasL/foto1.jpg", ...])
+            // Rutas de fotos en JSON
             $table->json('photo_evidence')->nullable();
 
-            /**
-             * TIMESTAMPS:
-             * created_at = "Fecha Actual" del modal.
-             * updated_at = Fecha de última modificación.
-             */
             $table->timestamps();
         });
     }

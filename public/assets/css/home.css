@@ -27,7 +27,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
+    font-family: "Poppins", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--fondo-app);
     color: var(--texto-principal);
     line-height: 1.5;
@@ -113,7 +113,7 @@ body {
    ========================================= */
 .sidebar {
     width: var(--sidebar-width);
-    background: linear-gradient(180deg, var(--azul-oscuro) 0%, var(--azul) 100%);
+    background: var(--azul-oscuro);
     position: fixed;
     top: var(--header-height);
     bottom: 0;

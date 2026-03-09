@@ -121,10 +121,13 @@ async function cargarViajes(page = 1) {
 
         if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
         if (currentStatusGv !== "all") url += `&status_gv=${currentStatusGv}`;
-        if (currentStatusViaje !== "all") url += `&status_viaje=${currentStatusViaje}`;
+        if (currentStatusViaje !== "all")
+            url += `&status_viaje=${currentStatusViaje}`;
         if (currentRiskLevel !== "all") url += `&risk_level=${currentRiskLevel}`;
-        if (currentDestination !== "all") url += `&destination=${currentDestination}`;
-        if (currentFechaSolicitud) url += `&fecha_solicitud=${encodeURIComponent(currentFechaSolicitud)}`;
+        if (currentDestination !== "all")
+            url += `&destination=${currentDestination}`;
+        if (currentFechaSolicitud)
+            url += `&fecha_solicitud=${encodeURIComponent(currentFechaSolicitud)}`;
 
         const response = await fetch(url);
         const result = await response.json();
@@ -135,7 +138,8 @@ async function cargarViajes(page = 1) {
 
         if (result.success) {
             if (result.data.length === 0) {
-                container.innerHTML = document.getElementById("emptyTemplate").innerHTML;
+                container.innerHTML =
+                    document.getElementById("emptyTemplate").innerHTML;
                 paginationContainer.innerHTML = "";
             } else {
                 renderTablaViajes(result.data, container);
@@ -184,7 +188,7 @@ function renderTablaViajes(viajes, container) {
     `;
 
     viajes.forEach((viaje) => {
-        // LÓGICA DE RENDERIZADO VISUAL PARA TIPO DE FLOTA
+        // Badge tipo de flota
         let badgeTipoViaje = "";
         if (viaje.tipo_viaje === "Convoy de Unidades") {
             badgeTipoViaje = `<span style="background: #fff4ed; color: #e85d04; border: 1px solid #fed7aa; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap;" title="Múltiples vehículos asignados">Convoy</span>`;
@@ -192,64 +196,68 @@ function renderTablaViajes(viajes, container) {
             badgeTipoViaje = `<span style="background: #f0f7ff; color: #0056b3; border: 1px solid #cce1ff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap;" title="Solo un vehículo asignado">Única</span>`;
         }
 
-        // ========================================================
-        // LÓGICA DEL BOTÓN PRINCIPAL
-        // ========================================================
+        // Botón principal: Revisar (aprobador pendiente) o Ver (todos los demás)
         let claseBotonVer = "btn-view";
         let iconoBotonVer = "fa-eye";
         let tituloBotonVer = "Ver detalle del viaje";
 
-        // EL BOTÓN REVISAR SOLO APARECE SI ESTÁ PENDIENTE *Y* EL USUARIO ES EL APROBADOR ASIGNADO
         if (viaje.estado_gv.texto === "Pendiente" && viaje.can_approve) {
             claseBotonVer = "btn-review";
             iconoBotonVer = "fa-clipboard-check";
             tituloBotonVer = "Revisar y Autorizar solicitud";
         }
 
-        // CONSTRUCCIÓN DE BOTONES DE ACCIÓN
+        // Construcción de botones de acción
         let botonesAccion = `
-    <div style="display: flex; gap: 8px; justify-content: center;">
-        <button class="btn-action-small ${claseBotonVer}" onclick="abrirModalViaje(${viaje.id})" title="${tituloBotonVer}">
-            <i class="fas ${iconoBotonVer}"></i>
-        </button>
-`;
-
-      // EL BOTÓN RUTA SOLO APARECE SI ESTÁ APROBADO, EN CURSO/POR INICIAR/DETENIDO *Y* ES EL CREADOR DEL VIAJE
-        if (viaje.estado_gv.texto === "Aprobado" &&
-           (viaje.estado_viaje.texto === "En Curso" ||
-            viaje.estado_viaje.texto === "Por Iniciar" ||
-            viaje.estado_viaje.texto === "Detenido")) { // 👈 SE AGREGA "Detenido" AQUÍ
-
-            if (viaje.is_creator) {
-                botonesAccion += `
-            <button class="btn-action-small btn-tracking" onclick="abrirModalRuta(${viaje.id}, '${viaje.folio}')" title="Ruta Operativa">
-                <i class="fas fa-route"></i> Ruta
-            </button>
+            <div style="display: flex; gap: 8px; justify-content: center;">
+                <button class="btn-action-small ${claseBotonVer}" onclick="abrirModalViaje(${viaje.id})" title="${tituloBotonVer}">
+                    <i class="fas ${iconoBotonVer}"></i>
+                </button>
         `;
+
+        // ✅ BOTÓN RUTA: visible para creador O participante (conductor/pasajero)
+        if (
+            viaje.estado_gv.texto === "Aprobado" &&
+            (viaje.estado_viaje.texto === "En Curso" ||
+                viaje.estado_viaje.texto === "Por Iniciar" ||
+                viaje.estado_viaje.texto === "Detenido")
+        ) {
+            if (viaje.is_creator || viaje.is_participant) {
+                botonesAccion += `
+                    <button class="btn-action-small btn-tracking"
+                            onclick="abrirModalRuta(${viaje.id}, '${viaje.folio}')"
+                            title="Ruta Operativa">
+                        <i class="fas fa-route"></i> Ruta
+                    </button>
+                `;
             }
         }
-        // EL BOTÓN HISTORIAL APARECE SI ESTÁ FINALIZADO/CANCELADO *Y* TIENE EL PERMISO
-        else if (viaje.estado_viaje.texto === "Finalizado" || viaje.estado_viaje.texto === "Cancelado") {
+        // Botón Historial para finalizados/cancelados
+        else if (
+            viaje.estado_viaje.texto === "Finalizado" ||
+            viaje.estado_viaje.texto === "Cancelado"
+        ) {
             if (viaje.can_see_history) {
                 botonesAccion += `
-           <button class="btn-action-small btn-history" onclick="abrirModalHistorial(${viaje.id}, '${viaje.folio}')" title="Ver Historial">
-                <i class="fas fa-list-alt"></i> Historial
-            </button>
-        `;
+                    <button class="btn-action-small btn-history"
+                            onclick="abrirModalHistorial(${viaje.id}, '${viaje.folio}')"
+                            title="Ver Historial">
+                        <i class="fas fa-list-alt"></i> Historial
+                    </button>
+                `;
             }
         }
 
         botonesAccion += `</div>`;
 
-        // CONSTRUCCIÓN DE LA FILA
-        html += `
+        // Fila de la tabla
+html += `
             <tr>
                 <td><strong>${viaje.folio}</strong></td>
-                <td>${viaje.solicitante}</td>
+                <td class="td-nombre">${viaje.solicitante}</td>
                 <td>${viaje.departamento}</td>
-                <td>${viaje.destino}</td>
-                <td style="text-align: center;">${badgeTipoViaje}</td>
-                <td>${viaje.fechas}</td>
+                <td class="td-destino">${viaje.destino}</td> <td style="text-align: center;">${badgeTipoViaje}</td>
+                <td class="td-fechas">${viaje.fechas}</td>
                 <td><span class="badge-riesgo ${viaje.riesgo.clase}">${viaje.riesgo.texto}</span></td>
                 <td><span class="badge-status ${viaje.estado_gv.clase}">${viaje.estado_gv.texto}</span></td>
                 <td><span class="badge-status ${viaje.estado_viaje.clase}">${viaje.estado_viaje.texto}</span></td>
@@ -258,11 +266,7 @@ function renderTablaViajes(viajes, container) {
         `;
     });
 
-    html += `
-            </tbody>
-        </table>
-    `;
-
+    html += `</tbody></table>`;
     container.innerHTML = html;
 }
 // ====================================================================
@@ -313,11 +317,7 @@ function renderPaginacion(pagination, container) {
     let currPage = pagination.current_page;
 
     for (let i = 1; i <= lastPage; i++) {
-        if (
-            i === 1 ||
-            i === lastPage ||
-            (i >= currPage - 1 && i <= currPage + 1)
-        ) {
+        if (i === 1 || i === lastPage || (i >= currPage - 1 && i <= currPage + 1)) {
             let activeClass = i === currPage ? "active" : "";
             html += `<button class="page-btn ${activeClass}" onclick="cambiarPagina(${i})">${i}</button>`;
         } else if (i === currPage - 2 || i === currPage + 2) {
@@ -373,20 +373,24 @@ async function abrirModalViaje(idViaje) {
         const result = await response.json();
 
         if (!result.success) {
-            Swal.fire("Error", result.message || "No se pudo cargar el viaje", "error");
+            Swal.fire(
+                "Error",
+                result.message || "No se pudo cargar el viaje",
+                "error",
+            );
             return;
         }
         Swal.close();
 
         // ¡NUEVO! Pasamos result.auth junto con result.data
         await cargarModalEnModoLectura(result.data, result.auth);
-
     } catch (e) {
         Swal.fire("Error de conexión", e.message, "error");
     }
 }
 // ── CARGA Y BLOQUEO COMPLETO ──────────────────────────────────────────
-async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authData
+async function cargarModalEnModoLectura(viaje, authData) {
+    // <-- Recibe authData
     // 1. PRIMERO limpiar el formulario (esto apaga el modo lectura por defecto)
     limpiarFormulario();
 
@@ -394,10 +398,10 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
     modoLectura = true;
 
     // 3. Abrir modal
-    const modal = document.getElementById('modalFormulario');
+    const modal = document.getElementById("modalFormulario");
     if (!modal) return;
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    modal.classList.add("active");
+    document.body.style.overflow = "hidden";
 
     // ── DATOS GENERALES ───────────────────────────────────────────────
     const codigoEl = document.getElementById("codigoViaje");
@@ -416,7 +420,8 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
 
     const inputDestinoHidden = document.getElementById("inputDestinoHidden");
     const labelDestino = document.getElementById("labelDestinoSeleccionado");
-    if (inputDestinoHidden) inputDestinoHidden.value = viaje.destination_region || "";
+    if (inputDestinoHidden)
+        inputDestinoHidden.value = viaje.destination_region || "";
     if (labelDestino) {
         labelDestino.textContent = viaje.destination_region || "Sin destino";
         labelDestino.style.color = "#212529";
@@ -437,12 +442,20 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
 
     // ── PARADAS ───────────────────────────────────────────────────────
     const tieneParadas = !!viaje.has_stops;
-    const radioParadasSi = modal.querySelector('input[name="tiene_paradas"][value="si"]');
-    const radioParadasNo = modal.querySelector('input[name="tiene_paradas"][value="no"]');
+    const radioParadasSi = modal.querySelector(
+        'input[name="tiene_paradas"][value="si"]',
+    );
+    const radioParadasNo = modal.querySelector(
+        'input[name="tiene_paradas"][value="no"]',
+    );
     if (tieneParadas && radioParadasSi) radioParadasSi.checked = true;
     else if (radioParadasNo) radioParadasNo.checked = true;
 
-    if (tieneParadas && Array.isArray(viaje.planned_stops) && viaje.planned_stops.length) {
+    if (
+        tieneParadas &&
+        Array.isArray(viaje.planned_stops) &&
+        viaje.planned_stops.length
+    ) {
         toggleSeccionParadas(true);
         const listaParadas = document.getElementById("listaParadas");
         if (listaParadas) listaParadas.innerHTML = "";
@@ -470,7 +483,9 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
         if (vHidden) vHidden.value = u.economic_number || "";
         if (vTrigger && u.economic_number) {
             const tipo = clasificacionVehiculos[u.economic_number] || "";
-            const icono = tipo.toLowerCase().includes("pesada") ? "fa-truck" : "fa-car";
+            const icono = tipo.toLowerCase().includes("pesada")
+                ? "fa-truck"
+                : "fa-car";
             vTrigger.innerHTML = `<i class="fas ${icono}"></i> ${u.economic_number}`;
             vTrigger.style.color = "#495057";
             vTrigger.style.fontWeight = "600";
@@ -493,29 +508,47 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
         }
         _setVal(`medicamento-nombre-${num}`, u.medication_name || "");
 
-        const esPesada = (clasificacionVehiculos[u.economic_number] || "").toLowerCase().includes("pesada");
-        const labelLic = document.querySelector(`#vigencia-lic-${num}`)?.closest('.hour-input-group')?.querySelector('label');
-        const labelMan = document.querySelector(`#vigencia-man-${num}`)?.closest('.hour-input-group')?.querySelector('label');
+        const esPesada = (clasificacionVehiculos[u.economic_number] || "")
+            .toLowerCase()
+            .includes("pesada");
+        const labelLic = document
+            .querySelector(`#vigencia-lic-${num}`)
+            ?.closest(".hour-input-group")
+            ?.querySelector("label");
+        const labelMan = document
+            .querySelector(`#vigencia-man-${num}`)
+            ?.closest(".hour-input-group")
+            ?.querySelector("label");
 
         if (labelLic) {
-            labelLic.innerHTML = esPesada ? `<i class="fas fa-id-card"></i> Vigencia Licencia Federal` : `<i class="fas fa-id-card"></i> Vigencia Licencia`;
+            labelLic.innerHTML = esPesada
+                ? `<i class="fas fa-id-card"></i> Vigencia Licencia Federal`
+                : `<i class="fas fa-id-card"></i> Vigencia Licencia`;
             labelLic.style.color = esPesada ? "#f08a1f" : "";
         }
         if (labelMan) {
-            labelMan.innerHTML = esPesada ? `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Pesada` : `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Ligera`;
+            labelMan.innerHTML = esPesada
+                ? `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Pesada`
+                : `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Ligera`;
             labelMan.style.color = "#0056b3";
         }
 
         const inputLic = document.getElementById(`vigencia-lic-${num}`);
         const inputMan = document.getElementById(`vigencia-man-${num}`);
         if (inputLic) {
-            inputLic.value = u.state_license_validity || u.federal_license_validity || "No registrada";
+            inputLic.value =
+                u.state_license_validity ||
+                u.federal_license_validity ||
+                "No registrada";
             inputLic.style.backgroundColor = "#e9ecef";
             inputLic.style.color = "#495057";
             inputLic.style.fontWeight = "bold";
         }
         if (inputMan) {
-            inputMan.value = u.light_defensive_driving_validity || u.heavy_defensive_driving_validity || "No registrado";
+            inputMan.value =
+                u.light_defensive_driving_validity ||
+                u.heavy_defensive_driving_validity ||
+                "No registrado";
             inputMan.style.backgroundColor = "#e9ecef";
             inputMan.style.color = "#495057";
             inputMan.style.fontWeight = "bold";
@@ -576,8 +609,12 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
             }
 
             const tieneNos = _inspeccionTieneNos(mappedData);
-            btnInsp.className = tieneNos ? "btn-inspeccion-realizada-warning" : "btn-inspeccion-realizada-ok";
-            btnInsp.innerHTML = tieneNos ? '<i class="fas fa-exclamation-circle"></i> Realizado' : '<i class="fas fa-check-circle"></i> Realizado';
+            btnInsp.className = tieneNos
+                ? "btn-inspeccion-realizada-warning"
+                : "btn-inspeccion-realizada-ok";
+            btnInsp.innerHTML = tieneNos
+                ? '<i class="fas fa-exclamation-circle"></i> Realizado'
+                : '<i class="fas fa-check-circle"></i> Realizado';
             btnInsp.dataset.tieneNos = tieneNos ? "true" : "false";
             btnInsp.setAttribute("onclick", `abrirInspeccionLectura(${num})`);
             btnInsp.disabled = false;
@@ -589,10 +626,22 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
     // ── EVALUACIÓN DE RIESGO ──────────────────────────────────────────
     if (viaje.risk_level || viaje.risk_assessment) {
         evaluacionRiesgoGuardada = true;
-        puntajeRiesgoTotal = viaje.risk_score || viaje.risk_assessment?.total_score || 0;
-        const nivel = viaje.risk_level || viaje.risk_assessment?.risk_level || "bajo";
-        const mapaClase = { bajo: "btn-riesgo-bajo", medio: "btn-riesgo-medio", alto: "btn-riesgo-alto", muy_alto: "btn-riesgo-muy-alto" };
-        const mapaTexto = { bajo: "Bajo", medio: "Medio", alto: "Alto", muy_alto: "Muy Alto" };
+        puntajeRiesgoTotal =
+            viaje.risk_score || viaje.risk_assessment?.total_score || 0;
+        const nivel =
+            viaje.risk_level || viaje.risk_assessment?.risk_level || "bajo";
+        const mapaClase = {
+            bajo: "btn-riesgo-bajo",
+            medio: "btn-riesgo-medio",
+            alto: "btn-riesgo-alto",
+            muy_alto: "btn-riesgo-muy-alto",
+        };
+        const mapaTexto = {
+            bajo: "Bajo",
+            medio: "Medio",
+            alto: "Alto",
+            muy_alto: "Muy Alto",
+        };
         const btnEval = document.getElementById("btnEvaluacionRiesgo");
         if (btnEval) {
             btnEval.className = `btn-evaluacion evaluacion-completada ${mapaClase[nivel] || "btn-riesgo-bajo"}`;
@@ -602,7 +651,8 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
             btnEval.style.opacity = "1";
             btnEval.setAttribute("onclick", "abrirEvaluacionLectura()");
         }
-        if (viaje.risk_assessment) llenarModalEvaluacionLectura(viaje.risk_assessment);
+        if (viaje.risk_assessment)
+            llenarModalEvaluacionLectura(viaje.risk_assessment);
     }
 
     // ── REUNIÓN PRE-CONVOY ────────────────────────────────────────────
@@ -636,30 +686,44 @@ async function cargarModalEnModoLectura(viaje, authData) { // <-- Recibe authDat
         if (seccion) {
             seccion.style.display = "block";
             const tituloH3 = seccion.querySelector(".form-section-title");
-            if (tituloH3) tituloH3.innerHTML = '<i class="fas fa-user-check"></i> Autorizador Asignado';
+            if (tituloH3)
+                tituloH3.innerHTML =
+                    '<i class="fas fa-user-check"></i> Autorizador Asignado';
             const subtituloP = seccion.querySelector(".destinatario-subtitle");
             if (subtituloP) subtituloP.style.display = "none";
         }
 
         if (grid) {
-            const nombre = viaje.approver?.employee?.full_name || viaje.approver?.name || `Autorizador #${viaje.approver_id}`;
-            const puesto = viaje.approver?.employee?.position || "Gerencia / Aprobador";
+            const nombre =
+                viaje.approver?.employee?.full_name ||
+                viaje.approver?.name ||
+                `Autorizador #${viaje.approver_id}`;
+            const puesto = viaje.approver?.employee?.position || "Aprobador";
 
             grid.innerHTML = `
-                <div style="display: flex; align-items: center; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px 16px; pointer-events: none; cursor: default; width: 100%; max-width: 400px;">
-                    <div style="font-size: 22px; color: #6c757d; margin-right: 15px;">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <div style="flex-grow: 1; line-height: 1.3;">
-                        <div style="font-weight: 600; font-size: 1rem; color: #343a40;">${nombre}</div>
-                        <div style="font-size: 0.85rem; color: #6c757d;">${puesto}</div>
-                    </div>
-                    <div>
-                        <span style="background: #e9ecef; color: #495057; border: 1px solid #ced4da; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
-                            <i class="fas fa-check"></i> Asignado
-                        </span>
-                    </div>
-                </div>`;
+    <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; pointer-events: none; cursor: default; width: 100%; max-width: 420px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);">
+
+        <div style="width: 42px; height: 42px; background: #f0f4ff; color: #334c95; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 15px; flex-shrink: 0;">
+            <i class="fas fa-user-tie"></i>
+        </div>
+
+        <div style="flex-grow: 1; line-height: 1.4; overflow: hidden;">
+            <div style="font-weight: 600; font-size: 0.95rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${nombre}
+            </div>
+            <div style="font-size: 0.8rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${puesto}
+            </div>
+        </div>
+
+        <div style="flex-shrink: 0; margin-left: 15px;">
+            <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.5);">
+                <i class="fas fa-check-circle" style="font-size: 0.75rem;"></i> Asignado
+            </span>
+        </div>
+
+    </div>`;
+
             grid.style.display = "flex";
             grid.style.justifyContent = "flex-start";
         }
@@ -913,20 +977,18 @@ function _bloquearTodo(modal) {
     // ====================================================================
     modal
         .querySelectorAll(
-            '.btn-accion.eliminar, .btn-remove-pasajero, .btn-add-pasajero, [id^="btn-add-pasajero-"], .btn-remove-parada-compact'
+            '.btn-accion.eliminar, .btn-remove-pasajero, .btn-add-pasajero, [id^="btn-add-pasajero-"], .btn-remove-parada-compact',
         )
         .forEach((el) => {
             el.style.display = "none";
         });
 
     // 6. Ocultar icono de asignar rol pasajero (para no confundir)
-    modal
-        .querySelectorAll('[onclick*="gestionarRolPasajero"]')
-        .forEach((el) => {
-            el.style.pointerEvents = "none";
-            el.style.opacity = "0.4";
-            el.style.cursor = "default";
-        });
+    modal.querySelectorAll('[onclick*="gestionarRolPasajero"]').forEach((el) => {
+        el.style.pointerEvents = "none";
+        el.style.opacity = "0.4";
+        el.style.cursor = "default";
+    });
 }
 
 // ── FOOTER DINÁMICO E INTELIGENTE ────────────────────────────────────
@@ -954,55 +1016,96 @@ function _reemplazarFooter(modal, viaje, authData) {
         bottom: 0;
         z-index: 10;
         gap: 15px;
+        flex-wrap: wrap;
     `;
 
-    let botonesHTML = '';
+    let botonesHTML = "";
 
-    // Si el viaje ya inició o finalizó, NADIE puede hacer nada, solo cerrar.
-    const viajeBloqueado = ['in_progress', 'completed', 'cancelled', 'no_procede'].includes(viaje.journey_status);
+    const viajeBloqueado = [
+        "in_progress",
+        "completed",
+        "cancelled",
+        "no_procede",
+    ].includes(viaje.journey_status);
 
     if (!viajeBloqueado) {
 
-        // 1. LÓGICA PARA EL APROBADOR (Si tiene permiso)
+        // ── BOTONES DEL APROBADOR ────────────────────────────────────
         if (authData.can_approve) {
-            if (viaje.approval_status === 'pending') {
+            if (viaje.approval_status === "pending") {
                 botonesHTML += `
-                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'aprobado')" style="background: #28a745; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
+                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'aprobado')"
+                        style="background: #28a745; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                        onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
                         <i class="fas fa-check-circle"></i> Aprobar
                     </button>
-                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'rechazado')" style="background: #dc3545; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
+                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'rechazado')"
+                        style="background: #dc3545; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                        onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
                         <i class="fas fa-times-circle"></i> Rechazar
                     </button>
                 `;
             }
 
-            // Si lo aprobó, pero el viaje aún no inicia, puede arrepentirse y cancelarlo
-            if (viaje.approval_status === 'approved') {
-                 botonesHTML += `
-                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')" style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
+            if (viaje.approval_status === "approved") {
+                botonesHTML += `
+                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')"
+                        style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                        onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
                         <i class="fas fa-ban"></i> Cancelar Viaje
                     </button>
                 `;
             }
         }
 
-        // 2. LÓGICA PARA EL CREADOR DEL VIAJE
-        // Si es el creador, la solicitud está pendiente o aprobada, y el viaje no ha iniciado, puede cancelar.
-        if (authData.is_creator && (viaje.approval_status === 'pending' || viaje.approval_status === 'approved')) {
-            // Evitamos duplicar el botón de cancelar si el creador también resulta ser el aprobador
-            if (!botonesHTML.includes('Cancelar Viaje')) {
+        // ── BOTONES DEL CREADOR ──────────────────────────────────────
+        if (authData.is_creator) {
+            if (viaje.approval_status === "pending" || viaje.approval_status === "approved") {
+                if (!botonesHTML.includes("Cancelar")) {
+                    botonesHTML += `
+                        <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')"
+                            style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                            onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
+                            <i class="fas fa-ban"></i> Cancelar Solicitud
+                        </button>
+                    `;
+                }
+            }
+
+            if (viaje.approval_status === "pending") {
                 botonesHTML += `
-                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')" style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
-                        <i class="fas fa-ban"></i> Cancelar Solicitud
+                    <button onclick="abrirModalCambiarAprobador(${viaje.id}, '${viaje.risk_level || 'bajo'}')"
+                        style="background: #0056b3; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                        onmouseover="this.style.background='#003d80'" onmouseout="this.style.background='#0056b3'">
+                        <i class="fas fa-user-edit"></i> Cambiar Aprobador
                     </button>
                 `;
             }
         }
+
+        // ✅ BOTÓN IR A RUTA para conductores y pasajeros (participantes)
+        if (
+            authData.is_participant &&
+            viaje.approval_status === "approved" &&
+            (viaje.journey_status === "not_started" ||
+             viaje.journey_status === "in_progress" ||
+             viaje.journey_status === "stopped")
+        ) {
+            botonesHTML += `
+                <button onclick="cerrarModalLectura(); setTimeout(() => abrirModalRuta(${viaje.id}, '${viaje.folio}'), 350);"
+                    style="background: #1e3c72; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                    onmouseover="this.style.background='#152d56'" onmouseout="this.style.background='#1e3c72'">
+                    <i class="fas fa-route"></i> Ir a Ruta Operativa
+                </button>
+            `;
+        }
     }
 
-    // 3. BOTÓN DE CERRAR (Siempre visible para todos)
+    // ── BOTÓN CERRAR (siempre visible) ───────────────────────────────
     botonesHTML += `
-        <button onclick="cerrarModalLectura()" style="background: #6c757d; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+        <button onclick="cerrarModalLectura()"
+            style="background: #6c757d; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+            onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
             <i class="fas fa-sign-out-alt"></i> Cerrar
         </button>
     `;
@@ -1010,7 +1113,116 @@ function _reemplazarFooter(modal, viaje, authData) {
     nuevoFooter.innerHTML = botonesHTML;
     footer.parentNode.insertBefore(nuevoFooter, footer.nextSibling);
 }
+async function abrirModalCambiarAprobador(viajeId, nivelRiesgo) {
+    // 1. Cargar la lista de aprobadores disponibles para ese nivel de riesgo
+    Swal.fire({
+        title: "Cargando aprobadores...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+    });
 
+    let aprobadores = [];
+    try {
+        const response = await fetch(
+            `/qhse/gerenciamiento/autorizadores/${nivelRiesgo}`,
+        );
+        const result = await response.json();
+        if (result.success) aprobadores = result.data;
+    } catch (e) {
+        Swal.fire("Error", "No se pudo cargar la lista de aprobadores.", "error");
+        return;
+    }
+
+    if (aprobadores.length === 0) {
+        Swal.fire(
+            "Sin aprobadores",
+            "No hay aprobadores disponibles para este nivel de riesgo.",
+            "warning",
+        );
+        return;
+    }
+
+    // 2. Construir opciones del select
+    const opcionesHtml = aprobadores
+        .map((a) => `<option value="${a.id}">${a.nombre} — ${a.puesto}</option>`)
+        .join("");
+
+    // 3. Mostrar el modal de selección
+    const { value: nuevoAprobadorId, isConfirmed } = await Swal.fire({
+        title:
+            '<i class="fas fa-user-edit" style="color:#0056b3"></i> Cambiar Aprobador',
+        html: `
+            <p style="color:#6c757d; margin-bottom:12px; font-size:14px;">
+                Selecciona al nuevo responsable de autorizar tu solicitud.<br>
+                Se le notificará por correo electrónico.
+            </p>
+            <select id="swal-nuevo-aprobador" class="swal2-input" style="width:100%; font-size:14px;">
+                <option value="">-- Selecciona un aprobador --</option>
+                ${opcionesHtml}
+            </select>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-save"></i> Confirmar Cambio',
+        confirmButtonColor: "#0056b3",
+        cancelButtonText: "Cancelar",
+        cancelButtonColor: "#6c757d",
+        preConfirm: () => {
+            const val = document.getElementById("swal-nuevo-aprobador").value;
+            if (!val) {
+                Swal.showValidationMessage("Debes seleccionar un aprobador.");
+                return false;
+            }
+            return val;
+        },
+    });
+
+    if (!isConfirmed || !nuevoAprobadorId) return;
+
+    // 4. Enviar al backend
+    Swal.fire({
+        title: "Guardando cambio...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+        const response = await fetch(
+            `/qhse/gerenciamiento/journeys/${viajeId}/change-approver`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
+                        .content,
+                },
+                body: JSON.stringify({ approver_id: nuevoAprobadorId }),
+            },
+        );
+
+        const result = await response.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: "success",
+                title: "¡Aprobador Actualizado!",
+                text: "El nuevo aprobador ha sido notificado por correo.",
+                confirmButtonColor: "#0056b3",
+            }).then(() => {
+                cerrarModalLectura();
+                cargarViajes(currentPage);
+            });
+        } else {
+            Swal.fire(
+                "Error",
+                result.message || "No se pudo cambiar el aprobador.",
+                "error",
+            );
+        }
+    } catch (e) {
+        Swal.fire("Error de red", e.message, "error");
+    }
+}
 // ====== VARIABLES PARA SEGUIMIENTO DE RUTA ======
 let viajeRutaActivoId = null;
 // ====================================================================
@@ -1019,26 +1231,34 @@ let viajeRutaActivoId = null;
 function gestionarEstadoViaje(viajeId, accion) {
     if (!viajeId) return;
 
-    let titulo = ""; let texto = ""; let icono = ""; let colorConf = "";
+    let titulo = "";
+    let texto = "";
+    let icono = "";
+    let colorConf = "";
 
-    if (accion === 'aprobado') {
+    if (accion === "aprobado") {
         titulo = "¿Aprobar viaje?";
-        texto = "Este viaje pasará a estado 'Aprobado' y estará listo para iniciar.";
-        icono = "success"; colorConf = "#28a745";
-    } else if (accion === 'rechazado') {
+        texto =
+            "Este viaje pasará a estado 'Aprobado' y estará listo para iniciar.";
+        icono = "success";
+        colorConf = "#28a745";
+    } else if (accion === "rechazado") {
         titulo = "¿Rechazar viaje?";
-        texto = "El viaje será marcado como rechazado. El solicitante será notificado.";
-        icono = "error"; colorConf = "#dc3545";
-    } else if (accion === 'cancelado') {
+        texto =
+            "El viaje será marcado como rechazado. El solicitante será notificado.";
+        icono = "error";
+        colorConf = "#dc3545";
+    } else if (accion === "cancelado") {
         titulo = "¿Cancelar viaje?";
         texto = "El viaje se cancelará de forma permanente.";
-        icono = "warning"; colorConf = "#fd7e14";
+        icono = "warning";
+        colorConf = "#fd7e14";
     }
 
     const backendStatus = {
-        'aprobado': 'approved',
-        'rechazado': 'rejected',
-        'cancelado': 'cancelled'
+        aprobado: "approved",
+        rechazado: "rejected",
+        cancelado: "cancelled",
     }[accion];
 
     Swal.fire({
@@ -1055,14 +1275,18 @@ function gestionarEstadoViaje(viajeId, accion) {
         preConfirm: async () => {
             try {
                 // El fetch se hace aquí adentro para bloquear el botón
-                const response = await fetch(`/qhse/gerenciamiento/journeys/${viajeId}/approval-status`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                const response = await fetch(
+                    `/qhse/gerenciamiento/journeys/${viajeId}/approval-status`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
+                                .content,
+                        },
+                        body: JSON.stringify({ approval_status: backendStatus }),
                     },
-                    body: JSON.stringify({ approval_status: backendStatus })
-                });
+                );
                 if (!response.ok) {
                     throw new Error(await response.text());
                 }
@@ -1070,10 +1294,14 @@ function gestionarEstadoViaje(viajeId, accion) {
             } catch (error) {
                 Swal.showValidationMessage(`Falló la operación: ${error}`);
             }
-        }
+        },
     }).then((result) => {
         if (result.isConfirmed && result.value && result.value.success) {
-            Swal.fire("¡Acción completada!", `El viaje ha sido ${accion} con éxito.`, "success").then(() => {
+            Swal.fire(
+                "¡Acción completada!",
+                `El viaje ha sido ${accion} con éxito.`,
+                "success",
+            ).then(() => {
                 cerrarModalLectura();
                 cargarViajes(currentPage);
             });
@@ -1085,42 +1313,49 @@ function gestionarEstadoViaje(viajeId, accion) {
 // ── MAPEO DE INSPECCIÓN LIGERA (BD → objeto JS que espera el modal) ──
 function _mapearInspeccionLigera(insp) {
     if (!insp) return {};
-    const b = (v) => (v ? "si" : "no");
+
     return {
         created_at: insp.created_at || null,
         kilometraje: insp.mileage || "0",
         nivel_gasolina: insp.fuel_level || "",
-        doc_tarjeta: b(insp.doc_registration_card),
-        doc_poliza: b(insp.doc_insurance_policy),
-        doc_tel_emergencia: b(insp.doc_emergency_phones),
-        doc_licencia: b(insp.doc_driving_license),
-        vis_botiquin: b(insp.vis_first_aid_kit),
-        vis_triangulo: b(insp.vis_safety_triangles),
-        vis_extintor: b(insp.vis_fire_extinguisher),
-        vis_gato: b(insp.vis_jack_wrench),
-        vis_cables: b(insp.vis_jumper_cables),
-        vis_herramientas: b(insp.vis_basic_tools),
-        vis_linterna: b(insp.vis_flashlight),
-        vis_espejos: b(insp.vis_mirrors),
-        vis_refaccion: b(insp.vis_spare_tire),
-        vis_neumaticos: b(insp.vis_tires_condition),
-        vis_pintura: b(insp.vis_paint_condition),
-        vis_parabrisas: b(insp.vis_windshield_wipers),
-        vis_defensas: b(insp.vis_bumpers),
-        vis_luces_gral: b(insp.vis_main_lights),
-        vis_luces_stop: b(insp.vis_stop_reverse_lights),
-        vis_claxon: b(insp.vis_horn),
-        vis_logos: b(insp.vis_company_logos),
-        vis_asientos: b(insp.vis_seats_condition),
-        vis_panel: b(insp.vis_dashboard_panel),
-        vis_cinturones: b(insp.vis_seatbelts),
-        mant_fecha_km: b(insp.maint_last_check_verified),
-        mant_fugas: b(insp.maint_leaks_check),
-        mant_niveles: b(insp.maint_fluid_levels),
-        mant_bandas: b(insp.maint_belts_condition),
-        anomalias_detectadas: b(insp.has_anomalies),
+
+        // I. Documentación
+        doc_tarjeta: insp.doc_registration_card || 'na',
+        doc_poliza: insp.doc_insurance_policy || 'na',
+        doc_tel_emergencia: insp.doc_emergency_phones || 'na',
+        doc_licencia: insp.doc_driving_license || 'na',
+
+        // II. Inspección Visual
+        vis_botiquin: insp.vis_first_aid_kit || 'na',
+        vis_triangulo: insp.vis_safety_triangles || 'na',
+        vis_extintor: insp.vis_fire_extinguisher || 'na',
+        vis_gato: insp.vis_jack_wrench || 'na',
+        vis_cables: insp.vis_jumper_cables || 'na',
+        vis_herramientas: insp.vis_basic_tools || 'na',
+        vis_linterna: insp.vis_flashlight || 'na',
+        vis_espejos: insp.vis_mirrors || 'na',
+        vis_refaccion: insp.vis_spare_tire || 'na',
+        vis_neumaticos: insp.vis_tires_condition || 'na',
+        vis_pintura: insp.vis_paint_condition || 'na',
+        vis_parabrisas: insp.vis_windshield_wipers || 'na',
+        vis_defensas: insp.vis_bumpers || 'na',
+        vis_luces_gral: insp.vis_main_lights || 'na',
+        vis_luces_stop: insp.vis_stop_reverse_lights || 'na',
+        vis_claxon: insp.vis_horn || 'na',
+        vis_logos: insp.vis_company_logos || 'na',
+        vis_asientos: insp.vis_seats_condition || 'na',
+        vis_panel: insp.vis_dashboard_panel || 'na',
+        vis_cinturones: insp.vis_seatbelts || 'na',
+
+        // III. Mantenimiento
+        mant_fecha_km: insp.maint_last_check_verified || 'na',
+        mant_fugas: insp.maint_leaks_check || 'na',
+        mant_niveles: insp.maint_fluid_levels || 'na',
+        mant_bandas: insp.maint_belts_condition || 'na',
+
+        // IV. Anomalías (Esta sigue siendo booleana en la BD, por lo que la convertimos)
+        anomalias_detectadas: insp.has_anomalies ? "si" : "no",
         comentarios: insp.anomaly_comments || "",
-        // LÍNEA MODIFICADA: Capturamos las fotos enviadas por el backend
         fotos_originales: insp.formatted_photos || [],
     };
 }
@@ -1128,66 +1363,72 @@ function _mapearInspeccionLigera(insp) {
 // ── MAPEO DE INSPECCIÓN PESADA (BD → objeto JS que espera el modal) ──
 function _mapearInspeccionPesada(insp) {
     if (!insp) return {};
-    const b = (v) => (v ? "si" : "no");
+
     return {
         created_at: insp.created_at || null,
         kilometraje: insp.mileage || "0",
         nivel_diesel: insp.fuel_level || "",
-        doc_tarjeta: b(insp.doc_registration_card),
-        doc_poliza: b(insp.doc_insurance_policy),
-        doc_permiso_carga: b(insp.doc_cargo_permit),
-        doc_bajos_contam: b(insp.doc_emissions_cert),
-        doc_fisico_mec: b(insp.doc_mechanical_cert),
-        doc_carta_porte: b(insp.doc_waybill),
-        doc_tel_emergencia: b(insp.doc_emergency_phones),
-        doc_licencia: b(insp.doc_driving_license),
-        vis_botiquin: b(insp.vis_first_aid_kit),
-        vis_conos: b(insp.vis_safety_cones),
-        vis_extintor: b(insp.vis_fire_extinguisher),
-        vis_gato: b(insp.vis_jack),
-        vis_cables: b(insp.vis_jumper_cables),
-        vis_linterna: b(insp.vis_flashlight),
-        vis_espejos: b(insp.vis_mirrors),
-        vis_refaccion: b(insp.vis_spare_tire),
-        vis_llantas_estado: b(insp.vis_tires_condition),
-        vis_llantas_calib: b(insp.vis_tires_calibrated),
-        vis_puertas: b(insp.vis_doors_windows),
-        vis_golpes: b(insp.vis_body_dents),
-        vis_limpiaparabrisas: b(insp.vis_windshield_wipers),
-        vis_aire_acond: b(insp.vis_air_conditioning),
-        vis_resortes: b(insp.vis_springs_suspension),
-        vis_bolsas_aire: b(insp.vis_air_bags_suspension),
-        vis_luces_gral: b(insp.vis_general_lights),
-        vis_claxon: b(insp.vis_horn),
-        vis_alarma_reversa: b(insp.vis_reverse_alarm),
-        vis_logos: b(insp.vis_logos),
-        vis_asientos: b(insp.vis_seats),
-        vis_cinturones: b(insp.vis_seatbelts),
-        vis_torreta: b(insp.vis_beacon_light),
-        mant_fecha_km: b(insp.maint_date_km_check),
-        mant_encendido: b(insp.maint_engine_start),
-        mant_presion_aceite: b(insp.maint_oil_pressure),
-        mant_temp_motor: b(insp.maint_engine_temp),
-        mant_presion_aire: b(insp.maint_air_pressure),
-        mant_fan_clutch: b(insp.maint_fan_clutch),
-        mant_baterias: b(insp.maint_batteries),
-        mant_velocimetro: b(insp.maint_speedometer),
-        mant_rpm: b(insp.maint_rpm_indicator),
-        mant_nivel_aceite: b(insp.maint_oil_level),
-        mant_nivel_anticongelante: b(insp.maint_coolant_level),
-        mant_nivel_hidraulico: b(insp.maint_hydraulic_level),
-        mant_nivel_diesel: b(insp.maint_diesel_level),
-        mant_freno_motor: b(insp.maint_engine_brake),
-        mant_freno_parqueo: b(insp.maint_parking_brake),
-        mant_bandas: b(insp.maint_belts),
-        mant_purgado: b(insp.maint_air_tank_purge),
-        anomalias_detectadas: b(insp.has_anomalies),
+
+        // I. Documentación
+        doc_tarjeta: insp.doc_registration_card || 'na',
+        doc_poliza: insp.doc_insurance_policy || 'na',
+        doc_permiso_carga: insp.doc_cargo_permit || 'na',
+        doc_bajos_contam: insp.doc_emissions_cert || 'na',
+        doc_fisico_mec: insp.doc_mechanical_cert || 'na',
+        doc_carta_porte: insp.doc_waybill || 'na',
+        doc_tel_emergencia: insp.doc_emergency_phones || 'na',
+        doc_licencia: insp.doc_driving_license || 'na',
+
+        // II. Inspección Visual
+        vis_botiquin: insp.vis_first_aid_kit || 'na',
+        vis_conos: insp.vis_safety_cones || 'na',
+        vis_extintor: insp.vis_fire_extinguisher || 'na',
+        vis_gato: insp.vis_jack || 'na',
+        vis_cables: insp.vis_jumper_cables || 'na',
+        vis_linterna: insp.vis_flashlight || 'na',
+        vis_espejos: insp.vis_mirrors || 'na',
+        vis_refaccion: insp.vis_spare_tire || 'na',
+        vis_llantas_estado: insp.vis_tires_condition || 'na',
+        vis_llantas_calib: insp.vis_tires_calibrated || 'na',
+        vis_puertas: insp.vis_doors_windows || 'na',
+        vis_golpes: insp.vis_body_dents || 'na',
+        vis_limpiaparabrisas: insp.vis_windshield_wipers || 'na',
+        vis_aire_acond: insp.vis_air_conditioning || 'na',
+        vis_resortes: insp.vis_springs_suspension || 'na',
+        vis_bolsas_aire: insp.vis_air_bags_suspension || 'na',
+        vis_luces_gral: insp.vis_general_lights || 'na',
+        vis_claxon: insp.vis_horn || 'na',
+        vis_alarma_reversa: insp.vis_reverse_alarm || 'na',
+        vis_logos: insp.vis_logos || 'na',
+        vis_asientos: insp.vis_seats || 'na',
+        vis_cinturones: insp.vis_seatbelts || 'na',
+        vis_torreta: insp.vis_beacon_light || 'na',
+
+        // III. Mantenimiento
+        mant_fecha_km: insp.maint_date_km_check || 'na',
+        mant_encendido: insp.maint_engine_start || 'na',
+        mant_presion_aceite: insp.maint_oil_pressure || 'na',
+        mant_temp_motor: insp.maint_engine_temp || 'na',
+        mant_presion_aire: insp.maint_air_pressure || 'na',
+        mant_fan_clutch: insp.maint_fan_clutch || 'na',
+        mant_baterias: insp.maint_batteries || 'na',
+        mant_velocimetro: insp.maint_speedometer || 'na',
+        mant_rpm: insp.maint_rpm_indicator || 'na',
+        mant_nivel_aceite: insp.maint_oil_level || 'na',
+        mant_nivel_anticongelante: insp.maint_coolant_level || 'na',
+        mant_nivel_hidraulico: insp.maint_hydraulic_level || 'na',
+        mant_nivel_diesel: insp.maint_diesel_level || 'na',
+        mant_freno_motor: insp.maint_engine_brake || 'na',
+        mant_freno_parqueo: insp.maint_parking_brake || 'na',
+        mant_bandas: insp.maint_belts || 'na',
+        mant_purgado: insp.maint_air_tank_purge || 'na',
+
+        // IV. Anomalías
+        anomalias_detectadas: insp.has_anomalies ? "si" : "no",
         comentarios: insp.anomaly_comments || "",
-        // LÍNEA MODIFICADA: Capturamos las fotos enviadas por el backend
         fotos_originales: insp.formatted_photos || [],
     };
 }
-
 function _inspeccionTieneNos(mappedInsp) {
     if (!mappedInsp) return false;
 
@@ -1218,9 +1459,6 @@ function _inspeccionTieneNos(mappedInsp) {
     // Si pasó todas las pruebas, todo está en orden (Botón Verde)
     return false;
 }
-
-
-
 
 // ── PARCHAR gestionarModalFormulario para no mostrar confirm en lectura ──
 const __gestionarOriginal = gestionarModalFormulario;
@@ -1263,13 +1501,10 @@ function llenarModalEvaluacionLectura(assessment) {
             if (radio) {
                 radio.checked = true;
                 // Pintar visualmente la opción seleccionada
-                const allRadios = form.querySelectorAll(
-                    `input[name="${frontName}"]`,
-                );
+                const allRadios = form.querySelectorAll(`input[name="${frontName}"]`);
                 allRadios.forEach((r) => {
                     if (r.parentElement)
-                        r.parentElement.style.opacity =
-                            r === radio ? "1" : "0.5";
+                        r.parentElement.style.opacity = r === radio ? "1" : "0.5";
                 });
             }
         }
@@ -1332,9 +1567,7 @@ document.addEventListener("DOMContentLoaded", function () {
             allowInput: true,
             onChange: function (selectedDates, dateStr, instance) {
                 // Usamos tu función para transformar "DD/MM/YYYY" a "YYYY-MM-DD"
-                currentFechaSolicitud = dateStr
-                    ? convertirFechaParaMySQL(dateStr)
-                    : "";
+                currentFechaSolicitud = dateStr ? convertirFechaParaMySQL(dateStr) : "";
                 currentPage = 1;
                 cargarViajes(1);
             },
@@ -1404,9 +1637,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const statusGvFilter = document.getElementById("status-gv-filter");
             if (statusGvFilter) statusGvFilter.value = "all";
 
-            const statusViajeFilter = document.getElementById(
-                "status-viaje-filter",
-            );
+            const statusViajeFilter = document.getElementById("status-viaje-filter");
             if (statusViajeFilter) statusViajeFilter.value = "all";
 
             const riesgoFilter = document.getElementById("riesgo-filter");
@@ -1461,9 +1692,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // ====================================================================
 async function cargarFolioEstimado() {
     try {
-        const response = await fetch(
-            "/qhse/gerenciamiento/journeys/next-folio",
-        );
+        const response = await fetch("/qhse/gerenciamiento/journeys/next-folio");
         const data = await response.json();
 
         if (data.success) {
@@ -1656,9 +1885,7 @@ async function cargarConductoresDesdeBD() {
             conductoresGlobales = data.conductores || [];
             datosConductoresGlobales = data.datosConductores || {};
         } else {
-            throw new Error(
-                data.message || "Error en la respuesta del servidor",
-            );
+            throw new Error(data.message || "Error en la respuesta del servidor");
         }
     } catch (error) {
         console.error("Error cargando conductores:", error);
@@ -1792,9 +2019,7 @@ function calcularTotalHoras(unidadNumero) {
     const inputDespierto = document.getElementById(
         `horas-despierto-${unidadNumero}`,
     );
-    const inputDuracion = document.getElementById(
-        `horas-viaje-${unidadNumero}`,
-    );
+    const inputDuracion = document.getElementById(`horas-viaje-${unidadNumero}`);
     const totalInput = document.getElementById(
         `total-hrs-finalizar-${unidadNumero}`,
     );
@@ -2499,19 +2724,13 @@ function reordenarNumerosUnidades() {
             if (oldEl) oldEl.id = `${el}-${nuevoNumero}`;
         });
 
-        const btnInspeccion = fila.querySelector(
-            `#btn-inspeccion-${nuevoNumero}`,
-        );
+        const btnInspeccion = fila.querySelector(`#btn-inspeccion-${nuevoNumero}`);
         if (btnInspeccion) {
-            btnInspeccion.setAttribute(
-                "onclick",
-                `abrirInspeccion(${nuevoNumero})`,
-            );
+            btnInspeccion.setAttribute("onclick", `abrirInspeccion(${nuevoNumero})`);
 
             if (btnInspeccion.dataset.realizada === "true") {
                 if (btnInspeccion.dataset.tieneNos === "true") {
-                    btnInspeccion.className =
-                        "btn-inspeccion-realizada-warning";
+                    btnInspeccion.className = "btn-inspeccion-realizada-warning";
                     btnInspeccion.innerHTML =
                         '<i class="fas fa-exclamation-triangle"></i> Realizado';
                 } else {
@@ -2537,10 +2756,7 @@ function reordenarNumerosUnidades() {
             } else {
                 btnEliminar.style.opacity = "1";
                 btnEliminar.style.pointerEvents = "auto";
-                btnEliminar.setAttribute(
-                    "onclick",
-                    `eliminarUnidad(${nuevoNumero})`,
-                );
+                btnEliminar.setAttribute("onclick", `eliminarUnidad(${nuevoNumero})`);
                 btnEliminar.title = "Eliminar unidad";
             }
         }
@@ -2549,14 +2765,9 @@ function reordenarNumerosUnidades() {
             `#btn-add-pasajero-${nuevoNumero}`,
         );
         if (btnAddPasajero)
-            btnAddPasajero.setAttribute(
-                "onclick",
-                `agregarPasajero(${nuevoNumero})`,
-            );
+            btnAddPasajero.setAttribute("onclick", `agregarPasajero(${nuevoNumero})`);
 
-        const medicamentoSelect = fila.querySelector(
-            `#medicamento-${nuevoNumero}`,
-        );
+        const medicamentoSelect = fila.querySelector(`#medicamento-${nuevoNumero}`);
         if (medicamentoSelect) {
             medicamentoSelect.setAttribute(
                 "onchange",
@@ -2565,25 +2776,23 @@ function reordenarNumerosUnidades() {
         }
 
         if (fila.querySelector(".unidad-hora-dormir")) {
-            fila.querySelector(".unidad-hora-dormir").addEventListener(
-                "change",
-                function () {
+            fila
+                .querySelector(".unidad-hora-dormir")
+                .addEventListener("change", function () {
                     calcularHorasDormidas(nuevoNumero);
                     calcularHorasViaje(nuevoNumero);
                     actualizarBotonReunionConvoy();
-                },
-            );
+                });
         }
 
         if (fila.querySelector(".unidad-hora-levantar")) {
-            fila.querySelector(".unidad-hora-levantar").addEventListener(
-                "change",
-                function () {
+            fila
+                .querySelector(".unidad-hora-levantar")
+                .addEventListener("change", function () {
                     calcularHorasDormidas(nuevoNumero);
                     calcularHorasViaje(nuevoNumero);
                     actualizarBotonReunionConvoy();
-                },
-            );
+                });
         }
 
         inicializarAutocompleteConductor(nuevoNumero, false, null);
@@ -2593,10 +2802,7 @@ function reordenarNumerosUnidades() {
         inputs.forEach((input) => {
             const name = input.getAttribute("name");
             if (name?.startsWith("unidad")) {
-                const newName = name.replace(
-                    /unidad\[\d+\]/,
-                    `unidad[${nuevoNumero}]`,
-                );
+                const newName = name.replace(/unidad\[\d+\]/, `unidad[${nuevoNumero}]`);
                 input.setAttribute("name", newName);
             }
         });
@@ -2610,9 +2816,7 @@ function reordenarNumerosUnidades() {
                 .forEach((group, pIndex) => {
                     const newIndex = pIndex + 1;
                     const input = group.querySelector("input");
-                    const removeBtn = group.querySelector(
-                        ".btn-remove-pasajero",
-                    );
+                    const removeBtn = group.querySelector(".btn-remove-pasajero");
 
                     group.id = `fila-p-${nuevoNumero}-${newIndex}`;
                     group.dataset.index = newIndex;
@@ -2648,11 +2852,7 @@ function reordenarNumerosUnidades() {
                     if (autocomplete)
                         autocomplete.id = `p-autocomplete-${nuevoNumero}-${newIndex}`;
 
-                    inicializarAutocompleteConductor(
-                        nuevoNumero,
-                        true,
-                        newIndex,
-                    );
+                    inicializarAutocompleteConductor(nuevoNumero, true, newIndex);
                     actualizarIconoPasajero(group, newIndex, nuevoNumero);
                 });
             actualizarBotonesPasajeros(nuevoNumero);
@@ -2913,10 +3113,7 @@ function inicializarAutocompleteConductor(
                     listContainer.innerHTML = "";
                     listContainer.style.display = "none";
                     if (!esPasajero) {
-                        actualizarDatosConductor(
-                            unidadNumero,
-                            exactMatch.nombre,
-                        );
+                        actualizarDatosConductor(unidadNumero, exactMatch.nombre);
                         actualizarBotonReunionConvoy();
                         actualizarBotonEvaluacion();
                     }
@@ -2993,8 +3190,7 @@ function actualizarDatosConductor(unidadNumero, nombreConductor) {
         tipoVehiculoDiv?.classList.contains("tipo-pesada") ||
         false;
 
-    const labelLicenciaContainer =
-        inputVigenciaLic?.closest(".hour-input-group");
+    const labelLicenciaContainer = inputVigenciaLic?.closest(".hour-input-group");
     const labelLicenciaElement = labelLicenciaContainer?.querySelector("label");
     const labelCursoContainer = inputVigenciaMan?.closest(".hour-input-group");
     const labelCursoElement = labelCursoContainer?.querySelector("label");
@@ -3043,9 +3239,7 @@ function actualizarDatosConductor(unidadNumero, nombreConductor) {
     ) {
         const tipoLic = esPesada ? "Licencia Federal" : "Licencia";
         const estadoTexto =
-            validacion.licencia.estilo === "expired"
-                ? "VENCIDA"
-                : "NO REGISTRADA";
+            validacion.licencia.estilo === "expired" ? "VENCIDA" : "NO REGISTRADA";
         problemasDocumentacion.push(`${tipoLic} (${estadoTexto})`);
     }
 
@@ -3062,9 +3256,7 @@ function actualizarDatosConductor(unidadNumero, nombreConductor) {
     }
 
     if (problemasDocumentacion.length > 0) {
-        const inputConductor = document.getElementById(
-            `conductor-${unidadNumero}`,
-        );
+        const inputConductor = document.getElementById(`conductor-${unidadNumero}`);
         Swal.fire({
             title: "¡PROBLEMAS DE DOCUMENTACIÓN!",
             html: `
@@ -3161,11 +3353,9 @@ function inicializarSelectorVehiculo(unidadNumero) {
     if (trigger) {
         trigger.onclick = (e) => {
             e.stopPropagation();
-            document
-                .querySelectorAll(".vehicle-dropdown-list")
-                .forEach((el) => {
-                    if (el.id !== listId) el.style.display = "none";
-                });
+            document.querySelectorAll(".vehicle-dropdown-list").forEach((el) => {
+                if (el.id !== listId) el.style.display = "none";
+            });
 
             if (listContainer.style.display === "block") {
                 listContainer.style.display = "none";
@@ -3265,9 +3455,7 @@ function actualizarTipoVehiculoCustom(unidadNumero, valorVehiculo) {
 // GESTIÓN DE PASAJEROS Y CONDUCTOR 2
 // ====================================================================
 function agregarPasajero(unidadNumero) {
-    const container = document.getElementById(
-        `pasajeros-unidad-${unidadNumero}`,
-    );
+    const container = document.getElementById(`pasajeros-unidad-${unidadNumero}`);
     if (!container) return;
 
     const currentPasajeros = container.querySelectorAll(
@@ -3355,11 +3543,8 @@ function eliminarPasajero(unidadNumero, pasajeroIndex) {
         return;
     }
 
-    const container = document.getElementById(
-        `pasajeros-unidad-${unidadNumero}`,
-    );
-    if (container?.querySelectorAll(".pasajero-input-group").length <= 1)
-        return;
+    const container = document.getElementById(`pasajeros-unidad-${unidadNumero}`);
+    if (container?.querySelectorAll(".pasajero-input-group").length <= 1) return;
 
     if (fila) fila.remove();
 
@@ -3418,9 +3603,7 @@ function eliminarPasajero(unidadNumero, pasajeroIndex) {
     });
 
     if (remainingPasajeros.length < MAX_PASAJEROS) {
-        const btnAdd = document.getElementById(
-            `btn-add-pasajero-${unidadNumero}`,
-        );
+        const btnAdd = document.getElementById(`btn-add-pasajero-${unidadNumero}`);
         if (btnAdd) btnAdd.disabled = false;
     }
 
@@ -3431,9 +3614,7 @@ function gestionarRolPasajero(unidad, index) {
     const fila = document.getElementById(`fila-p-${unidad}-${index}`);
     if (!fila) return;
 
-    const nombre = document.getElementById(
-        `p-nombre-${unidad}-${index}`,
-    )?.value;
+    const nombre = document.getElementById(`p-nombre-${unidad}-${index}`)?.value;
     if (!nombre) {
         Swal.fire(
             "Falta Nombre",
@@ -3468,11 +3649,7 @@ function gestionarRolPasajero(unidad, index) {
                 fila.dataset.totalHrs = "";
                 actualizarIconoPasajero(fila, index, unidad);
                 actualizarBotonVerConductor2(unidad);
-                Swal.fire(
-                    "Actualizado",
-                    "El usuario ahora es Pasajero.",
-                    "success",
-                );
+                Swal.fire("Actualizado", "El usuario ahora es Pasajero.", "success");
             }
         });
         return;
@@ -3480,8 +3657,7 @@ function gestionarRolPasajero(unidad, index) {
 
     const container = document.getElementById(`pasajeros-unidad-${unidad}`);
     if (container) {
-        const relevosExistentes =
-            container.querySelectorAll(".es-relevo").length;
+        const relevosExistentes = container.querySelectorAll(".es-relevo").length;
         if (relevosExistentes >= 1) {
             Swal.fire({
                 title: "Límite de Conductores Alcanzado",
@@ -3636,8 +3812,7 @@ function gestionarRolPasajero(unidad, index) {
         didOpen: () => {
             flatpickr(".flatpickr-modal", configHora);
 
-            const medicamentoSelect =
-                document.getElementById("swal-medicamento");
+            const medicamentoSelect = document.getElementById("swal-medicamento");
             const medicamentoDetalle = document.getElementById(
                 "swal-medicamento-detalle-container",
             );
@@ -3647,9 +3822,7 @@ function gestionarRolPasajero(unidad, index) {
                         medicamentoDetalle.style.display = "flex";
                     } else {
                         medicamentoDetalle.style.display = "none";
-                        document.getElementById(
-                            "swal-medicamento-nombre",
-                        ).value = "";
+                        document.getElementById("swal-medicamento-nombre").value = "";
                     }
                 });
             }
@@ -3664,16 +3837,10 @@ function gestionarRolPasajero(unidad, index) {
             const manStatus = document.getElementById("swal-hidden-man-status");
 
             if (data) {
-                const validacion = validarDocumentacionConductor(
-                    data,
-                    esPesada,
-                );
+                const validacion = validarDocumentacionConductor(data, esPesada);
                 licInput.value = validacion.licencia.mensaje;
                 licStatus.value = validacion.licencia.estilo;
-                aplicarEstiloPorValidacion(
-                    licInput,
-                    validacion.licencia.estilo,
-                );
+                aplicarEstiloPorValidacion(licInput, validacion.licencia.estilo);
                 manInput.value = validacion.curso.mensaje;
                 manStatus.value = validacion.curso.estilo;
                 aplicarEstiloPorValidacion(manInput, validacion.curso.estilo);
@@ -3688,13 +3855,9 @@ function gestionarRolPasajero(unidad, index) {
 
             const dormirInput = document.getElementById("swal-dormir");
             const levantarInput = document.getElementById("swal-levantar");
-            const hrsDormidasInput =
-                document.getElementById("swal-hrs-dormidas");
-            const hrDespiertoInput =
-                document.getElementById("swal-hr-despierto");
-            const duracionViajeInput = document.getElementById(
-                "swal-duracion-viaje",
-            );
+            const hrsDormidasInput = document.getElementById("swal-hrs-dormidas");
+            const hrDespiertoInput = document.getElementById("swal-hr-despierto");
+            const duracionViajeInput = document.getElementById("swal-duracion-viaje");
             const totalHrsInput = document.getElementById("swal-total-hrs");
             const warningMsg = document.getElementById("swal-warning-msg");
 
@@ -3705,10 +3868,7 @@ function gestionarRolPasajero(unidad, index) {
                 const totalMinutosDormir = parseTimeForCalculation(dormir);
                 let totalMinutosLevantar = parseTimeForCalculation(levantar);
 
-                if (
-                    totalMinutosDormir !== null &&
-                    totalMinutosLevantar !== null
-                ) {
+                if (totalMinutosDormir !== null && totalMinutosLevantar !== null) {
                     if (totalMinutosLevantar <= totalMinutosDormir)
                         totalMinutosLevantar += 24 * 60;
                     hrsDormidasInput.value = minutosAStringHora(
@@ -3719,8 +3879,7 @@ function gestionarRolPasajero(unidad, index) {
                 }
 
                 const minutosLevantar = parseTimeForCalculation(levantar);
-                const minutosInicioViaje =
-                    parseTimeForCalculation(horaInicioViaje);
+                const minutosInicioViaje = parseTimeForCalculation(horaInicioViaje);
 
                 if (minutosLevantar !== null && minutosInicioViaje !== null) {
                     let diferencia = minutosInicioViaje - minutosLevantar;
@@ -3730,12 +3889,8 @@ function gestionarRolPasajero(unidad, index) {
                     hrDespiertoInput.value = "0:00";
                 }
 
-                const minutosDespierto = stringHoraAMinutos(
-                    hrDespiertoInput.value,
-                );
-                const minutosViaje = stringHoraAMinutos(
-                    duracionViajeInput.value,
-                );
+                const minutosDespierto = stringHoraAMinutos(hrDespiertoInput.value);
+                const minutosViaje = stringHoraAMinutos(duracionViajeInput.value);
                 const totalMinutos = minutosDespierto + minutosViaje;
                 totalHrsInput.value = minutosAStringHora(totalMinutos);
 
@@ -3763,20 +3918,16 @@ function gestionarRolPasajero(unidad, index) {
         },
 
         preConfirm: () => {
-            const alcoholPct =
-                document.getElementById("swal-alcohol-pct").value;
+            const alcoholPct = document.getElementById("swal-alcohol-pct").value;
             const dormir = document.getElementById("swal-dormir").value;
             const levantar = document.getElementById("swal-levantar").value;
-            const medicamento =
-                document.getElementById("swal-medicamento").value;
+            const medicamento = document.getElementById("swal-medicamento").value;
             const medicamentoNombre = document.getElementById(
                 "swal-medicamento-nombre",
             ).value;
 
             if (!alcoholPct) {
-                Swal.showValidationMessage(
-                    "Ingrese el porcentaje de alcoholimetría",
-                );
+                Swal.showValidationMessage("Ingrese el porcentaje de alcoholimetría");
                 return false;
             }
             if (parseFloat(alcoholPct) > 0.4) {
@@ -3784,9 +3935,7 @@ function gestionarRolPasajero(unidad, index) {
                 return false;
             }
             if (!dormir || !levantar) {
-                Swal.showValidationMessage(
-                    "Complete las horas de dormir y despertar",
-                );
+                Swal.showValidationMessage("Complete las horas de dormir y despertar");
                 return false;
             }
             if (!medicamento) {
@@ -3794,18 +3943,12 @@ function gestionarRolPasajero(unidad, index) {
                 return false;
             }
             if (medicamento === "si" && !medicamentoNombre) {
-                Swal.showValidationMessage(
-                    "Especifique el nombre del medicamento",
-                );
+                Swal.showValidationMessage("Especifique el nombre del medicamento");
                 return false;
             }
 
-            const licStatus = document.getElementById(
-                "swal-hidden-lic-status",
-            ).value;
-            const manStatus = document.getElementById(
-                "swal-hidden-man-status",
-            ).value;
+            const licStatus = document.getElementById("swal-hidden-lic-status").value;
+            const manStatus = document.getElementById("swal-hidden-man-status").value;
             const erroresDocs = [];
 
             if (licStatus === "expired" || licStatus === "missing") {
@@ -3816,10 +3959,7 @@ function gestionarRolPasajero(unidad, index) {
             }
             if (manStatus === "expired" || manStatus === "missing") {
                 erroresDocs.push(
-                    `${esPesada
-                        ? "Curso Man. Def. Pesada"
-                        : "Curso Man. Def. Ligera"
-                    } (${manStatus === "expired" ? "VENCIDO" : "NO REGISTRADO"
+                    `${esPesada ? "Curso Man. Def. Pesada" : "Curso Man. Def. Ligera"} (${manStatus === "expired" ? "VENCIDO" : "NO REGISTRADO"
                     })`,
                 );
             }
@@ -3835,16 +3975,14 @@ function gestionarRolPasajero(unidad, index) {
                 alcoholPct,
                 dormir,
                 levantar,
-                presionValor:
-                    document.getElementById("swal-presion-valor").value,
+                presionValor: document.getElementById("swal-presion-valor").value,
                 medicamento,
                 medicamentoNombre,
                 vigenciaLic: document.getElementById("swal-vigencia-lic").value,
                 vigenciaMan: document.getElementById("swal-vigencia-man").value,
                 hrsDormidas: document.getElementById("swal-hrs-dormidas").value,
                 hrDespierto: document.getElementById("swal-hr-despierto").value,
-                duracionViaje: document.getElementById("swal-duracion-viaje")
-                    .value,
+                duracionViaje: document.getElementById("swal-duracion-viaje").value,
                 totalHrs: document.getElementById("swal-total-hrs").value,
             };
         },
@@ -3882,9 +4020,7 @@ function gestionarRolPasajero(unidad, index) {
 }
 
 function mostrarInfoConductor2(unidadNumero) {
-    const container = document.getElementById(
-        `pasajeros-unidad-${unidadNumero}`,
-    );
+    const container = document.getElementById(`pasajeros-unidad-${unidadNumero}`);
     const filaRelevo = container?.querySelector(
         ".pasajero-input-group.es-relevo",
     );
@@ -3942,9 +4078,7 @@ function mostrarInfoConductor2(unidadNumero) {
             }">${pVigenciaLic || "No registrada"}</span>
                         </div>
                         <div>
-                            <strong>${esPesada
-                ? "Man. Def. Pesada"
-                : "Man. Def. Ligera"
+                            <strong>${esPesada ? "Man. Def. Pesada" : "Man. Def. Ligera"
             }:</strong><br>
                             <span style="color: ${pVigenciaMan.includes("No registrada")
                 ? "#dc3545"
@@ -3956,9 +4090,7 @@ function mostrarInfoConductor2(unidadNumero) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div>
                         <strong><i class="fas fa-wind"></i> Alcoholimetría:</strong><br>
-                        <span style="color: ${parseFloat(pAlcoholPct) === 0
-                ? "#28a745"
-                : "#dc3545"
+                        <span style="color: ${parseFloat(pAlcoholPct) === 0 ? "#28a745" : "#dc3545"
             }">${pAlcoholPct}%</span>
                     </div>
                     <div>
@@ -4016,9 +4148,7 @@ function actualizarBotonVerConductor2(unidadNumero) {
     const btnVer = filaUnidad.querySelector(".btn-ver-conductor2");
     if (!btnVer) return;
 
-    const container = document.getElementById(
-        `pasajeros-unidad-${unidadNumero}`,
-    );
+    const container = document.getElementById(`pasajeros-unidad-${unidadNumero}`);
     const hayRelevo = container?.querySelector(".es-relevo");
 
     btnVer.style.display = hayRelevo ? "inline-flex" : "none";
@@ -4051,9 +4181,7 @@ function actualizarIconoPasajero(fila, index, unidad) {
 }
 
 function actualizarBotonesPasajeros(unidadNumero) {
-    const container = document.getElementById(
-        `pasajeros-unidad-${unidadNumero}`,
-    );
+    const container = document.getElementById(`pasajeros-unidad-${unidadNumero}`);
     if (!container) return;
 
     const grupos = container.querySelectorAll(".pasajero-input-group");
@@ -4089,9 +4217,7 @@ function abrirInspeccion(unidadNumero) {
         return;
     }
 
-    const hiddenInput = document.getElementById(
-        `vehicle-hidden-${unidadNumero}`,
-    );
+    const hiddenInput = document.getElementById(`vehicle-hidden-${unidadNumero}`);
     const vehiculo = hiddenInput?.value || "";
 
     if (!vehiculo?.trim()) {
@@ -4123,9 +4249,7 @@ function configurarEventosAnomalias() {
     const radiosLigera = document.getElementsByName("anomalias_ligera");
     radiosLigera.forEach((radio) => {
         radio.addEventListener("change", function () {
-            const container = document.getElementById(
-                "evidenceContainerLigera",
-            );
+            const container = document.getElementById("evidenceContainerLigera");
             if (this.value === "si") {
                 container.style.display = "block";
             } else {
@@ -4137,9 +4261,7 @@ function configurarEventosAnomalias() {
     const radiosPesada = document.getElementsByName("anomalias_pesada");
     radiosPesada.forEach((radio) => {
         radio.addEventListener("change", function () {
-            const container = document.getElementById(
-                "evidenceContainerPesada",
-            );
+            const container = document.getElementById("evidenceContainerPesada");
             if (this.value === "si") {
                 container.style.display = "block";
             } else {
@@ -4181,7 +4303,11 @@ function convertirArchivoABase64(file) {
 // ====================================================================
 // FUNCIÓN PARA OBTENER LA ÚLTIMA FECHA DE INSPECCIÓN DESDE LA BD
 // ====================================================================
-async function cargarFechaUltimaInspeccion(numeroEconomico, tipo, fechaHistorica = null) {
+async function cargarFechaUltimaInspeccion(
+    numeroEconomico,
+    tipo,
+    fechaHistorica = null,
+) {
     const headerElement = document.getElementById(
         tipo === "ligera"
             ? "headerUltimaInspeccionLigera"
@@ -4209,7 +4335,8 @@ async function cargarFechaUltimaInspeccion(numeroEconomico, tipo, fechaHistorica
         fechaISO = fechaHistorica;
     } else {
         // Si es un viaje nuevo, tomamos la fecha actual del formulario y la convertimos
-        const fechaContexto = document.getElementById("fechaSolicitudHidden")?.value || "";
+        const fechaContexto =
+            document.getElementById("fechaSolicitudHidden")?.value || "";
         fechaISO = convertirFechaParaMySQL(fechaContexto);
     }
 
@@ -4277,17 +4404,18 @@ function gestionarModalInspeccionLigera(
         if (modoLectura) {
             // MODO LECTURA: Mostrar la fecha en que se creó la inspección actual
             if (savedData.created_at) {
-                const fechaCreacionFmt = formatearFechaDMA(
-                    savedData.created_at,
-                );
+                const fechaCreacionFmt = formatearFechaDMA(savedData.created_at);
                 if (spanFechaInspeccion) {
                     spanFechaInspeccion.textContent = fechaCreacionFmt;
                 }
                 // ¡NUEVO! Pasamos la fecha exacta de creación para buscar hacia atrás
-                cargarFechaUltimaInspeccion(numeroEconomico, "ligera", savedData.created_at);
+                cargarFechaUltimaInspeccion(
+                    numeroEconomico,
+                    "ligera",
+                    savedData.created_at,
+                );
             } else {
-                if (spanFechaInspeccion)
-                    spanFechaInspeccion.textContent = "Sin fecha";
+                if (spanFechaInspeccion) spanFechaInspeccion.textContent = "Sin fecha";
                 cargarFechaUltimaInspeccion(numeroEconomico, "ligera");
             }
         } else {
@@ -4306,8 +4434,7 @@ function gestionarModalInspeccionLigera(
 
         if (numeroEconomico && detallesVehiculos[numeroEconomico]) {
             marca = detallesVehiculos[numeroEconomico].marca || "Sin Marca";
-            propiedad =
-                detallesVehiculos[numeroEconomico].propiedad || "Desconocido";
+            propiedad = detallesVehiculos[numeroEconomico].propiedad || "Desconocido";
         }
 
         document.getElementById("inputNombreConductorLigera").value =
@@ -4315,8 +4442,7 @@ function gestionarModalInspeccionLigera(
         document.getElementById("inputNoEconomicoLigera").value = nombreMostrar;
         document.getElementById("inputMarcaLigera").value = marca;
         document.getElementById("inputVesRentadaLigera").value = propiedad;
-        document.getElementById("inspeccionUnidadIndexLigera").value =
-            unidadNumero;
+        document.getElementById("inspeccionUnidadIndexLigera").value = unidadNumero;
 
         const allRadios = modal.querySelectorAll('input[type="radio"]');
         allRadios.forEach((r) => (r.checked = false));
@@ -4392,8 +4518,7 @@ function gestionarModalInspeccionLigera(
         const comentariosInput = document.getElementById(
             "comentariosInspeccionLigera",
         );
-        if (comentariosInput)
-            comentariosInput.value = savedData.comentarios || "";
+        if (comentariosInput) comentariosInput.value = savedData.comentarios || "";
 
         if (modal) {
             modal.classList.add("active");
@@ -4411,18 +4536,15 @@ function gestionarModalInspeccionLigera(
                 "comentariosInspeccionLigera",
             );
             if (comentariosInput) comentariosInput.value = "";
-            const fileInput = document.getElementById(
-                "evidenciaInspeccionLigera",
-            );
+            const fileInput = document.getElementById("evidenciaInspeccionLigera");
             if (fileInput) fileInput.value = "";
 
             return;
         }
 
         const comentarios =
-            document
-                .getElementById("comentariosInspeccionLigera")
-                ?.value.trim() || "";
+            document.getElementById("comentariosInspeccionLigera")?.value.trim() ||
+            "";
         const hayFotos = fotosSubidas.ligera.length > 0;
 
         if (comentarios || hayFotos) {
@@ -4453,8 +4575,7 @@ function guardarInspeccionLigera() {
 
     const hayAnomalias = anomaliasRadio.value === "si";
     const comentarios =
-        document.getElementById("comentariosInspeccionLigera")?.value.trim() ||
-        "";
+        document.getElementById("comentariosInspeccionLigera")?.value.trim() || "";
     const tieneFotos = fotosSubidas.ligera.length > 0;
 
     if (hayAnomalias) {
@@ -4477,8 +4598,7 @@ function guardarInspeccionLigera() {
                 confirmButtonColor: "#0056b3",
                 cancelButtonColor: "#dc3545",
             }).then((result) => {
-                if (result.isConfirmed)
-                    procederGuardadoLigera(comentarios, "si");
+                if (result.isConfirmed) procederGuardadoLigera(comentarios, "si");
             });
             return;
         }
@@ -4606,8 +4726,7 @@ async function procederGuardadoLigera(comentarios, anomaliasValor) {
                 "btn-inspeccion-realizada-warning",
             );
             btnInspeccion.classList.add("btn-inspeccion-realizada-ok");
-            btnInspeccion.innerHTML =
-                '<i class="fas fa-check-circle"></i> Realizado';
+            btnInspeccion.innerHTML = '<i class="fas fa-check-circle"></i> Realizado';
             btnInspeccion.dataset.tieneNos = "false";
             btnInspeccion.title = "Inspección realizada sin observaciones";
         }
@@ -4668,17 +4787,18 @@ function gestionarModalInspeccionPesada(
         if (modoLectura) {
             // MODO LECTURA: Mostrar la fecha en que se creó la inspección actual
             if (savedData.created_at) {
-                const fechaCreacionFmt = formatearFechaDMA(
-                    savedData.created_at,
-                );
+                const fechaCreacionFmt = formatearFechaDMA(savedData.created_at);
                 if (spanFechaInspeccion) {
                     spanFechaInspeccion.textContent = fechaCreacionFmt;
                 }
                 // ¡NUEVO! Pasamos la fecha exacta de creación para buscar hacia atrás
-                cargarFechaUltimaInspeccion(numeroEconomico, "pesada", savedData.created_at);
+                cargarFechaUltimaInspeccion(
+                    numeroEconomico,
+                    "pesada",
+                    savedData.created_at,
+                );
             } else {
-                if (spanFechaInspeccion)
-                    spanFechaInspeccion.textContent = "Sin fecha";
+                if (spanFechaInspeccion) spanFechaInspeccion.textContent = "Sin fecha";
                 cargarFechaUltimaInspeccion(numeroEconomico, "pesada");
             }
         } else {
@@ -4698,8 +4818,7 @@ function gestionarModalInspeccionPesada(
 
         if (numeroEconomico && detallesVehiculos[numeroEconomico]) {
             marca = detallesVehiculos[numeroEconomico].marca || "Sin Marca";
-            propiedad =
-                detallesVehiculos[numeroEconomico].propiedad || "Desconocido";
+            propiedad = detallesVehiculos[numeroEconomico].propiedad || "Desconocido";
         }
 
         document.getElementById("inputNombreConductorPesada").value =
@@ -4707,8 +4826,7 @@ function gestionarModalInspeccionPesada(
         document.getElementById("inputNoEconomicoPesada").value = nombreMostrar;
         document.getElementById("inputMarcaPesada").value = marca;
         document.getElementById("inputVesRentadaPesada").value = propiedad;
-        document.getElementById("inspeccionUnidadIndexPesada").value =
-            unidadNumero;
+        document.getElementById("inspeccionUnidadIndexPesada").value = unidadNumero;
 
         const allRadios = modal.querySelectorAll('input[type="radio"]');
         allRadios.forEach((r) => (r.checked = false));
@@ -4803,8 +4921,7 @@ function gestionarModalInspeccionPesada(
         const comentariosInput = document.getElementById(
             "comentariosInspeccionPesada",
         );
-        if (comentariosInput)
-            comentariosInput.value = savedData.comentarios || "";
+        if (comentariosInput) comentariosInput.value = savedData.comentarios || "";
 
         if (modal) {
             modal.classList.add("active");
@@ -4822,18 +4939,15 @@ function gestionarModalInspeccionPesada(
                 "comentariosInspeccionPesada",
             );
             if (comentariosInput) comentariosInput.value = "";
-            const fileInput = document.getElementById(
-                "evidenciaInspeccionPesada",
-            );
+            const fileInput = document.getElementById("evidenciaInspeccionPesada");
             if (fileInput) fileInput.value = "";
 
             return;
         }
 
         const comentarios =
-            document
-                .getElementById("comentariosInspeccionPesada")
-                ?.value.trim() || "";
+            document.getElementById("comentariosInspeccionPesada")?.value.trim() ||
+            "";
         const hayFotos = fotosSubidas.pesada.length > 0;
 
         if (comentarios || hayFotos) {
@@ -4863,8 +4977,7 @@ function guardarInspeccionPesada() {
 
     const hayAnomalias = anomaliasRadio.value === "si";
     const comentarios =
-        document.getElementById("comentariosInspeccionPesada")?.value.trim() ||
-        "";
+        document.getElementById("comentariosInspeccionPesada")?.value.trim() || "";
     const tieneFotos = fotosSubidas.pesada.length > 0;
 
     if (hayAnomalias) {
@@ -4887,8 +5000,7 @@ function guardarInspeccionPesada() {
                 confirmButtonColor: "#0056b3",
                 cancelButtonColor: "#dc3545",
             }).then((result) => {
-                if (result.isConfirmed)
-                    procederGuardadoPesada(comentarios, "si");
+                if (result.isConfirmed) procederGuardadoPesada(comentarios, "si");
             });
             return;
         }
@@ -4907,9 +5019,7 @@ async function procederGuardadoPesada(comentarios, anomaliasValor) {
     const kilometrajeRaw =
         form.querySelector('input[name="kilometraje"]')?.value || "0";
     const kilometraje = kilometrajeRaw.replace(/,/g, "");
-    const nivelDiesel = form.querySelector(
-        'select[name="nivel_diesel"]',
-    )?.value;
+    const nivelDiesel = form.querySelector('select[name="nivel_diesel"]')?.value;
 
     const docItems = [
         "doc_tarjeta",
@@ -5036,8 +5146,7 @@ async function procederGuardadoPesada(comentarios, anomaliasValor) {
                 "btn-inspeccion-realizada-warning",
             );
             btnInspeccion.classList.add("btn-inspeccion-realizada-ok");
-            btnInspeccion.innerHTML =
-                '<i class="fas fa-check-circle"></i> Realizado';
+            btnInspeccion.innerHTML = '<i class="fas fa-check-circle"></i> Realizado';
             btnInspeccion.dataset.tieneNos = "false";
             btnInspeccion.title = "Inspección realizada sin observaciones";
         }
@@ -5180,13 +5289,9 @@ function actualizarVistaPrevia(tipo) {
     const container = document.getElementById(
         `previewContainer${tipoCapitalizado}`,
     );
-    const placeholder = document.getElementById(
-        `placeholder${tipoCapitalizado}`,
-    );
+    const placeholder = document.getElementById(`placeholder${tipoCapitalizado}`);
     const grid = document.getElementById(`previewGrid${tipoCapitalizado}`);
-    const countSpan = document.getElementById(
-        `previewCount${tipoCapitalizado}`,
-    );
+    const countSpan = document.getElementById(`previewCount${tipoCapitalizado}`);
     const input = document.getElementById(
         `evidenciaInspeccion${tipoCapitalizado}`,
     );
@@ -5277,8 +5382,7 @@ function limpiarFotos(tipo) {
         if (result.isConfirmed) {
             fotosSubidas[tipo] = [];
             const input = document.getElementById(
-                `evidenciaInspeccion${tipo.charAt(0).toUpperCase() + tipo.slice(1)
-                }`,
+                `evidenciaInspeccion${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`,
             );
             if (input) input.value = "";
             actualizarVistaPrevia(tipo);
@@ -5534,18 +5638,14 @@ function calcularAutomarcadoEvaluacion() {
         }
 
         // 2. Cálculo de Horas Totales (Despierto + Viaje)
-        const inputTotalHoras = document.getElementById(
-            `total-hrs-finalizar-${i}`,
-        );
+        const inputTotalHoras = document.getElementById(`total-hrs-finalizar-${i}`);
         if (inputTotalHoras && inputTotalHoras.value) {
             const minsTotales = stringHoraAMinutos(inputTotalHoras.value);
             if (minsTotales > maxTotalMinutos) maxTotalMinutos = minsTotales;
         }
 
         // 3. Detección de Pasajeros
-        const containerPasajeros = document.getElementById(
-            `pasajeros-unidad-${i}`,
-        );
+        const containerPasajeros = document.getElementById(`pasajeros-unidad-${i}`);
         if (containerPasajeros) {
             const inputsPasajeros = containerPasajeros.querySelectorAll(
                 'input[name*="[nombre]"]',
@@ -5556,13 +5656,10 @@ function calcularAutomarcadoEvaluacion() {
         }
 
         // 4. Mínimo de Horas Dormidas
-        const inputDormidas = document.getElementById(
-            `total-hrs-dormidas-${i}`,
-        );
+        const inputDormidas = document.getElementById(`total-hrs-dormidas-${i}`);
         if (inputDormidas && inputDormidas.value) {
             const minsDormidos = stringHoraAMinutos(inputDormidas.value);
-            if (minsDormidos < minMinutosDormidos)
-                minMinutosDormidos = minsDormidos;
+            if (minsDormidos < minMinutosDormidos) minMinutosDormidos = minsDormidos;
         }
     }
 
@@ -5594,8 +5691,7 @@ function calcularAutomarcadoEvaluacion() {
 
     const horaInicioStr =
         document.getElementById("horaInicioViaje")?.value || "00:00";
-    const horaFinStr =
-        document.getElementById("horaFinViaje")?.value || "00:00";
+    const horaFinStr = document.getElementById("horaFinViaje")?.value || "00:00";
     const minInicio = stringHoraAMinutos(horaInicioStr);
     const minFin = stringHoraAMinutos(horaFinStr);
 
@@ -5959,16 +6055,11 @@ function actualizarBotonReunionConvoy() {
         if (reunionPreConvoyGuardada) {
             btn.classList.add("btn-secondary-convoy-completed");
             btn.classList.remove("btn-secondary-convoy", "btn-submit");
-            btn.innerHTML =
-                '<i class="fas fa-check-circle"></i> Reunión Confirmada';
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Reunión Confirmada';
         } else {
             btn.classList.add("btn-secondary-convoy");
-            btn.classList.remove(
-                "btn-submit",
-                "btn-secondary-convoy-completed",
-            );
-            btn.innerHTML =
-                '<i class="fas fa-handshake"></i> Reunión Pre-convoy';
+            btn.classList.remove("btn-submit", "btn-secondary-convoy-completed");
+            btn.innerHTML = '<i class="fas fa-handshake"></i> Reunión Pre-convoy';
         }
     } else {
         btn.disabled = true;
@@ -6150,8 +6241,7 @@ function guardarPreConvoy() {
     // AQUÍ ESTÁ EL CAMBIO: Guardamos el ID del líder, y también el nombre para validaciones visuales
     const data = {
         lider_convoy_id: liderSelect.value,
-        lider_convoy_nombre:
-            liderSelect.options[liderSelect.selectedIndex].text,
+        lider_convoy_nombre: liderSelect.options[liderSelect.selectedIndex].text,
     };
 
     checklistItems.forEach((item) => {
@@ -6354,17 +6444,10 @@ function reorganizarParadas() {
 
         if (select)
             select.setAttribute("name", `paradas[${contadorGlobal}][motivo]`);
-        if (input)
-            input.setAttribute("name", `paradas[${contadorGlobal}][lugar]`);
+        if (input) input.setAttribute("name", `paradas[${contadorGlobal}][lugar]`);
         if (btnEliminar) {
-            btnEliminar.setAttribute(
-                "onclick",
-                `eliminarParada(${contadorGlobal})`,
-            );
-            btnEliminar.setAttribute(
-                "title",
-                `Eliminar Parada ${contadorGlobal}`,
-            );
+            btnEliminar.setAttribute("onclick", `eliminarParada(${contadorGlobal})`);
+            btnEliminar.setAttribute("title", `Eliminar Parada ${contadorGlobal}`);
         }
 
         parada.id = `parada-${contadorGlobal}`;
@@ -6480,11 +6563,9 @@ function limpiarFormulario() {
         document.getElementById("comentariosInspeccionPesada").value = "";
 
     if (document.getElementById("previewContainerLigera"))
-        document.getElementById("previewContainerLigera").style.display =
-            "none";
+        document.getElementById("previewContainerLigera").style.display = "none";
     if (document.getElementById("previewContainerPesada"))
-        document.getElementById("previewContainerPesada").style.display =
-            "none";
+        document.getElementById("previewContainerPesada").style.display = "none";
 
     // 8. RESTAURAR ABSOLUTAMENTE TODOS LOS BLOQUEOS Y ESTILOS
     restaurarModoEscritura();
@@ -6557,24 +6638,19 @@ function restaurarModoEscritura() {
             btn.style.display = "";
         });
     // 2. Desbloquear Modales de Inspección (Ligera y Pesada)
-    const modalesInspeccion = [
-        "modalInspeccionLigera",
-        "modalInspeccionPesada",
-    ];
+    const modalesInspeccion = ["modalInspeccionLigera", "modalInspeccionPesada"];
     modalesInspeccion.forEach((id) => {
         const mod = document.getElementById(id);
         if (mod) {
-            mod.querySelectorAll("input, select, textarea, button").forEach(
-                (el) => {
-                    el.disabled = false;
-                    el.style.pointerEvents = "auto";
-                    el.style.opacity = "1";
-                    // ¡AQUÍ ESTÁ LA MAGIA! Si es un botón, lo volvemos a mostrar
-                    if (el.tagName === "BUTTON") {
-                        el.style.display = "";
-                    }
-                },
-            );
+            mod.querySelectorAll("input, select, textarea, button").forEach((el) => {
+                el.disabled = false;
+                el.style.pointerEvents = "auto";
+                el.style.opacity = "1";
+                // ¡AQUÍ ESTÁ LA MAGIA! Si es un botón, lo volvemos a mostrar
+                if (el.tagName === "BUTTON") {
+                    el.style.display = "";
+                }
+            });
             // Reactivar zona para arrastrar fotos
             const seccFotos = mod.querySelector(
                 '[id^="dropZone"], [id^="evidenciaInspeccion"]',
@@ -6646,9 +6722,7 @@ function restaurarModoEscritura() {
     // 6. Restaurar textos de la sección del Autorizador (Blade original)
     const seccionDestinatario = document.getElementById("seccionDestinatario");
     if (seccionDestinatario) {
-        const tituloH3 = seccionDestinatario.querySelector(
-            ".form-section-title",
-        );
+        const tituloH3 = seccionDestinatario.querySelector(".form-section-title");
         if (tituloH3) {
             tituloH3.innerHTML =
                 '<i class="fas fa-paper-plane"></i> Enviar solicitud a: <span class="required">*</span>';
@@ -6677,7 +6751,8 @@ function validarSolicitudCompleta() {
     if (!destinoHidden || destinoHidden.value.trim() === "") {
         mostrarError({
             titulo: "Región de Destino Faltante",
-            texto: "Abra el menú desplegable y seleccione el Estado y Municipio al que se dirige el viaje.",
+            texto:
+                "Abra el menú desplegable y seleccione el Estado y Municipio al que se dirige el viaje.",
             elementoScroll: wrapperDestino,
             claseAnimacion: "error-shake",
         });
@@ -6687,7 +6762,8 @@ function validarSolicitudCompleta() {
     if (!destinoEspecifico || destinoEspecifico.value.trim() === "") {
         mostrarError({
             titulo: "Dirección Exacta Faltante",
-            texto: "Escriba el nombre de la instalación, pozo, empresa o la dirección específica a donde se dirige.",
+            texto:
+                "Escriba el nombre de la instalación, pozo, empresa o la dirección específica a donde se dirige.",
             elementoFocus: destinoEspecifico,
             elementoScroll: destinoEspecifico,
             claseAnimacion: "error-shake",
@@ -6726,7 +6802,8 @@ function validarSolicitudCompleta() {
     if (!fechaInicio || fechaInicio.value.trim() === "") {
         mostrarError({
             titulo: "Fecha de Salida Faltante",
-            texto: "Seleccione en el calendario la fecha programada para iniciar el viaje.",
+            texto:
+                "Seleccione en el calendario la fecha programada para iniciar el viaje.",
             elementoFocus: fechaInicio,
             elementoScroll: fechaInicio,
         });
@@ -6737,7 +6814,8 @@ function validarSolicitudCompleta() {
     if (!fechaFin || fechaFin.value.trim() === "") {
         mostrarError({
             titulo: "Fecha de Retorno Faltante",
-            texto: "Seleccione en el calendario la fecha estimada en la que concluirá el viaje.",
+            texto:
+                "Seleccione en el calendario la fecha estimada en la que concluirá el viaje.",
             elementoFocus: fechaFin,
             elementoScroll: fechaFin,
         });
@@ -6748,7 +6826,8 @@ function validarSolicitudCompleta() {
     if (!horaInicio || horaInicio.value.trim() === "") {
         mostrarError({
             titulo: "Hora de Salida Faltante",
-            texto: "Indique la hora exacta a la que el vehículo comenzará el trayecto.",
+            texto:
+                "Indique la hora exacta a la que el vehículo comenzará el trayecto.",
             elementoFocus: horaInicio,
             elementoScroll: horaInicio,
         });
@@ -6777,7 +6856,8 @@ function validarSolicitudCompleta() {
         if (!listaParadas || listaParadas.children.length === 0) {
             mostrarError({
                 titulo: "Bloque de Paradas Vacío",
-                texto: "Usted indicó que realizará paradas, pero no ha registrado ninguna en el sistema.",
+                texto:
+                    "Usted indicó que realizará paradas, pero no ha registrado ninguna en el sistema.",
                 elementoScroll: document.querySelector(".radio-group-paradas"),
             });
             return false;
@@ -6792,7 +6872,8 @@ function validarSolicitudCompleta() {
             if (!select?.value) {
                 mostrarError({
                     titulo: `Motivo Faltante en Parada #${i + 1}`,
-                    texto: "Seleccione la razón o propósito por el cual se detendrá en esta ubicación.",
+                    texto:
+                        "Seleccione la razón o propósito por el cual se detendrá en esta ubicación.",
                     elementoFocus: select,
                     elementoScroll: parada,
                     claseAnimacion: "error-shake",
@@ -6802,7 +6883,8 @@ function validarSolicitudCompleta() {
             if (!inputLugar?.value.trim()) {
                 mostrarError({
                     titulo: `Ubicación Faltante en Parada #${i + 1}`,
-                    texto: "Escriba el nombre del lugar, gasolinera o punto de control donde realizará esta parada.",
+                    texto:
+                        "Escriba el nombre del lugar, gasolinera o punto de control donde realizará esta parada.",
                     elementoFocus: inputLugar,
                     elementoScroll: parada,
                     claseAnimacion: "error-shake",
@@ -6837,7 +6919,8 @@ function validarSolicitudCompleta() {
         if (!vehiculoHidden?.value) {
             mostrarError({
                 titulo: `Vehículo Faltante en Unidad #${i}`,
-                texto: "Despliegue el menú de vehículos y asigne qué equipo se utilizará en esta posición.",
+                texto:
+                    "Despliegue el menú de vehículos y asigne qué equipo se utilizará en esta posición.",
                 elementoScroll: fila,
                 claseAnimacion: "error-shake",
             });
@@ -6962,7 +7045,8 @@ function validarSolicitudCompleta() {
     if (contadorUnidades > 1 && !reunionPreConvoyGuardada) {
         mostrarError({
             titulo: "Protocolo Pre-Convoy Incompleto",
-            texto: "El sistema detecta múltiples unidades. Por normatividad, debe ejecutar y respaldar la lista de verificación en la Reunión Pre-Convoy.",
+            texto:
+                "El sistema detecta múltiples unidades. Por normatividad, debe ejecutar y respaldar la lista de verificación en la Reunión Pre-Convoy.",
             icono: "warning",
             color: "#f08a1f",
             elementoScroll: btnReunionPreConvoy,
@@ -6978,7 +7062,8 @@ function validarSolicitudCompleta() {
     if (!evaluacionRiesgoGuardada) {
         mostrarError({
             titulo: "Matriz de Riesgo Faltante",
-            texto: "Antes de someter este gerenciamiento a escrutinio, es indispensable ponderar y calcular el nivel de riesgo del trayecto empleando el módulo de Evaluación.",
+            texto:
+                "Antes de someter este gerenciamiento a escrutinio, es indispensable ponderar y calcular el nivel de riesgo del trayecto empleando el módulo de Evaluación.",
             elementoScroll: btnEvaluacionRiesgo,
             claseAnimacion: "pulse-animation",
         });
@@ -6992,12 +7077,11 @@ function validarSolicitudCompleta() {
         'input[name="autorizador_id"]:checked',
     );
     if (!autorizadorSeleccionado) {
-        const seccionDestinatario = document.getElementById(
-            "seccionDestinatario",
-        );
+        const seccionDestinatario = document.getElementById("seccionDestinatario");
         mostrarError({
             titulo: "Aprobador No Seleccionado",
-            texto: "Debe designar a la autoridad correspondiente que será responsable de revisar y emitir la aprobación final de esta solicitud.",
+            texto:
+                "Debe designar a la autoridad correspondiente que será responsable de revisar y emitir la aprobación final de esta solicitud.",
             elementoScroll: seccionDestinatario,
             claseAnimacion: "pulseWarning",
         });
@@ -7020,10 +7104,7 @@ function mostrarError(config) {
         if (config.claseAnimacion) {
             config.elementoScroll.classList.add(config.claseAnimacion);
             setTimeout(
-                () =>
-                    config.elementoScroll.classList.remove(
-                        config.claseAnimacion,
-                    ),
+                () => config.elementoScroll.classList.remove(config.claseAnimacion),
                 2000,
             );
         }
@@ -7114,11 +7195,11 @@ function enviarSolicitudAJAX() {
         hora_inicio: document.getElementById("horaInicioViaje")?.value || "",
         hora_fin: document.getElementById("horaFinViaje")?.value || "",
         tiene_paradas:
-            document.querySelector('input[name="tiene_paradas"]:checked')
-                ?.value || "no",
+            document.querySelector('input[name="tiene_paradas"]:checked')?.value ||
+            "no",
         autorizador_id:
-            document.querySelector('input[name="autorizador_id"]:checked')
-                ?.value || "",
+            document.querySelector('input[name="autorizador_id"]:checked')?.value ||
+            "",
         riesgo_puntaje: puntajeRiesgoTotal || 0,
 
         // --- AQUÍ ESTÁ LA CORRECCIÓN EXACTA ---
@@ -7258,29 +7339,24 @@ function recolectarUnidad(numero) {
     unidad.vigencia_man =
         document.getElementById(`vigencia-man-${numero}`)?.value || "";
 
-    unidad.hora_dormir =
-        document.getElementById(`dormir-${numero}`)?.value || "";
+    unidad.hora_dormir = document.getElementById(`dormir-${numero}`)?.value || "";
     unidad.hora_levantar =
         document.getElementById(`levantar-${numero}`)?.value || "";
     unidad.total_dormidas =
-        document.getElementById(`total-hrs-dormidas-${numero}`)?.value ||
-        "0:00";
+        document.getElementById(`total-hrs-dormidas-${numero}`)?.value || "0:00";
     unidad.horas_despierto =
         document.getElementById(`horas-despierto-${numero}`)?.value || "0:00";
     unidad.horas_viaje =
         document.getElementById(`horas-viaje-${numero}`)?.value || "0:00";
     unidad.total_finalizar =
-        document.getElementById(`total-hrs-finalizar-${numero}`)?.value ||
-        "0:00";
+        document.getElementById(`total-hrs-finalizar-${numero}`)?.value || "0:00";
 
     unidad.pasajeros = [];
     const containerPasajeros = document.getElementById(
         `pasajeros-unidad-${numero}`,
     );
     if (containerPasajeros) {
-        const filas = containerPasajeros.querySelectorAll(
-            ".pasajero-input-group",
-        );
+        const filas = containerPasajeros.querySelectorAll(".pasajero-input-group");
         filas.forEach((fila) => {
             const index = fila.dataset.index;
             const input = fila.querySelector("input");
@@ -7296,8 +7372,7 @@ function recolectarUnidad(numero) {
                     pasajero.alcohol_pct = fila.dataset.alcoholPct;
                     pasajero.presion_valor = fila.dataset.presionValor;
                     pasajero.medicamento = fila.dataset.medicamento;
-                    pasajero.medicamento_nombre =
-                        fila.dataset.medicamentoNombre;
+                    pasajero.medicamento_nombre = fila.dataset.medicamentoNombre;
                     pasajero.dormir = fila.dataset.dormir;
                     pasajero.levantar = fila.dataset.levantar;
                     pasajero.hrs_dormidas = fila.dataset.hrsDormidas;
@@ -7359,16 +7434,13 @@ function recolectarEvaluacionRiesgo() {
     }
 
     evaluacion.is_night_shift =
-        form.querySelector('input[name="ev_horario_nocturno"]')?.checked ||
-        false;
+        form.querySelector('input[name="ev_horario_nocturno"]')?.checked || false;
     evaluacion.has_low_sleep =
         form.querySelector('input[name="ev_horas_dormidas"]')?.checked || false;
     evaluacion.exceeds_midnight =
-        form.querySelector('input[name="ev_rebase_medianoche"]')?.checked ||
-        false;
+        form.querySelector('input[name="ev_rebase_medianoche"]')?.checked || false;
     evaluacion.extreme_fatigue =
-        form.querySelector('input[name="ev_16hrs_despierto"]')?.checked ||
-        false;
+        form.querySelector('input[name="ev_16hrs_despierto"]')?.checked || false;
     evaluacion.total_score = puntajeRiesgoTotal || 0;
 
     // --- AQUÍ ESTÁ LA CORRECCIÓN EXACTA ---
@@ -7431,14 +7503,15 @@ async function abrirModalRuta(idViaje, folioViaje) {
         title: "Cargando ruta...",
         html: "Sincronizando estado...",
         allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
+        didOpen: () => Swal.showLoading(),
     });
 
     try {
         const response = await fetch(`/qhse/gerenciamiento/journeys/${idViaje}`);
         const result = await response.json();
 
-        if (!result.success) throw new Error(result.message || "No se pudo cargar la información");
+        if (!result.success)
+            throw new Error(result.message || "No se pudo cargar la información");
 
         const viaje = result.data;
         const logs = viaje.logs || [];
@@ -7448,11 +7521,11 @@ async function abrirModalRuta(idViaje, folioViaje) {
         if (lblRutaViaje) lblRutaViaje.innerText = viaje.folio || folioViaje;
 
         // 1. Determinar estado principal exacto desde la BD
-        if (viaje.journey_status === 'in_progress') {
+        if (viaje.journey_status === "in_progress") {
             estadoViajeActual = "En Curso";
-        } else if (viaje.journey_status === 'stopped') {
+        } else if (viaje.journey_status === "stopped") {
             estadoViajeActual = "Detenido";
-        } else if (viaje.journey_status === 'completed') {
+        } else if (viaje.journey_status === "completed") {
             estadoViajeActual = "Finalizado";
         } else {
             estadoViajeActual = "Por Iniciar";
@@ -7480,8 +7553,7 @@ async function abrirModalRuta(idViaje, folioViaje) {
             }
             if (btnDetener) btnDetener.style.display = "flex";
             if (btnReanudar) btnReanudar.style.display = "none";
-        }
-        else if (estadoViajeActual === "Detenido") {
+        } else if (estadoViajeActual === "Detenido") {
             if (dot) {
                 dot.className = "status-dot-ruta pulsing-red";
                 dot.style.backgroundColor = "";
@@ -7492,8 +7564,7 @@ async function abrirModalRuta(idViaje, folioViaje) {
             }
             if (btnDetener) btnDetener.style.display = "none";
             if (btnReanudar) btnReanudar.style.display = "flex";
-        }
-        else if (estadoViajeActual === "En Curso") {
+        } else if (estadoViajeActual === "En Curso") {
             if (dot) {
                 dot.className = "status-dot-ruta pulsing-green";
                 dot.style.backgroundColor = "";
@@ -7516,7 +7587,6 @@ async function abrirModalRuta(idViaje, folioViaje) {
             modal.style.display = "flex";
             setTimeout(() => modal.classList.add("active"), 10);
         }
-
     } catch (error) {
         Swal.fire("Error", error.message, "error");
     }
@@ -7525,18 +7595,22 @@ async function abrirModalRuta(idViaje, folioViaje) {
 async function guardarEventoBackend(tipo, titulo, descripcion) {
     if (!viajeRutaActivoId) throw new Error("Sin viaje activo");
 
-    const response = await fetch(`/qhse/gerenciamiento/journeys/${viajeRutaActivoId}/log-event`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+    const response = await fetch(
+        `/qhse/gerenciamiento/journeys/${viajeRutaActivoId}/log-event`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
+                    .content,
+            },
+            body: JSON.stringify({
+                event_type: tipo,
+                title: titulo,
+                description: descripcion,
+            }),
         },
-        body: JSON.stringify({
-            event_type: tipo,
-            title: titulo,
-            description: descripcion
-        })
-    });
+    );
 
     if (!response.ok) {
         throw new Error("Error guardando evento en la Base de Datos");
@@ -7549,7 +7623,10 @@ function renderizarParadasRuta(viaje, logs) {
 
     let paradas = [];
     if (viaje.planned_stops) {
-        paradas = typeof viaje.planned_stops === 'string' ? JSON.parse(viaje.planned_stops) : viaje.planned_stops;
+        paradas =
+            typeof viaje.planned_stops === "string"
+                ? JSON.parse(viaje.planned_stops)
+                : viaje.planned_stops;
     }
 
     if (!paradas || paradas.length === 0) {
@@ -7559,17 +7636,21 @@ function renderizarParadasRuta(viaje, logs) {
 
     paradas.forEach((parada, index) => {
         let icon = "fa-map-pin";
-        if(parada.motivo.includes("Alimentos")) icon = "fa-utensils";
-        if(parada.motivo.includes("Combustible")) icon = "fa-gas-pump";
-        if(parada.motivo.includes("Aseguramiento")) icon = "fa-shield-alt";
+        if (parada.motivo.includes("Alimentos")) icon = "fa-utensils";
+        if (parada.motivo.includes("Combustible")) icon = "fa-gas-pump";
+        if (parada.motivo.includes("Aseguramiento")) icon = "fa-shield-alt";
 
         // VERIFICAMOS EN LOS LOGS SI ESTA PARADA YA FUE MARCADA
-        const logParada = logs.find(l => l.event_type === 'parada' && l.description.includes(parada.lugar));
+        const logParada = logs.find(
+            (l) => l.event_type === "parada" && l.description.includes(parada.lugar),
+        );
         const isCompleted = !!logParada; // true si ya existe en la bitácora
 
-        const cardClass = isCompleted ? 'parada-card completed' : 'parada-card';
-        const btnDisabled = isCompleted ? 'disabled' : '';
-        const btnIcon = isCompleted ? '<i class="fas fa-check-double"></i>' : '<i class="fas fa-check"></i>';
+        const cardClass = isCompleted ? "parada-card completed" : "parada-card";
+        const btnDisabled = isCompleted ? "disabled" : "";
+        const btnIcon = isCompleted
+            ? '<i class="fas fa-check-double"></i>'
+            : '<i class="fas fa-check"></i>';
 
         const cardHtml = `
             <div class="${cardClass}" id="card-parada-${index}">
@@ -7582,7 +7663,7 @@ function renderizarParadasRuta(viaje, logs) {
                 </button>
             </div>
         `;
-        contenedor.insertAdjacentHTML('beforeend', cardHtml);
+        contenedor.insertAdjacentHTML("beforeend", cardHtml);
     });
 }
 function renderizarConductoresRuta(viaje, logs) {
@@ -7600,14 +7681,18 @@ function renderizarConductoresRuta(viaje, logs) {
     let relevoOriginal = null;
 
     if (unidad1.passengers && Array.isArray(unidad1.passengers)) {
-        relevoOriginal = unidad1.passengers.find(p => p.is_relay || p.role === 'second_driver');
+        relevoOriginal = unidad1.passengers.find(
+            (p) => p.is_relay || p.role === "second_driver",
+        );
     }
 
     if (relevoOriginal) {
         seccionRelevo.style.display = "block";
 
         // CONTAMOS LOS CAMBIOS EN EL HISTORIAL PARA SABER QUIÉN ESTÁ AL VOLANTE
-        const cantidadCambios = logs.filter(l => l.event_type === 'relevo').length;
+        const cantidadCambios = logs.filter(
+            (l) => l.event_type === "relevo",
+        ).length;
 
         // Si hay un número impar de cambios, el relevo va manejando. Si es par (0, 2, 4...), va el principal.
         let actualAlVolante = conductorOriginal;
@@ -7684,25 +7769,73 @@ async function abrirModalHistorial(folioViaje) {
         timeline.innerHTML = "";
 
         if (result.success && result.data.logs && result.data.logs.length > 0) {
-
             // 1. DIBUJAR LA LÍNEA DE TIEMPO NORMAL
-            result.data.logs.forEach(log => {
+            result.data.logs.forEach((log) => {
                 let colorClass = "bg-blue-base";
                 let iconClass = "fas fa-info-circle";
                 let textColor = "#1d4ed8";
 
-                if (log.event_type === 'created') { colorClass = "bg-blue-base"; iconClass = "fas fa-file-signature"; textColor = "#1d4ed8"; }
-                if (log.event_type === 'approved') { colorClass = "bg-green-approve"; iconClass = "fas fa-check-circle"; textColor = "#047857"; }
-                if (log.event_type === 'rejected' || log.event_type === 'cancelled') { colorClass = "bg-danger-red"; iconClass = "fas fa-ban"; textColor = "#b91c1c"; }
-                if (log.event_type === 'in_progress') { colorClass = "bg-blue-dark"; iconClass = "fas fa-truck-fast"; textColor = "#1e3a8a"; }
-                if (log.event_type === 'parada') { colorClass = "bg-warning-yellow"; iconClass = "fas fa-location-dot"; textColor = "#a16207"; }
-                if (log.event_type === 'relevo') { colorClass = "bg-warning-orange"; iconClass = "fas fa-users-gear"; textColor = "#c2410c"; }
-                if (log.event_type === 'detencion') { colorClass = "bg-danger-dark"; iconClass = "fas fa-exclamation-triangle"; textColor = "#7f1d1d"; }
-                if (log.event_type === 'reanudacion') { colorClass = "bg-green-resume"; iconClass = "fas fa-play-circle"; textColor = "#4d7c0f"; }
-                if (log.event_type === 'completed') { colorClass = "bg-green-finish"; iconClass = "fas fa-flag-checkered"; textColor = "#14532d"; }
-
+                if (log.event_type === "created") {
+                    colorClass = "bg-blue-base";
+                    iconClass = "fas fa-file-signature";
+                    textColor = "#1d4ed8";
+                }
+                if (log.event_type === "approved") {
+                    colorClass = "bg-green-approve";
+                    iconClass = "fas fa-check-circle";
+                    textColor = "#047857";
+                }
+                if (log.event_type === "rejected" || log.event_type === "cancelled") {
+                    colorClass = "bg-danger-red";
+                    iconClass = "fas fa-ban";
+                    textColor = "#b91c1c";
+                }
+                if (log.event_type === "in_progress") {
+                    colorClass = "bg-blue-dark";
+                    iconClass = "fas fa-truck-fast";
+                    textColor = "#1e3a8a";
+                }
+                if (log.event_type === "parada") {
+                    colorClass = "bg-warning-yellow";
+                    iconClass = "fas fa-location-dot";
+                    textColor = "#a16207";
+                }
+                if (log.event_type === "relevo") {
+                    colorClass = "bg-warning-orange";
+                    iconClass = "fas fa-users-gear";
+                    textColor = "#c2410c";
+                }
+                if (log.event_type === "detencion") {
+                    colorClass = "bg-danger-dark";
+                    iconClass = "fas fa-exclamation-triangle";
+                    textColor = "#7f1d1d";
+                }
+                if (log.event_type === "reanudacion") {
+                    colorClass = "bg-green-resume";
+                    iconClass = "fas fa-play-circle";
+                    textColor = "#4d7c0f";
+                }
+                if (log.event_type === "completed") {
+                    colorClass = "bg-green-finish";
+                    iconClass = "fas fa-flag-checkered";
+                    textColor = "#14532d";
+                }
+                if (log.event_type === "approver_changed") {
+                    colorClass = "bg-blue-base";
+                    iconClass = "fas fa-user-edit";
+                    textColor = "#1d4ed8";
+                }
                 const fechaObj = new Date(log.created_at);
-                const fechaFormat = fechaObj.toLocaleDateString("es-MX", { day: '2-digit', month: 'short' }) + ', ' + fechaObj.toLocaleTimeString("es-MX", { hour: '2-digit', minute: '2-digit' });
+                const fechaFormat =
+                    fechaObj.toLocaleDateString("es-MX", {
+                        day: "2-digit",
+                        month: "short",
+                    }) +
+                    ", " +
+                    fechaObj.toLocaleTimeString("es-MX", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    });
 
                 const htmlExtra = `
                     <div class="timeline-item">
@@ -7722,8 +7855,10 @@ async function abrirModalHistorial(folioViaje) {
             // ====================================================================
             // 2. NUEVA LÓGICA: COMPARATIVA DE TIEMPOS (DISEÑO COMPACTO Y MODERNO)
             // ====================================================================
-            const logInicio = result.data.logs.find(l => l.event_type === 'in_progress');
-            const logFin = result.data.logs.find(l => l.event_type === 'completed');
+            const logInicio = result.data.logs.find(
+                (l) => l.event_type === "in_progress",
+            );
+            const logFin = result.data.logs.find((l) => l.event_type === "completed");
             const tiempoEstimadoStr = result.data.estimated_duration;
 
             if (logInicio && logFin && tiempoEstimadoStr) {
@@ -7734,8 +7869,10 @@ async function abrirModalHistorial(folioViaje) {
                 const minutosReales = Math.floor(diffMs / 60000);
 
                 // Calcular tiempo estimado en minutos
-                const partesEstimado = tiempoEstimadoStr.split(':');
-                const minutosEstimados = (parseInt(partesEstimado[0]) || 0) * 60 + (parseInt(partesEstimado[1]) || 0);
+                const partesEstimado = tiempoEstimadoStr.split(":");
+                const minutosEstimados =
+                    (parseInt(partesEstimado[0]) || 0) * 60 +
+                    (parseInt(partesEstimado[1]) || 0);
 
                 // Comparativa
                 const diferencia = minutosReales - minutosEstimados;
@@ -7791,7 +7928,6 @@ async function abrirModalHistorial(folioViaje) {
                 `;
                 timeline.insertAdjacentHTML("beforeend", resumenHtml);
             }
-
         } else {
             timeline.innerHTML = `<div style="text-align:center; padding: 20px; color:#6c757d;">No hay eventos registrados en este viaje.</div>`;
         }
@@ -7809,7 +7945,7 @@ function formatearMinutosAString(totalMinutos) {
     if (horas > 0) resultado.push(`${horas}h`);
     if (minutos > 0 || horas === 0) resultado.push(`${minutos}m`);
 
-    return resultado.join(' ');
+    return resultado.join(" ");
 }
 function cerrarModalHistorial() {
     const modal = document.getElementById("modalHistorialActividad");
@@ -7822,7 +7958,6 @@ function cerrarModalHistorial() {
 function agregarEventoTimelineGlobal() {
     // Obsoleta, ahora el historial se lee directo de la BD cada vez que se abre.
 }
-
 
 // ====== LÓGICA DEL BOTÓN: INICIAR / FINALIZAR VIAJE ======
 function actualizarBotonPrincipalRuta() {
@@ -7841,7 +7976,9 @@ function toggleEstadoViaje() {
 
     Swal.fire({
         title: esInicio ? "¿Quieres iniciar el viaje?" : "¿Finalizar Viaje?",
-        text: esInicio ? "El estado pasará a 'En Curso' y la unidad estará en ruta." : "La bitácora se cerrará y el viaje pasará al Historial.",
+        text: esInicio
+            ? "El estado pasará a 'En Curso' y la unidad estará en ruta."
+            : "La bitácora se cerrará y el viaje pasará al Historial.",
         icon: esInicio ? "question" : "warning",
         showCancelButton: true,
         confirmButtonColor: esInicio ? "#1e3c72" : "#166534",
@@ -7852,31 +7989,53 @@ function toggleEstadoViaje() {
         allowOutsideClick: () => !Swal.isLoading(),
         preConfirm: async () => {
             try {
-                const response = await fetch(`/qhse/gerenciamiento/journeys/${viajeRutaActivoId}/journey-status`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ journey_status: esInicio ? 'in_progress' : 'completed' })
-                });
+                const response = await fetch(
+                    `/qhse/gerenciamiento/journeys/${viajeRutaActivoId}/journey-status`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
+                                .content,
+                        },
+                        body: JSON.stringify({
+                            journey_status: esInicio ? "in_progress" : "completed",
+                        }),
+                    },
+                );
                 if (!response.ok) throw new Error("Error actualizando estado");
                 return await response.json();
             } catch (error) {
                 Swal.showValidationMessage(`Fallo de red: ${error}`);
             }
-        }
+        },
     }).then((result) => {
         if (result.isConfirmed) {
             if (esInicio) {
                 estadoViajeActual = "En Curso";
                 actualizarBotonPrincipalRuta();
-                document.getElementById("dotEstado").className = "status-dot-ruta pulsing-green";
+                document.getElementById("dotEstado").className =
+                    "status-dot-ruta pulsing-green";
                 document.getElementById("dotEstado").style.backgroundColor = "";
                 document.getElementById("txtEstadoActual").innerText = "EN RUTA";
-                document.getElementById("txtEstadoActual").className = "status-value text-green";
+                document.getElementById("txtEstadoActual").className =
+                    "status-value text-green";
                 document.getElementById("btnDetenerMarcha").style.display = "flex";
 
-                Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Viaje Iniciado", showConfirmButton: false, timer: 2000 });
+                Swal.fire({
+                    toast: true,
+                    position: "top-end",
+                    icon: "success",
+                    title: "Viaje Iniciado",
+                    showConfirmButton: false,
+                    timer: 2000,
+                });
             } else {
-                Swal.fire("¡Finalizado!", "El viaje ha terminado exitosamente.", "success").then(() => {
+                Swal.fire(
+                    "¡Finalizado!",
+                    "El viaje ha terminado exitosamente.",
+                    "success",
+                ).then(() => {
                     cerrarModalRuta();
                 });
             }
@@ -7884,11 +8043,14 @@ function toggleEstadoViaje() {
     });
 }
 
-
 // ====== LÓGICA DE DETENCIÓN E INCIDENCIAS CON ALERTA ======
 function abrirFormularioDetencion() {
     if (estadoViajeActual === "Por Iniciar") {
-        return Swal.fire("Aviso", "Debes Iniciar el Viaje antes de poder registrar incidencias.", "info");
+        return Swal.fire(
+            "Aviso",
+            "Debes Iniciar el Viaje antes de poder registrar incidencias.",
+            "info",
+        );
     }
     document.getElementById("btnDetenerMarcha").style.display = "none";
     document.getElementById("formDetencion").style.display = "block";
@@ -7906,7 +8068,12 @@ function confirmarDetencion() {
     const motivo = selector.value;
     const notas = document.getElementById("notasDetencion").value;
 
-    if (!motivo) return Swal.fire({ icon: "warning", title: "Atención", text: "Seleccione un motivo de detención." });
+    if (!motivo)
+        return Swal.fire({
+            icon: "warning",
+            title: "Atención",
+            text: "Seleccione un motivo de detención.",
+        });
 
     Swal.fire({
         title: "¿Notificar Incidencia?",
@@ -7921,22 +8088,36 @@ function confirmarDetencion() {
         preConfirm: async () => {
             try {
                 const textoDescripcion = notas ? `${motivo} - Notas: ${notas}` : motivo;
-                return await guardarEventoBackend('detencion', 'Incidencia / Unidad Detenida', textoDescripcion);
+                return await guardarEventoBackend(
+                    "detencion",
+                    "Incidencia / Unidad Detenida",
+                    textoDescripcion,
+                );
             } catch (error) {
                 Swal.showValidationMessage(`Error: ${error}`);
             }
-        }
+        },
     }).then((result) => {
         if (result.isConfirmed) {
             // Actualizar UI inmediatamente
-            document.getElementById("dotEstado").className = "status-dot-ruta pulsing-red";
+            document.getElementById("dotEstado").className =
+                "status-dot-ruta pulsing-red";
             document.getElementById("txtEstadoActual").innerText = "UNIDAD DETENIDA";
-            document.getElementById("txtEstadoActual").className = "status-value text-red";
+            document.getElementById("txtEstadoActual").className =
+                "status-value text-red";
             document.getElementById("formDetencion").style.display = "none";
             document.getElementById("btnReanudarMarcha").style.display = "flex";
 
-            selector.value = ""; document.getElementById("notasDetencion").value = "";
-            Swal.fire({ toast: true, position: "top-end", icon: "error", title: "Detención notificada", showConfirmButton: false, timer: 2000 });
+            selector.value = "";
+            document.getElementById("notasDetencion").value = "";
+            Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "error",
+                title: "Detención notificada",
+                showConfirmButton: false,
+                timer: 2000,
+            });
         }
     });
 }
@@ -7955,20 +8136,33 @@ function confirmarReanudacion() {
         allowOutsideClick: () => !Swal.isLoading(),
         preConfirm: async () => {
             try {
-                return await guardarEventoBackend('reanudacion', 'Ruta Reanudada', 'La unidad ha retomado su trayecto.');
+                return await guardarEventoBackend(
+                    "reanudacion",
+                    "Ruta Reanudada",
+                    "La unidad ha retomado su trayecto.",
+                );
             } catch (error) {
                 Swal.showValidationMessage(`Error: ${error}`);
             }
-        }
+        },
     }).then((result) => {
         if (result.isConfirmed) {
-            document.getElementById("dotEstado").className = "status-dot-ruta pulsing-green";
+            document.getElementById("dotEstado").className =
+                "status-dot-ruta pulsing-green";
             document.getElementById("txtEstadoActual").innerText = "EN RUTA";
-            document.getElementById("txtEstadoActual").className = "status-value text-green";
+            document.getElementById("txtEstadoActual").className =
+                "status-value text-green";
             document.getElementById("btnReanudarMarcha").style.display = "none";
             document.getElementById("btnDetenerMarcha").style.display = "flex";
 
-            Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Ruta reanudada", showConfirmButton: false, timer: 2000 });
+            Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "success",
+                title: "Ruta reanudada",
+                showConfirmButton: false,
+                timer: 2000,
+            });
         }
     });
 }
@@ -7982,7 +8176,10 @@ function renderizarParadasRuta(viaje, logs) {
 
     let paradas = [];
     if (viaje.planned_stops) {
-        paradas = typeof viaje.planned_stops === 'string' ? JSON.parse(viaje.planned_stops) : viaje.planned_stops;
+        paradas =
+            typeof viaje.planned_stops === "string"
+                ? JSON.parse(viaje.planned_stops)
+                : viaje.planned_stops;
     }
 
     if (!paradas || paradas.length === 0) {
@@ -7992,17 +8189,21 @@ function renderizarParadasRuta(viaje, logs) {
 
     paradas.forEach((parada, index) => {
         let icon = "fa-map-pin";
-        if(parada.motivo.includes("Alimentos")) icon = "fa-utensils";
-        if(parada.motivo.includes("Combustible")) icon = "fa-gas-pump";
-        if(parada.motivo.includes("Aseguramiento")) icon = "fa-shield-alt";
+        if (parada.motivo.includes("Alimentos")) icon = "fa-utensils";
+        if (parada.motivo.includes("Combustible")) icon = "fa-gas-pump";
+        if (parada.motivo.includes("Aseguramiento")) icon = "fa-shield-alt";
 
         // VERIFICAMOS EN EL HISTORIAL DE LA BD SI ESTA PARADA YA FUE MARCADA
-        const logParada = logs.find(l => l.event_type === 'parada' && l.description.includes(parada.lugar));
+        const logParada = logs.find(
+            (l) => l.event_type === "parada" && l.description.includes(parada.lugar),
+        );
         const isCompleted = !!logParada;
 
-        const cardClass = isCompleted ? 'parada-card completed' : 'parada-card';
-        const btnDisabled = isCompleted ? 'disabled' : '';
-        const btnIcon = isCompleted ? '<i class="fas fa-check-double"></i>' : '<i class="fas fa-check"></i>';
+        const cardClass = isCompleted ? "parada-card completed" : "parada-card";
+        const btnDisabled = isCompleted ? "disabled" : "";
+        const btnIcon = isCompleted
+            ? '<i class="fas fa-check-double"></i>'
+            : '<i class="fas fa-check"></i>';
 
         const cardHtml = `
             <div class="${cardClass}" id="card-parada-${index}">
@@ -8015,12 +8216,17 @@ function renderizarParadasRuta(viaje, logs) {
                 </button>
             </div>
         `;
-        contenedor.insertAdjacentHTML('beforeend', cardHtml);
+        contenedor.insertAdjacentHTML("beforeend", cardHtml);
     });
 }
 
 function marcarParada(idCard, ubicacion, motivo, botonElemento) {
-    if (estadoViajeActual === "Por Iniciar") return Swal.fire("Aviso", "Debes Iniciar el viaje para registrar paradas.", "info");
+    if (estadoViajeActual === "Por Iniciar")
+        return Swal.fire(
+            "Aviso",
+            "Debes Iniciar el viaje para registrar paradas.",
+            "info",
+        );
 
     Swal.fire({
         title: "¿Confirmar Parada?",
@@ -8035,11 +8241,11 @@ function marcarParada(idCard, ubicacion, motivo, botonElemento) {
         preConfirm: async () => {
             try {
                 const desc = `Ubicación: ${ubicacion} | Motivo: ${motivo}`;
-                return await guardarEventoBackend('parada', 'Parada Alcanzada', desc);
+                return await guardarEventoBackend("parada", "Parada Alcanzada", desc);
             } catch (error) {
                 Swal.showValidationMessage(`Error: ${error}`);
             }
-        }
+        },
     }).then((result) => {
         if (result.isConfirmed) {
             // Actualizar UI
@@ -8048,7 +8254,14 @@ function marcarParada(idCard, ubicacion, motivo, botonElemento) {
             botonElemento.disabled = true;
             botonElemento.innerHTML = '<i class="fas fa-check-double"></i>';
 
-            Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Parada confirmada", showConfirmButton: false, timer: 2000 });
+            Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "success",
+                title: "Parada confirmada",
+                showConfirmButton: false,
+                timer: 2000,
+            });
         }
     });
 }
@@ -8071,14 +8284,18 @@ function renderizarConductoresRuta(viaje, logs) {
     let relevoOriginal = null;
 
     if (unidad1.passengers && Array.isArray(unidad1.passengers)) {
-        relevoOriginal = unidad1.passengers.find(p => p.is_relay || p.role === 'second_driver');
+        relevoOriginal = unidad1.passengers.find(
+            (p) => p.is_relay || p.role === "second_driver",
+        );
     }
 
     if (relevoOriginal) {
         seccionRelevo.style.display = "block";
 
         // CONTAMOS LOS CAMBIOS EN EL HISTORIAL PARA SABER QUIÉN ESTÁ AL VOLANTE
-        const cantidadCambios = logs.filter(l => l.event_type === 'relevo').length;
+        const cantidadCambios = logs.filter(
+            (l) => l.event_type === "relevo",
+        ).length;
 
         let actualAlVolante = conductorOriginal;
         let actualDescansando = relevoOriginal.name;
@@ -8108,7 +8325,12 @@ function renderizarConductoresRuta(viaje, logs) {
 }
 
 function ejecutarRelevo() {
-    if (estadoViajeActual === "Por Iniciar") return Swal.fire("Aviso", "Inicia el viaje para registrar el relevo.", "info");
+    if (estadoViajeActual === "Por Iniciar")
+        return Swal.fire(
+            "Aviso",
+            "Inicia el viaje para registrar el relevo.",
+            "info",
+        );
 
     const lblAlVolante = document.getElementById("lblConductorAlVolante");
     const lblDescansando = document.getElementById("lblConductorDescansando");
@@ -8127,11 +8349,15 @@ function ejecutarRelevo() {
         preConfirm: async () => {
             try {
                 const desc = `El conductor ${proximoConductor} ha tomado el volante.`;
-                return await guardarEventoBackend('relevo', 'Cambio de Conductor', desc);
+                return await guardarEventoBackend(
+                    "relevo",
+                    "Cambio de Conductor",
+                    desc,
+                );
             } catch (error) {
                 Swal.showValidationMessage(`Error: ${error}`);
             }
-        }
+        },
     }).then((result) => {
         if (result.isConfirmed) {
             // Intercambiar Nombres Visualmente
@@ -8141,16 +8367,19 @@ function ejecutarRelevo() {
 
             // Animación de intercambio
             const caja = document.querySelector(".conductor-swap-box");
-            if(caja) {
+            if (caja) {
                 caja.style.transform = "scale(0.96)";
-                setTimeout(() => caja.style.transform = "scale(1)", 150);
+                setTimeout(() => (caja.style.transform = "scale(1)"), 150);
             }
 
-            Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Relevo registrado", showConfirmButton: false, timer: 2000 });
+            Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "success",
+                title: "Relevo registrado",
+                showConfirmButton: false,
+                timer: 2000,
+            });
         }
     });
 }
-
-
-
-

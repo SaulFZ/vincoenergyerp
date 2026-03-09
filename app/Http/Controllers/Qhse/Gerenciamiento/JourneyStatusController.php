@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Log;
 class JourneyStatusController extends Controller
 {
 
-
-
-
     /**
      * 1. Actualizar estado de aprobación (Aprobar/Rechazar/Cancelar)
      */
@@ -67,7 +64,80 @@ class JourneyStatusController extends Controller
             return response()->json(['success' => false, 'message' => 'Error al actualizar'], 500);
         }
     }
+/**
+ * Cambiar el aprobador de un viaje (solo si está pendiente y lo solicita el creador)
+ */
+    public function changeApprover(Request $request, $id)
+    {
+        try {
+            $journey = Journey::findOrFail($id);
 
+            // Validaciones de seguridad
+            if ($journey->created_by !== auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo el creador del viaje puede cambiar el aprobador.',
+                ], 403);
+            }
+
+            if ($journey->approval_status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se puede cambiar el aprobador cuando el GV está Pendiente.',
+                ], 422);
+            }
+
+            $request->validate([
+                'approver_id' => 'required|exists:users,id',
+            ]);
+
+            $nuevoAprobadorId = $request->approver_id;
+
+            // Evitar asignar el mismo aprobador
+            if ($journey->approver_id == $nuevoAprobadorId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El nuevo aprobador es el mismo que el actual.',
+                ], 422);
+            }
+
+            $journey->approver_id = $nuevoAprobadorId;
+            $journey->save();
+
+            // Registrar en bitácora
+            JourneyLog::create([
+                'journey_id'  => $journey->id,
+                'user_id'     => auth()->id(),
+                'event_type'  => 'approver_changed',
+                'title'       => 'Aprobador Reasignado',
+                'description' => 'El solicitante ha reasignado el aprobador del viaje.',
+                'event_time'  => now(),
+            ]);
+
+            // Reenviar correo al nuevo aprobador
+            try {
+                $newApprover = \App\Models\Auth\User::find($nuevoAprobadorId);
+                if ($newApprover && $newApprover->email) {
+                    \Illuminate\Support\Facades\Mail::to($newApprover->email)
+                        ->send(new \App\Mail\Qhse\Gerenciamiento\JourneyApprovalMail($journey));
+                }
+            } catch (\Exception $mailEx) {
+                \Illuminate\Support\Facades\Log::error('Error enviando correo cambio aprobador: ' . $mailEx->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Aprobador actualizado correctamente.',
+            ]);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error cambiando aprobador: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar aprobador: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
     /**
      * 2. Actualizar estado del viaje operativo (Iniciar / Finalizar)
      */
