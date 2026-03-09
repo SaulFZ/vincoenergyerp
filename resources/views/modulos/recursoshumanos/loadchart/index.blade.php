@@ -82,6 +82,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('assets/js/recursoshumanos/loadchart/index.js') }}"></script>
+        <script src="{{ asset('assets/js/recursoshumanos/loadchart/calendar.js') }}"></script>
+
     <script src="{{ asset('assets/js/sessionTimer.js') }}"></script>
     @stack('scripts')
 </body>
