@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-
 class EmployeeVacationBalanceController extends Controller
 {
     public function index()
@@ -145,10 +144,10 @@ class EmployeeVacationBalanceController extends Controller
         $balance = EmployeeVacationBalance::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'employee_id'           => 'required|exists:employees,id|unique:employee_vacation_balance,employee_id,' . $id,
+            'employee_id'             => 'required|exists:employees,id|unique:employee_vacation_balance,employee_id,' . $id,
             'vacation_days_available' => 'required|integer|min:0',
             'rest_days_available'     => 'required|integer',
-            'rest_mode'                 => 'required|string|max:15',
+            'rest_mode'               => 'required|string|max:15',
         ], [
             'employee_id.required'      => 'El ID del empleado es obligatorio.',
             'employee_id.exists'        => 'El empleado seleccionado no existe.',
