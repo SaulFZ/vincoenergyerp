@@ -23,6 +23,25 @@
                                 <i class="fas fa-plus-circle"></i> Agregar Balance
                             </button>
 
+                            {{-- FILTROS PARA LA TABLA --}}
+                            <div class="table-filters" id="mainTableFilters" style="display: flex; gap: 10px;">
+                                <select id="filterDepartment" class="select-custom" style="padding: 10px 12px;">
+                                    <option value="">Todos los Deptos</option>
+                                    @foreach ($departments as $dept)
+                                        <option value="{{ $dept }}">{{ $dept }}</option>
+                                    @endforeach
+                                </select>
+
+                                <select id="filterRestMode" class="select-custom" style="padding: 10px 12px;">
+                                    <option value="">Todas las Modalidades</option>
+                                    <option value="5x2">5x2</option>
+                                    <option value="6x1">6x1</option>
+                                    <option value="24x6">24x6</option>
+                                    <option value="12x24hr">12x24hr</option>
+                                    <option value="UNASSIGNED">No Asignado</option>
+                                </select>
+                            </div>
+
                             {{-- COMIENZO DEL BUSCADOR --}}
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
@@ -49,11 +68,11 @@
                                     <thead>
                                         <tr>
                                             <th>Empleado</th>
+                                            <th>Departamento</th>
                                             <th>Fecha de Ingreso</th>
                                             <th>Años de Servicio</th>
                                             <th>Modalidad Descanso</th>
                                             <th>Días de Vacaciones</th>
-                                            <th>Días de Descanso</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -961,6 +980,10 @@
             const takenTableBody = document.getElementById('takenTableBody');
             const paginationLinksContainer = document.getElementById('pagination-links');
 
+            // Nuevos filtros
+            const filterDepartment = document.getElementById('filterDepartment');
+            const filterRestMode = document.getElementById('filterRestMode');
+
             // 🥇 Referencia al botón de reporte
             const openReportModalBtn = document.getElementById('openReportModalBtn');
 
@@ -1125,14 +1148,34 @@
 
             function renderTableAndPagination() {
                 const searchTerm = searchInput.value.toLowerCase();
+                const deptFilterVal = filterDepartment.value;
+                const modeFilterVal = filterRestMode.value;
+
                 let dataToUse = isBalanceView ? vacationBalancesData : vacationDaysTakenData;
 
                 const tempFiltered = dataToUse.filter(item => {
                     const fullName = isBalanceView ?
                         (item.employee ? item.employee.full_name : 'Empleado no encontrado') :
                         item.full_name;
-                    return fullName.toLowerCase().includes(searchTerm);
+
+                    const department = isBalanceView ?
+                        (item.employee && item.employee.department ? item.employee.department : '') :
+                        (item.area || '');
+
+                    const restMode = item.rest_mode || '5x2';
+
+                    const matchesSearch = fullName.toLowerCase().includes(searchTerm);
+                    const matchesDept = deptFilterVal === '' || department === deptFilterVal;
+
+                    // El filtro de modalidad de descanso sólo aplica para la vista de Balance
+                    let matchesMode = true;
+                    if (isBalanceView) {
+                        matchesMode = modeFilterVal === '' || restMode === modeFilterVal;
+                    }
+
+                    return matchesSearch && matchesDept && matchesMode;
                 });
+
                 let filteredData = tempFiltered;
 
                 const isAll = itemsPerPage === 'all';
@@ -1174,6 +1217,7 @@
                 toggleVacationViewBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Ver Vacaciones Tomadas';
                 toggleVacationViewBtn.classList.remove('btn-outline');
                 toggleVacationViewBtn.classList.add('btn-primary');
+                filterRestMode.style.display = 'inline-block'; // Mostrar filtro de modalidad
             }
 
             function renderTakenViewHeader() {
@@ -1184,6 +1228,7 @@
                 toggleVacationViewBtn.innerHTML = '<i class="fas fa-balance-scale"></i> Ver Balances Disponibles';
                 toggleVacationViewBtn.classList.remove('btn-primary');
                 toggleVacationViewBtn.classList.add('btn-outline');
+                filterRestMode.style.display = 'none'; // Ocultar en vista tomadas
             }
 
             function renderBalanceTableRows(balancesToDisplay) {
@@ -1195,15 +1240,16 @@
                         row.dataset.balanceId = balance.id;
 
                         const employeeName = balance.employee ? balance.employee.full_name : 'Empleado no encontrado';
+                        const departmentName = balance.employee && balance.employee.department ? balance.employee.department : 'N/A';
                         const hireDate = balance.employee ? formatHireDate(balance.employee.hire_date) : 'N/A';
 
                         row.innerHTML = `
                             <td>${employeeName}</td>
+                            <td>${departmentName}</td>
                             <td>${hireDate}</td>
                             <td>${balance.years_of_service} años</td>
                             <td><span class="badge">${balance.rest_mode || '5x2'}</span></td>
                             <td><span class="badge">${balance.vacation_days_available} días</span></td>
-                            <td><span class="badge">${balance.rest_days_available} días</span></td>
                             <td>
                                 <div class="action-buttons">
                                     <button class="btn-icon btn-edit" title="Editar" data-balance-id="${balance.id}">
@@ -1296,7 +1342,7 @@
                     (isBalance ? 'No hay balances de vacaciones registrados.' :
                         'No hay historial de vacaciones tomadas.');
                 const detail = searchTerm ?
-                    'Intenta con otro término de búsqueda.' :
+                    'Intenta con otro término de búsqueda o asegúrate de elegir los filtros correctos.' :
                     (isBalance ? 'Comienza agregando un balance usando el formulario.' :
                         'Asegúrate de que los empleados hayan registrado días de vacaciones (VAC) en sus bitácoras.'
                     );
@@ -1956,17 +2002,17 @@
                 params.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
                 try {
-    const response = await fetch('/recursoshumanos/loadchart/employee_vacation_balance/generate-report', {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            // 💡 SOLUCIÓN: Agrega este encabezado para que Laravel reconozca los datos POST
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        // 💡 SOLUCIÓN: Convierte 'params' a una cadena de URL
-        body: params.toString()
-    });
+                    const response = await fetch('/recursoshumanos/loadchart/employee_vacation_balance/generate-report', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            // 💡 SOLUCIÓN: Agrega este encabezado para que Laravel reconozca los datos POST
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        // 💡 SOLUCIÓN: Convierte 'params' a una cadena de URL
+                        body: params.toString()
+                    });
                     if (response.headers.get('content-type') && response.headers.get('content-type').includes('application/json')) {
                         const data = await response.json();
                         let errorMessages = '';
@@ -2101,6 +2147,16 @@
             });
 
             searchInput.addEventListener('input', () => {
+                currentPage = 1;
+                renderTableAndPagination();
+            });
+
+            filterDepartment.addEventListener('change', () => {
+                currentPage = 1;
+                renderTableAndPagination();
+            });
+
+            filterRestMode.addEventListener('change', () => {
                 currentPage = 1;
                 renderTableAndPagination();
             });
