@@ -85,7 +85,7 @@ class FieldBonusController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'employee_category' => 'required|string|max:80',
-            'bonus_type' => 'required|string|max:35',
+            'bonus_type' => 'required|string|max:150',
             'amount' => 'required|numeric|min:0',
             'currency' => 'required|string|max:3|in:MXN,USD',
             'bonus_identifier' => 'required|string|max:15',

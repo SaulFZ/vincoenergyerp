@@ -26,7 +26,7 @@ let employees = [];
 allEmployeeRows = [];
 allSquadRows = [];
 let isFiltersOpen = false;
-let auxiliarPalState = 'hidden'; // Estados posibles: 'hidden' (ocultos por defecto) o 'only' (mostrar solo a ellos)
+let auxiliarPalState = 'inactive'; // Cambiado de 'hidden' a 'inactive'
 // Detener el sistema de actualización automática
 function stopAutoRefresh() {
     if (autoRefreshInterval) {
@@ -69,15 +69,16 @@ function initializeApprovalTable() {
                 assignmentFilter.value = 'assigned';
             }
             populatePositionFilter();
-            applyFilters();
         }
+
+        // ⭐ CRÍTICO: Llamamos applyFilters() SIEMPRE, incluso si no tiene permiso ver_filtros.
+        // Esto asegura que la regla de ocultar a los Auxiliares PAL se aplique desde el inicio.
+        applyFilters();
     });
 
-    // ⭐ SACAMOS EL EVENTO DEL BOTÓN AQUÍ AFUERA
-    // Así funcionará siempre que el botón exista en el HTML (es decir, si tiene el permiso ver_guardias)
     const toggleAuxBtn = document.getElementById('toggle-auxiliar-pal-btn');
-    if(toggleAuxBtn) {
-        toggleAuxBtn.addEventListener('click', function() {
+    if (toggleAuxBtn) {
+        toggleAuxBtn.addEventListener('click', function () {
             if (auxiliarPalState === 'inactive') {
                 auxiliarPalState = 'active';
                 this.innerHTML = '<i class="fas fa-times-circle"></i> Regresar';
@@ -96,7 +97,7 @@ function initializeApprovalTable() {
         document.getElementById('toggle-filters-btn').addEventListener('click', toggleFilters);
         document.getElementById('assignment-filter').addEventListener('change', applyFilters);
 
-        document.getElementById('department-filter').addEventListener('change', function() {
+        document.getElementById('department-filter').addEventListener('change', function () {
             populatePositionFilter();
             applyFilters();
         });
@@ -105,6 +106,7 @@ function initializeApprovalTable() {
         document.getElementById('employee-search').addEventListener('input', applyFilters);
     }
 }
+
 //INICIAMOS LOGICA DE NUEVO MODAL
 // Variables globales para el modal de empleado
 let currentEmployeeModal = null;
@@ -295,23 +297,26 @@ function populatePositionFilter() {
  * Aplica los filtros de departamento, CARGO, asignación y búsqueda.
  */
 function applyFilters() {
-    // Solo aplica los filtros si el usuario tiene el permiso
-    if (typeof canSeeFilters !== 'undefined' && !canSeeFilters) {
-        return;
-    }
+    // ⭐ ELIMINAMOS el if(!canSeeFilters) return; porque necesitamos que evalúe a los guardias sí o sí.
 
-    // Obtener valores de los filtros
-    const assignmentFilter = document.getElementById('assignment-filter') ? document.getElementById('assignment-filter').value : 'all';
-    const departmentFilter = document.getElementById('department-filter').value;
-    const positionFilter = document.getElementById('position-filter').value;
-    const searchFilter = document.getElementById('employee-search').value.toLowerCase().trim();
+    // Obtener valores de los filtros (De forma segura por si Blade no los renderizó)
+    const assignmentFilterElem = document.getElementById('assignment-filter');
+    const departmentFilterElem = document.getElementById('department-filter');
+    const positionFilterElem = document.getElementById('position-filter');
+    const searchFilterElem = document.getElementById('employee-search');
 
-    // ⭐ CORRECCIÓN: Ahora también detecta si cambiaste a "Todos los Empleados" ('all')
+    const assignmentFilter = assignmentFilterElem ? assignmentFilterElem.value : 'all'; // Default fallback
+    const departmentFilter = departmentFilterElem ? departmentFilterElem.value : '';
+    const positionFilter = positionFilterElem ? positionFilterElem.value : '';
+    const searchFilter = searchFilterElem ? searchFilterElem.value.toLowerCase().trim() : '';
+
+    // ⭐ Detecta si el usuario está usando filtros intencionalmente.
+    // Solo validamos assignmentFilter === 'all' si el filtro realmente existe en el HTML.
     const isUsingManualFilters = (
         departmentFilter !== '' ||
         positionFilter !== '' ||
         searchFilter !== '' ||
-        assignmentFilter === 'all' // <--- Esto hace que aparezcan al ver "Todos"
+        (assignmentFilterElem !== null && assignmentFilter === 'all')
     );
 
     allEmployeeRows.forEach(row => {
@@ -340,7 +345,9 @@ function applyFilters() {
         const matchesDepartment = !departmentFilter || department === departmentFilter;
         const matchesPosition = !positionFilter || employeePosition === positionFilter;
         const matchesSearch = !searchFilter || employeeName.includes(searchFilter) || employeeNumber.includes(searchFilter);
-        const matchesAssignment = assignmentFilter === 'all' || (assignmentFilter === 'assigned' && isAssigned);
+
+        // Si el filtro de asignación no existe en HTML, asumimos true para no ocultar nada por error
+        const matchesAssignment = !assignmentFilterElem ? true : (assignmentFilter === 'all' || (assignmentFilter === 'assigned' && isAssigned));
 
         // ⭐ REGLA ESTRICTA PARA OCULTAR/MOSTRAR AUXILIAR PAL
         let matchesAuxiliar = true;
@@ -352,7 +359,7 @@ function applyFilters() {
             // 2. Si el botón está apagado...
             if (isAuxiliarPal) {
                 // Si el empleado ES Auxiliar PAL, lo ocultamos por defecto...
-                // a menos que el usuario esté buscando, filtrando, o viendo "Todos".
+                // a menos que el usuario esté buscando o filtrando activamente.
                 if (!isUsingManualFilters) {
                     matchesAuxiliar = false;
                 }
@@ -703,6 +710,9 @@ function getItemFromActivity(dailyActivity, itemType, itemIndex) {
  * Abre y construye el contenido del modal de aprobación.
  * CORREGIDO: El dropdown de Vespertina inicia de forma independiente.
  */
+/**
+ * Abre y construye el contenido del modal de aprobación.
+ */
 function openApprovalModal(employeeData, dailyActivity) {
     const modal = document.getElementById('approvalModal');
     const subtitle = modal.querySelector('.modal-approval-subtitle');
@@ -710,10 +720,19 @@ function openApprovalModal(employeeData, dailyActivity) {
     const employeeRow = document.querySelector(`.employee-row[data-employee-id="${employeeData.employee_id}"]`);
 
     let employeeName = 'Empleado Desconocido';
-    if (employeeRow) {
+    let employeeJobTitle = '';
+
+    // Buscar en la variable global employees para saber si es Guardia
+    const employeeInfo = employees.find(e => e.id.toString() === employeeData.employee_id.toString());
+    if (employeeInfo) {
+        employeeName = employeeInfo.full_name;
+        employeeJobTitle = employeeInfo.job_title ? employeeInfo.job_title.toUpperCase() : '';
+    } else if (employeeRow) {
         const nameCell = employeeRow.querySelector('.employee-info-cell');
         if (nameCell) employeeName = nameCell.textContent.trim();
     }
+
+    const isGuardia = employeeJobTitle.includes('AUXILIAR PAL');
 
     const dateWithTime = dailyActivity.date + 'T12:00:00';
     const formattedDate = new Date(dateWithTime).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -733,13 +752,20 @@ function openApprovalModal(employeeData, dailyActivity) {
         const activityStatus = dailyActivity.activity_status ?? 'under_review';
         let additionalDetails = '';
 
-        if (dailyActivity.activity_type === 'P' && dailyActivity.well_name) additionalDetails = `<strong>Pozo:</strong> ${dailyActivity.well_name}`;
-        else if (dailyActivity.activity_type === 'C' && dailyActivity.commissioned_to) additionalDetails = `<strong>Área Comisionada:</strong> ${dailyActivity.commissioned_to}`;
-        else if (dailyActivity.activity_type === 'V') {
+        if (dailyActivity.activity_type === 'P' && dailyActivity.well_name) {
+            additionalDetails = `<strong>Pozo:</strong> ${dailyActivity.well_name}`;
+        } else if (dailyActivity.activity_type === 'C' && dailyActivity.commissioned_to) {
+            additionalDetails = `<strong>Área Comisionada:</strong> ${dailyActivity.commissioned_to}`;
+        } else if (dailyActivity.activity_type === 'V') {
             const destination = dailyActivity.travel_destination || 'N/A';
             const reason = dailyActivity.travel_reason || 'N/A';
             additionalDetails = `<div><strong>Destino:</strong> ${destination}</div><div><strong>Motivo:</strong> ${reason}</div>`;
-        } else if (dailyActivity.activity_description) additionalDetails = `Descripción: ${dailyActivity.activity_description}`;
+        } else if (dailyActivity.activity_type === 'B' && dailyActivity.base_activity_description) {
+            // ⭐ AQUI MOSTRAMOS LA DESCRIPCIÓN ESPECÍFICA DE LA BASE PARA LOS OPERADORES
+            additionalDetails = `<strong>Actividad:</strong> ${dailyActivity.base_activity_description}`;
+        } else if (dailyActivity.activity_description) {
+            additionalDetails = `Descripción: ${dailyActivity.activity_description}`;
+        }
 
         const conceptTitle = (dailyActivity.activity_type_vespertina && dailyActivity.activity_type_vespertina !== 'N') ? 'Act. Matutina' : 'Actividad';
 
@@ -748,22 +774,25 @@ function openApprovalModal(employeeData, dailyActivity) {
 
     // 1.5 Actividad Vespertina (Solo si existe en el JSON)
     if (dailyActivity.activity_type_vespertina && dailyActivity.activity_type_vespertina !== 'N') {
-        // ⭐ CORRECCIÓN: Fallback cambiado para no heredar el estatus Matutino
         const activityStatusVespertina = dailyActivity.activity_status_vespertina || 'under_review';
 
         let additionalDetailsVespertina = '';
-        if (dailyActivity.activity_type_vespertina === 'P' && dailyActivity.well_name) additionalDetailsVespertina = `<strong>Pozo:</strong> ${dailyActivity.well_name}`;
-        else if (dailyActivity.activity_type_vespertina === 'C' && dailyActivity.commissioned_to) additionalDetailsVespertina = `<strong>Área Comisionada:</strong> ${dailyActivity.commissioned_to}`;
-        else if (dailyActivity.activity_type_vespertina === 'V') {
+        if (dailyActivity.activity_type_vespertina === 'P' && dailyActivity.well_name) {
+            additionalDetailsVespertina = `<strong>Pozo:</strong> ${dailyActivity.well_name}`;
+        } else if (dailyActivity.activity_type_vespertina === 'C' && dailyActivity.commissioned_to) {
+            additionalDetailsVespertina = `<strong>Área Comisionada:</strong> ${dailyActivity.commissioned_to}`;
+        } else if (dailyActivity.activity_type_vespertina === 'V') {
             const destination = dailyActivity.travel_destination || 'N/A';
             const reason = dailyActivity.travel_reason || 'N/A';
             additionalDetailsVespertina = `<div><strong>Destino:</strong> ${destination}</div><div><strong>Motivo:</strong> ${reason}</div>`;
-        } else if (dailyActivity.activity_description_vespertina) additionalDetailsVespertina = `Descripción: ${dailyActivity.activity_description_vespertina}`;
+        } else if (dailyActivity.activity_description_vespertina) {
+            additionalDetailsVespertina = `Descripción: ${dailyActivity.activity_description_vespertina}`;
+        }
 
         addRowToModalTable('Act. Vespertina', dailyActivity.activity_description_vespertina || '', dailyActivity.activity_type_vespertina || 'N', additionalDetailsVespertina, 'activity_vespertina', null, activityStatusVespertina, dailyActivity.rejection_reason_vespertina || '', null, isReviewer, isApprover);
     }
 
-    // (Código Bonos y Servicios igual...)
+    // 2. Bonos de Comida
     if (dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0) {
         dailyActivity.food_bonuses.forEach((bonus, index) => {
             const amount = canSeeAmounts ? `\$${Number(bonus.daily_amount).toFixed(2)} MXN` : null;
@@ -771,14 +800,34 @@ function openApprovalModal(employeeData, dailyActivity) {
         });
     }
 
+    // 3. Bonos de Campo (Y Bono Especial de Guardia con Cantidad)
     if (dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0) {
         dailyActivity.field_bonuses.forEach((bonus, index) => {
             let amount = null;
-            if (canSeeAmounts) amount = bonus.currency === 'USD' ? `\$${Number(bonus.daily_amount).toFixed(2)} USD` : `\$${Number(bonus.daily_amount).toFixed(2)} MXN`;
-            addRowToModalTable('Bono', `<strong>${bonus.bonus_type}</strong>`, bonus.bonus_identifier, `Moneda: ${bonus.currency}`, 'field_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
+            let detailText = `Moneda: ${bonus.currency}`;
+
+            // ⭐ AQUI PROCESAMOS LA CANTIDAD SI ES UN BONO DE GUARDIA
+            if (bonus.quantity && bonus.quantity > 1) {
+                detailText += `<br><strong>Cantidad Realizada:</strong> ${bonus.quantity}`;
+                if (canSeeAmounts && bonus.base_amount) {
+                    detailText += `<br><small>(Precio Base: $${Number(bonus.base_amount).toFixed(2)} ${bonus.currency})</small>`;
+                }
+            }
+
+            if (canSeeAmounts) {
+                // El 'daily_amount' ya viene multiplicado desde el backend
+                amount = bonus.currency === 'USD'
+                    ? `\$${Number(bonus.daily_amount).toFixed(2)} USD`
+                    : `\$${Number(bonus.daily_amount).toFixed(2)} MXN`;
+            }
+
+            const conceptName = isGuardia ? 'Bono Especial' : 'Bono';
+
+            addRowToModalTable(conceptName, `<strong>${bonus.bonus_type}</strong>`, bonus.bonus_identifier, detailText, 'field_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
         });
     }
 
+    // 4. Servicios
     if (dailyActivity.services_list && dailyActivity.services_list.length > 0) {
         dailyActivity.services_list.forEach((service, index) => {
             const amount = canSeeAmounts ? `\$${Number(service.amount).toFixed(2)} MXN` : null;
@@ -787,6 +836,7 @@ function openApprovalModal(employeeData, dailyActivity) {
         });
     }
 
+    // Mostrar/Ocultar columnas de montos según permisos
     const amountHeader = modal.querySelector('.amount-header');
     if (amountHeader) {
         amountHeader.style.display = canSeeAmounts ? '' : 'none';
@@ -1671,11 +1721,11 @@ function updateTableBody(employeesData, monthlyDaysData) {
                 </td>
                 <td class="activity-label-cell activity-main-label">Actividad</td>
                 ${monthlyDaysData.map(dayInfo => {
-                    let displayStyle = '';
-                    if (currentView === 'quincena1' && !dayInfo.is_quincena_1) displayStyle = 'display: none;';
-                    if (currentView === 'quincena2' && !dayInfo.is_quincena_2) displayStyle = 'display: none;';
+                let displayStyle = '';
+                if (currentView === 'quincena1' && !dayInfo.is_quincena_1) displayStyle = 'display: none;';
+                if (currentView === 'quincena2' && !dayInfo.is_quincena_2) displayStyle = 'display: none;';
 
-                    return `
+                return `
                     <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
                         data-day="${dayInfo.day}" data-date="${dayInfo.date}" style="${displayStyle}">
                         <div class="status-indicator status-n">N</div>
@@ -2331,7 +2381,7 @@ function enableDragToScroll(containerSelector) {
         startX = e.pageX - container.offsetLeft;
         startY = e.pageY - container.offsetTop;
         scrollLeft = container.scrollLeft;
-        scrollTop  = container.scrollTop;
+        scrollTop = container.scrollTop;
         e.preventDefault();
     });
 
@@ -2353,24 +2403,24 @@ function enableDragToScroll(containerSelector) {
         const walkX = (x - startX) * 1.2; // velocidad horizontal
         const walkY = (y - startY) * 1.2; // velocidad vertical
         container.scrollLeft = scrollLeft - walkX;
-        container.scrollTop  = scrollTop  - walkY;
+        container.scrollTop = scrollTop - walkY;
     });
 
     // Touch support (móvil)
     let touchStartX, touchStartY, touchScrollLeft, touchScrollTop;
 
     container.addEventListener('touchstart', (e) => {
-        touchStartX    = e.touches[0].pageX - container.offsetLeft;
-        touchStartY    = e.touches[0].pageY - container.offsetTop;
+        touchStartX = e.touches[0].pageX - container.offsetLeft;
+        touchStartY = e.touches[0].pageY - container.offsetTop;
         touchScrollLeft = container.scrollLeft;
-        touchScrollTop  = container.scrollTop;
+        touchScrollTop = container.scrollTop;
     }, { passive: true });
 
     container.addEventListener('touchmove', (e) => {
         const x = e.touches[0].pageX - container.offsetLeft;
         const y = e.touches[0].pageY - container.offsetTop;
         container.scrollLeft = touchScrollLeft - (x - touchStartX);
-        container.scrollTop  = touchScrollTop  - (y - touchStartY);
+        container.scrollTop = touchScrollTop - (y - touchStartY);
     }, { passive: true });
 }
 

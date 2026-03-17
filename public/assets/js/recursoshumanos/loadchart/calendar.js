@@ -37,6 +37,10 @@ function initializeModalCalendarScripts(employeeId) {
     const travelReasonInput = document.getElementById('travel-reason');
     const serviceRealDateInput = document.getElementById('service-real-date');
 
+    const requiresBaseDesc = document.getElementById('requires_base_description')?.value === '1';
+    const baseDescGroup = document.getElementById('base-activity-description-group');
+    const baseDescSelect = document.getElementById('base-activity-description');
+
     // 🚔 NUEVO: Elementos de Guardia
     const isGuardia = document.getElementById('is_guardia_user')?.value === '1';
     const normalActivityGroup = document.getElementById('activity-type-group');
@@ -44,13 +48,22 @@ function initializeModalCalendarScripts(employeeId) {
     const matutinaSelect = document.getElementById('activity-matutina');
     const vespertinaSelect = document.getElementById('activity-vespertina');
 
+    // Elementos del Nuevo Custom Select de Bonos para Guardias y su Cantidad
+    const guardiaBonusGroup = document.getElementById('guardia-bonus-group');
+    const guardiaBonusInput = document.getElementById('guardia-field-bonus');
+    const guardiaBonusHeader = document.getElementById('guardia-bonus-header');
+    const guardiaBonusOptionsEl = document.getElementById('guardia-bonus-options');
+
+    const guardiaBonusQuantityContainer = document.getElementById('guardia-bonus-quantity-container');
+    const guardiaBonusQuantityInput = document.getElementById('guardia-bonus-quantity');
+    const guardiaBonusTotalText = document.getElementById('guardia-bonus-total-text');
+    let currentGuardiaBonusAmount = 0;
+    let currentGuardiaBonusCurrency = 'MXN';
+
     if (isGuardia) {
         if (normalActivityGroup) normalActivityGroup.style.display = 'none';
         if (guardiaActivityGroups) guardiaActivityGroups.style.display = 'block';
         if (serviceTabBtn) serviceTabBtn.style.display = 'none';
-
-        const fieldBonusLabel = document.querySelector('label[for="field-bonus"]');
-        if (fieldBonusLabel) fieldBonusLabel.textContent = 'Bono';
     }
 
     let currentSelectedDate = null;
@@ -85,6 +98,86 @@ function initializeModalCalendarScripts(employeeId) {
         return cssVar ? getCSSVariable(cssVar) : getCSSVariable('--training');
     }
 
+    // --- LÓGICA DE AUTOCOMPLETADO DE POZOS ---
+    // =========================================================================
+    // LÓGICA DE AUTOCOMPLETADO DE POZOS CON VALIDACIÓN Y ANIMACIÓN
+    // =========================================================================
+    const wellNameInput = document.getElementById('well-name');
+    const wellSearchResults = document.getElementById('well-search-results');
+    let wellSearchTimeout;
+
+    if (wellNameInput && wellSearchResults) {
+        wellNameInput.addEventListener('input', function() {
+            this.dataset.valid = "false"; // Marcamos como inválido al teclear
+
+            clearTimeout(wellSearchTimeout);
+            const term = this.value.trim();
+
+            if (term.length < 2) {
+                wellSearchResults.style.display = 'none';
+                return;
+            }
+
+            // ESPERA DE 300ms PARA NO SATURAR EL SERVIDOR
+            wellSearchTimeout = setTimeout(async () => {
+
+                // 1. MOSTRAR ANIMACIÓN DE "BUSCANDO..."
+                wellSearchResults.innerHTML = `
+                    <li class="searching-indicator">
+                        <i class="fas fa-spinner fa-spin"></i> Buscando...
+                    </li>`;
+                wellSearchResults.style.display = 'block';
+
+                try {
+                    // 2. HACER LA PETICIÓN AL SERVIDOR
+                    const response = await fetch(`/recursoshumanos/loadchart/search-wells?q=${encodeURIComponent(term)}`);
+                    const wells = await response.json();
+
+                    // 3. LIMPIAR EL MENSAJE DE BÚSQUEDA
+                    wellSearchResults.innerHTML = '';
+
+                    if (wells.length > 0) {
+                        wells.forEach(well => {
+                            const li = document.createElement('li');
+                            const regex = new RegExp(`(${term})`, "gi");
+                            const highlightedName = well.name.replace(regex, "<strong>$1</strong>");
+
+                            li.innerHTML = `<i class="fas fa-oil-well"></i> <span>${highlightedName}</span>`;
+
+                            li.addEventListener('click', function() {
+                                wellNameInput.value = well.name;
+                                wellNameInput.dataset.valid = "true"; // Válido tras seleccionar
+                                wellSearchResults.style.display = 'none';
+                            });
+                            wellSearchResults.appendChild(li);
+                        });
+                        wellSearchResults.style.display = 'block';
+                    } else {
+                        // SI NO HAY RESULTADOS
+                        wellSearchResults.innerHTML = '<li class="no-results"><i class="fas fa-search-minus"></i> No se encontraron pozos activos</li>';
+                        wellSearchResults.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error buscando pozos:', error);
+                    wellSearchResults.innerHTML = '<li class="no-results" style="color: red;"><i class="fas fa-exclamation-triangle"></i> Error de conexión</li>';
+                }
+            }, 300);
+        });
+
+        // Ocultar al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!wellNameInput.contains(e.target) && !wellSearchResults.contains(e.target)) {
+                wellSearchResults.style.display = 'none';
+            }
+        });
+
+        // Mostrar nuevamente si hay texto válido y el usuario regresa al campo
+        wellNameInput.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2 && wellSearchResults.innerHTML !== '') {
+                wellSearchResults.style.display = 'block';
+            }
+        });
+    }
     function getStatusIcon(dayStatus) {
         switch (dayStatus) {
             case 'under_review':
@@ -152,6 +245,77 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
+    function handleBaseDescriptionChange() {
+        if (!requiresBaseDesc || document.getElementById('activity-type').value !== 'B') return;
+
+        const val = baseDescSelect.value;
+        const foodBonusContainer = document.getElementById('food-bonus') ? document.getElementById('food-bonus').closest('.form-group') : null;
+        const fieldBonusContainer = document.getElementById('field-bonus') ? document.getElementById('field-bonus').closest('.form-group') : null;
+        const foodBonusSelect = document.getElementById('food-bonus');
+
+        if (['Movimiento o eventos con gerencias', 'Mantenimiento a polvorin Vinco'].includes(val)) {
+            if (foodBonusContainer) foodBonusContainer.style.display = 'block';
+            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+        } else if (['Paso de cable', 'Pruebas de presion para los ECP', 'Pintura y soldaduras en area de taller'].includes(val)) {
+            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
+            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+            if (foodBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'food_bonus'))) {
+                foodBonusSelect.selectedIndex = 0;
+            }
+        } else {
+            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
+            if (fieldBonusContainer) fieldBonusContainer.style.display = 'none';
+            if (foodBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'food_bonus'))) {
+                foodBonusSelect.selectedIndex = 0;
+            }
+            const fieldBonusSelect = document.getElementById('field-bonus');
+            if (fieldBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'field_bonus'))) {
+                fieldBonusSelect.selectedIndex = 0;
+            }
+        }
+    }
+
+    if (baseDescSelect) {
+        baseDescSelect.addEventListener('change', handleBaseDescriptionChange);
+    }
+
+    // 🥇 NUEVA FUNCIÓN: Lógica maestra de visualización para Guardias
+    function handleGuardiaActivityChange() {
+        if (!isGuardia) return;
+
+        const matVal = matutinaSelect.value || 'N';
+        const vespVal = vespertinaSelect.value || 'N';
+        const vacationError = document.getElementById('vacation-balance-error');
+
+        // Mostrar advertencia si eligen vacaciones y no tienen saldo
+        if ((matVal === 'VAC' || vespVal === 'VAC') && vacationDaysAvailable <= 0) {
+            if (vacationError) vacationError.style.display = 'block';
+        } else {
+            if (vacationError) vacationError.style.display = 'none';
+        }
+
+        // SI HAY UNA BASE, MOSTRAMOS EL SELECTOR DE BONO. SINO, LO OCULTAMOS Y RESETEAMOS.
+        if (matVal === 'B' || vespVal === 'B') {
+            if (guardiaBonusGroup) guardiaBonusGroup.style.display = 'block';
+        } else {
+            if (guardiaBonusGroup) guardiaBonusGroup.style.display = 'none';
+
+            // Borramos el valor seleccionado del bono internamente
+            if (guardiaBonusInput) {
+                guardiaBonusInput.value = '';
+                const headerPlaceholder = document.querySelector('#guardia-bonus-header .placeholder');
+                if (headerPlaceholder) headerPlaceholder.textContent = 'Seleccionar bono (Solo si aplica)';
+                document.querySelectorAll('#guardia-bonus-options .bonus-option').forEach(opt => opt.classList.remove('selected'));
+
+                if (guardiaBonusQuantityContainer) {
+                    guardiaBonusQuantityContainer.style.display = 'none';
+                    if (guardiaBonusQuantityInput) guardiaBonusQuantityInput.value = 1;
+                    currentGuardiaBonusAmount = 0;
+                }
+            }
+        }
+    }
+
     function handleActivityTypeChange(activityType) {
         const wellNameField = document.getElementById('well-name-field');
         const wellNameInput = document.getElementById('well-name');
@@ -167,18 +331,19 @@ function initializeModalCalendarScripts(employeeId) {
 
         // 🚔 LÓGICA EXCLUSIVA PARA GUARDIAS
         if (isGuardia) {
-            conditionalFields.style.display = 'block';
-            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
-            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+            conditionalFields.style.display = 'none'; // Ocultamos los condicionales normales para guardias
 
             travelDestinationField.style.display = 'none';
             travelReasonField.style.display = 'none';
             wellNameField.style.display = 'none';
             commissionedField.style.display = 'none';
+            if (baseDescGroup) baseDescGroup.style.display = 'none';
             vacationError.style.display = 'none';
 
             const radioNo = document.getElementById('service-bonus-no');
             if (radioNo) radioNo.checked = true;
+
+            handleGuardiaActivityChange(); // Chequeo para guardias
             return;
         }
 
@@ -193,7 +358,23 @@ function initializeModalCalendarScripts(employeeId) {
         wellNameField.style.display = 'none';
         commissionedField.style.display = 'none';
 
-        if (activityType === 'P') {
+        if (activityType === 'B' && requiresBaseDesc) {
+            baseDescGroup.style.display = 'block';
+            conditionalFields.style.display = 'block';
+            handleBaseDescriptionChange();
+            resetServiceForm();
+            const radioNo = document.getElementById('service-bonus-no');
+            const optionNo = document.querySelector('.service-bonus-option[data-value="no"]');
+            const optionSi = document.querySelector('.service-bonus-option[data-value="si"]');
+
+            if (radioNo && optionNo && optionSi) {
+                radioNo.checked = true;
+                optionNo.classList.add('selected');
+                optionSi.classList.remove('selected');
+                handleServiceBonusChange('no');
+            }
+        } else if (activityType === 'P') {
+            if (baseDescGroup) baseDescGroup.style.display = 'none';
             wellNameField.style.display = 'block';
             conditionalFields.style.display = 'block';
             if (foodBonusContainer) foodBonusContainer.style.display = 'block';
@@ -201,6 +382,7 @@ function initializeModalCalendarScripts(employeeId) {
             handleServiceBonusChange(hasServiceBonusSelect?.value);
 
         } else if (activityType === 'C') {
+            if (baseDescGroup) baseDescGroup.style.display = 'none';
             commissionedField.style.display = 'block';
             conditionalFields.style.display = 'block';
             if (foodBonusContainer) foodBonusContainer.style.display = 'none';
@@ -224,6 +406,7 @@ function initializeModalCalendarScripts(employeeId) {
             }
 
         } else if (activityType === 'V') {
+            if (baseDescGroup) baseDescGroup.style.display = 'none';
             travelDestinationField.style.display = 'block';
             travelReasonField.style.display = 'block';
             conditionalFields.style.display = 'block';
@@ -249,6 +432,8 @@ function initializeModalCalendarScripts(employeeId) {
             }
 
         } else {
+            if (baseDescGroup) baseDescGroup.style.display = 'none';
+            if (baseDescSelect) baseDescSelect.value = '';
             wellNameInput.value = '';
             travelDestinationInput.value = '';
             travelReasonInput.value = '';
@@ -314,6 +499,19 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
+    // 🥇 Función para calcular el total del bono en tiempo real para Guardias
+    function calculateGuardiaBonusTotal() {
+        if (!guardiaBonusQuantityInput || !guardiaBonusTotalText) return;
+        const qty = parseInt(guardiaBonusQuantityInput.value) || 1;
+        const total = currentGuardiaBonusAmount * qty;
+        guardiaBonusTotalText.textContent = `Total a pagar: ${currentGuardiaBonusCurrency} $${total.toFixed(2)}`;
+    }
+
+    // Listener para el input de la cantidad de bono (se dispara cuando el usuario teclea números)
+    if (guardiaBonusQuantityInput) {
+        guardiaBonusQuantityInput.addEventListener('input', calculateGuardiaBonusTotal);
+    }
+
     function showRejectionMessages(activity) {
         clearRejectionMessages();
         if (!activity) return;
@@ -345,7 +543,12 @@ function initializeModalCalendarScripts(employeeId) {
         if (activity.field_bonuses && activity.field_bonuses.length > 0) {
             activity.field_bonuses.forEach(bonus => {
                 if (bonus.status && bonus.status.toLowerCase() === 'rejected' && bonus.rejection_reason) {
-                    showRejectionMessage('field-bonus', bonus.rejection_reason);
+                    // Si es guardia mostramos el rechazo en el custom select
+                    if (isGuardia) {
+                        showRejectionMessage('guardia-bonus-custom-select', bonus.rejection_reason);
+                    } else {
+                        showRejectionMessage('field-bonus', bonus.rejection_reason);
+                    }
                 }
             });
         }
@@ -388,8 +591,11 @@ function initializeModalCalendarScripts(employeeId) {
             document.getElementById('travel-destination'), document.getElementById('travel-reason'),
             ...document.querySelectorAll('.service-bonus-option'),
             document.getElementById('food-bonus'), document.getElementById('field-bonus'),
+            document.getElementById('base-activity-description'),
             // AGREGADOS PARA GUARDIA
-            document.getElementById('activity-matutina-select'), document.getElementById('activity-vespertina-select')
+            document.getElementById('activity-matutina-select'), document.getElementById('activity-vespertina-select'),
+            document.getElementById('guardia-bonus-custom-select'), ...document.querySelectorAll('.bonus-option'),
+            document.getElementById('guardia-bonus-quantity')
         ];
         const serviceElements = [
             ...document.querySelectorAll('.work-type-option'),
@@ -403,7 +609,7 @@ function initializeModalCalendarScripts(employeeId) {
             if (element) {
                 if (element.classList.contains('custom-select')) {
                     element.classList.remove('locked');
-                } else if (element.classList.contains('work-type-option') || element.classList.contains('activity-option') || element.classList.contains('service-bonus-option')) {
+                } else if (element.classList.contains('work-type-option') || element.classList.contains('activity-option') || element.classList.contains('service-bonus-option') || element.classList.contains('bonus-option')) {
                     element.style.pointerEvents = '';
                     element.style.opacity = '';
                 } else if (element.tagName === 'SELECT' || element.tagName === 'INPUT') {
@@ -427,6 +633,7 @@ function initializeModalCalendarScripts(employeeId) {
         saveBtn.style.cursor = 'pointer';
         if (loadingSpinner) loadingSpinner.style.display = 'none';
     }
+
     function getFieldStatus(activity, fieldType, itemIndex = 0) {
         if (!activity) return 'under_review';
         let status = 'under_review';
@@ -460,7 +667,7 @@ function initializeModalCalendarScripts(employeeId) {
         if (!parentGroup) return;
 
         const isCustomSelect = element.classList.contains('custom-select');
-        const isOption = element.classList.contains('work-type-option') || element.classList.contains('activity-option') || element.classList.contains('service-bonus-option');
+        const isOption = element.classList.contains('work-type-option') || element.classList.contains('activity-option') || element.classList.contains('service-bonus-option') || element.classList.contains('bonus-option');
         const lowerCaseStatus = status ? status.toLowerCase() : '';
 
         const existingIndicator = parentGroup.querySelector('.lock-indicator');
@@ -492,7 +699,11 @@ function initializeModalCalendarScripts(employeeId) {
 
             lockIndicator.innerHTML = `<i class="${icon}"></i> ${message}`;
             lockIndicator.style.backgroundColor = bgColor;
-            parentGroup.appendChild(lockIndicator);
+
+            // Excepción para no empalmar el lock en el mismo grupo del input de cantidad si ya se puso en el selector
+            if (element.id !== 'guardia-bonus-quantity') {
+                parentGroup.appendChild(lockIndicator);
+            }
         }
 
         if (isLocked) {
@@ -533,7 +744,7 @@ function initializeModalCalendarScripts(employeeId) {
 
         if (isDayCompletelyBlocked) {
             const allFormElements = document.querySelectorAll('#activity-tab select, #activity-tab .custom-select, #activity-tab input:not([type="radio"]), #service-tab select, #service-tab input');
-            document.querySelectorAll('.work-type-option, .activity-option, .service-bonus-option').forEach(el => toggleFieldLock(el, true, dayStatus));
+            document.querySelectorAll('.work-type-option, .activity-option, .service-bonus-option, .bonus-option').forEach(el => toggleFieldLock(el, true, dayStatus));
             allFormElements.forEach(el => {
                 if (el.id !== 'activity-date' && el.id !== 'service-amount') {
                     toggleFieldLock(el, true, dayStatus);
@@ -559,6 +770,16 @@ function initializeModalCalendarScripts(employeeId) {
             toggleFieldLock(vespContainer, isActivityLocked, activityStatus);
             vespOptions.forEach(opt => toggleFieldLock(opt, isActivityLocked, activityStatus));
 
+            // Bloqueo del bono específico de guardia y su cantidad
+            const fieldBonusStatus = getFieldStatus(activity, 'field_bonus');
+            const isFieldBonusLocked = statusesToBlockField.includes(fieldBonusStatus);
+            const guardiaBonusCustomSelect = document.getElementById('guardia-bonus-custom-select');
+            const guardiaBonusOpts = document.querySelectorAll('#guardia-bonus-options .bonus-option');
+
+            toggleFieldLock(guardiaBonusCustomSelect, isFieldBonusLocked, fieldBonusStatus);
+            guardiaBonusOpts.forEach(opt => toggleFieldLock(opt, isFieldBonusLocked, fieldBonusStatus));
+            if (guardiaBonusQuantityInput) toggleFieldLock(guardiaBonusQuantityInput, isFieldBonusLocked, fieldBonusStatus);
+
         } else {
             const activityTypeSelectContainer = document.getElementById('activity-type-select');
             const commissionedSelect = document.getElementById('commissioned-select');
@@ -573,6 +794,9 @@ function initializeModalCalendarScripts(employeeId) {
             toggleFieldLock(wellNameInput, isActivityLocked, activityStatus);
             toggleFieldLock(travelDestinationInput, isActivityLocked, activityStatus);
             toggleFieldLock(travelReasonInput, isActivityLocked, activityStatus);
+            if (baseDescSelect) {
+                toggleFieldLock(baseDescSelect, isActivityLocked, activityStatus);
+            }
         }
 
         const serviceBonusOptions = document.querySelectorAll('.service-bonus-option');
@@ -648,15 +872,30 @@ function initializeModalCalendarScripts(employeeId) {
                 document.querySelector('#activity-vespertina-header .placeholder').textContent = vespOpt.querySelector('.activity-label').textContent;
             }
 
-            conditionalFields.style.display = 'block';
-            const foodBonusSelect = document.getElementById('food-bonus');
-            if (foodBonusSelect) foodBonusSelect.closest('.form-group').style.display = 'none';
+            conditionalFields.style.display = 'none'; // No usamos los condicionales normales
+
+            // Mostrar el contenedor de bonos si aplica
+            handleGuardiaActivityChange();
 
             if (activity.field_bonuses && activity.field_bonuses.length > 0) {
                 const fieldBonus = activity.field_bonuses[0];
-                const fieldBonusSelect = document.getElementById('field-bonus');
-                if (fieldBonus.bonus_identifier) {
-                    fieldBonusSelect.value = fieldBonus.bonus_identifier;
+                if (fieldBonus.bonus_identifier && guardiaBonusInput) {
+                    guardiaBonusInput.value = fieldBonus.bonus_identifier;
+                    const optBonus = document.querySelector(`#guardia-bonus-options .bonus-option[data-value="${fieldBonus.bonus_identifier}"]`);
+                    if (optBonus) {
+                        optBonus.classList.add('selected');
+                        document.querySelector('#guardia-bonus-header .placeholder').textContent = optBonus.querySelector('.activity-label').textContent;
+
+                        // Extraer el precio y colocar la cantidad guardada
+                        currentGuardiaBonusAmount = parseFloat(optBonus.getAttribute('data-amount')) || parseFloat(fieldBonus.base_amount) || 0;
+                        currentGuardiaBonusCurrency = optBonus.getAttribute('data-currency') || fieldBonus.currency || 'MXN';
+
+                        if (guardiaBonusQuantityContainer && guardiaBonusQuantityInput) {
+                            guardiaBonusQuantityInput.value = fieldBonus.quantity || 1;
+                            guardiaBonusQuantityContainer.style.display = 'block';
+                            calculateGuardiaBonusTotal();
+                        }
+                    }
                 }
             }
 
@@ -669,8 +908,7 @@ function initializeModalCalendarScripts(employeeId) {
 
 
         const isActivityP = activity.activity_type === 'P';
-        const activityTypesWithBonuses = ['P', 'C', 'V'];
-        conditionalFields.style.display = activityTypesWithBonuses.includes(activity.activity_type) ? 'block' : 'none';
+        const activityTypesWithBonuses = ['P', 'C', 'V', 'B']; // Added B due to the new logic
 
         if (activity.activity_type === 'VAC' && vacationDaysAvailable <= 0) {
             vacationError.style.display = 'block';
@@ -705,6 +943,10 @@ function initializeModalCalendarScripts(employeeId) {
                 optionNo.classList.add('selected');
                 optionSi.classList.remove('selected');
             }
+        }
+
+        if (activity.activity_type === 'B' && requiresBaseDesc && activity.base_activity_description) {
+            if (baseDescSelect) baseDescSelect.value = activity.base_activity_description;
         }
 
         const activityTypeOption = document.querySelector(`.activity-option[data-value="${activity.activity_type}"]`);
@@ -904,9 +1146,8 @@ function initializeModalCalendarScripts(employeeId) {
                 conditionalFields.style.display = 'none';
                 serviceTabBtn.style.display = 'none';
             } else {
-                conditionalFields.style.display = 'block';
-                const foodBonusSelect = document.getElementById('food-bonus');
-                if (foodBonusSelect) foodBonusSelect.closest('.form-group').style.display = 'none';
+                conditionalFields.style.display = 'none'; // Guardias usan su propio Select
+                handleGuardiaActivityChange(); // 🥇 Aseguramos que por defecto esté cerrado (Ninguna - N)
             }
 
             serviceRealDateInput.value = processedDate;
@@ -992,11 +1233,30 @@ function initializeModalCalendarScripts(employeeId) {
         travelDestinationInput.value = '';
         travelReasonField.style.display = 'none';
         travelReasonInput.value = '';
+
+        if (baseDescGroup) {
+            baseDescGroup.style.display = 'none';
+            if (baseDescSelect) baseDescSelect.selectedIndex = 0;
+        }
     }
 
     function resetBonusFields() {
-        document.getElementById('food-bonus').selectedIndex = 0;
-        document.getElementById('field-bonus').selectedIndex = 0;
+        if (document.getElementById('food-bonus')) document.getElementById('food-bonus').selectedIndex = 0;
+        if (document.getElementById('field-bonus')) document.getElementById('field-bonus').selectedIndex = 0;
+
+        // Reinicio del bono de guardia y su cantidad
+        if (guardiaBonusInput) {
+            guardiaBonusInput.value = '';
+            const headerPlaceholder = document.querySelector('#guardia-bonus-header .placeholder');
+            if (headerPlaceholder) headerPlaceholder.textContent = 'Seleccionar bono especial...';
+            document.querySelectorAll('#guardia-bonus-options .bonus-option').forEach(opt => opt.classList.remove('selected'));
+
+            if (guardiaBonusQuantityContainer) {
+                guardiaBonusQuantityContainer.style.display = 'none';
+                if (guardiaBonusQuantityInput) guardiaBonusQuantityInput.value = 1;
+                currentGuardiaBonusAmount = 0;
+            }
+        }
     }
 
     function resetServiceForm() {
@@ -1035,7 +1295,8 @@ function initializeModalCalendarScripts(employeeId) {
         const selectsToClose = [
             { header: 'activity-type-header', options: 'activity-type-options' },
             { header: 'activity-matutina-header', options: 'activity-matutina-options' },
-            { header: 'activity-vespertina-header', options: 'activity-vespertina-options' }
+            { header: 'activity-vespertina-header', options: 'activity-vespertina-options' },
+            { header: 'guardia-bonus-header', options: 'guardia-bonus-options' }
         ];
 
         selectsToClose.forEach(item => {
@@ -1142,6 +1403,9 @@ function initializeModalCalendarScripts(employeeId) {
 
                 header.classList.remove('open');
                 optionsEl.classList.remove('open');
+
+                // 🥇 Evaluamos visualización de bonos al cambiar actividad
+                handleGuardiaActivityChange();
             });
         });
     }
@@ -1149,6 +1413,54 @@ function initializeModalCalendarScripts(employeeId) {
     if (isGuardia) {
         setupGuardiaCustomSelect('matutina');
         setupGuardiaCustomSelect('vespertina');
+
+        // Configuración para el Custom Select de Bono Especial de Guardia
+        if (guardiaBonusHeader && guardiaBonusOptionsEl) {
+            const bonusOptions = guardiaBonusOptionsEl.querySelectorAll('.bonus-option');
+
+            guardiaBonusHeader.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
+                const bonusStatus = getFieldStatus(currentActivity, 'field_bonus');
+                if (currentActivity && statusesToBlockField.includes(bonusStatus)) return;
+
+                this.classList.toggle('open');
+                guardiaBonusOptionsEl.classList.toggle('open');
+            });
+
+            bonusOptions.forEach(opt => {
+                opt.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    if (currentActivity && statusesToBlockAll.includes(currentActivity.day_status)) return;
+                    const bonusStatus = getFieldStatus(currentActivity, 'field_bonus');
+                    if (currentActivity && statusesToBlockField.includes(bonusStatus)) return;
+
+                    bonusOptions.forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    const val = this.getAttribute('data-value');
+                    guardiaBonusInput.value = val;
+
+                    currentGuardiaBonusAmount = parseFloat(this.getAttribute('data-amount')) || 0;
+                    currentGuardiaBonusCurrency = this.getAttribute('data-currency') || 'MXN';
+
+                    const labelText = this.querySelector('.activity-label').textContent;
+                    guardiaBonusHeader.querySelector('.placeholder').textContent = val ? labelText : 'Seleccionar bono especial...';
+
+                    // Si hay un valor, mostrar el input de cantidad y calcular
+                    if (val && guardiaBonusQuantityContainer) {
+                        guardiaBonusQuantityContainer.style.display = 'block';
+                        calculateGuardiaBonusTotal();
+                    } else if (!val && guardiaBonusQuantityContainer) {
+                        guardiaBonusQuantityContainer.style.display = 'none';
+                        guardiaBonusQuantityInput.value = 1;
+                    }
+
+                    guardiaBonusHeader.classList.remove('open');
+                    guardiaBonusOptionsEl.classList.remove('open');
+                });
+            });
+        }
     }
 
     const workTypeOptions = document.querySelectorAll('.work-type-option');
@@ -1312,19 +1624,13 @@ function initializeModalCalendarScripts(employeeId) {
         if (isGuardia) {
             // Lógica Especial Guardias
             if (!statusesToBlockField.includes(activityStatus)) {
-                formData.activity_type = matutinaSelect.value;
-                formData.activity_type_vespertina = vespertinaSelect.value;
-                formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;
-                formData.has_service_bonus = 'no'; // Fuerte sin servicio
+                formData.activity_type = matutinaSelect.value || 'N';
+                formData.activity_type_vespertina = vespertinaSelect.value || 'N';
 
-                if (!formData.activity_type) {
-                    document.getElementById('activity-matutina-error').style.display = 'block';
-                    isValid = false;
-                }
-                if (!formData.activity_type_vespertina) {
-                    document.getElementById('activity-vespertina-error').style.display = 'block';
-                    isValid = false;
-                }
+                // Obtenemos el valor del INPUT OCULTO del custom select de guardia
+                formData.field_bonus_identifier = guardiaBonusInput ? guardiaBonusInput.value || null : null;
+                formData.guardia_bonus_quantity = guardiaBonusQuantityInput ? (parseInt(guardiaBonusQuantityInput.value) || 1) : 1;
+                formData.has_service_bonus = 'no'; // Fuerte sin servicio
 
                 if (formData.activity_type === 'VAC' || formData.activity_type_vespertina === 'VAC') {
                     if (vacationDaysAvailable <= 0) {
@@ -1350,6 +1656,14 @@ function initializeModalCalendarScripts(employeeId) {
 
                 formData.travel_destination = activityType === 'V' ? document.getElementById('travel-destination').value.trim() : null;
                 formData.travel_reason = activityType === 'V' ? document.getElementById('travel-reason').value.trim() : null;
+
+                if (activityType === 'B' && requiresBaseDesc) {
+                    formData.base_activity_description = baseDescSelect.value;
+                    if (!formData.base_activity_description) {
+                        document.getElementById('base-activity-description-error').style.display = 'block';
+                        isValid = false;
+                    }
+                }
 
                 const isActivityP = activityType === 'P';
                 const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
@@ -1412,14 +1726,14 @@ function initializeModalCalendarScripts(employeeId) {
             // 2. Procesar Bonos NORMAL
             const currentActivityType = document.getElementById('activity-type').value;
 
-            if (['P', 'N'].includes(currentActivityType) || !currentActivityType) {
+            if (['P', 'N', 'B'].includes(currentActivityType) || !currentActivityType) {
                 const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
                 if (!statusesToBlockField.includes(foodBonusStatus)) {
                     formData.food_bonus_number = document.getElementById('food-bonus').value || null;
                 }
             }
 
-            if (['P', 'N', 'C', 'V'].includes(currentActivityType) || !currentActivityType) {
+            if (['P', 'N', 'C', 'V', 'B'].includes(currentActivityType) || !currentActivityType) {
                 const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
                 if (!statusesToBlockField.includes(fieldBonusStatus)) {
                     formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;

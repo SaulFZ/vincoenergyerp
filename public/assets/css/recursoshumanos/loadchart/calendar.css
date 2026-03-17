@@ -4,35 +4,42 @@
     gap: 10px;
 }
 
-/* Sección de Detalles del Empleado */
+/* ======================================================= */
+/* SECCIÓN DE DETALLES DEL EMPLEADO                        */
+/* ======================================================= */
+
 .employee-details {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    padding: 20px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 8px 24px rgba(45, 55, 72, 0.08);
+    padding: 24px;
     height: fit-content;
     position: sticky;
     top: 20px;
-    border-left: 4px solid var(--primary-orange);
+    border-top: 3px solid #d67e29;
 }
 
 .employee-header {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--light-gray);
-    gap: 15px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #e2e8f0;
+    gap: 16px;
 }
 
 .employee-photo-container {
-    width: 80px;
-    height: 80px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     overflow: hidden;
-    border: 3px solid var(--primary-orange);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    border: 2px solid #e2e8f0;
+    outline: 3px solid #d67e29;
+    outline-offset: 2px;
     flex-shrink: 0;
+    background: #f7fafc;
 }
 
 .employee-photo {
@@ -44,92 +51,87 @@
 .employee-header-content {
     flex: 1;
     min-width: 0;
-    /* Permite que el contenido se reduzca */
 }
 
 .employee-header h2 {
-    color: var(--dark-gray);
-    font-size: 16px;
+    color: #4a5568;
+    font-size: 11px;
     font-weight: 600;
     margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .employee-name-header {
-    color: var(--medium-gray);
-    font-size: 18px;
+    color: #2d3748;
+    font-size: 17px;
     font-weight: 700;
-    /* --- INICIO DE AJUSTE PARA ENVOLVER EN VARIAS LÍNEAS --- */
     white-space: normal;
-    /* Permite que el texto se envuelva */
     overflow: visible;
-    /* Asegura que el texto sea visible aunque se envuelva */
     text-overflow: clip;
-    /* Quita el recorte con puntos suspensivos */
-    line-height: 1.2;
-    /* Ajusta la altura de la línea para espacio de 2 filas */
-    /* --- FIN DE AJUSTE --- */
+    line-height: 1.25;
 }
 
+/* Info Groups */
 .employee-info {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 8px;
 }
 
 .info-group {
-    background: linear-gradient(135deg, #f9fafc 0%, #ffffff 100%);
-    padding: 12px;
-    border-radius: 8px;
-    border-left: 3px solid var(--dark-gray);
-    transition: all 0.3s ease;
+    background: #ffffff;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #334c95;
     position: relative;
-    overflow: hidden;
+    transition: box-shadow 0.2s ease, border-left-color 0.2s ease;
 }
 
 .info-group::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--medium-gray), transparent);
+    content: none;
 }
 
 .info-group:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: none;
+    box-shadow: 0 2px 10px rgba(51, 76, 149, 0.08);
+    border-left-color: #d67e29;
 }
 
 .info-group h3 {
-    font-size: 11px;
-    color: var(--medium-gray);
-    margin-bottom: 6px;
-    font-weight: 500;
+    font-size: 10px;
+    color: #4a5568;
+    margin-bottom: 4px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
 }
 
 .info-group p {
     font-size: 14px;
-    color: var(--dark-gray);
+    color: #2d3748;
     font-weight: 600;
 }
 
 .vacation-days {
-    color: var(--primary-orange) !important;
-    font-size: 16px;
+    color: #d67e29 !important;
+    font-size: 17px;
     font-weight: 700;
 }
 
+
 /* ======================================================= */
-/* 4. CALENDARIO DE CARGA (LOAD CHART) */
+/* CALENDARIO DE CARGA (LOAD CHART)                        */
 /* ======================================================= */
+
 .load-chart-container {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-    padding: 15px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 8px 24px rgba(45, 55, 72, 0.08);
+    padding: 20px 22px;
     margin-bottom: 20px;
     position: relative;
 }
@@ -138,34 +140,38 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 2px;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .chart-header h2 {
-    color: var(--dark-gray);
-    font-size: 18px;
+    color: #2d3748;
+    font-size: 17px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-weight: 600;
+    gap: 8px;
+    font-weight: 700;
 }
 
 .chart-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 /* Navegación de Meses */
 .month-navigation {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: var(--light-gray);
-    border-radius: 20px;
-    padding: 3px;
+    gap: 4px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 4px;
 }
 
 .month-navigation button {
@@ -173,72 +179,81 @@
     border: none;
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: 7px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--dark-gray);
-    transition: all 0.3s ease;
-    font-size: 14px;
+    color: #2d3748;
+    transition: background 0.15s ease, color 0.15s ease;
+    font-size: 13px;
 }
 
 .month-navigation button:hover {
-    background: var(--medium-gray);
-    color: white;
+    background: #2d3748;
+    color: #ffffff;
 }
 
 .month-navigation span {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    min-width: 100px;
+    min-width: 110px;
     text-align: center;
+    color: #2d3748;
 }
 
-/* Botones Generales */
+/* Botones */
 .btn {
-    padding: 7px 14px;
-    border-radius: 5px;
-    font-weight: 500;
+    padding: 7px 15px;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    border: none;
-    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
     font-size: 12px;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    letter-spacing: 0.2px;
 }
 
 .btn-primary {
-    background-color: var(--dark-gray);
-    color: white;
+    background-color: #2d3748;
+    color: #ffffff;
+    border-color: #2d3748;
 }
 
 .btn-primary:hover {
-    background-color: var(--medium-gray);
+    background-color: #4a5568;
+    box-shadow: 0 2px 8px rgba(45, 55, 72, 0.2);
 }
 
 .btn-orange {
-    background-color: var(--primary-orange);
-    color: white;
+    background-color: #d67e29;
+    color: #ffffff;
+    border-color: #d67e29;
 }
 
 .btn-orange:hover {
     background-color: #c06d1f;
+    box-shadow: 0 2px 8px rgba(214, 126, 41, 0.3);
 }
 
-/* CALENDARIO - MEJORADO PARA TAMAÑOS UNIFORMES */
+
+/* ======================================================= */
+/* CALENDARIO                                              */
+/* ======================================================= */
+
 .calendar-container {
     overflow-x: auto;
-    margin-bottom: 15px;
-    border-radius: 8px;
+    margin-bottom: 16px;
+    border-radius: 12px;
     border: 1px solid #e2e8f0;
 }
 
 .calendar {
     width: 100%;
     border-collapse: collapse;
-    border-radius: 6px;
     overflow: hidden;
     font-size: 13px;
     min-width: 600px;
@@ -246,30 +261,33 @@
 }
 
 .calendar th {
-    background-color: var(--dark-gray);
-    color: white;
+    background-color: #2d3748;
+    color: #ffffff;
     padding: 10px;
     text-align: center;
-    font-weight: 500;
-    font-size: 13px;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     width: 14.2857%;
 }
 
 .calendar td {
-    height: 75px;
+    height: 78px;
     vertical-align: top;
-    padding: 5px;
+    padding: 6px;
     position: relative;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid #0000002e;
+    transition: background 0.15s ease;
+    border: 1px solid #c7c9cc;
     box-sizing: border-box;
     width: 14.2857%;
-    min-height: 75px;
+    min-height: 78px;
+    background: #ffffff;
 }
 
 .calendar td:hover {
-    background-color: rgba(225, 225, 225, 0.27);
+    background-color: #f7fafc;
 }
 
 .calendar .other-month {
@@ -283,104 +301,70 @@
 }
 
 .calendar .current-d {
-    background-color: rgba(0, 62, 248, 0.08);
-    border: 2px solid var(--dark-gray);
+    background-color: rgba(51, 76, 149, 0.05);
+    border: 2px solid #334c95 !important;
 }
 
 .day-number {
-    font-weight: 600;
+    font-weight: 700;
     font-size: 13px;
     display: inline-block;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
+    color: #2d3748;
 }
 
 /* ======================================================= */
-/* TAGS DE ACTIVIDAD - CENTRADOS EN PANTALLAS PEQUEÑAS - MEJORADO */
+/* TAGS DE ACTIVIDAD                                       */
 /* ======================================================= */
+
 .activity-tag {
-    padding: 3px 6px;
-    border-radius: 4px;
+    padding: 2px 6px;
+    border-radius: 5px;
     font-size: 10px;
-    color: white;
-    text-align: center;
-    font-weight: 500;
+    color: #ffffff;
+    text-align: left;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
     width: 100%;
     min-height: 18px;
-    line-height: 12px;
+    line-height: 13px;
     margin-top: 2px;
-    transition: all 0.3s ease;
+    letter-spacing: 0.2px;
 }
 
-/* En pantallas grandes: comportamiento normal */
-.activity-tag {
-    text-align: left;
-}
+.activity-tag.work-base      { background-color: #334c95; }
+.activity-tag.work-well      { background-color: #6475aa; }
+.activity-tag.home-office    { background-color: #7293ff; }
+.activity-tag.traveling      { background-color: #a2b5ff; color: #2d3748; }
+.activity-tag.rest           { background-color: #118b20; }
+.activity-tag.vacation       { background-color: #59983e; }
+.activity-tag.training       { background-color: #a5a5a5; }
+.activity-tag.medical        { background-color: #dd840fe0; }
+.activity-tag.commissioned   { background-color: #249399; }
+.activity-tag.absence        { background-color: #7d4e4e; }
+.activity-tag.permission     { background-color: #49c0c9; color: #2d3748; }
 
 
+/* ======================================================= */
+/* LOADING OVERLAY                                         */
+/* ======================================================= */
 
-/* Colores de tags de actividad */
-.activity-tag.work-base {
-    background-color: var(--work-base);
-}
-
-.activity-tag.work-well {
-    background-color: var(--work-well);
-}
-
-.activity-tag.home-office {
-    background-color: var(--home-office);
-}
-
-.activity-tag.traveling {
-    background-color: var(--traveling);
-}
-
-.activity-tag.rest {
-    background-color: var(--rest);
-}
-
-.activity-tag.vacation {
-    background-color: var(--vacation);
-}
-
-.activity-tag.training {
-    background-color: var(--training);
-}
-
-.activity-tag.medical {
-    background-color: var(--medical);
-}
-
-.activity-tag.commissioned {
-    background-color: var(--commissioned);
-}
-
-.activity-tag.absence {
-    background-color: var(--absence);
-}
-
-.activity-tag.permission {
-    background-color: var(--permission);
-}
-
-/* Overlay de Carga del Calendario */
 .loading-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.405);
     display: none;
     justify-content: center;
     align-items: center;
     z-index: 50;
-    border-radius: 8px;
-    transition: opacity 0.3s ease;
+    border-radius: 12px;
+    transition: opacity 0.25s ease;
     opacity: 0;
 }
 
@@ -391,43 +375,48 @@
 
 .loading-spinner-lg {
     display: inline-block;
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--light-gray);
+    width: 38px;
+    height: 38px;
+    border: 3px solid #e2e8f0;
     border-radius: 50%;
-    border-top-color: var(--dark-gray);
-    animation: spin 1s ease-in-out infinite;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    border-top-color: #334c95;
+    animation: spin 0.9s ease-in-out infinite;
 }
 
 .loading-message {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    color: var(--medium-gray);
-    margin-left: 10px;
+    color: #4a5568;
+    margin-left: 12px;
 }
 
 .calendar tbody tr td.loading {
     display: none;
 }
 
-/* Tooltip de Fecha */
+
+/* ======================================================= */
+/* TOOLTIP                                                 */
+/* ======================================================= */
+
 .calendar-tooltip {
     position: absolute;
-    top: -30px;
+    top: -34px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--dark-gray);
-    color: var(--white);
+    background-color: #2d3748;
+    color: #ffffff;
     padding: 5px 10px;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 11px;
+    font-weight: 500;
     white-space: nowrap;
     z-index: 100;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
     pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .calendar-tooltip::after {
@@ -438,7 +427,7 @@
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: var(--primary-blue) transparent transparent transparent;
+    border-color: #2d3748 transparent transparent transparent;
 }
 
 .calendar td:hover .calendar-tooltip {
@@ -446,8 +435,9 @@
     visibility: visible;
 }
 
+
 /* ======================================================= */
-/* 5. ESTILOS DE ACTIVIDADES Y ESTADOS */
+/* ICONOS Y ESTADOS                                        */
 /* ======================================================= */
 
 .day-header-info {
@@ -455,28 +445,19 @@
     top: 5px;
     right: 5px;
     display: flex;
-    /* Flexbox básico y seguro */
     align-items: center;
-    /* Centra el icono verticalmente respecto a los tags */
     gap: 4px;
     max-width: calc(100% - 15px);
-    /* Evita que tape el número del día */
 }
 
-/* Nuevo contenedor que apila los tags */
 .tags-wrapper {
     display: flex;
     flex-direction: column;
-    /* Apila un tag arriba del otro */
     gap: 2px;
-    /* Espacio vertical entre los dos tags */
     align-items: flex-end;
-    /* Los recarga hacia la derecha junto al icono */
     min-width: 0;
-    /* Obliga a que funcionen los puntos suspensivos si el texto es muy largo */
 }
 
-/* Forzamos el ancho en pantallas grandes */
 .tags-wrapper .activity-tag {
     width: max-content;
     max-width: 100%;
@@ -489,120 +470,78 @@
     z-index: 10;
 }
 
-.status-icon.approved {
-    color: var(--approved);
-}
+.status-icon.approved     { color: #64946f; }
+.status-icon.under-review { color: #ffd900; }
+.status-icon.reviewed     { color: #da8544; }
+.status-icon.rejected     { color: #f35900; filter: drop-shadow(0 0 1px #ffffff); }
 
-.status-icon.under-review {
-    color: var(--under-review);
-}
-
-.status-icon.reviewed {
-    color: var(--reviewed);
-}
-
-.status-icon.rejected {
-    color: var(--not-approved);
-    filter: drop-shadow(0 0 1px #ffffff);
-}
-
-.status-indicator.reviewed {
-    background-color: var(--reviewed);
-}
+.status-indicator.reviewed { background-color: #da8544; }
 
 /* Iconos de Nómina */
 .payroll-icon {
     position: absolute;
-    bottom: 3px;
-    right: 3px;
+    bottom: 4px;
+    right: 4px;
     font-size: 10px;
     z-index: 10;
 }
 
-.payroll-start-1 {
-    color: var(--payroll-start-1);
-}
+.payroll-start-1 { color: #00a700; }
+.payroll-start-2 { color: #004bad; }
+.payroll-end     { color: #d61c1c; }
 
-.payroll-start-2 {
-    color: var(--payroll-start-2);
-}
-
-.payroll-end {
-    color: var(--payroll-end);
-}
-
-/* Icono de Día Festivo */
+/* Día Festivo */
 .holiday-icon {
     position: absolute;
-    bottom: 3px;
-    left: 3px;
-    width: 16px;
-    height: 16px;
+    bottom: 4px;
+    left: 4px;
+    width: 15px;
+    height: 15px;
     z-index: 10;
 }
 
-/* Leyenda de Actividad */
+
+/* ======================================================= */
+/* LEYENDA DE ACTIVIDADES                                  */
+/* ======================================================= */
+
 .activity-legend {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-    margin-top: 15px;
-    background: var(--light-gray);
-    padding: 10px;
-    border-radius: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 8px 14px;
+    margin-top: 16px;
+    background: #dee1e449;
+    border-radius: 10px;
     font-size: 12px;
+    border: 1px solid #e2e8f0;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+    color: #2d3748;
+    font-weight: 500;
 }
 
 .legend-color {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    flex-shrink: 0;
 }
 
-/* Colores de la Leyenda */
-.legend-color.work-base {
-    background-color: var(--work-base);
-}
+.legend-color.work-base    { background-color: #334c95; }
+.legend-color.work-well    { background-color: #6475aa; }
+.legend-color.home-office  { background-color: #7293ff; }
+.legend-color.traveling    { background-color: #a2b5ff; }
+.legend-color.rest         { background-color: #118b20; }
+.legend-color.vacation     { background-color: #59983e; }
+.legend-color.training     { background-color: #a5a5a5; }
+.legend-color.medical      { background-color: #dd840fe0; }
+.legend-color.commissioned { background-color: #249399; }
 
-.legend-color.work-well {
-    background-color: var(--work-well);
-}
-
-.legend-color.home-office {
-    background-color: var(--home-office);
-}
-
-.legend-color.traveling {
-    background-color: var(--traveling);
-}
-
-.legend-color.rest {
-    background-color: var(--rest);
-}
-
-.legend-color.vacation {
-    background-color: var(--vacation);
-}
-
-.legend-color.training {
-    background-color: var(--training);
-}
-
-.legend-color.medical {
-    background-color: var(--medical);
-}
-
-.legend-color.commissioned {
-    background-color: var(--commissioned);
-}
-
-/* Iconos de la Leyenda */
+/* Iconos de Leyenda */
 .legend-approved,
 .legend-reviewed,
 .legend-not-approved,
@@ -610,47 +549,171 @@
 .legend-payroll-start-1,
 .legend-payroll-start-2,
 .legend-payroll-end {
-    width: 16px;
+    width: 15px;
     text-align: center;
+    flex-shrink: 0;
+    font-size: 12px;
 }
 
-.legend-approved {
-    color: var(--approved);
-}
-
-.legend-reviewed {
-    color: var(--reviewed);
-}
-
+.legend-approved        { color: #64946f; }
+.legend-reviewed        { color: #da8544; }
 .legend-not-approved,
-.fa-exclamation-triangle {
-    color: var(--not-approved);
-    filter: drop-shadow(0 0 1px #817c7c);
-}
-
-.legend-under-review {
-    color: var(--under-review);
-}
-
-.legend-payroll-start-1 {
-    color: var(--payroll-start-1);
-}
-
-.legend-payroll-start-2 {
-    color: var(--payroll-start-2);
-}
-
-.legend-payroll-end {
-    color: var(--payroll-end);
-}
+.fa-exclamation-triangle { color: #f35900; filter: drop-shadow(0 0 1px #817c7c); }
+.legend-under-review    { color: #ffd900; }
+.legend-payroll-start-1 { color: #00a700; }
+.legend-payroll-start-2 { color: #004bad; }
+.legend-payroll-end     { color: #d61c1c; }
 
 .legend-holiday-icon {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     display: inline-block;
     vertical-align: middle;
-    margin-right: 5px;
+    flex-shrink: 0;
 }
+
+
+
+/* ======================================================= */
+/* AUTOCOMPLETADO DE POZOS (Buscador)                      */
+/* ======================================================= */
+
+/* Aseguramos que el contenedor padre sea el ancla */
+#well-name-field {
+    position: relative;
+}
+
+.autocomplete-list {
+    position: absolute;
+    top: calc(100% + 4px); /* Pequeña separación del input */
+    left: 0;
+    right: 0;
+    background-color: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 9999; /* Asegura que flote sobre todo (calendario, modales) */
+    list-style: none;
+    padding: 6px 0;
+    margin: 0;
+    box-shadow: 0 8px 25px rgba(45, 55, 72, 0.12); /* Sombra amplia y elegante */
+
+    /* Animación de aparición */
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: slideDownFade 0.2s ease-out forwards;
+}
+
+@keyframes slideDownFade {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar moderno y delgado para la lista */
+.autocomplete-list::-webkit-scrollbar {
+    width: 6px;
+}
+.autocomplete-list::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+}
+.autocomplete-list::-webkit-scrollbar-thumb {
+    background-color: #cbd5e0;
+    border-radius: 10px;
+}
+.autocomplete-list::-webkit-scrollbar-thumb:hover {
+    background-color: var(--medium-gray);
+}
+
+/* Diseño de cada ítem de la lista */
+.autocomplete-list li {
+    padding: 10px 16px;
+    cursor: pointer;
+    color: var(--dark-gray);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Espaciado perfecto entre ícono y texto */
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f8fafc; /* Línea separadora casi invisible */
+}
+
+.autocomplete-list li:last-child {
+    border-bottom: none;
+}
+
+/* El texto que coincide con la búsqueda (negritas) */
+.autocomplete-list li strong {
+    color: var(--primary-blue);
+    font-weight: 800;
+}
+
+/* Ícono del pozo */
+.autocomplete-list li i {
+    color: var(--primary-orange);
+    font-size: 14px;
+    width: 16px; /* Fija el ancho para que los textos no "bailen" */
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+/* Interacción (Hover) */
+.autocomplete-list li:hover {
+    background-color: var(--background-gray);
+    color: var(--primary-blue);
+    padding-left: 20px; /* Efecto de desplazamiento sutil a la derecha */
+}
+
+.autocomplete-list li:hover i {
+    transform: scale(1.15); /* El ícono crece un poco */
+}
+
+/* ======================================================= */
+/* ESTADOS ESPECIALES: Buscando... y Sin Resultados        */
+/* ======================================================= */
+
+.autocomplete-list li.searching-indicator,
+.autocomplete-list li.no-results {
+    justify-content: center; /* Texto centrado */
+    padding: 16px;
+    cursor: default;
+    background-color: var(--white);
+    font-weight: 600;
+}
+
+/* Anulamos el efecto hover para los estados informativos */
+.autocomplete-list li.searching-indicator:hover,
+.autocomplete-list li.no-results:hover {
+    background-color: var(--white);
+    padding-left: 16px;
+    color: inherit;
+}
+
+/* Diseño de "Buscando..." */
+.autocomplete-list li.searching-indicator {
+    color: var(--primary-blue);
+}
+
+.autocomplete-list li.searching-indicator i {
+    color: var(--primary-blue);
+    animation: spin 1s linear infinite; /* Animación de rotación del ícono */
+}
+
+/* Diseño de "No hay resultados" */
+.autocomplete-list li.no-results {
+    color: var(--medium-gray);
+    font-style: italic;
+}
+
+.autocomplete-list li.no-results i {
+    color: var(--medium-gray);
+    transform: none; /* Evita que crezca */
+}
+
 
 /* ======================================================= */
 /* 6. ESTILOS DE MODAL Y FORMULARIO */

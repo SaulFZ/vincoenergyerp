@@ -1,10 +1,9 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
-
+use App\Http\Controllers\Administracion\Reembolsos\ReimbursementController;
 
 /* CONTROLADORES DE RECURSOS Administracion */
-use App\Http\Controllers\Administracion\Reembolsos\ReimbursementController;
+use App\Http\Controllers\Auth\LoginController;
 
 /* CONTROLADORES DE RECURSOS QHSE */
 use App\Http\Controllers\Qhse\Gerenciamiento\DriverLicenseController;
@@ -24,6 +23,8 @@ use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\HistoryController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
 use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
+use App\Http\Controllers\RecursosHumanos\LoadChart\StatsLoadController;
+
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
 use App\Http\Controllers\Sistemas\Tickets\TicketController;
@@ -96,13 +97,13 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware(['auth', 'check.permission:administracion']) // Seguridad global del módulo
         ->group(function () {
 
-          // ===================================================
+            // ===================================================
             // GRUPO GESTIÓN DE REEMBOLSOS (REIMBURSEMENTS)
             // Prefijo URL: /administracion/reembolsos
             // ===================================================
             Route::prefix('reembolsos')->group(function () {
 
-            // 1. Redirección automática
+                // 1. Redirección automática
                 Route::get('/', function () {
                     return redirect()->route('reembolsos.reimbursements');
                 })
@@ -155,7 +156,6 @@ Route::middleware(['web', 'auth'])->group(function () {
 
             // Aquí puedes agregar futuros submódulos de administración (ej. /nomina, /facturacion)
         });
-
 
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS
@@ -333,6 +333,10 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/save-activity', 'saveActivity')->name('loadchart.save_activity');
                     Route::get('/monthly-activities', 'getMonthlyActivities')->name('loadchart.monthly_activities');
                     Route::get('/balances-data', 'getEmployeeBalancesAjax')->name('loadchart.balances.data');
+
+                    // Agrégala dentro de tu grupo de rutas de loadchart
+                    Route::get('/search-wells', 'searchWells')->name('loadchart.search_wells');
+
                 });
 
                 // --- RUTAS DE APROBACIÓN (ApprovalController) ---
@@ -422,14 +426,15 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/generate-report', 'generateReport')->name('vacation_balance.generate_report');
                 });
 
-                Route::get('/stats', function () {
-                    return view('modulos.recursoshumanos.loadchart.stats');
-                })->name('loadchart.stats');
+                Route::controller(StatsLoadController::class)->group(function () {
+                    Route::get('/stats', 'index')->name('loadchart.stats');
+                    Route::get('/stats/data', 'getData')->name('loadchart.stats.data');
+                });
             });
 
             // Subsistemas de RRHH (Rutas que no son de LoadChart)
             Route::get('/altasempleados', function () {
-                return view('modulos.recursoshumanos.altasempleados.index');
+                return view('modulos.recursoshumanos.altas.employees');
             })
                 ->middleware('check.permission:recursoshumanos,altasempleados')
                 ->name('recursoshumanos.altasempleados');

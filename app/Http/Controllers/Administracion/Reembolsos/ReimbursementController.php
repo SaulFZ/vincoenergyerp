@@ -17,7 +17,7 @@ class ReimbursementController extends Controller
     public function index()
     {
         // Asegúrate de que esta ruta coincida con la ubicación de tu archivo Blade
-        return view('modulos.administracion.reembolsos.index');
+        return view('modulos.administracion.reembolsos.reimbursements');
     }
 
     // Aquí puedes dejar vacíos por ahora los demás métodos que definiste en tus rutas

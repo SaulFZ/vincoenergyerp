@@ -1295,7 +1295,7 @@
                         ${subItem.comments ? `<div class="item-comment">${subItem.comments}</div>` : ''}
                         <div class="item-id-amount">
                             ${subItem.id ? `<div class="item-id">ID: ${subItem.id}</div>` : ''}
-                            ${subItem.amount ? `<div class="${amountClass}">${this.formatCurrency(subItem.amount)}</div>` : ''}
+                            ${subItem.amount ? `<div class="${amountClass}">${this.formatCurrency(subItem.amount, subItem.currency)}</div>` : ''}
                         </div>
                         ${hasRejection ? `
                                         <div class="rejection-reason">
@@ -1308,13 +1308,13 @@
             `;
                 }
 
-                formatCurrency(amount) {
-                    return new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD',
+                // ⭐ AHORA ACEPTA MONEDA DINÁMICA (USD, MXN, ETC)
+                formatCurrency(amount, currency = 'MXN') {
+                    const formatted = new Intl.NumberFormat('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     }).format(amount);
+                    return `$${formatted} ${currency}`;
                 }
 
                 getStatusText(status) {
@@ -1436,7 +1436,7 @@
                                                 <div class="detail-item-card ${subItem.rejection_reason ? 'rejected' : ''}">
                                                     <div class="item-header">
                                                         ${conceptContent}
-                                                        ${subItem.amount ? `<span class="${amountClass}">${this.formatCurrency(subItem.amount)}</span>` : ''}
+                                                        ${subItem.amount ? `<span class="${amountClass}">${this.formatCurrency(subItem.amount, subItem.currency)}</span>` : ''}
                                                     </div>
                                                     <div class="item-body">
                                                         ${subItem.id ? `<div><strong>ID:</strong> ${subItem.id}</div>` : ''}

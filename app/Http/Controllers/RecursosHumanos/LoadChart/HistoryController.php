@@ -139,14 +139,20 @@ class HistoryController extends Controller
                 foreach ($log->daily_activities as $activity) {
                     $activityDate = Carbon::parse($activity['date']);
 
-                    // ⭐ CORRECCIÓN: Agregar variables de Vespertina
+                    // 🥇 NUEVO: Construir la descripción visual con el detalle de Base si existe
+                    $activityType = $activity['activity_type'] ?? 'N';
+                    $activityDesc = $this->getActivityDescription($activityType);
+                    if ($activityType === 'B' && !empty($activity['base_activity_description'])) {
+                        $activityDesc .= ' (' . $activity['base_activity_description'] . ')';
+                    }
+
                     $history->push([
                         'date' => $activityDate->format('d/m/Y'),
                         'day_name' => $activityDate->locale('es')->dayName,
                         'month_name' => $monthName,
                         'year' => $year,
-                        'activity_type' => $activity['activity_type'] ?? 'N',
-                        'activity_description' => $this->getActivityDescription($activity['activity_type'] ?? 'N'),
+                        'activity_type' => $activityType,
+                        'activity_description' => $activityDesc, // Usa la descripción enriquecida
                         'activity_type_vespertina' => $activity['activity_type_vespertina'] ?? null,
                         'activity_description_vespertina' => isset($activity['activity_type_vespertina']) ? $this->getActivityDescription($activity['activity_type_vespertina']) : null,
                         'overall_status' => $activity['day_status'] ?? 'under_review',
@@ -167,7 +173,7 @@ class HistoryController extends Controller
     }
 
     /**
-     * Extrae items diarios - MEJORADO: Ahora separa Matutino y Vespertino
+     * Extrae items diarios - MEJORADO: Separación y nuevos datos (Base y Cantidades)
      */
     private function extractDailyItems($activity)
     {
@@ -188,6 +194,9 @@ class HistoryController extends Controller
                 $details .= !empty($activity['travel_reason']) ? "<br>Motivo: {$activity['travel_reason']}" : '';
             } elseif ($activityType === 'C') {
                 $details .= !empty($activity['commissioned_to']) ? "<br>Area: {$activity['commissioned_to']}" : '';
+            } elseif ($activityType === 'B') {
+                // 🥇 NUEVO: Mostrar descripción de base
+                $details .= !empty($activity['base_activity_description']) ? "<br>Actividad Específica: {$activity['base_activity_description']}" : '';
             }
 
             $items[] = $this->createItem(
@@ -205,7 +214,6 @@ class HistoryController extends Controller
         if ($isGuardia && $vType !== 'N' && $vType !== null) {
             $detailsVesp = $this->getActivityDescription($vType);
 
-            // Por si llegaran a tener pozo/viaje en vespertino (soporte a futuro)
             if ($vType === 'P') {
                 $detailsVesp .= !empty($activity['well_name']) ? "<br>Pozo: {$activity['well_name']}" : '';
             } elseif ($vType === 'V') {
@@ -236,22 +244,36 @@ class HistoryController extends Controller
                     "Cant: {$item['num_daily']}",
                     $item['rejection_reason'] ?? null,
                     $item['bonus_identifier'] ?? null,
-                    $item['daily_amount'] ?? null
+                    $item['daily_amount'] ?? null,
+                    $item['currency'] ?? 'MXN'
                 );
             }
         }
 
-        // Bonos de campo
+        // Bonos de campo (y Bonos Especiales de Guardia)
         if (!empty($activity['field_bonuses'])) {
             foreach ($activity['field_bonuses'] as $item) {
+                $details = $item['bonus_description'] ?? "Moneda: " . ($item['currency'] ?? 'MXN');
+
+                // 🥇 NUEVO: Formatear la cantidad y precio base si es que trae más de 1
+                if (isset($item['quantity']) && $item['quantity'] > 1) {
+                    $qty = $item['quantity'];
+                    $baseAmt = number_format((float)($item['base_amount'] ?? 0), 2);
+                    $curr = $item['currency'] ?? 'MXN';
+
+                    // Concatena al detalle existente la cantidad y el precio base
+                    $details .= "<br><b>Cantidad Realizada:</b> {$qty}<br><small>(Precio Base: \${$baseAmt} {$curr})</small>";
+                }
+
                 $items[] = $this->createItem(
-                    'Bono',
+                    isset($item['quantity']) ? 'Bono' : 'Bono', // Título dinámico
                     $item['bonus_type'] ?? 'Campo',
                     $item['status'] ?? 'under_review',
-                    $item['bonus_description'] ?? null,
+                    $details,
                     $item['rejection_reason'] ?? null,
                     $item['bonus_identifier'] ?? null,
-                    $item['daily_amount'] ?? null
+                    $item['daily_amount'] ?? null,
+                    $item['currency'] ?? 'MXN'
                 );
             }
         }
@@ -266,7 +288,8 @@ class HistoryController extends Controller
                     $item['service_description'] ?? null,
                     $item['rejection_reason'] ?? null,
                     $item['service_identifier'] ?? null,
-                    $item['amount'] ?? null
+                    $item['amount'] ?? null,
+                    $item['currency'] ?? 'MXN'
                 );
             }
         }
@@ -275,9 +298,9 @@ class HistoryController extends Controller
     }
 
     /**
-     * Crea un item del historial
+     * Crea un item del historial (Añadido $currency para formateo en JS)
      */
-    private function createItem($concept, $type, $status, $details = null, $rejectionReason = null, $id = null, $amount = null)
+    private function createItem($concept, $type, $status, $details = null, $rejectionReason = null, $id = null, $amount = null, $currency = 'MXN')
     {
         return [
             'concept' => $concept,
@@ -287,6 +310,7 @@ class HistoryController extends Controller
             'rejection_reason' => $rejectionReason,
             'id' => $id,
             'amount' => $amount,
+            'currency' => $currency, // Nuevo campo
             'status_color' => $this->getStatusColor($status),
         ];
     }

@@ -1,5 +1,8 @@
 {{-- Lee la variable $isGuardia que viene del CalendarController --}}
 <input type="hidden" id="is_guardia_user" value="{{ isset($isGuardia) && $isGuardia ? '1' : '0' }}">
+{{-- Variable para requerir descripcion de base --}}
+<input type="hidden" id="requires_base_description"
+    value="{{ isset($requiresBaseDescription) && $requiresBaseDescription ? '1' : '0' }}">
 
 <div id="normalView">
     <div class="content-layout">
@@ -424,8 +427,23 @@
 
                 </div>
 
-                <div id="guardia-activity-groups" style="display: none;">
+                <div class="form-group" id="base-activity-description-group" style="display: none;">
+                    <label for="base-activity-description">Descripción de Actividad en Base</label>
+                    <select id="base-activity-description" name="base_activity_description" class="select-custom">
+                        <option value="Actividad en base">Actividad en base</option>
+                        <option value="">Seleccionar actividad específica...</option>
+                        <option value="Paso de cable">Paso de cable</option>
+                        <option value="Pruebas de presion para los ECP">Pruebas de presión para los ECP</option>
+                        <option value="Pintura y soldaduras en area de taller">Pintura y soldaduras en área de taller
+                        </option>
+                        <option value="Movimiento o eventos con gerencias">Movimiento o eventos con gerencias</option>
+                        <option value="Mantenimiento a polvorin Vinco">Mantenimiento a polvorín Vinco</option>
+                    </select>
+                    <div class="error-message" id="base-activity-description-error">Debes seleccionar una descripción
+                        de la actividad</div>
+                </div>
 
+                <div id="guardia-activity-groups" style="display: none;">
                     <div class="form-group" id="activity-matutina-group">
                         <label>Actividad Matutina(12HR)</label>
                         <div class="custom-select" id="activity-matutina-select">
@@ -487,7 +505,7 @@
                                 <div class="activity-option" data-value="N">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: #ccc;"></div>
-                                        <div class="activity-label">Ninguna / Solo Bonos</div>
+                                        <div class="activity-label">Ninguna</div>
                                     </div>
                                     <div class="activity-code" style="background-color: #ccc; color: #333;">N</div>
                                 </div>
@@ -568,7 +586,7 @@
                                 <div class="activity-option" data-value="N">
                                     <div class="option-content">
                                         <div class="color-indicator" style="background-color: #ccc;"></div>
-                                        <div class="activity-label">Ninguna / Solo Bonos</div>
+                                        <div class="activity-label">Ninguna</div>
                                     </div>
                                     <div class="activity-code" style="background-color: #ccc; color: #333;">N</div>
                                 </div>
@@ -587,15 +605,62 @@
                         <div class="error-message" id="activity-vespertina-error" style="display:none;">Debes
                             seleccionar una actividad vespertina</div>
                     </div>
+
+                    <div class="form-group" id="guardia-bonus-group" style="display: none;"> <label>Bono (Solo en
+                            Base)</label>
+                        <div class="custom-select" id="guardia-bonus-custom-select">
+                            <div class="select-header" id="guardia-bonus-header">
+                                <span class="placeholder">Seleccionar bono...</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="select-options" id="guardia-bonus-options">
+                                @if (isset($guardiaBonuses))
+                                    @foreach ($guardiaBonuses as $bonus)
+                                        <div class="activity-option bonus-option"
+                                            data-value="{{ $bonus->bonus_identifier }}"
+                                            data-amount="{{ $bonus->amount }}"
+                                            data-currency="{{ $bonus->currency }}">
+                                            <div class="option-content">
+                                                <div class="activity-label">{{ $bonus->bonus_type }}</div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                                <div class="activity-option bonus-option" data-value="" data-amount="0"
+                                    data-currency="MXN">
+                                    <div class="option-content">
+                                        <div class="activity-label" style="color: #999;">Ninguno</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="guardia-field-bonus" value="">
+
+                        <div id="guardia-bonus-quantity-container"
+                            style="display: none; margin-top: 15px; padding-left: 5px;">
+                            <label for="guardia-bonus-quantity"
+                                style="font-size: 0.9em; font-weight: bold; color: #555;">Cantidad Realizada (Unidades,
+                                Metros)</label>
+                            <input type="number" id="guardia-bonus-quantity" class="input-custom" value="1"
+                                min="1" step="1" style="width: 100%;">
+                            <!--<div style="margin-top: 8px; font-weight: bold; color: var(--primary-color, #e67e22); font-size: 1.1em;"
+                                id="guardia-bonus-total-text">
+                                Total a pagar: $0.00
+                            </div>-->
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-group" id="well-name-field" style="display: none;">
-                    <label for="well-name">Nombre del Pozo</label>
+                <div class="form-group" id="well-name-field" style="display: none; position: relative;">
+                    <label for="well-name">Buscar el Nombre del Pozo</label>
                     <div class="input-with-icon">
                         <i class="fas fa-oil-well"></i>
                         <input type="text" id="well-name" class="input-custom"
-                            placeholder="Ingrese nombre del pozo">
+                            placeholder="Ingrese nombre del pozo" autocomplete="off">
                     </div>
+
+                    <ul id="well-search-results" class="autocomplete-list" style="display: none;"></ul>
+
                     <div class="error-message" id="well-name-error">Debes ingresar el nombre del pozo</div>
                 </div>
 

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
 
             $table->string('employee_category', 80)->nullable(false);
-            $table->string('bonus_type', 35)->nullable(false);
+            $table->string('bonus_type', 150)->nullable(false);
 
             // Campo de monto y moneda
             $table->decimal('amount', 12, 2)->nullable(false)

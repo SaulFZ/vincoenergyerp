@@ -365,7 +365,7 @@ class EmployeeVacationBalanceController extends Controller
                 'allEmployees' => Employee::select('id', 'full_name', 'employee_number')->get()->keyBy('id')->toArray(),
             ];
 
-            $pdf = Pdf::loadView('modulos.recursoshumanos.sistemas.loadchart.reports.vacation_report_pdf', $data);
+            $pdf = Pdf::loadView('modulos.recursoshumanos.loadchart.reports.vacation_report_pdf', $data);
 
             // 🌟 LÍNEA CORREGIDA: Eliminamos el tipo de reporte del nombre
             return $pdf->download('reporte_vacaciones_' . Carbon::now()->format('Y-m-d') . '.pdf');

@@ -1,12 +1,14 @@
 @extends('modulos.recursoshumanos.loadchart.index')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
     /* --- Variables Globales --- */
     :root {
         --primary-color: #34495e;
         --secondary-color: #2c3e50;
-        --accent-color: #3498db;
+        --accent-color: #d67e29;
         --text-dark: #2d3748;
         --text-medium: #4a5568;
         --bg-light: #f8fafc;
@@ -14,7 +16,6 @@
         --border-color: #e2e8f0;
         --success: #27ae60;
         --danger: #e74c3c;
-        --warning: #f39c12;
     }
 
     body {
@@ -29,12 +30,71 @@
         padding: 20px !important;
     }
 
+    /* --- Selector de año + loading (NUEVO) --- */
+    .top-controls {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 18px;
+        padding: 10px 15px;
+        background: var(--white);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        flex-wrap: wrap;
+    }
+    .top-controls label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-medium);
+        letter-spacing: .4px;
+    }
+    .top-controls select {
+        padding: 6px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--secondary-color);
+        background: var(--white);
+        cursor: pointer;
+        height: 34px;
+    }
+    #loading-indicator {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-medium);
+    }
+    #loading-indicator .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #e2e8f0;
+        border-top-color: var(--accent-color);
+        border-radius: 50%;
+        animation: spin .8s linear infinite;
+        display: inline-block;
+    }
+    #error-indicator {
+        display: none;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--danger);
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        padding: 3px 10px;
+        border-radius: 4px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     /* --- Tabs --- */
     .data-tabs {
         display: flex;
         gap: 5px;
         margin-bottom: 20px;
         border-bottom: 2px solid var(--border-color);
+        flex-wrap: wrap;
     }
 
     .tab-btn {
@@ -51,7 +111,7 @@
     }
 
     .tab-btn:hover { color: var(--primary-color); background: rgba(0,0,0,0.02); }
-    .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+    .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--accent-color); }
 
     /* --- Sections & Cards --- */
     .table-section { display: none; animation: fadeIn 0.3s ease-out; }
@@ -65,28 +125,30 @@
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         border: 1px solid var(--border-color);
         padding: 20px;
+        margin-bottom: 20px;
     }
 
     .table-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         padding-bottom: 15px;
         border-bottom: 1px solid var(--border-color);
     }
 
     .table-title { font-size: 1.25rem; font-weight: 700; color: var(--secondary-color); margin: 0; }
+    .table-subtitle { font-size: 1rem; font-weight: 600; color: var(--primary-color); margin-bottom: 15px; border-left: 4px solid var(--accent-color); padding-left: 10px;}
 
-    /* --- Unified Filters Area --- */
+    /* --- Filtros Dinámicos --- */
     .table-filters {
         display: flex;
         flex-wrap: wrap;
         gap: 15px;
-        padding: 20px;
+        padding: 15px;
         background-color: #f1f5f9;
         border-radius: 8px;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         align-items: flex-end;
         border: 1px solid var(--border-color);
     }
@@ -95,7 +157,7 @@
         display: flex;
         flex-direction: column;
         flex: 1;
-        min-width: 140px;
+        min-width: 150px;
     }
 
     .filter-label {
@@ -103,8 +165,7 @@
         font-weight: 700;
         text-transform: uppercase;
         color: var(--text-medium);
-        margin-bottom: 5px;
-        letter-spacing: 0.5px;
+        margin-bottom: 6px;
     }
 
     .select-field, .input-field {
@@ -115,27 +176,38 @@
         background-color: var(--white);
         font-size: 13px;
         color: var(--text-dark);
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .select-field:focus, .input-field:focus {
         outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.1);
+        height: 37px;
+    }
+    .select-field:focus, .input-field:focus { border-color: var(--primary-color); }
+
+    optgroup {
+        font-weight: bold;
+        color: var(--secondary-color);
     }
 
-    .select-field:not(:focus):hover, .input-field:not(:focus):hover {
-        border-color: #94a3b8;
+    /* --- Dropdown Checkboxes Custom --- */
+    .multi-select-container { position: relative; width: 100%; user-select: none; }
+    .multi-select-header {
+        width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+        background-color: var(--white); font-size: 13px; color: var(--text-dark);
+        cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+        height: 37px; box-sizing: border-box;
     }
-
-    /* --- The Divider Line --- */
-    .filter-divider {
-        width: 1px;
-        background-color: #cbd5e1;
-        height: 50px;
-        margin: 0 15px;
-        align-self: center;
+    .multi-select-header:hover { border-color: #94a3b8; }
+    .multi-select-options {
+        display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+        background: var(--white); border: 1px solid #cbd5e1; border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 100; max-height: 250px;
+        overflow-y: auto; padding: 5px;
     }
+    .multi-select-options.show { display: block; }
+    .multi-select-options label {
+        display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+        cursor: pointer; font-size: 13px; border-radius: 4px; transition: background 0.2s;
+    }
+    .multi-select-options label:hover { background: #f1f5f9; }
+    .multi-select-options input[type="checkbox"] { cursor: pointer; }
 
     /* --- Buttons --- */
     .btn {
@@ -152,9 +224,7 @@
         height: 37px;
     }
 
-    .btn:active { transform: translateY(1px); }
     .btn-primary { background-color: var(--primary-color); color: var(--white); }
-    .btn-secondary { background-color: #e2e8f0; color: var(--text-medium); border: 1px solid #cbd5e1; }
     .btn:hover { opacity: 0.9; }
 
     /* --- Table Styling --- */
@@ -164,12 +234,13 @@
         border-radius: 6px;
         max-height: 500px;
         overflow-y: auto;
+        margin-bottom: 20px;
     }
 
     .data-table {
         width: 100%;
-        border-collapse: collapse;
-        min-width: 1000px;
+        border-collapse: separate;
+        border-spacing: 0;
         background: var(--white);
         font-size: 0.85rem;
     }
@@ -178,951 +249,988 @@
         background-color: var(--primary-color);
         color: var(--white);
         font-weight: 600;
-        padding: 12px 15px;
+        padding: 10px 15px;
         text-align: center;
         white-space: nowrap;
         position: sticky;
         top: 0;
         z-index: 10;
-        border-bottom: 2px solid var(--primary-color);
+        border-bottom: 2px solid var(--secondary-color);
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .data-table .sub-header th {
+        background-color: #4a6583;
+        top: 39px;
+        font-size: 0.75rem;
     }
 
     .data-table td {
-        padding: 10px 15px;
+        padding: 8px 15px;
         border-bottom: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
         vertical-align: middle;
         color: var(--text-dark);
+        white-space: nowrap;
     }
 
-    .data-table tr:hover { background-color: #f8fafc; }
-    .data-table tr:nth-child(even) { background-color: #fcfcfc; }
+    .sticky-col {
+        position: sticky;
+        left: 0;
+        background-color: var(--white);
+        z-index: 5;
+        box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+        font-weight: 600;
+    }
 
-    /* Utility Classes */
+    .data-table th.sticky-col { z-index: 15; background-color: var(--primary-color); }
+    .data-table tr:hover td { background-color: #f8fafc; }
+
     .text-center { text-align: center !important; }
     .text-right { text-align: right !important; }
     .text-left { text-align: left !important; }
 
-    .currency { font-family: 'Roboto Mono', monospace; font-weight: 500; }
-    .currency-mxn { color: var(--secondary-color); font-weight: 600; }
-    .currency-usd { color: var(--accent-color); font-size: 0.85em; font-weight: 500; }
+    .currency-mxn { font-family: 'Roboto Mono', monospace; font-weight: 600; color: var(--secondary-color); }
+    .currency-usd { font-family: 'Roboto Mono', monospace; font-weight: 600; color: #27ae60; }
+    .percentage-positive { color: var(--success); font-weight: 700; }
+    .percentage-negative { color: var(--danger); font-weight: 700; }
 
-    .dual-value {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        line-height: 1.3;
-        gap: 2px;
-    }
-    .total-row { background-color: #edf2f7 !important; font-weight: 700; }
-    .total-row td { border-top: 2px solid var(--border-color); }
-    .positive { color: var(--success); font-weight: 600; }
-    .negative { color: var(--danger); font-weight: 600; }
-    .warning { color: var(--warning); }
+    .total-col { background-color: #f1f5f9; font-weight: 700; }
 
-    /* Status indicators */
-    .status-indicator {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-right: 6px;
-    }
-    .status-active { background-color: var(--success); }
-    .status-inactive { background-color: var(--danger); }
-    .status-pending { background-color: var(--warning); }
-
-    /* Loading animation */
-    .loading-spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid #f3f3f3;
-        border-top: 2px solid var(--primary-color);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+    .total-row td {
+        background-color: #edf2f7 !important;
+        font-weight: 700;
+        border-top: 2px solid var(--secondary-color);
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
     }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    /* Responsive */
-    @media (max-width: 1200px) {
-        .filter-divider { display: none; width: 100%; height: 1px; margin: 10px 0; }
-        .table-filters { flex-direction: column; align-items: stretch; }
-        .filter-group { width: 100%; }
-    }
-
-    @media (max-width: 768px) {
-        .table-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-        .table-title { font-size: 1.1rem; }
-        .btn { width: 100%; justify-content: center; }
-        .data-table { min-width: 800px; }
-    }
-
-    /* Tooltip */
-    .tooltip {
-        position: relative;
-        display: inline-block;
-    }
-
-    .tooltip .tooltiptext {
-        visibility: hidden;
-        width: 200px;
-        background-color: var(--secondary-color);
-        color: var(--white);
-        text-align: center;
+    .badge-area {
+        background-color: #e2e8f0;
+        padding: 4px 8px;
         border-radius: 4px;
-        padding: 5px;
-        position: absolute;
-        z-index: 1000;
-        bottom: 125%;
-        left: 50%;
-        transform: translateX(-50%);
-        opacity: 0;
-        transition: opacity 0.3s;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-medium);
     }
 
-    .tooltip:hover .tooltiptext {
-        visibility: visible;
-        opacity: 1;
-    }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    .grid-column { display: flex; flex-direction: column; }
+    .grid-full-width { grid-column: 1 / -1; }
+    .chart-container { position: relative; width: 100%; padding: 15px; background: var(--white); border: 1px solid var(--border-color); border-radius: 6px; }
+
+    .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
+
+    @media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+    /* --- Estado vacío/cargando --- */
+    .empty-row td { text-align: center; padding: 24px; color: var(--text-medium); font-style: italic; }
 </style>
 
 <main class="dashboard-container">
 
-    <div class="data-tabs">
-        <button class="tab-btn active" data-tab="bonos-periodicos">Bonos por Periodo</button>
-        <button class="tab-btn" data-tab="record-bonos">Record de Bonos</button>
-        <button class="tab-btn" data-tab="resumen-general">Resumen General</button>
+    {{-- ─── Selector de año + indicador de carga (NUEVO) ─────────── --}}
+    <div class="top-controls">
+        <label for="global-year">Año</label>
+        <select id="global-year">
+            <option value="2026" selected>2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+        </select>
+        <span id="loading-indicator">
+            <span class="spinner"></span> Cargando datos…
+        </span>
+        <span id="error-indicator"></span>
     </div>
 
-    <!-- Sección 1: Bonos por Periodo -->
-    <section id="bonos-periodicos" class="table-section active">
+    <div class="data-tabs">
+        <button class="tab-btn active" data-tab="bonos-empleados">1. Bonos por Empleado</button>
+        <button class="tab-btn" data-tab="resumen-areas">2. Resumen por Área</button>
+        <button class="tab-btn" data-tab="control-pozos">3. Control de Pozos</button>
+        <button class="tab-btn" data-tab="evolucion-estadisticas">4. Evolución y Estadísticas</button>
+    </div>
+
+    {{-- ─── TAB 1 ──────────────────────────────────────────────────── --}}
+    <section id="bonos-empleados" class="table-section active">
         <div class="table-card">
             <div class="table-header">
-                <h2 class="table-title">Bonos por Periodo <span id="current-year-1">2025</span></h2>
-                <button class="btn btn-primary" onclick="exportTable('periodos-table', 'Bonos_Periodo')">
-                    <i class="fas fa-download"></i> Exportar
+                <h2 class="table-title">Reporte de Bonos por Empleado</h2>
+                <button class="btn btn-primary" onclick="exportTable('empleados-table', 'Bonos_Empleados')">
+                    <i class="fas fa-download"></i> Exportar a Excel
                 </button>
             </div>
 
             <div class="table-filters">
                 <div class="filter-group">
-                    <label class="filter-label">Año</label>
-                    <select id="p1-year" class="select-field">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
+                    <label class="filter-label">Periodo Rápido</label>
+                    <select id="emp-trimestre-filter" class="select-field">
+                        <option value="Personalizado">Personalizado</option>
+                        <optgroup label="Trimestral">
+                            <option value="Q1" selected>Trimestre 1 (Ene - Mar)</option>
+                            <option value="Q2">Trimestre 2 (Abr - Jun)</option>
+                            <option value="Q3">Trimestre 3 (Jul - Sep)</option>
+                            <option value="Q4">Trimestre 4 (Oct - Dic)</option>
+                        </optgroup>
+                        <optgroup label="Semestral / Anual">
+                            <option value="H1">Semestre 1 (Ene - Jun)</option>
+                            <option value="H2">Semestre 2 (Jul - Dic)</option>
+                            <option value="Anual">Anual Completo</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="filter-group" style="min-width: 200px;">
+                    <label class="filter-label">Meses a Visualizar</label>
+                    <div class="multi-select-container">
+                        <div class="multi-select-header" onclick="toggleDropdown('emp-meses-dropdown', event)">
+                            <span id="emp-meses-text">Ene, Feb, Mar</span>
+                            <span>&#9662;</span>
+                        </div>
+                        <div class="multi-select-options" id="emp-meses-dropdown">
+                            <label><input type="checkbox" value="Enero"      class="emp-mes-chk" checked> Enero</label>
+                            <label><input type="checkbox" value="Febrero"    class="emp-mes-chk" checked> Febrero</label>
+                            <label><input type="checkbox" value="Marzo"      class="emp-mes-chk" checked> Marzo</label>
+                            <label><input type="checkbox" value="Abril"      class="emp-mes-chk"> Abril</label>
+                            <label><input type="checkbox" value="Mayo"       class="emp-mes-chk"> Mayo</label>
+                            <label><input type="checkbox" value="Junio"      class="emp-mes-chk"> Junio</label>
+                            <label><input type="checkbox" value="Julio"      class="emp-mes-chk"> Julio</label>
+                            <label><input type="checkbox" value="Agosto"     class="emp-mes-chk"> Agosto</label>
+                            <label><input type="checkbox" value="Septiembre" class="emp-mes-chk"> Septiembre</label>
+                            <label><input type="checkbox" value="Octubre"    class="emp-mes-chk"> Octubre</label>
+                            <label><input type="checkbox" value="Noviembre"  class="emp-mes-chk"> Noviembre</label>
+                            <label><input type="checkbox" value="Diciembre"  class="emp-mes-chk"> Diciembre</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Área</label>
+                    <select id="emp-area-filter" class="select-field">
+                        <option value="TODAS">Todas las Áreas</option>
+                        <option value="OPERACIONES">Operaciones</option>
+                        <option value="SUMINISTROS">Suministros</option>
+                        <option value="ADMINISTRACIÓN Y COMPRAS">Administración y Compras</option>
+                        <option value="QHSE">QHSE</option>
+                        <option value="GEOCIENCIAS">Geociencias</option>
+                        <option value="VENTAS">Ventas</option>
+                        <option value="LABORATORIO">Laboratorio</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label class="filter-label">Tipo de Periodo</label>
-                    <select id="p1-type" class="select-field">
-                        <option value="quincena">Quincena</option>
-                        <option value="mes">Mes</option>
-                        <option value="trimestre">Trimestre</option>
-                        <option value="anual">Anual</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Periodo Específico</label>
-                    <select id="p1-spec" class="select-field">
-                        <option value="todos">Todos</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Departamento</label>
-                    <select id="p1-dept" class="select-field">
-                        <option value="todos">Todos los Departamentos</option>
-                        <option value="operaciones">Operaciones</option>
-                        <option value="administracion">Administración</option>
-                        <option value="suministros">Suministros</option>
-                        <option value="geociencias">Geociencias</option>
-                        <option value="ventas">Ventas</option>
-                        <option value="mantenimiento">Mantenimiento</option>
-                        <option value="ohse">OHSE</option>
-                    </select>
-                </div>
-
-                <div class="filter-divider"></div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Filtrar por Mes</label>
-                    <select id="p1-mes-filter" class="select-field">
-                        <option value="todos">Todos los Meses</option>
-                        <option value="enero">Enero</option>
-                        <option value="febrero">Febrero</option>
-                        <option value="marzo">Marzo</option>
-                        <option value="abril">Abril</option>
-                        <option value="mayo">Mayo</option>
-                        <option value="junio">Junio</option>
-                        <option value="julio">Julio</option>
-                        <option value="agosto">Agosto</option>
-                        <option value="septiembre">Septiembre</option>
-                        <option value="octubre">Octubre</option>
-                        <option value="noviembre">Noviembre</option>
-                        <option value="diciembre">Diciembre</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Ordenar por</label>
-                    <select id="p1-sort" class="select-field">
-                        <option value="periodo">Periodo (Ascendente)</option>
-                        <option value="periodo-desc">Periodo (Descendente)</option>
-                        <option value="bonos">Total Bonos (Mayor a menor)</option>
-                        <option value="bonos-asc">Total Bonos (Menor a mayor)</option>
-                    </select>
-                </div>
-
-                <div class="filter-group" style="flex: 0 0 auto; min-width: auto;">
-                    <label class="filter-label">&nbsp;</label>
-                    <button class="btn btn-secondary" id="p1-reset" title="Restablecer filtros">
-                        <i class="fas fa-redo"></i> Limpiar
-                    </button>
+                    <label class="filter-label">Buscar Empleado</label>
+                    <input type="text" id="emp-search-filter" class="input-field" placeholder="Nombre o Clave...">
                 </div>
             </div>
 
             <div class="table-container">
-                <table id="periodos-table" class="data-table">
-                    <thead>
-                        <tr>
-                            <th class="text-center">Periodo</th>
-                            <th class="text-center">Mes</th>
-                            <th class="text-center">HC</th>
-                            <th class="text-right">Total Bonos (MXN)</th>
-                            <th class="text-right">Total en USD</th>
-                            <th class="text-right">Promedio x HC</th>
-                            <th class="text-center">% del Total</th>
-                            <th class="text-center">Tipo Cambio</th>
-                        </tr>
-                    </thead>
-                    <tbody id="periodos-tbody"></tbody>
-                    <tfoot id="periodos-tfoot"></tfoot>
+                <table id="empleados-table" class="data-table" style="min-width: 1200px;">
+                    <thead></thead>
+                    <tbody id="empleados-tbody"><tr class="empty-row"><td colspan="20">Cargando datos del servidor…</td></tr></tbody>
+                    <tfoot id="empleados-tfoot"></tfoot>
                 </table>
             </div>
         </div>
     </section>
 
-    <!-- Sección 2: Record de Bonos -->
-    <section id="record-bonos" class="table-section">
+    {{-- ─── TAB 2 ──────────────────────────────────────────────────── --}}
+    <section id="resumen-areas" class="table-section">
         <div class="table-card">
             <div class="table-header">
-                <h2 class="table-title">Record de Bonos por Empleado <span id="current-year-2">2025</span></h2>
-                <button class="btn btn-primary" onclick="exportTable('record-table', 'Record_Bonos')">
-                    <i class="fas fa-download"></i> Exportar
+                <h2 class="table-title">Resumen de Bonos por Área</h2>
+                <button class="btn btn-primary" onclick="exportTable('areas-table', 'Resumen_Areas')">
+                    <i class="fas fa-download"></i> Exportar a Excel
                 </button>
             </div>
 
             <div class="table-filters">
                 <div class="filter-group">
-                    <label class="filter-label">Año</label>
-                    <select id="p2-year" class="select-field">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
+                    <label class="filter-label">Periodo Rápido</label>
+                    <select id="area-trimestre-filter" class="select-field">
+                        <option value="Personalizado">Personalizado</option>
+                        <optgroup label="Trimestral">
+                            <option value="Q1">Trimestre 1 (Ene - Mar)</option>
+                            <option value="Q2">Trimestre 2 (Abr - Jun)</option>
+                            <option value="Q3">Trimestre 3 (Jul - Sep)</option>
+                            <option value="Q4">Trimestre 4 (Oct - Dic)</option>
+                        </optgroup>
+                        <optgroup label="Semestral / Anual">
+                            <option value="H1" selected>Semestre 1 (Ene - Jun)</option>
+                            <option value="H2">Semestre 2 (Jul - Dic)</option>
+                            <option value="Anual">Anual Completo</option>
+                        </optgroup>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label class="filter-label">Departamento</label>
-                    <select id="p2-dept" class="select-field">
-                        <option value="todos">Todos los Departamentos</option>
-                        <option value="operaciones">Operaciones</option>
-                        <option value="administracion">Administración</option>
-                        <option value="suministros">Suministros</option>
-                        <option value="geociencias">Geociencias</option>
-                        <option value="ventas">Ventas</option>
-                        <option value="mantenimiento">Mantenimiento</option>
-                        <option value="ohse">OHSE</option>
-                    </select>
-                </div>
-
-                <div class="filter-divider"></div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Bono Mínimo (MXN)</label>
-                    <input type="number" id="p2-min" class="input-field" placeholder="Mínimo" min="0" step="1000">
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Bono Máximo (MXN)</label>
-                    <input type="number" id="p2-max" class="input-field" placeholder="Máximo" min="0" step="1000">
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Ordenar por</label>
-                    <select id="p2-sort" class="select-field">
-                        <option value="bono-desc">Bono (Mayor a menor)</option>
-                        <option value="bono-asc">Bono (Menor a mayor)</option>
-                        <option value="nombre">Nombre (A-Z)</option>
-                        <option value="departamento">Departamento</option>
-                    </select>
-                </div>
-
-                <div class="filter-group" style="flex: 0 0 auto; min-width: auto;">
-                    <label class="filter-label">&nbsp;</label>
-                    <button class="btn btn-secondary" id="p2-reset" title="Restablecer filtros">
-                        <i class="fas fa-redo"></i> Limpiar
-                    </button>
+                <div class="filter-group" style="min-width: 200px;">
+                    <label class="filter-label">Meses a Visualizar</label>
+                    <div class="multi-select-container">
+                        <div class="multi-select-header" onclick="toggleDropdown('area-meses-dropdown', event)">
+                            <span id="area-meses-text">6 meses selec.</span>
+                            <span>&#9662;</span>
+                        </div>
+                        <div class="multi-select-options" id="area-meses-dropdown">
+                            <label><input type="checkbox" value="Enero"      class="area-mes-chk" checked> Enero</label>
+                            <label><input type="checkbox" value="Febrero"    class="area-mes-chk" checked> Febrero</label>
+                            <label><input type="checkbox" value="Marzo"      class="area-mes-chk" checked> Marzo</label>
+                            <label><input type="checkbox" value="Abril"      class="area-mes-chk" checked> Abril</label>
+                            <label><input type="checkbox" value="Mayo"       class="area-mes-chk" checked> Mayo</label>
+                            <label><input type="checkbox" value="Junio"      class="area-mes-chk" checked> Junio</label>
+                            <label><input type="checkbox" value="Julio"      class="area-mes-chk"> Julio</label>
+                            <label><input type="checkbox" value="Agosto"     class="area-mes-chk"> Agosto</label>
+                            <label><input type="checkbox" value="Septiembre" class="area-mes-chk"> Septiembre</label>
+                            <label><input type="checkbox" value="Octubre"    class="area-mes-chk"> Octubre</label>
+                            <label><input type="checkbox" value="Noviembre"  class="area-mes-chk"> Noviembre</label>
+                            <label><input type="checkbox" value="Diciembre"  class="area-mes-chk"> Diciembre</label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="table-container">
-                <table id="record-table" class="data-table">
-                    <thead>
-                        <tr>
-                            <th class="text-left">ID</th>
-                            <th class="text-left">Nombre</th>
-                            <th class="text-center">Departamento</th>
-                            <th class="text-right">Bono (MXN)</th>
-                            <th class="text-right">Bono (USD)</th>
-                            <th class="text-center">% del Total</th>
-                            <th class="text-right">Promedio Depto</th>
-                            <th class="text-right">Diferencia</th>
-                        </tr>
-                    </thead>
-                    <tbody id="record-tbody"></tbody>
-                    <tfoot id="record-tfoot"></tfoot>
+                <table id="areas-table" class="data-table" style="min-width: 1000px;">
+                    <thead></thead>
+                    <tbody id="areas-tbody"><tr class="empty-row"><td colspan="20">Cargando…</td></tr></tbody>
+                    <tfoot id="areas-tfoot"></tfoot>
                 </table>
             </div>
         </div>
     </section>
 
-    <!-- Sección 3: Resumen General -->
-    <section id="resumen-general" class="table-section">
+    {{-- ─── TAB 3 ──────────────────────────────────────────────────── --}}
+    <section id="control-pozos" class="table-section">
         <div class="table-card">
             <div class="table-header">
-                <h2 class="table-title">Resumen General <span id="current-year-3">2025</span></h2>
-                <button class="btn btn-primary" onclick="exportTable('resumen-table', 'Resumen_General')">
-                    <i class="fas fa-download"></i> Exportar
+                <h2 class="table-title">Control de Pozos Pagados Quincenalmente</h2>
+                <button class="btn btn-primary" onclick="exportTable('pozos-table', 'Control_Pozos')">
+                    <i class="fas fa-download"></i> Exportar a Excel
                 </button>
             </div>
 
             <div class="table-filters">
                 <div class="filter-group">
-                    <label class="filter-label">Año</label>
-                    <select id="p3-year" class="select-field">
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
+                    <label class="filter-label">Periodo Rápido</label>
+                    <select id="pozo-trimestre-filter" class="select-field">
+                        <option value="Personalizado">Personalizado</option>
+                        <optgroup label="Trimestral">
+                            <option value="Q1" selected>Trimestre 1 (Ene - Mar)</option>
+                            <option value="Q2">Trimestre 2 (Abr - Jun)</option>
+                            <option value="Q3">Trimestre 3 (Jul - Sep)</option>
+                            <option value="Q4">Trimestre 4 (Oct - Dic)</option>
+                        </optgroup>
+                        <optgroup label="Semestral / Anual">
+                            <option value="H1">Semestre 1 (Ene - Jun)</option>
+                            <option value="H2">Semestre 2 (Jul - Dic)</option>
+                            <option value="Anual">Anual Completo</option>
+                        </optgroup>
                     </select>
+                </div>
+                <div class="filter-group" style="min-width: 200px;">
+                    <label class="filter-label">Meses a Visualizar</label>
+                    <div class="multi-select-container">
+                        <div class="multi-select-header" onclick="toggleDropdown('pozo-meses-dropdown', event)">
+                            <span id="pozo-meses-text">Ene, Feb, Mar</span>
+                            <span>&#9662;</span>
+                        </div>
+                        <div class="multi-select-options" id="pozo-meses-dropdown">
+                            <label><input type="checkbox" value="Enero"      class="pozo-mes-chk" checked> Enero</label>
+                            <label><input type="checkbox" value="Febrero"    class="pozo-mes-chk" checked> Febrero</label>
+                            <label><input type="checkbox" value="Marzo"      class="pozo-mes-chk" checked> Marzo</label>
+                            <label><input type="checkbox" value="Abril"      class="pozo-mes-chk"> Abril</label>
+                            <label><input type="checkbox" value="Mayo"       class="pozo-mes-chk"> Mayo</label>
+                            <label><input type="checkbox" value="Junio"      class="pozo-mes-chk"> Junio</label>
+                            <label><input type="checkbox" value="Julio"      class="pozo-mes-chk"> Julio</label>
+                            <label><input type="checkbox" value="Agosto"     class="pozo-mes-chk"> Agosto</label>
+                            <label><input type="checkbox" value="Septiembre" class="pozo-mes-chk"> Septiembre</label>
+                            <label><input type="checkbox" value="Octubre"    class="pozo-mes-chk"> Octubre</label>
+                            <label><input type="checkbox" value="Noviembre"  class="pozo-mes-chk"> Noviembre</label>
+                            <label><input type="checkbox" value="Diciembre"  class="pozo-mes-chk"> Diciembre</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="filter-group">
-                    <label class="filter-label">Departamento</label>
-                    <select id="p3-dept" class="select-field">
-                        <option value="todos">Todos los Departamentos</option>
-                        <option value="operaciones">Operaciones</option>
-                        <option value="administracion">Administración</option>
-                        <option value="suministros">Suministros</option>
-                        <option value="geociencias">Geociencias</option>
-                        <option value="ventas">Ventas</option>
-                        <option value="mantenimiento">Mantenimiento</option>
-                        <option value="ohse">OHSE</option>
-                    </select>
-                </div>
-
-                <div class="filter-divider"></div>
-
-                <div class="filter-group">
-                    <label class="filter-label">Vista</label>
-                    <select id="p3-view" class="select-field">
-                        <option value="anual">Anual</option>
-                        <option value="trimestral">Trimestral</option>
-                        <option value="mensual">Mensual</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">Moneda Principal</label>
-                    <select id="p3-currency" class="select-field">
-                        <option value="mxn">MXN (Pesos)</option>
-                        <option value="usd">USD (Dólares)</option>
-                    </select>
-                </div>
-
-                <div class="filter-group" style="flex: 0 0 auto; min-width: auto;">
-                    <label class="filter-label">&nbsp;</label>
-                    <button class="btn btn-secondary" id="p3-reset" title="Restablecer filtros">
-                        <i class="fas fa-redo"></i> Limpiar
-                    </button>
+                    <label class="filter-label">Buscar Pozo</label>
+                    <input type="text" id="pozo-search-filter" class="input-field" placeholder="Nombre del pozo...">
                 </div>
             </div>
 
             <div class="table-container">
-                <table id="resumen-table" class="data-table">
-                    <thead>
-                        <tr>
-                            <th class="text-left">Periodo</th>
-                            <th class="text-right">Total Bonos (MXN)</th>
-                            <th class="text-right">Total en USD</th>
-                            <th class="text-center">HC Promedio</th>
-                            <th class="text-right">Bonos x HC (MXN)</th>
-                            <th class="text-center">Tipo Cambio</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resumen-tbody"></tbody>
+                <table id="pozos-table" class="data-table" style="min-width: 1000px;">
+                    <thead></thead>
+                    <tbody id="pozos-tbody"><tr class="empty-row"><td colspan="20">Cargando…</td></tr></tbody>
+                    <tfoot id="pozos-tfoot"></tfoot>
                 </table>
             </div>
         </div>
     </section>
+
+    {{-- ─── TAB 4 ──────────────────────────────────────────────────── --}}
+    <section id="evolucion-estadisticas" class="table-section">
+        <div class="table-card">
+            <div class="table-header">
+                <h2 class="table-title">Evolución, Estadísticas y Proyecciones — <span id="stats-year-label">2026</span></h2>
+            </div>
+            <div class="dashboard-grid">
+                <div class="grid-column">
+                    <h3 class="table-subtitle">BONOS POR QUINCENA</h3>
+                    <div class="table-container" style="max-height: 400px; margin-bottom: 20px;">
+                        <table id="stat-quincena-table" class="data-table" style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Quincena</th>
+                                    <th class="text-right">Bonos</th>
+                                    <th class="text-center">Servicios</th>
+                                    <th class="text-center">Suministros</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stat-quincena-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="table-subtitle">EVOLUCIÓN MENSUAL (MXN)</h3>
+                    <div class="chart-container" style="height: 350px;">
+                        <canvas id="evolucionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid-column">
+                    <h3 class="table-subtitle">RENDIMIENTO OPERATIVO (SERVICIOS Y SUMINISTROS)</h3>
+                    <div class="table-container" style="max-height: 180px; margin-bottom: 20px;">
+                        <table id="stat-rendimiento-table" class="data-table" style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Quincena</th>
+                                    <th class="text-right">Bonos MXN</th>
+                                    <th class="text-center">Servicios</th>
+                                    <th class="text-center">Suministros</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stat-rendimiento-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="table-subtitle">DESGLOSE MENSUAL</h3>
+                    <div class="dashboard-grid" style="gap: 15px;">
+                        <div>
+                            <h4 style="font-size: 0.85rem; color: var(--text-medium); margin-bottom: 8px; text-align: center;">(MXN)</h4>
+                            <div class="table-container" style="max-height: 535px; margin-bottom: 0;">
+                                <table id="stat-mes-mxn-table" class="data-table" style="min-width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-left">Mes</th>
+                                            <th class="text-right">Bonos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stat-mes-mxn-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="font-size: 0.85rem; color: var(--text-medium); margin-bottom: 8px; text-align: center;">(USD — referencial)</h4>
+                            <div class="table-container" style="max-height: 535px; margin-bottom: 0;">
+                                <table id="stat-mes-usd-table" class="data-table" style="min-width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-left">Mes</th>
+                                            <th class="text-right">Bonos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stat-mes-usd-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-full-width" style="margin-top: 10px;">
+                    <h3 class="table-subtitle">ANÁLISIS DE CRECIMIENTO ENTRE PERIODOS</h3>
+                    <div class="table-container" style="margin-bottom: 0;">
+                        <table id="stat-diferencia-table" class="data-table" style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Periodo</th>
+                                    <th class="text-left">Quincena</th>
+                                    <th class="text-center">Servicios</th>
+                                    <th class="text-center">Suministros</th>
+                                    <th class="text-right">Bonos MXN</th>
+                                    <th class="text-center">% Diferencia</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stat-diferencia-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
 </main>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- Configuración y Datos ---
-        const tasaCambio = 18.50; // 1 USD = 18.50 MXN
+document.addEventListener('DOMContentLoaded', function () {
 
-        // Datos en Pesos MXN (más completos)
-        const datosQuincena = [
-            { quincena: 1, mes: 'Enero', bonos: 4475092.64, hc: 104, tipo: 'HREFI' },
-            { quincena: 2, mes: 'Febrero', bonos: 9006180.36, hc: 104, tipo: 'HREFI' },
-            { quincena: 3, mes: 'Marzo', bonos: 7443761.75, hc: 103, tipo: 'HREFI' },
-            { quincena: 4, mes: 'Abril', bonos: 4769956.75, hc: 102, tipo: 'HREFI' },
-            { quincena: 5, mes: 'Mayo', bonos: 7719199.00, hc: 101, tipo: 'HREFI' },
-            { quincena: 6, mes: 'Junio', bonos: 7284478.43, hc: 101, tipo: 'HREFI' },
-            { quincena: 7, mes: 'Julio', bonos: 5536865.00, hc: 101, tipo: 'HREFI' },
-            { quincena: 8, mes: 'Agosto', bonos: 5638100.70, hc: 86, tipo: 'HREFI' },
-            { quincena: 9, mes: 'Septiembre', bonos: 4736000.00, hc: 86, tipo: 'HREFI' },
-            { quincena: 10, mes: 'Octubre', bonos: 5061738.75, hc: 86, tipo: 'HREFI' },
-            { quincena: 11, mes: 'Noviembre', bonos: 5699480.00, hc: 86, tipo: 'HREFI' },
-            { quincena: 12, mes: 'Diciembre', bonos: 5219662.52, hc: 86, tipo: 'HREFI' },
-            { quincena: 13, mes: 'Enero', bonos: 3684802.25, hc: 85, tipo: 'HREFI' },
-            { quincena: 14, mes: 'Febrero', bonos: 7056283.32, hc: 85, tipo: 'HREFI' },
-            { quincena: 15, mes: 'Marzo', bonos: 6972477.95, hc: 85, tipo: 'HREFI' },
-            { quincena: 16, mes: 'Abril', bonos: 7515599.10, hc: 85, tipo: 'HREFI' },
-            { quincena: 17, mes: 'Mayo', bonos: 7458902.15, hc: 86, tipo: 'HREFI' },
-            { quincena: 18, mes: 'Junio', bonos: 6767374.00, hc: 86, tipo: 'HREFI' },
-            { quincena: 19, mes: 'Julio', bonos: 5843739.30, hc: 86, tipo: 'HREFI' },
-            { quincena: 20, mes: 'Agosto', bonos: 8306037.50, hc: 86, tipo: 'HREFI' },
-            { quincena: 21, mes: 'Septiembre', bonos: 4286000.00, hc: 86, tipo: 'HREFI' },
-            { quincena: 22, mes: 'Octubre', bonos: 4891738.75, hc: 86, tipo: 'HREFI' },
-            { quincena: 23, mes: 'Noviembre', bonos: 5329480.00, hc: 86, tipo: 'HREFI' },
-            { quincena: 24, mes: 'Diciembre', bonos: 4869662.52, hc: 86, tipo: 'HREFI' }
-        ];
+    // ============================================================================
+    // CONFIGURACIÓN
+    // ============================================================================
+    const STATS_URL = '{{ route("loadchart.stats.data") }}';
 
-        const datosRecord = [
-            { id: 'V10012', nombre: 'MARCOS FERNANDO RUIZ GUERRERO', departamento: 'ADMINISTRACIÓN', bono: 231250.00 },
-            { id: 'V10024', nombre: 'PEDRO ANTONIO TAXILAGA LOPEZ', departamento: 'SUMINISTROS', bono: 333000.00 },
-            { id: 'V10026', nombre: 'JESUS AURELIO MORALES COLLADO', departamento: 'OPERACIONES', bono: 178710.00 },
-            { id: 'V10029', nombre: 'FRANCISCO JAVIER LARA HIDALGO', departamento: 'SUMINISTROS', bono: 51800.00 },
-            { id: 'V10030', nombre: 'RAUL TRONCO ALVAREZ', departamento: 'OPERACIONES', bono: 138750.00 },
-            { id: 'V10031', nombre: 'MARVIN DEL CARMEN DE LA CRUZ IZQUIERDO', departamento: 'SUMINISTROS', bono: 199800.00 },
-            { id: 'V10041', nombre: 'ANGEL MARIO LOPEZ GOMEZ', departamento: 'OPERACIONES', bono: 256780.00 },
-            { id: 'V10046', nombre: 'RAMON BASTAR MEJIA', departamento: 'OPERACIONES', bono: 213120.00 },
-            { id: 'V10049', nombre: 'JUAN CARLOS DIAZ RODRIGUEZ', departamento: 'OPERACIONES', bono: 51060.00 },
-            { id: 'V10050', nombre: 'DIANA LAURA ARZAT ALEJANDRO', departamento: 'GEOCIENCIAS', bono: 120120.50 },
-            { id: 'V10057', nombre: 'LUIS ALBERTO MENDIZ GONZALEZ', departamento: 'GEOCIENCIAS', bono: 133052.00 },
-            { id: 'V10069', nombre: 'OCTAVO CESAR HERNANDEZ RAMON', departamento: 'SUMINISTROS', bono: 185000.00 },
-            { id: 'V10074', nombre: 'ANTONIO RAVANALES ESCALANTE', departamento: 'OPERACIONES', bono: 92870.00 },
-            { id: 'V10075', nombre: 'SALVADOR GERARDO VELASCO LOPEZ', departamento: 'OPERACIONES', bono: 311170.00 },
-            { id: 'V10077', nombre: 'ERNESTINA PEREZ ACOSTA', departamento: 'ADMINISTRACIÓN', bono: 27750.00 },
-            { id: 'V10084', nombre: 'CHRISTIAN NERI JIMENEZ SALAS', departamento: 'OPERACIONES', bono: 345765.00 },
-            { id: 'V10087', nombre: 'EDVINI RAFAEL COLINA LANDA', departamento: 'OPERACIONES', bono: 185740.00 },
-            { id: 'V10102', nombre: 'JORGE ARMANDO GARCIA NOCHEBUENA', departamento: 'OPERACIONES', bono: 219410.00 },
-            { id: 'V10105', nombre: 'FABIAN HERNANDEZ REYES', departamento: 'OPERACIONES', bono: 25160.00 },
-            { id: 'V10106', nombre: 'CARLOS OCTAVO BAUTISTA GONZALEZ', departamento: 'OPERACIONES', bono: 146150.00 },
-            { id: 'V10109', nombre: 'RICARDO PURECO ALEJANDRO', departamento: 'OPERACIONES', bono: 213120.00 },
-            { id: 'V10110', nombre: 'JOSE ANTONIO ACOSTA CAMPOS', departamento: 'OPERACIONES', bono: 297110.00 },
-            { id: 'V10112', nombre: 'CECILIO RAMIREZ MONTERO', departamento: 'OHSE', bono: 23957.50 },
-            { id: 'V10114', nombre: 'MIGUEL HERNANDEZ GARCIA', departamento: 'OHSE', bono: 19980.00 },
-            { id: 'V10116', nombre: 'MABEL AZUCENA RODRIGUEZ CANTU', departamento: 'OHSE', bono: 7030.00 },
-            { id: 'V10120', nombre: 'FELIPE DANIEL LOM TIBURCIO', departamento: 'OPERACIONES', bono: 251600.00 }
-        ];
+    const periodosMap = {
+        'Q1':    ['Enero','Febrero','Marzo'],
+        'Q2':    ['Abril','Mayo','Junio'],
+        'Q3':    ['Julio','Agosto','Septiembre'],
+        'Q4':    ['Octubre','Noviembre','Diciembre'],
+        'H1':    ['Enero','Febrero','Marzo','Abril','Mayo','Junio'],
+        'H2':    ['Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+        'Anual': ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    };
 
-        // --- Helpers ---
-        function formatCurrency(amount, currency = 'MXN') {
-            if (amount === null || amount === undefined) return '$0.00';
-            const loc = currency === 'USD' ? 'en-US' : 'es-MX';
-            const formatted = new Intl.NumberFormat(loc, {
-                style: 'currency',
-                currency: currency,
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(amount);
-            return formatted;
+    const monthKeysMap = {
+        'Enero':['ene1','ene2'], 'Febrero':['feb1','feb2'], 'Marzo':['mar1','mar2'],
+        'Abril':['abr1','abr2'], 'Mayo':['may1','may2'], 'Junio':['jun1','jun2'],
+        'Julio':['jul1','jul2'], 'Agosto':['ago1','ago2'], 'Septiembre':['sep1','sep2'],
+        'Octubre':['oct1','oct2'], 'Noviembre':['nov1','nov2'], 'Diciembre':['dic1','dic2']
+    };
+
+    // ============================================================================
+    // ESTADO GLOBAL — reemplaza los arrays hardcodeados
+    // ============================================================================
+    let empleadosData = [];
+    let pozosData     = [];
+    let quincenasData = [];   // equivale a statQuincenaData + statRendimientoData + statDiferenciaData
+    let mesData       = [];   // equivale a statMesData
+    let evChart       = null;
+
+    // ============================================================================
+    // HELPERS DE FORMATO
+    // ============================================================================
+    function formatMxn(amount) {
+        if (amount === null || amount === undefined) return '';
+        return new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', minimumFractionDigits:2 }).format(amount);
+    }
+
+    function formatUsd(amount) {
+        if (amount === null || amount === undefined) return '';
+        return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:0 }).format(amount);
+    }
+
+    // ============================================================================
+    // CARGA AJAX
+    // ============================================================================
+    async function loadData(year) {
+        document.getElementById('loading-indicator').style.display = 'inline-flex';
+        document.getElementById('error-indicator').style.display   = 'none';
+        document.getElementById('stats-year-label').textContent    = year;
+
+        try {
+            const r = await fetch(`${STATS_URL}?year=${year}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+
+            const j = await r.json();
+            if (!j.success) throw new Error(j.message || 'Error del servidor');
+
+            empleadosData = j.empleadosData || [];
+            pozosData     = j.pozosData     || [];
+            quincenasData = j.quincenasData || [];
+            mesData       = j.mesData       || [];
+
+            // Re-renderizar todo con los nuevos datos
+            renderEmpleados();
+            renderAreas();
+            renderPozos();
+            renderEstadisticas();
+
+        } catch (e) {
+            console.error(e);
+            const el = document.getElementById('error-indicator');
+            el.textContent = '⚠ ' + e.message;
+            el.style.display = 'inline-block';
+        } finally {
+            document.getElementById('loading-indicator').style.display = 'none';
         }
+    }
 
-        function convertMxnToUsd(mxn) {
-            return mxn / tasaCambio;
+    // ============================================================================
+    // FUNCIONES DE CONTROL DE FILTROS (MULTI-SELECT) — sin cambios vs tu blade
+    // ============================================================================
+    window.toggleDropdown = function (id, event) {
+        event.stopPropagation();
+        document.getElementById(id).classList.toggle('show');
+    };
+
+    window.onclick = function (event) {
+        if (!event.target.closest('.multi-select-container')) {
+            document.querySelectorAll('.multi-select-options.show')
+                    .forEach(el => el.classList.remove('show'));
         }
+    };
 
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
+    function updateDropdownText(prefix) {
+        const checkboxes = document.querySelectorAll(`.${prefix}-mes-chk:checked`);
+        const textSpan   = document.getElementById(`${prefix}-meses-text`);
+
+        if (checkboxes.length === 0) {
+            textSpan.textContent = 'Ningún mes';
+        } else if (checkboxes.length === 12) {
+            textSpan.textContent = 'Todos los meses';
+        } else if (checkboxes.length <= 3) {
+            textSpan.textContent = Array.from(checkboxes).map(cb => cb.value.substring(0,3)).join(', ');
+        } else {
+            textSpan.textContent = `${checkboxes.length} meses selec.`;
         }
+    }
 
-        // --- Lógica de Filtros Dinámicos Automáticos ---
-        function populateSpecificPeriod(typeSelectId, specSelectId) {
-            const typeSel = document.getElementById(typeSelectId);
-            const specSel = document.getElementById(specSelectId);
-
-            function updateOptions() {
-                const val = typeSel.value;
-                specSel.innerHTML = '<option value="todos">Todos</option>';
-
-                if(val === 'quincena') {
-                    for(let i=1; i<=24; i++) {
-                        specSel.innerHTML += `<option value="${i}">Quincena ${i}</option>`;
-                    }
-                } else if(val === 'mes') {
-                    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-                    meses.forEach(m => {
-                        specSel.innerHTML += `<option value="${m.toLowerCase()}">${m}</option>`;
-                    });
-                } else if(val === 'trimestre') {
-                    for(let i=1; i<=4; i++) {
-                        specSel.innerHTML += `<option value="${i}">Trimestre ${i} (Q${i})</option>`;
-                    }
-                } else if(val === 'anual') {
-                    specSel.innerHTML = '<option value="todos">Año Completo</option>';
-                }
-            }
-
-            typeSel.addEventListener('change', updateOptions);
-            updateOptions();
+    function handleTrimestreChange(prefix) {
+        const selectVal = document.getElementById(`${prefix}-trimestre-filter`).value;
+        if (selectVal !== 'Personalizado') {
+            const meses = periodosMap[selectVal] || [];
+            document.querySelectorAll(`.${prefix}-mes-chk`).forEach(cb => {
+                cb.checked = meses.includes(cb.value);
+            });
+            updateDropdownText(prefix);
+            if (prefix === 'emp')  renderEmpleados();
+            if (prefix === 'area') renderAreas();
+            if (prefix === 'pozo') renderPozos();
         }
+    }
 
-        // Inicializar dropdowns
-        populateSpecificPeriod('p1-type', 'p1-spec');
+    function handleMesCheckboxChange(prefix) {
+        document.getElementById(`${prefix}-trimestre-filter`).value = 'Personalizado';
+        updateDropdownText(prefix);
+        if (prefix === 'emp')  renderEmpleados();
+        if (prefix === 'area') renderAreas();
+        if (prefix === 'pozo') renderPozos();
+    }
 
-        // --- Funciones de Renderizado con Filtros Automáticos ---
+    document.getElementById('emp-trimestre-filter').addEventListener('change', () => handleTrimestreChange('emp'));
+    document.querySelectorAll('.emp-mes-chk').forEach(cb => cb.addEventListener('change', () => handleMesCheckboxChange('emp')));
 
-        // 1. Tabla Periodos (con filtros automáticos)
-        async function updatePeriodosTable() {
-            const tbody = document.querySelector('#periodos-table tbody');
-            const tfoot = document.querySelector('#periodos-table tfoot');
-            const yearElement = document.getElementById('current-year-1');
+    document.getElementById('area-trimestre-filter').addEventListener('change', () => handleTrimestreChange('area'));
+    document.querySelectorAll('.area-mes-chk').forEach(cb => cb.addEventListener('change', () => handleMesCheckboxChange('area')));
 
-            // Mostrar loading
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="loading-spinner"></div> Cargando datos...</td></tr>';
+    document.getElementById('pozo-trimestre-filter').addEventListener('change', () => handleTrimestreChange('pozo'));
+    document.querySelectorAll('.pozo-mes-chk').forEach(cb => cb.addEventListener('change', () => handleMesCheckboxChange('pozo')));
+
+    // ============================================================================
+    // 3. RENDERIZADO — EMPLEADOS (idéntico a tu blade, consume empleadosData del server)
+    // ============================================================================
+    function renderEmpleados() {
+        const filterArea   = document.getElementById('emp-area-filter').value;
+        const filterSearch = document.getElementById('emp-search-filter').value.toLowerCase();
+        const mesesMostrar = Array.from(document.querySelectorAll('.emp-mes-chk:checked')).map(cb => cb.value);
+
+        const thead = document.querySelector('#empleados-table thead');
+        const tbody = document.getElementById('empleados-tbody');
+        const tfoot = document.getElementById('empleados-tfoot');
+
+        if (mesesMostrar.length === 0) {
+            thead.innerHTML = '<tr><th>No hay meses seleccionados</th></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="20">Selecciona al menos un mes en los filtros.</td></tr>';
             tfoot.innerHTML = '';
-
-            await delay(300); // Simular carga
-
-            const year = document.getElementById('p1-year').value;
-            const type = document.getElementById('p1-type').value;
-            const spec = document.getElementById('p1-spec').value;
-            const dept = document.getElementById('p1-dept').value;
-            const mesFilter = document.getElementById('p1-mes-filter').value;
-            const sortBy = document.getElementById('p1-sort').value;
-
-            // Actualizar título
-            yearElement.textContent = year;
-
-            let data = [...datosQuincena];
-            let totalMxn = 0;
-            let totalHc = 0;
-            let count = 0;
-
-            // Aplicar filtros
-            if(type === 'quincena' && spec !== 'todos') {
-                data = data.filter(d => d.quincena == spec);
-            }
-            if(mesFilter !== 'todos') {
-                data = data.filter(d => d.mes.toLowerCase() === mesFilter);
-            }
-
-            // Ordenar
-            if(sortBy === 'periodo-desc') {
-                data.sort((a, b) => b.quincena - a.quincena);
-            } else if(sortBy === 'bonos') {
-                data.sort((a, b) => b.bonos - a.bonos);
-            } else if(sortBy === 'bonos-asc') {
-                data.sort((a, b) => a.bonos - b.bonos);
-            } else {
-                data.sort((a, b) => a.quincena - b.quincena);
-            }
-
-            // Calcular total para porcentajes
-            const totalBonos = data.reduce((acc, item) => acc + item.bonos, 0);
-
-            tbody.innerHTML = '';
-            data.forEach(d => {
-                totalMxn += d.bonos;
-                totalHc += d.hc;
-                count++;
-
-                const usd = convertMxnToUsd(d.bonos);
-                const promedioXhc = d.bonos / d.hc;
-                const porcentajeTotal = totalBonos > 0 ? (d.bonos / totalBonos * 100) : 0;
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="text-center">Q${d.quincena}</td>
-                    <td class="text-center">${d.mes}</td>
-                    <td class="text-center">${d.hc}</td>
-                    <td class="text-right">
-                        <div class="dual-value">
-                            <span class="currency-mxn">${formatCurrency(d.bonos)}</span>
-                            <span class="currency-usd">≈ ${formatCurrency(usd, 'USD')}</span>
-                        </div>
-                    </td>
-                    <td class="text-right currency-usd">${formatCurrency(usd, 'USD')}</td>
-                    <td class="text-right currency-mxn">${formatCurrency(promedioXhc)}</td>
-                    <td class="text-center">${porcentajeTotal.toFixed(2)}%</td>
-                    <td class="text-center">${tasaCambio.toFixed(2)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // Fila Total
-            if(data.length > 0) {
-                const promedioHc = Math.round(totalHc / count);
-                const promedioMxn = totalMxn / count;
-                const promedioUsd = convertMxnToUsd(promedioMxn);
-                const totalUsd = convertMxnToUsd(totalMxn);
-
-                tfoot.innerHTML = `
-                    <tr class="total-row">
-                        <td colspan="2" class="text-center"><strong>TOTAL (${count} periodos)</strong></td>
-                        <td class="text-center"><strong>${promedioHc}</strong></td>
-                        <td class="text-right">
-                            <div class="dual-value">
-                                <span class="currency-mxn"><strong>${formatCurrency(totalMxn)}</strong></span>
-                                <span class="currency-usd"><strong>≈ ${formatCurrency(totalUsd, 'USD')}</strong></span>
-                            </div>
-                        </td>
-                        <td class="text-right currency-usd"><strong>${formatCurrency(totalUsd, 'USD')}</strong></td>
-                        <td class="text-right currency-mxn"><strong>${formatCurrency(promedioMxn)}</strong></td>
-                        <td class="text-center"><strong>100%</strong></td>
-                        <td class="text-center"><strong>${tasaCambio.toFixed(2)}</strong></td>
-                    </tr>
-                `;
-            }
+            return;
         }
 
-        // 2. Tabla Record (con filtros automáticos)
-        async function updateRecordTable() {
-            const tbody = document.querySelector('#record-table tbody');
-            const tfoot = document.querySelector('#record-table tfoot');
-            const yearElement = document.getElementById('current-year-2');
+        let theadHTML1 = `<tr>
+            <th rowspan="2" class="sticky-col text-left">CLAVE</th>
+            <th rowspan="2" class="sticky-col text-left" style="left: 80px;">NOMBRE COMPLETO</th>
+            <th rowspan="2" class="text-left">ÁREA</th>`;
+        let theadHTML2 = `<tr class="sub-header">`;
 
-            // Mostrar loading
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="loading-spinner"></div> Cargando datos...</td></tr>';
+        mesesMostrar.forEach(mes => {
+            theadHTML1 += `<th colspan="3">${mes.toUpperCase()}</th>`;
+            theadHTML2 += `<th>1RA QUINCENA</th><th>2DA QUINCENA</th><th>TOTAL ${mes.substring(0,3).toUpperCase()}</th>`;
+        });
+        theadHTML1 += `<th rowspan="2">GRAN TOTAL</th></tr>`;
+        theadHTML2 += `</tr>`;
+        thead.innerHTML = theadHTML1 + theadHTML2;
+
+        tbody.innerHTML = '';
+        let columnTotals = new Array(mesesMostrar.length * 3 + 1).fill(0);
+
+        // Ordenar de mayor a menor por gran total del periodo visible
+        const empSorted = [...empleadosData].sort((a, b) => {
+            const totA = mesesMostrar.reduce((s, m) => s + (a[monthKeysMap[m][0]]||0) + (a[monthKeysMap[m][1]]||0), 0);
+            const totB = mesesMostrar.reduce((s, m) => s + (b[monthKeysMap[m][0]]||0) + (b[monthKeysMap[m][1]]||0), 0);
+            return totB - totA;
+        });
+
+        empSorted.forEach(emp => {
+            const matchArea   = filterArea === 'TODAS' || emp.area === filterArea;
+            const matchSearch = emp.nombre.toLowerCase().includes(filterSearch) ||
+                                emp.clave.toLowerCase().includes(filterSearch);
+
+            if (matchArea && matchSearch) {
+                const tr = document.createElement('tr');
+                let rowHTML = `
+                    <td class="sticky-col text-left">${emp.clave}</td>
+                    <td class="sticky-col text-left" style="left: 80px;">${emp.nombre}</td>
+                    <td class="text-left"><span class="badge-area">${emp.area}</span></td>`;
+
+                let granTotalEmp = 0;
+
+                mesesMostrar.forEach((mes, idx) => {
+                    const val1    = emp[monthKeysMap[mes][0]] || 0;
+                    const val2    = emp[monthKeysMap[mes][1]] || 0;
+                    const totalM  = val1 + val2;
+                    granTotalEmp += totalM;
+                    columnTotals[idx * 3]     += val1;
+                    columnTotals[idx * 3 + 1] += val2;
+                    columnTotals[idx * 3 + 2] += totalM;
+
+                    rowHTML += `
+                        <td class="text-right currency-mxn">${val1 > 0 ? formatMxn(val1) : '-'}</td>
+                        <td class="text-right currency-mxn">${val2 > 0 ? formatMxn(val2) : '-'}</td>
+                        <td class="text-right currency-mxn total-col">${totalM > 0 ? formatMxn(totalM) : '-'}</td>`;
+                });
+
+                columnTotals[columnTotals.length - 1] += granTotalEmp;
+                rowHTML += `<td class="text-right currency-mxn" style="background-color: #e2e8f0;">${granTotalEmp > 0 ? formatMxn(granTotalEmp) : '-'}</td>`;
+                tr.innerHTML = rowHTML;
+                tbody.appendChild(tr);
+            }
+        });
+
+        if (!tbody.children.length) {
+            tbody.innerHTML = `<tr class="empty-row"><td colspan="${mesesMostrar.length*3+4}">Sin resultados para los filtros aplicados.</td></tr>`;
+        }
+
+        let tfootHTML = `<tr class="total-row"><td colspan="3" class="text-right sticky-col" style="left: 0;">TOTALES GENERALES</td>`;
+        columnTotals.forEach((tot, idx) => {
+            const isFinal = idx === columnTotals.length - 1;
+            const style   = isFinal ? 'color: var(--primary-color); font-size: 1.1em;' : '';
+            tfootHTML += `<td class="text-right currency-mxn" style="${style}">${formatMxn(tot)}</td>`;
+        });
+        tfoot.innerHTML = tfootHTML + `</tr>`;
+    }
+
+    // ============================================================================
+    // 4. RENDERIZADO — ÁREAS (idéntico a tu blade)
+    // ============================================================================
+    function renderAreas() {
+        const mesesMostrar = Array.from(document.querySelectorAll('.area-mes-chk:checked')).map(cb => cb.value);
+        const thead = document.querySelector('#areas-table thead');
+        const tbody = document.getElementById('areas-tbody');
+        const tfoot = document.getElementById('areas-tfoot');
+
+        if (mesesMostrar.length === 0) {
+            thead.innerHTML = '<tr><th>No hay meses seleccionados</th></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="20">Selecciona al menos un mes en los filtros.</td></tr>';
             tfoot.innerHTML = '';
-
-            await delay(300);
-
-            const year = document.getElementById('p2-year').value;
-            const dept = document.getElementById('p2-dept').value;
-            const min = parseFloat(document.getElementById('p2-min').value) || 0;
-            const max = parseFloat(document.getElementById('p2-max').value) || Infinity;
-            const sortBy = document.getElementById('p2-sort').value;
-
-            // Actualizar título
-            yearElement.textContent = year;
-
-            let data = datosRecord.filter(item => {
-                const matchDepto = dept === 'todos' ||
-                    item.departamento.toLowerCase().includes(dept.toLowerCase());
-                const matchVal = item.bono >= min && item.bono <= max;
-                return matchDepto && matchVal;
-            });
-
-            // Ordenar
-            if(sortBy === 'bono-desc') {
-                data.sort((a, b) => b.bono - a.bono);
-            } else if(sortBy === 'bono-asc') {
-                data.sort((a, b) => a.bono - b.bono);
-            } else if(sortBy === 'nombre') {
-                data.sort((a, b) => a.nombre.localeCompare(b.nombre));
-            } else if(sortBy === 'departamento') {
-                data.sort((a, b) => a.departamento.localeCompare(b.departamento));
-            }
-
-            const totalMxn = data.reduce((acc, i) => acc + i.bono, 0);
-
-            // Calcular promedio por departamento
-            const deptoSums = {};
-            const deptoCounts = {};
-
-            data.forEach(i => {
-                if(!deptoSums[i.departamento]) {
-                    deptoSums[i.departamento] = 0;
-                    deptoCounts[i.departamento] = 0;
-                }
-                deptoSums[i.departamento] += i.bono;
-                deptoCounts[i.departamento]++;
-            });
-
-            tbody.innerHTML = '';
-            data.forEach(item => {
-                const usd = convertMxnToUsd(item.bono);
-                const avg = deptoSums[item.departamento] / deptoCounts[item.departamento];
-                const diff = item.bono - avg;
-                const pct = totalMxn > 0 ? (item.bono / totalMxn * 100) : 0;
-                const diffClass = diff >= 0 ? 'positive' : 'negative';
-                const diffSymbol = diff >= 0 ? '+' : '';
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="text-left">${item.id}</td>
-                    <td class="text-left">${item.nombre}</td>
-                    <td class="text-center">${item.departamento}</td>
-                    <td class="text-right currency-mxn">${formatCurrency(item.bono)}</td>
-                    <td class="text-right currency-usd">${formatCurrency(usd, 'USD')}</td>
-                    <td class="text-center">${pct.toFixed(2)}%</td>
-                    <td class="text-right currency-mxn">${formatCurrency(avg)}</td>
-                    <td class="text-right ${diffClass}">${diffSymbol}${formatCurrency(diff)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // Fila Total
-            if(data.length > 0) {
-                const totalUsd = convertMxnToUsd(totalMxn);
-                const promedioGeneral = totalMxn / data.length;
-
-                tfoot.innerHTML = `
-                    <tr class="total-row">
-                        <td colspan="3" class="text-center"><strong>TOTAL (${data.length} empleados)</strong></td>
-                        <td class="text-right currency-mxn"><strong>${formatCurrency(totalMxn)}</strong></td>
-                        <td class="text-right currency-usd"><strong>${formatCurrency(totalUsd, 'USD')}</strong></td>
-                        <td class="text-center"><strong>100%</strong></td>
-                        <td class="text-right currency-mxn"><strong>${formatCurrency(promedioGeneral)}</strong></td>
-                        <td class="text-right"><strong>-</strong></td>
-                    </tr>
-                `;
-            }
+            return;
         }
 
-        // 3. Tabla Resumen (con filtros automáticos)
-        async function updateResumenTable() {
-            const tbody = document.querySelector('#resumen-table tbody');
-            const yearElement = document.getElementById('current-year-3');
+        let theadHTML1 = `<tr><th rowspan="2" class="sticky-col text-left">ÁREA</th>`;
+        let theadHTML2 = `<tr class="sub-header">`;
+        mesesMostrar.forEach(mes => {
+            theadHTML1 += `<th colspan="3">${mes.toUpperCase()}</th>`;
+            theadHTML2 += `<th>1RA QUINCENA</th><th>2DA QUINCENA</th><th>TOTAL ${mes.substring(0,3).toUpperCase()}</th>`;
+        });
+        theadHTML1 += `<th rowspan="2">GRAN TOTAL</th></tr>`;
+        theadHTML2 += `</tr>`;
+        thead.innerHTML = theadHTML1 + theadHTML2;
 
-            // Mostrar loading
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="loading-spinner"></div> Cargando datos...</td></tr>';
+        const areasMap = {};
+        empleadosData.forEach(emp => {
+            if (!areasMap[emp.area]) areasMap[emp.area] = {};
+            mesesMostrar.forEach(mes => {
+                if (!areasMap[emp.area][mes]) areasMap[emp.area][mes] = { q1: 0, q2: 0 };
+                areasMap[emp.area][mes].q1 += emp[monthKeysMap[mes][0]] || 0;
+                areasMap[emp.area][mes].q2 += emp[monthKeysMap[mes][1]] || 0;
+            });
+        });
 
-            await delay(300);
+        tbody.innerHTML = '';
+        let columnTotals = new Array(mesesMostrar.length * 3 + 1).fill(0);
 
-            const year = document.getElementById('p3-year').value;
-            const dept = document.getElementById('p3-dept').value;
-            const view = document.getElementById('p3-view').value;
-            const currency = document.getElementById('p3-currency').value;
+        // Ordenar áreas de mayor a menor por gran total del periodo visible
+        const areasSorted = Object.keys(areasMap).sort((a, b) => {
+            const totA = mesesMostrar.reduce((s, m) => s + (areasMap[a][m]?.q1||0) + (areasMap[a][m]?.q2||0), 0);
+            const totB = mesesMostrar.reduce((s, m) => s + (areasMap[b][m]?.q1||0) + (areasMap[b][m]?.q2||0), 0);
+            return totB - totA;
+        });
 
-            // Actualizar título
-            yearElement.textContent = year;
+        areasSorted.forEach(areaName => {
+            const tr = document.createElement('tr');
+            let rowHTML = `<td class="sticky-col text-left"><strong>${areaName}</strong></td>`;
+            let granTotalArea = 0;
 
-            tbody.innerHTML = '';
+            mesesMostrar.forEach((mes, idx) => {
+                const val1   = areasMap[areaName][mes].q1;
+                const val2   = areasMap[areaName][mes].q2;
+                const totalM = val1 + val2;
+                granTotalArea             += totalM;
+                columnTotals[idx * 3]     += val1;
+                columnTotals[idx * 3 + 1] += val2;
+                columnTotals[idx * 3 + 2] += totalM;
+                rowHTML += `
+                    <td class="text-right currency-mxn">${val1 > 0 ? formatMxn(val1) : '-'}</td>
+                    <td class="text-right currency-mxn">${val2 > 0 ? formatMxn(val2) : '-'}</td>
+                    <td class="text-right currency-mxn total-col">${totalM > 0 ? formatMxn(totalM) : '-'}</td>`;
+            });
 
-            // Datos según vista seleccionada
-            if(view === 'anual') {
-                const totalMxn = datosQuincena.reduce((acc, item) => acc + item.bonos, 0);
-                const totalUsd = convertMxnToUsd(totalMxn);
-                const hcPromedio = 85;
-                const bonosXhc = totalMxn / hcPromedio;
+            columnTotals[columnTotals.length - 1] += granTotalArea;
+            rowHTML += `<td class="text-right currency-mxn" style="background-color: #e2e8f0;">${granTotalArea > 0 ? formatMxn(granTotalArea) : '-'}</td>`;
+            tr.innerHTML = rowHTML;
+            tbody.appendChild(tr);
+        });
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="text-left"><strong>${year} (Anual)</strong></td>
-                    <td class="text-right currency-mxn">${formatCurrency(totalMxn)}</td>
-                    <td class="text-right currency-usd">${formatCurrency(totalUsd, 'USD')}</td>
-                    <td class="text-center">${hcPromedio}</td>
-                    <td class="text-right currency-mxn">${formatCurrency(bonosXhc)}</td>
-                    <td class="text-center">${tasaCambio.toFixed(2)}</td>
-                `;
+        let tfootHTML = `<tr class="total-row"><td class="text-right sticky-col">TOTALES</td>`;
+        columnTotals.forEach((tot, idx) => {
+            const isFinal = idx === columnTotals.length - 1;
+            const style   = isFinal ? 'color: var(--primary-color); font-size: 1.1em;' : '';
+            tfootHTML += `<td class="text-right currency-mxn" style="${style}">${formatMxn(tot)}</td>`;
+        });
+        tfoot.innerHTML = tfootHTML + `</tr>`;
+    }
+
+    // ============================================================================
+    // 5. RENDERIZADO — POZOS (idéntico a tu blade)
+    // ============================================================================
+    function renderPozos() {
+        const filterSearch = document.getElementById('pozo-search-filter').value.toLowerCase();
+        const mesesMostrar = Array.from(document.querySelectorAll('.pozo-mes-chk:checked')).map(cb => cb.value);
+
+        const thead = document.querySelector('#pozos-table thead');
+        const tbody = document.getElementById('pozos-tbody');
+        const tfoot = document.getElementById('pozos-tfoot');
+
+        if (mesesMostrar.length === 0) {
+            thead.innerHTML = '<tr><th>No hay meses seleccionados</th></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="20">Selecciona al menos un mes en los filtros.</td></tr>';
+            tfoot.innerHTML = '';
+            return;
+        }
+
+        let theadHTML1 = `<tr><th rowspan="2" class="sticky-col text-left">POZO</th>`;
+        let theadHTML2 = `<tr class="sub-header">`;
+        mesesMostrar.forEach(mes => {
+            theadHTML1 += `<th colspan="3">${mes.toUpperCase()}</th>`;
+            theadHTML2 += `<th>1RA QUINCENA</th><th>2DA QUINCENA</th><th>TOTAL ${mes.substring(0,3).toUpperCase()}</th>`;
+        });
+        theadHTML1 += `<th rowspan="2">GRAN TOTAL</th></tr>`;
+        theadHTML2 += `</tr>`;
+        thead.innerHTML = theadHTML1 + theadHTML2;
+
+        const pozosMap = {};
+        pozosData.forEach(p => {
+            if (!pozosMap[p.pozo]) pozosMap[p.pozo] = {};
+            mesesMostrar.forEach(mes => {
+                if (!pozosMap[p.pozo][mes]) pozosMap[p.pozo][mes] = { q1: 0, q2: 0 };
+            });
+            if (mesesMostrar.includes(p.mes)) {
+                if (p.quincena === '1RA QUINCENA') pozosMap[p.pozo][p.mes].q1 += p.costo;
+                if (p.quincena === '2DA QUINCENA') pozosMap[p.pozo][p.mes].q2 += p.costo;
+            }
+        });
+
+        tbody.innerHTML = '';
+        let columnTotals = new Array(mesesMostrar.length * 3 + 1).fill(0);
+
+        // Ordenar pozos de mayor a menor por gran total del periodo visible
+        const pozosSorted = Object.keys(pozosMap).sort((a, b) => {
+            const totA = mesesMostrar.reduce((s, m) => s + (pozosMap[a][m]?.q1||0) + (pozosMap[a][m]?.q2||0), 0);
+            const totB = mesesMostrar.reduce((s, m) => s + (pozosMap[b][m]?.q1||0) + (pozosMap[b][m]?.q2||0), 0);
+            return totB - totA;
+        });
+
+        pozosSorted.forEach(pozoName => {
+            if (!pozoName.toLowerCase().includes(filterSearch)) return;
+
+            const tr = document.createElement('tr');
+            let rowHTML = `<td class="sticky-col text-left"><strong>${pozoName}</strong></td>`;
+            let granTotalPozo = 0;
+            let hasData = false;
+
+            mesesMostrar.forEach((mes, idx) => {
+                const val1   = pozosMap[pozoName][mes].q1;
+                const val2   = pozosMap[pozoName][mes].q2;
+                const totalM = val1 + val2;
+                if (totalM > 0) hasData = true;
+                granTotalPozo             += totalM;
+                columnTotals[idx * 3]     += val1;
+                columnTotals[idx * 3 + 1] += val2;
+                columnTotals[idx * 3 + 2] += totalM;
+                rowHTML += `
+                    <td class="text-right currency-mxn">${val1 > 0 ? formatMxn(val1) : '-'}</td>
+                    <td class="text-right currency-mxn">${val2 > 0 ? formatMxn(val2) : '-'}</td>
+                    <td class="text-right currency-mxn total-col">${totalM > 0 ? formatMxn(totalM) : '-'}</td>`;
+            });
+
+            if (hasData) {
+                columnTotals[columnTotals.length - 1] += granTotalPozo;
+                rowHTML += `<td class="text-right currency-mxn" style="background-color: #e2e8f0;">${granTotalPozo > 0 ? formatMxn(granTotalPozo) : '-'}</td>`;
+                tr.innerHTML = rowHTML;
                 tbody.appendChild(tr);
+            }
+        });
 
-            } else if(view === 'trimestral') {
-                const trimestres = [
-                    { nombre: 'Q1 (Ene-Mar)', meses: ['Enero', 'Febrero', 'Marzo'] },
-                    { nombre: 'Q2 (Abr-Jun)', meses: ['Abril', 'Mayo', 'Junio'] },
-                    { nombre: 'Q3 (Jul-Sep)', meses: ['Julio', 'Agosto', 'Septiembre'] },
-                    { nombre: 'Q4 (Oct-Dic)', meses: ['Octubre', 'Noviembre', 'Diciembre'] }
-                ];
+        let tfootHTML = `<tr class="total-row"><td class="text-right sticky-col">TOTALES</td>`;
+        columnTotals.forEach((tot, idx) => {
+            const isFinal = idx === columnTotals.length - 1;
+            const style   = isFinal ? 'color: var(--primary-color); font-size: 1.1em;' : '';
+            tfootHTML += `<td class="text-right currency-mxn" style="${style}">${formatMxn(tot)}</td>`;
+        });
+        tfoot.innerHTML = tfootHTML + `</tr>`;
+    }
 
-                trimestres.forEach(trimestre => {
-                    let bonosTrimestreMxn = 0;
-                    datosQuincena.forEach(item => {
-                        if(trimestre.meses.includes(item.mes)) {
-                            bonosTrimestreMxn += item.bonos;
-                        }
-                    });
+    // ============================================================================
+    // 6. RENDERIZADO — ESTADÍSTICAS (misma estructura de tu blade, datos del server)
+    // ============================================================================
+    function renderEstadisticas() {
+        // ── Tabla Quincena (reemplaza statQuincenaData) ──────────
+        const tbQuincena = document.getElementById('stat-quincena-tbody');
+        tbQuincena.innerHTML = '';
+        quincenasData.forEach(q => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center">${q.num}</td>
+                <td class="text-right currency-mxn">${q.bonosMxn ? formatMxn(q.bonosMxn) : ''}</td>
+                <td class="text-center">${q.serviciosCount ?? ''}</td>
+                <td class="text-center">${q.suministrosCount ?? ''}</td>`;
+            tbQuincena.appendChild(tr);
+        });
 
-                    const bonosTrimestreUsd = convertMxnToUsd(bonosTrimestreMxn);
-                    const hcPromedio = 85;
-                    const bonosXhc = bonosTrimestreMxn / hcPromedio;
+        // ── Tabla Rendimiento (reemplaza statRendimientoData) ────
+        const tbRend = document.getElementById('stat-rendimiento-tbody');
+        tbRend.innerHTML = '';
+        quincenasData.forEach(q => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center">${q.num}</td>
+                <td class="text-right currency-mxn">${formatMxn(q.bonosMxn)}</td>
+                <td class="text-center">${q.serviciosCount}</td>
+                <td class="text-center">${q.suministrosCount}</td>`;
+            tbRend.appendChild(tr);
+        });
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="text-left"><strong>${trimestre.nombre} ${year}</strong></td>
-                        <td class="text-right currency-mxn">${formatCurrency(bonosTrimestreMxn)}</td>
-                        <td class="text-right currency-usd">${formatCurrency(bonosTrimestreUsd, 'USD')}</td>
-                        <td class="text-center">${hcPromedio}</td>
-                        <td class="text-right currency-mxn">${formatCurrency(bonosXhc)}</td>
-                        <td class="text-center">${tasaCambio.toFixed(2)}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+        // ── Tabla Mes MXN / USD (reemplaza statMesData) ──────────
+        const tbMesMxn = document.getElementById('stat-mes-mxn-tbody');
+        const tbMesUsd = document.getElementById('stat-mes-usd-tbody');
+        tbMesMxn.innerHTML = '';
+        tbMesUsd.innerHTML = '';
 
-            } else if(view === 'mensual') {
-                const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        // Tipo de cambio referencial (ajusta o trae del servidor si lo necesitas)
+        const TC = 20.10;
 
-                meses.forEach(mes => {
-                    let bonosMesMxn = 0;
-                    datosQuincena.forEach(item => {
-                        if(item.mes === mes) {
-                            bonosMesMxn += item.bonos;
-                        }
-                    });
+        mesData.forEach(d => {
+            const trMxn = document.createElement('tr');
+            trMxn.innerHTML = `
+                <td class="text-left">${d.mes}</td>
+                <td class="text-right currency-mxn">${d.bonosMxn > 0 ? formatMxn(d.bonosMxn) : ''}</td>`;
+            tbMesMxn.appendChild(trMxn);
 
-                    if(bonosMesMxn > 0) {
-                        const bonosMesUsd = convertMxnToUsd(bonosMesMxn);
-                        const hcPromedio = 85;
-                        const bonosXhc = bonosMesMxn / hcPromedio;
+            const bonosUsd = d.bonosMxn > 0 ? d.bonosMxn / TC : 0;
+            const trUsd = document.createElement('tr');
+            trUsd.innerHTML = `
+                <td class="text-left">${d.mes}</td>
+                <td class="text-right currency-usd">${bonosUsd > 0 ? formatUsd(bonosUsd) : ''}</td>`;
+            tbMesUsd.appendChild(trUsd);
+        });
 
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td class="text-left"><strong>${mes} ${year}</strong></td>
-                            <td class="text-right currency-mxn">${formatCurrency(bonosMesMxn)}</td>
-                            <td class="text-right currency-usd">${formatCurrency(bonosMesUsd, 'USD')}</td>
-                            <td class="text-center">${hcPromedio}</td>
-                            <td class="text-right currency-mxn">${formatCurrency(bonosXhc)}</td>
-                            <td class="text-center">${tasaCambio.toFixed(2)}</td>
-                        `;
-                        tbody.appendChild(tr);
+        // ── Tabla Diferencia (reemplaza statDiferenciaData) ─────
+        const tbDiff = document.getElementById('stat-diferencia-tbody');
+        tbDiff.innerHTML = '';
+        quincenasData.forEach((q, i) => {
+            const classDiff = q.pctDif === null ? '' : q.pctDif >= 0 ? 'percentage-positive' : 'percentage-negative';
+            const sign      = (q.pctDif !== null && q.pctDif > 0) ? '+' : '';
+            const pctText   = q.pctDif !== null ? `${sign}${q.pctDif}%` : '—';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center">${i + 1}</td>
+                <td class="text-left"><strong>${q.periodo}</strong></td>
+                <td class="text-center">${q.serviciosCount}</td>
+                <td class="text-center">${q.suministrosCount}</td>
+                <td class="text-right currency-mxn">${formatMxn(q.bonosMxn)}</td>
+                <td class="text-center ${classDiff}">${pctText}</td>`;
+            tbDiff.appendChild(tr);
+        });
+
+        // ── Gráfica (misma configuración de tu blade) ────────────
+        if (evChart) evChart.destroy();
+        const ctx = document.getElementById('evolucionChart').getContext('2d');
+        evChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: mesData.map(d => d.mes),
+                datasets: [
+                    {
+                        label: 'Bonos MXN',
+                        data: mesData.map(d => d.bonosMxn),
+                        backgroundColor: '#5e5e5e',
+                        yAxisID: 'y'
                     }
-                });
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { type: 'linear', position: 'left', ticks: { callback: v => '$' + v.toLocaleString('es-MX') } }
+                },
+                plugins: { legend: { position: 'bottom' } }
             }
-        }
-
-        // --- Event Listeners para Filtros Automáticos ---
-
-        // Tab 1: Bonos por Periodo
-        const tab1Filters = ['p1-year', 'p1-type', 'p1-spec', 'p1-dept', 'p1-mes-filter', 'p1-sort'];
-        tab1Filters.forEach(id => {
-            document.getElementById(id).addEventListener('change', updatePeriodosTable);
         });
+    }
 
-        // Tab 2: Record de Bonos
-        const tab2Filters = ['p2-year', 'p2-dept', 'p2-sort'];
-        tab2Filters.forEach(id => {
-            document.getElementById(id).addEventListener('change', updateRecordTable);
+    // ============================================================================
+    // TABS NAVEGACIÓN — sin cambios
+    // ============================================================================
+    const tabs     = document.querySelectorAll('.tab-btn');
+    const sections = document.querySelectorAll('.table-section');
+    tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.tab).classList.add('active');
         });
-
-        // Inputs con debounce para mejor performance
-        let recordTimeout;
-        document.getElementById('p2-min').addEventListener('input', function() {
-            clearTimeout(recordTimeout);
-            recordTimeout = setTimeout(updateRecordTable, 500);
-        });
-
-        document.getElementById('p2-max').addEventListener('input', function() {
-            clearTimeout(recordTimeout);
-            recordTimeout = setTimeout(updateRecordTable, 500);
-        });
-
-        // Tab 3: Resumen General
-        const tab3Filters = ['p3-year', 'p3-dept', 'p3-view', 'p3-currency'];
-        tab3Filters.forEach(id => {
-            document.getElementById(id).addEventListener('change', updateResumenTable);
-        });
-
-        // --- Listeners de Tabs ---
-        const tabs = document.querySelectorAll('.tab-btn');
-        const sections = document.querySelectorAll('.table-section');
-
-        tabs.forEach(btn => {
-            btn.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                sections.forEach(s => s.classList.remove('active'));
-
-                btn.classList.add('active');
-                const target = document.getElementById(btn.dataset.tab);
-                target.classList.add('active');
-
-                // Actualizar la tabla correspondiente al cambiar de tab
-                if(btn.dataset.tab === 'bonos-periodicos') updatePeriodosTable();
-                if(btn.dataset.tab === 'record-bonos') updateRecordTable();
-                if(btn.dataset.tab === 'resumen-general') updateResumenTable();
-            });
-        });
-
-        // --- Botones de Reset ---
-        document.getElementById('p1-reset').addEventListener('click', () => {
-            document.getElementById('p1-year').value = '2025';
-            document.getElementById('p1-type').value = 'quincena';
-            document.getElementById('p1-spec').value = 'todos';
-            document.getElementById('p1-dept').value = 'todos';
-            document.getElementById('p1-mes-filter').value = 'todos';
-            document.getElementById('p1-sort').value = 'periodo';
-            updatePeriodosTable();
-        });
-
-        document.getElementById('p2-reset').addEventListener('click', () => {
-            document.getElementById('p2-year').value = '2025';
-            document.getElementById('p2-dept').value = 'todos';
-            document.getElementById('p2-min').value = '';
-            document.getElementById('p2-max').value = '';
-            document.getElementById('p2-sort').value = 'bono-desc';
-            updateRecordTable();
-        });
-
-        document.getElementById('p3-reset').addEventListener('click', () => {
-            document.getElementById('p3-year').value = '2025';
-            document.getElementById('p3-dept').value = 'todos';
-            document.getElementById('p3-view').value = 'anual';
-            document.getElementById('p3-currency').value = 'mxn';
-            updateResumenTable();
-        });
-
-        // --- Función de Exportación ---
-        window.exportTable = function(tableId, filename) {
-            const table = document.getElementById(tableId);
-            let csv = [];
-
-            // Encabezados
-            const headers = [];
-            table.querySelectorAll('th').forEach(th => {
-                headers.push(th.textContent.trim());
-            });
-            csv.push(headers.join(','));
-
-            // Filas del cuerpo
-            table.querySelectorAll('tbody tr').forEach(row => {
-                const rowData = [];
-                row.querySelectorAll('td').forEach(cell => {
-                    let text = cell.textContent.trim();
-                    text = text.replace(/[$,]/g, '');
-                    text = text.replace(/\s+/g, ' ');
-                    rowData.push(`"${text}"`);
-                });
-                csv.push(rowData.join(','));
-            });
-
-            // Fila de total si existe
-            table.querySelectorAll('tfoot tr').forEach(row => {
-                const rowData = [];
-                row.querySelectorAll('td').forEach(cell => {
-                    let text = cell.textContent.trim();
-                    text = text.replace(/[$,]/g, '');
-                    text = text.replace(/\s+/g, ' ');
-                    rowData.push(`"${text}"`);
-                });
-                csv.push(rowData.join(','));
-            });
-
-            const csvContent = csv.join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-
-            if(navigator.msSaveBlob) {
-                navigator.msSaveBlob(blob, filename + '.csv');
-            } else {
-                link.href = URL.createObjectURL(blob);
-                link.download = filename + '.csv';
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        };
-
-        // --- Inicialización ---
-        updatePeriodosTable();
     });
+
+    // Filtros extras
+    document.getElementById('emp-area-filter').addEventListener('change', renderEmpleados);
+    document.getElementById('emp-search-filter').addEventListener('input', renderEmpleados);
+    document.getElementById('pozo-search-filter').addEventListener('input', renderPozos);
+
+    // Cambio de año → nueva petición
+    document.getElementById('global-year').addEventListener('change', function () {
+        loadData(this.value);
+    });
+
+    // ============================================================================
+    // EXPORTAR A CSV — sin cambios
+    // ============================================================================
+    window.exportTable = function (tableId, filename) {
+        const table = document.getElementById(tableId);
+        let csv = [];
+        table.querySelectorAll('thead tr').forEach(row => {
+            const rowData = [];
+            row.querySelectorAll('th').forEach(cell => rowData.push(`"${cell.textContent.trim().replace(/"/g,'""')}"`));
+            csv.push(rowData.join(','));
+        });
+        table.querySelectorAll('tbody tr, tfoot tr').forEach(row => {
+            const rowData = [];
+            row.querySelectorAll('td').forEach(cell => rowData.push(`"${cell.textContent.trim().replace(/[$,]/g,'').replace(/\s+/g,' ')}"`));
+            csv.push(rowData.join(','));
+        });
+        const blob = new Blob(['\uFEFF' + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href     = URL.createObjectURL(blob);
+        link.download = filename + '.csv';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // ============================================================================
+    // INICIALIZAR
+    // ============================================================================
+    updateDropdownText('emp');
+    updateDropdownText('area');
+    updateDropdownText('pozo');
+    loadData(document.getElementById('global-year').value);
+});
 </script>
 @endsection

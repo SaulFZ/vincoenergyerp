@@ -9,6 +9,7 @@ use App\Models\RecursosHumanos\LoadChart\FieldBonus;
 use App\Models\RecursosHumanos\LoadChart\FortnightlyConfig;
 use App\Models\RecursosHumanos\LoadChart\Meal;
 use App\Models\RecursosHumanos\LoadChart\Services;
+use App\Models\Operaciones\Well;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -86,10 +87,8 @@ class CalendarController extends Controller
 
         $foodOptions = Meal::orderBy('meal_number')->get();
 
-        // 🚀 Lógica de Bonos de Campo MÁXIMAMENTE SIMPLIFICADA
+        // 🚀 Lógica de Bonos de Campo NORMAL
         $employeeBonusCategory = $employee->job_title;
-
-        // FILTRADO DE BONOS POR LA CATEGORÍA CALCULADA
         $fieldBonuses = FieldBonus::where('employee_category', $employeeBonusCategory)
             ->orderBy('bonus_identifier')
             ->get();
@@ -142,29 +141,46 @@ class CalendarController extends Controller
             ];
         }
 
-       $isGuardiaEmpleado = false;
+        // 🚔 LÓGICA DE GUARDIAS Y BONOS DE GUARDIAS
+        $isGuardiaEmpleado = false;
+        $guardiaBonuses = collect();
+
         if ($employee && $employee->job_title && stripos($employee->job_title, 'AUXILIAR PAL') !== false) {
             $isGuardiaEmpleado = true;
+            // 🥇 Extraer SOLAMENTE los bonos para 'Auxiliar PAL'
+            $guardiaBonuses = FieldBonus::where('employee_category', 'Auxiliar PAL')
+                                        ->orderBy('bonus_identifier')
+                                        ->get();
         }
+
+        // Lógica de visualización del campo Base Activity Description
+        $operativosValidos = [
+            'Operador de Campo 1', 'Operador de Campo 2', 'Operador de Campo 3',
+            'Operador de Campo 4', 'Operador de Campo 5', 'Operador de Campo 6',
+            'Auxiliar Mecanico', 'Auxiliar General', 'Mecánico General'
+        ];
+        $requiresBaseDescription = ($employee && $employee->department === 'Operaciones' && in_array($employee->job_title, $operativosValidos));
 
         // Datos comunes para ambas vistas
         $viewData = [
-            'employee'           => $employee,
-            'hire_date'          => $hire_date,
-            'employee_photo'     => $photo,
-            'services'           => $services,
-            'calendarDays'       => $calendarDays,
-            'monthName'          => $monthName,
-            'currentYear'        => $currentYear,
-            'currentMonth'       => $currentMonth,
-            'payrollDates'       => $payrollDates,
-            'foodOptions'        => $foodOptions,
-            'fieldBonuses'       => $fieldBonuses,
-            'vacationDays'       => $vacationDays,
-            'restDays'           => $totalRestDaysInMonth,
-            'employeeActivities' => $employeeActivities,
-            'isForModal'         => $isForModal,
-            'isGuardia'          => $isGuardiaEmpleado, // 👈🏼 PASAMOS LA VARIABLE A LA VISTA
+            'employee'                => $employee,
+            'hire_date'               => $hire_date,
+            'employee_photo'          => $photo,
+            'services'                => $services,
+            'calendarDays'            => $calendarDays,
+            'monthName'               => $monthName,
+            'currentYear'             => $currentYear,
+            'currentMonth'            => $currentMonth,
+            'payrollDates'            => $payrollDates,
+            'foodOptions'             => $foodOptions,
+            'fieldBonuses'            => $fieldBonuses,
+            'guardiaBonuses'          => $guardiaBonuses,
+            'vacationDays'            => $vacationDays,
+            'restDays'                => $totalRestDaysInMonth,
+            'employeeActivities'      => $employeeActivities,
+            'isForModal'              => $isForModal,
+            'isGuardia'               => $isGuardiaEmpleado,
+            'requiresBaseDescription' => $requiresBaseDescription,
         ];
 
         // Determinar qué vista retornar
@@ -188,9 +204,6 @@ class CalendarController extends Controller
         }
     }
 
-    /**
-     * Devuelve los datos del calendario en formato JSON para las solicitudes AJAX.
-     */
     public function getCalendarData(Request $request)
     {
         $currentMonth = $request->input('month', date('n'));
@@ -261,9 +274,6 @@ class CalendarController extends Controller
         ]);
     }
 
-    /**
-     * Devuelve los datos de balance para ser usados en AJAX
-     */
     public function getEmployeeBalancesAjax(Request $request)
     {
         $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
@@ -279,7 +289,6 @@ class CalendarController extends Controller
 
         $vacationBalance = EmployeeVacationBalance::where('employee_id', $employee->id)->first();
 
-        // ✅ LÓGICA: Contar los días de actividad 'D' (Descanso) en el mes
         $monthlyLog = EmployeeMonthlyWorkLog::where('employee_id', $employee->id)
             ->where('month_and_year', $monthYear)
             ->first();
@@ -291,7 +300,6 @@ class CalendarController extends Controller
                 $totalRestDaysInMonth++;
             }
         }
-        // -----------------------------------------------------------------
 
         return response()->json([
             'success'              => true,
@@ -300,9 +308,6 @@ class CalendarController extends Controller
         ]);
     }
 
-    /**
-     * Función auxiliar para calcular datos iniciales de balance
-     */
     private function calculateInitialVacationData(Employee $employee): array
     {
         $hireDate = Carbon::parse($employee->hire_date);
@@ -322,12 +327,25 @@ class CalendarController extends Controller
     }
 
     /**
-     * Verifica si una fecha de servicio ya está utilizada por otro registro en el Load Chart.
-     * * @param int $employeeId
-     * @param string $serviceRealDate
-     * @param string $currentActivityDate La fecha de la actividad que se está guardando.
-     * @return bool True si ya existe otro servicio usando esta fecha, False en caso contrario.
+     * Busca pozos por nombre para el autocompletado.
      */
+    public function searchWells(Request $request)
+    {
+        $term = $request->input('q');
+
+        if (!$term) {
+            return response()->json([]);
+        }
+
+        // Buscamos pozos que coincidan con el texto y que estén activos
+        $wells = Well::where('name', 'LIKE', '%' . $term . '%')
+            ->where('status', 'active')
+            ->limit(10) // Limitamos a 10 resultados para no saturar la vista
+            ->get(['id', 'name']);
+
+        return response()->json($wells);
+    }
+
     private function isServiceRealDateUsedByAnotherDay(int $employeeId, string $serviceRealDate, string $currentActivityDate): bool
     {
         $realDateMonthYear     = Carbon::parse($serviceRealDate)->format('Y-m');
@@ -356,9 +374,6 @@ class CalendarController extends Controller
         return false;
     }
 
-    /**
-     * Guarda una actividad diaria con los nuevos campos.
-     */
     public function saveActivity(Request $request)
     {
         DB::beginTransaction();
@@ -378,10 +393,12 @@ class CalendarController extends Controller
                     return response()->json(['success' => false, 'message' => 'No tienes permiso para editar este calendario.'], 403);
                 }
             }
+
             $employee = Employee::find($targetEmployeeId);
             if (! $employee) {
                 return response()->json(['success' => false, 'message' => 'Empleado no encontrado.'], 404);
             }
+
             $monthYear = Carbon::create($request->displayed_year, $request->displayed_month, 1)->format('Y-m');
 
             $monthlyLog = EmployeeMonthlyWorkLog::firstOrCreate(
@@ -390,8 +407,6 @@ class CalendarController extends Controller
             );
 
             $activityData = $monthlyLog->getDailyActivity($request->date) ?? [];
-
-            $isWellActivity = ($request->activity_type === 'P');
 
             $existingFoodBonus  = $activityData['food_bonuses'][0] ?? null;
             $existingFieldBonus = $activityData['field_bonuses'][0] ?? null;
@@ -409,30 +424,51 @@ class CalendarController extends Controller
                     $activityData['rejection_reason'] = null;
                 }
 
-                $activityData['activity_type']        = $activityType;
-                $activityData['activity_description'] = $this->getActivityDescription($activityType);
-                $activityData['commissioned_to']      = $request->commissioned_to;
-                $activityData['well_name']            = $request->well_name;
-                $activityData['has_service_bonus']    = $request->has_service_bonus;
+                $activityData['activity_type']             = $activityType;
+                $activityData['activity_description']      = $this->getActivityDescription($activityType);
+                $activityData['commissioned_to']           = $request->commissioned_to;
+                $activityData['well_name']                 = $request->well_name;
 
-                $activityData['travel_destination'] = $request->travel_destination;
-                $activityData['travel_reason']      = $request->travel_reason;
+                // ------------------------------------------------------------------
+                // 🔒 VALIDACIÓN BACKEND DEL POZO
+                // ------------------------------------------------------------------
+                if ($activityType === 'P' && $request->filled('well_name')) {
+                    $validWell = \App\Models\Operaciones\Well::where('name', $request->well_name)
+                                     ->where('status', 'active')
+                                     ->exists();
 
-                // 🚔 GUARDAR ACTIVIDAD VESPERTINA (Si el request lo trae, aplica a los guardias)
+                    if (!$validWell) {
+                        DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => "El pozo '{$request->well_name}' no existe o no está activo. Seleccione uno de la lista sugerida."
+                        ], 422);
+                    }
+                }
+                // ------------------------------------------------------------------
+
+                $activityData['has_service_bonus']         = $request->has_service_bonus;
+                $activityData['travel_destination']        = $request->travel_destination;
+                $activityData['travel_reason']             = $request->travel_reason;
+                $activityData['base_activity_description'] = $activityType === 'B' ? $request->base_activity_description : null;
+
+                // GUARDAR ACTIVIDAD VESPERTINA (Si el request lo trae, aplica a los guardias)
                 if ($request->has('activity_type_vespertina')) {
                     $activityData['activity_type_vespertina']        = $request->activity_type_vespertina;
                     $activityData['activity_description_vespertina'] = $this->getActivityDescription($request->activity_type_vespertina);
                 }
 
+                $isWellActivity = ($activityType === 'P');
+                $isBaseSpecialActivity = ($activityType === 'B' && in_array($request->base_activity_description, ['Movimiento o eventos con gerencias', 'Mantenimiento a polvorin Vinco']));
+
                 if (! $isWellActivity) {
                     $activityData['has_service_bonus'] = 'no';
 
-                    if (! $foodBonusLocked) {
+                    if (! $isBaseSpecialActivity && ! $foodBonusLocked) {
                         $activityData['food_bonuses'] = [];
                     }
                     if (! $fieldBonusLocked) {
                         // Importante: No borrar los field_bonuses si se mandó uno desde el request
-                        // El frontend de guardia y otros campos enviará field_bonus_identifier
                     }
                     if (! $serviceLocked) {
                         $activityData['services_list'] = [];
@@ -467,9 +503,17 @@ class CalendarController extends Controller
                 }
             }
 
-            // Procesar bono de campo (Y el "Bono" del guardia)
+            // Procesar bono de campo (Y el "Bono Especial y Cantidad" del guardia)
             if ($request->has('field_bonus_identifier')) {
                 $employeeBonusCategory = $employee->job_title;
+                $quantity = 1;
+
+                if (stripos($employee->job_title, 'AUXILIAR PAL') !== false) {
+                    $employeeBonusCategory = 'Auxiliar PAL';
+                    if ($request->has('guardia_bonus_quantity')) {
+                        $quantity = max(1, (int)$request->guardia_bonus_quantity);
+                    }
+                }
 
                 if ($request->filled('field_bonus_identifier')) {
                     $fieldBonus = FieldBonus::where('bonus_identifier', $request->field_bonus_identifier)
@@ -493,10 +537,14 @@ class CalendarController extends Controller
                             $newRejectionReason = $existingFieldBonus['rejection_reason'] ?? null;
                         }
 
+                        $finalDailyAmount = (float) $fieldBonus->amount * $quantity;
+
                         $activityData['field_bonuses'] = [[
                             'bonus_identifier' => $fieldBonus->bonus_identifier,
                             'bonus_type'       => $fieldBonus->bonus_type,
-                            'daily_amount'     => (float) $fieldBonus->amount,
+                            'daily_amount'     => $finalDailyAmount,
+                            'base_amount'      => (float) $fieldBonus->amount,
+                            'quantity'         => $quantity,
                             'currency'         => $fieldBonus->currency,
                             'status'           => $newStatus,
                             'rejection_reason' => $newRejectionReason,
@@ -507,7 +555,7 @@ class CalendarController extends Controller
                 }
             }
 
-            // 🥇 Procesar servicios con validación de service_real_date
+            // Procesar servicios con validación de service_real_date
             if ($request->has('service_identifier')) {
                 $serviceIdentifierProvided = $request->filled('service_identifier');
 
@@ -564,7 +612,7 @@ class CalendarController extends Controller
             }
 
             $isAnythingLeft = ($activityData['activity_type'] ?? 'N') !== 'N' ||
-            (! empty($activityData['activity_type_vespertina']) && $activityData['activity_type_vespertina'] !== 'N') || // Añadido para Guardia
+            (! empty($activityData['activity_type_vespertina']) && $activityData['activity_type_vespertina'] !== 'N') ||
             ! empty($activityData['food_bonuses']) ||
             ! empty($activityData['field_bonuses']) ||
             ! empty($activityData['services_list']);
@@ -602,10 +650,6 @@ class CalendarController extends Controller
             return response()->json(['success' => false, 'message' => 'Error interno del servidor. Consulte el log para más detalles.'], 500);
         }
     }
-
-    /**
-     * Determina el marcador de período de nómina para una fecha específica
-     */
     private function determinePayrollPeriodMarker($date, $month, $year)
     {
         $fortnightlyConfig = FortnightlyConfig::where('year', $year)
@@ -650,9 +694,6 @@ class CalendarController extends Controller
         return $descriptions[$activityType] ?? 'Actividad desconocida';
     }
 
-    /**
-     * Obtiene las actividades de un empleado para un mes específico
-     */
     public function getMonthlyActivities(Request $request)
     {
         $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
@@ -877,4 +918,6 @@ class CalendarController extends Controller
 
         return 'under_review';
     }
+
+
 }
