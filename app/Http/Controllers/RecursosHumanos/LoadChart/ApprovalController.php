@@ -163,11 +163,8 @@ class ApprovalController extends Controller
             $query->where('month_and_year', Carbon::createFromDate($currentYear, $currentMonth, 1)->format('Y-m'));
         }])
             ->with('squads')
+            ->where('employment_status', 'active') // ✅ Solo empleados activos
             ->select('id', 'full_name', 'employee_number', 'position', 'department', 'job_title');
-
-        if (! $canSeeFilters) {
-            $employeeQuery->whereIn('id', $assignedEmployeeIds);
-        }
 
         $employees = $employeeQuery->get();
 
@@ -265,6 +262,7 @@ class ApprovalController extends Controller
                 $query->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'));
             }])
                 ->with('squads')
+                ->where('employment_status', 'active') // ✅ Solo empleados activos
                 ->select('id', 'full_name', 'employee_number', 'position', 'department', 'job_title');
 
             if (! $canSeeFilters) {
@@ -361,7 +359,7 @@ class ApprovalController extends Controller
     }
 
     /**
-/**
+    /**
      * Actualiza masivamente el estado de revisión o aprobación para los ítems de una quincena.
      */
     public function updateApprovalStatus(Request $request)
@@ -372,7 +370,7 @@ class ApprovalController extends Controller
                 'month'       => 'required|integer|min:1|max:12',
                 'year'        => 'required|integer|min:2020|max:2030',
                 'status'      => 'required|in:reviewed,approved',
-                'fortnight'   => 'required|in:quincena1,quincena2,full-month'
+                'fortnight'   => 'required|in:quincena1,quincena2,full-month',
             ]);
 
             $employeeId = $request->employee_id;
@@ -401,8 +399,8 @@ class ApprovalController extends Controller
                 return response()->json(['success' => false, 'message' => 'No tiene permisos para aprobar este registro.'], 403);
             }
 
-            $monthAndYear      = Carbon::createFromDate($year, $month, 1)->format('Y-m');
-            $workLog           = EmployeeMonthlyWorkLog::firstOrCreate(
+            $monthAndYear = Carbon::createFromDate($year, $month, 1)->format('Y-m');
+            $workLog      = EmployeeMonthlyWorkLog::firstOrCreate(
                 ['employee_id' => $employeeId, 'month_and_year' => $monthAndYear],
                 ['user_id' => $userId, 'daily_activities' => []]
             );
@@ -436,10 +434,10 @@ class ApprovalController extends Controller
                     $vType        = $dailyActivity['activity_type_vespertina'] ?? 'N';
 
                     // Solo basta con que UN turno sea vacaciones para contar el día completo
-                    $isVacation   = ($activityType === 'VAC' || $vType === 'VAC');
+                    $isVacation = ($activityType === 'VAC' || $vType === 'VAC');
 
-                    $oldStatus    = strtolower($dailyActivity['activity_status'] ?? 'under_review');
-                    $oldVStatus   = strtolower($dailyActivity['activity_status_vespertina'] ?? 'under_review');
+                    $oldStatus     = strtolower($dailyActivity['activity_status'] ?? 'under_review');
+                    $oldVStatus    = strtolower($dailyActivity['activity_status_vespertina'] ?? 'under_review');
                     $isNotApproved = ($oldStatus !== 'approved' && $oldVStatus !== 'approved');
 
                     return $activityDate->between($startDate, $endDate) && $isVacation && $isNotApproved;
@@ -475,7 +473,7 @@ class ApprovalController extends Controller
                             $dailyActivity[$type] = array_map(function ($item) use ($newStatus, $isReviewer, $isApprover, &$tempUpdated) {
                                 $currentItemStatus = strtolower($item['status'] ?? 'under_review');
                                 $tempSubUpdated    = false;
-                                $item = $this->updateItemStatus($item, 'status', $currentItemStatus, $newStatus, $isReviewer, $isApprover, $tempSubUpdated);
+                                $item              = $this->updateItemStatus($item, 'status', $currentItemStatus, $newStatus, $isReviewer, $isApprover, $tempSubUpdated);
                                 if ($tempSubUpdated) {
                                     $tempUpdated = true;
                                 }
@@ -504,9 +502,9 @@ class ApprovalController extends Controller
 
                             // ⭐ CORRECCIÓN: Descuenta 1 solo día garantizado, comparando el estado general del "Día"
                             if ($balance) {
-                                if ($isNowApproved && !$wasApproved) {
+                                if ($isNowApproved && ! $wasApproved) {
                                     $balance->decrement('vacation_days_available');
-                                } elseif (!$isNowApproved && $wasApproved) {
+                                } elseif (! $isNowApproved && $wasApproved) {
                                     $balance->increment('vacation_days_available');
                                 }
                                 $balance->save();
@@ -762,21 +760,37 @@ class ApprovalController extends Controller
     /**
      * Envía correos de notificación por rechazos - MEJORADO CON INFORMACIÓN DETALLADA
      */
+    /**
+     * Envía correos de notificación por rechazos - MEJORADO CON INFORMACIÓN DETALLADA Y LÓGICA DE CORREOS
+     */
     private function sendRejectionEmails($employeeId, array $rejectionData, $rejectedByUserId)
     {
         try {
-            $employee       = Employee::find($employeeId);
+            // 1. Cargamos al empleado JUNTO con su usuario asociado (si existe)
+            $employee       = Employee::with('user')->find($employeeId);
             $rejectedByUser = \App\Models\Auth\User::find($rejectedByUserId);
 
-            // 1. Verificar si el empleado tiene un email válido para recibir notificaciones
-            if (! $employee || ! $employee->getRecipientEmailAttribute()) {
-                Log::warning('MAIL_RECHAZO_FALLO: Empleado ' . ($employee ? $employee->full_name : $employeeId) . ' no tiene email válido para notificar.', ['employee_id' => $employeeId]);
+            // 2. Lógica de prioridad de correos:
+            // Si tiene usuario y el usuario tiene email -> Usamos el administrativo
+            // Si no -> Usamos el personal_email del empleado
+            $recipientEmail = null;
+            if ($employee) {
+                if ($employee->user && ! empty($employee->user->email)) {
+                    $recipientEmail = $employee->user->email;
+                } else {
+                    $recipientEmail = $employee->personal_email;
+                }
+            }
+
+            // 3. Verificar si obtuvimos un email válido
+            if (! $recipientEmail) {
+                Log::warning('MAIL_RECHAZO_FALLO: Empleado ' . ($employee ? $employee->full_name : $employeeId) . ' no tiene email administrativo ni personal para notificar.', ['employee_id' => $employeeId]);
                 return;
             }
 
             $rejectedByName = $rejectedByUser ? ($rejectedByUser->full_name ?? $rejectedByUser->name) : 'Sistema ERP';
 
-            // 2. Iterar sobre cada fecha (grupo de rechazo)
+            // 4. Iterar sobre cada fecha (grupo de rechazo)
             foreach ($rejectionData as $date => $itemsRejected) {
                 $formattedDate = Carbon::parse($date)->format('d/m/Y');
 
@@ -787,7 +801,8 @@ class ApprovalController extends Controller
                 $uniqueReasons = collect($rejectedItemsWithDetails)->pluck('rejection_reason')->filter()->unique()->implode(' | ');
                 $mainReason    = ! empty($uniqueReasons) ? $uniqueReasons : 'Sin motivo especificado';
 
-                Mail::to($employee->getRecipientEmailAttribute())
+                // Enviamos al correo calculado
+                Mail::to($recipientEmail)
                     ->send(new DayRejectedMail(
                         $employee->full_name,
                         $formattedDate,
@@ -798,7 +813,7 @@ class ApprovalController extends Controller
 
                 Log::info('MAIL_RECHAZO_ENVIO: Correo de rechazo enviado con detalles', [
                     'employee' => $employee->full_name,
-                    'email'    => $employee->getRecipientEmailAttribute(),
+                    'email'    => $recipientEmail, // Registramos a qué correo se envió realmente
                     'date'     => $formattedDate,
                     'items'    => count($rejectedItemsWithDetails),
                     'reasons'  => $uniqueReasons,
@@ -808,7 +823,6 @@ class ApprovalController extends Controller
             Log::error('MAIL_RECHAZO_ERROR_CRITICO: Error al enviar correo de rechazo: ' . $e->getMessage());
         }
     }
-
 /**
  * Obtiene información detallada de los elementos rechazados
  */
