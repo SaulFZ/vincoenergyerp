@@ -1,502 +1,456 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Usuarios y Permisos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="{{ asset('assets/css/sistemas/gestionderoles/index.css') }}" rel="stylesheet">
 </head>
-
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-left">
-                <div class="logo">E</div>
-                <div class="header-title">
-                    <i class="fas fa-users-cog"></i>
-                    <h1>Gestión de Usuarios y Permisos</h1>
-                </div>
+
+<!-- ════════ HEADER ════════ -->
+<header class="header">
+    <div class="header-inner">
+        <div class="header-brand">
+            <div class="brand-logo">E</div>
+            <div class="brand-text">
+                <span class="brand-label">Sistema</span>
+                <h1>Usuarios <span class="accent">&amp;</span> Permisos</h1>
+            </div>
+        </div>
+        <nav class="header-nav">
+            <div class="nav-pill">
+                <i class="fas fa-users-cog"></i>
+                <span>Gestión de Roles</span>
             </div>
             @include('components.layouts._user-profile')
-        </div>
-    </header>
+        </nav>
+    </div>
+</header>
 
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Controls -->
-        <div class="controls">
-            <div class="search-container">
+<!-- ════════ MAIN ════════ -->
+<main class="main-wrapper">
+
+    <!-- Stats -->
+    <div class="stats-bar" id="statsBar">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--blue"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+                <span class="stat-number" id="statTotalNum">—</span>
+                <span class="stat-label">Total usuarios</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--green"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+                <span class="stat-number" id="statActiveNum">—</span>
+                <span class="stat-label">Activos</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--red"><i class="fas fa-times-circle"></i></div>
+            <div class="stat-info">
+                <span class="stat-number" id="statInactiveNum">—</span>
+                <span class="stat-label">Inactivos</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon--amber"><i class="fas fa-cubes"></i></div>
+            <div class="stat-info">
+                <span class="stat-number">10</span>
+                <span class="stat-label">Módulos</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel tabla -->
+    <div class="panel">
+        <div class="panel-controls">
+            <div class="search-wrap">
+                <i class="fas fa-search search-ico"></i>
                 <input type="text" class="search-input" placeholder="Buscar usuario...">
-                <i class="fas fa-search search-icon"></i>
             </div>
-            <div class="action-buttons">
-                <button class="btn btn-primary" onclick="openNewUserModal()">
-                    <i class="fas fa-plus"></i>
-                    Nuevo Usuario
-                </button>
-                <button class="btn btn-secondary">
+            <div class="controls-right">
+                <div class="items-select-wrap">
+                    <label>Mostrar</label>
+                    <select id="itemsPerPage" class="items-select">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                    <label>por página</label>
+                </div>
+                <button class="btn-export" title="Exportar">
                     <i class="fas fa-download"></i>
-                    Exportar
+                    <span>Exportar</span>
+                </button>
+                <button class="btn-new" onclick="openNewUserModal()">
+                    <i class="fas fa-plus"></i>
+                    <span>Nuevo Usuario</span>
                 </button>
             </div>
         </div>
 
-        <!-- Table -->
-        <div class="table-container">
-            <table class="table">
+        <div class="table-scroll">
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>Usuario</th>
                         <th>Email</th>
                         <th>Permisos</th>
                         <th>Estado</th>
-                        <th>Acciones</th>
+                        <th class="th-actions">Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="userTableBody">
-                    <!-- Los datos se muestran mediante javascript -->
-                </tbody>
+                <tbody id="userTableBody"></tbody>
             </table>
-            <!-- Paginación -->
-            <div class="pagination-container">
-                <div class="pagination-info">
-                    <div class="items-per-page">
-                        <label for="itemsPerPage">Mostrar:</label>
-                        <select id="itemsPerPage">
-                            <option value="5">5 usuarios</option>
-                            <option value="10" selected>10 usuarios</option>
-                            <option value="25">25 usuarios</option>
-                            <option value="50">50 usuarios</option>
-                        </select>
-                    </div>
-                </div>
+            <div class="empty-state" id="emptyState" style="display:none;">
+                <div class="empty-icon"><i class="fas fa-user-slash"></i></div>
+                <p class="empty-title">Sin usuarios encontrados</p>
+                <p class="empty-sub">Intenta otra búsqueda o crea un nuevo usuario</p>
+            </div>
+        </div>
 
-                <div class="pagination-nav">
-                    <div class="page-info">
-                        Mostrando <span id="startItem">1</span>-<span id="endItem">10</span> de <span
-                            id="totalItems">50</span> usuarios
-                    </div>
-                    <div class="pagination-controls">
-                        <button class="page-btn" id="firstPage" title="Primera página">
-                            <i class="fas fa-angle-double-left"></i>
-                        </button>
-                        <button class="page-btn" id="prevPage" title="Página anterior">
-                            <i class="fas fa-angle-left"></i>
-                        </button>
-                        <button class="page-btn active" id="currentPageBtn">1</button>
-                        <button class="page-btn" id="nextPage" title="Página siguiente">
-                            <i class="fas fa-angle-right"></i>
-                        </button>
-                        <button class="page-btn" id="lastPage" title="Última página">
-                            <i class="fas fa-angle-double-right"></i>
-                        </button>
-                    </div>
-                </div>
+        <div class="pagination-bar">
+            <span class="page-count">
+                Mostrando <b id="startItem">1</b>–<b id="endItem">10</b> de <b id="totalItems">0</b>
+            </span>
+            <div class="pag-controls">
+                <button class="pag-btn" id="firstPage" title="Primera"><i class="fas fa-angle-double-left"></i></button>
+                <button class="pag-btn" id="prevPage"  title="Anterior"><i class="fas fa-angle-left"></i></button>
+                <button class="pag-btn pag-current" id="currentPageBtn">1</button>
+                <button class="pag-btn" id="nextPage"  title="Siguiente"><i class="fas fa-angle-right"></i></button>
+                <button class="pag-btn" id="lastPage"  title="Última"><i class="fas fa-angle-double-right"></i></button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Nuevo Usuario -->
-    <div class="modal-overlay" id="newUserModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3><i class="fas fa-user-plus"></i>Nuevo Usuario</h3>
-                <button class="close-btn" onclick="closeNewUserModal()">&times;</button>
+</main>
+
+<!-- ════════ MODAL NUEVO / EDITAR ════════ -->
+<div class="modal-backdrop" id="newUserModal">
+    <div class="modal-box">
+
+        <div class="modal-top">
+            <div class="modal-heading">
+                <div class="modal-icon-wrap"><i class="fas fa-user-plus" id="modalIconHeader"></i></div>
+                <div>
+                    <p class="modal-subtitle">Gestión de accesos</p>
+                    <h2 class="modal-title" id="modalTitle">Nuevo Usuario</h2>
+                </div>
             </div>
-            <div class="modal-body">
-                <form id="permissionsForm">
-                    <!-- Sección de datos del usuario - Nueva disposición de 3 campos por fila -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h4 class="section-title"><i class="fas fa-user me-2"></i>Datos del Usuario</h4>
-                        </div>
+            <button class="modal-close" onclick="closeNewUserModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Foto del Empleado</label>
-                            <div class="employee-photo-container">
-                                <div class="photo-preview" id="photoPreview">
-                                    <img id="photoDisplay"
-                                        src="{{ asset('assets/img/fotouser.png') }}"alt="Foto del empleado">
-                                </div>
-                                <div class="photo-actions">
-                                    <input type="file" id="photoInput" accept="image/*" style="display: none;">
-                                    <button type="button" class="btn btn-sm btn-primary"
-                                        onclick="document.getElementById('photoInput').click()">
-                                        <i class="fas fa-upload"></i> Cambiar Foto
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-danger" id="removePhotoBtn"
-                                        style="display: none;">
-                                        <i class="fas fa-trash"></i> Eliminar
-                                    </button>
-                                </div>
-                                <input type="hidden" id="photo" name="photo">
-                            </div>
-                        </div>
+        <div class="modal-body">
+            <form id="permissionsForm" autocomplete="off">
 
-                        <div class="col-md-4 mb-3">
-                            <label for="name" class="form-label">Nombre Completo</label>
-                            <input type="text" class="form-control" id="name" name="name"
-                                placeholder="Ingrese el nombre completo" required autocomplete="off">
-                            <input type="hidden" id="employee_id" name="employee_id">
-                            <div id="employeeSuggestions" class="suggestions-dropdown" style="display: none;"></div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="username" class="form-label">Nombre de Usuario</label>
-                            <input type="text" class="form-control" id="username" name="username"
-                                placeholder="Ingrese el nombre de usuario" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="password" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="password" name="password"
-                                placeholder="Ingrese una contraseña segura" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="email" class="form-label">Correo Electrónico</label>
-                            <input type="email" class="form-control" id="email" name="email"
-                                placeholder="ejemplo@correo.com" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="status" class="form-label">Estado</label>
-                            <select class="form-select" id="status" name="status" required>
-                                <option value="" selected disabled>Seleccione un estado</option>
-                                <option value="active">Activo</option>
-                                <option value="inactive">Inactivo</option>
-                            </select>
-                        </div>
+                <!-- Sección: Datos -->
+                <section class="form-section">
+                    <div class="section-header">
+                        <div class="section-dot"></div>
+                        <h3>Datos del Usuario</h3>
                     </div>
-
-                    <!-- Dentro del modal-body, después de la sección de Datos del Usuario -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="permission-tabs">
-                                <button class="tab-btn active" data-tab="module-permissions">
-                                    <i class="fas fa-cubes me-2"></i>Configuración de Permisos
+                    <div class="form-grid">
+                        <!-- Foto -->
+                        <div class="photo-col">
+                            <label class="field-label">Foto</label>
+                            <div class="photo-ring" id="photoPreview">
+                                <img id="photoDisplay" src="{{ asset('assets/img/fotouser.png') }}" alt="Foto">
+                                <div class="photo-overlay" onclick="document.getElementById('photoInput').click()">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                            </div>
+                            <div class="photo-btns">
+                                <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                                <button type="button" class="btn-photo-change" onclick="document.getElementById('photoInput').click()">
+                                    <i class="fas fa-upload"></i> Cambiar
                                 </button>
-                                <button class="tab-btn" data-tab="role-permissions">
-                                    <i class="fas fa-user-tag me-2"></i>Rol y Permisos
+                                <button type="button" class="btn-photo-remove" id="removePhotoBtn" style="display:none;">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Contenido de Configuración de Permisos (tu sección actual) -->
-                    <div id="module-permissions" class="tab-content active">
-                        <!-- Todo tu contenido actual de Configuración de Permisos aquí -->
-                        <div class="row">
-                            <div class="col-12">
-                                <h4 class="section-title"><i class="fas fa-key me-2"></i>Configuración de Permisos
-                                </h4>
-                                <p class="text-muted mb-4">Seleccione los módulos a los que el usuario tendrá acceso.
-                                </p>
-                            </div>
-
-                            <!-- Columna 1 -->
-                            <div class="col-md-6">
-                                <!-- Módulo Administración -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('administracion-body')">
-                                        <h5 class="module-title"><i class="fas fa-cogs me-2"></i>Administración</h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle"
-                                                data-module="administracion">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-
-                                    <div class="module-body" id="administracion-body">
-                                        <div class="permission-item">
-                                            <span>Gestión de reembolsos</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[administracion][reembolsos]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Módulo QHSE -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('qhse-body')">
-                                        <h5 class="module-title"><i class="fas fa-shield-alt me-2"></i>QHSE</h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle" data-module="qhse">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="module-body" id="qhse-body">
-                                        <div class="permission-item">
-                                            <span>Gerenciamiento</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[qhse][gerenciamiento]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="permission-item">
-                                            <span>VESCAP</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[qhse][vescap]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="permission-item">
-                                            <span>Incidencias</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[qhse][incidencias]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="permission-item">
-                                            <span>Auditorías</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[qhse][auditorias]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Módulo Ventas -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('ventas-body')">
-                                        <h5 class="module-title"><i class="fas fa-chart-line me-2"></i>Ventas</h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle" data-module="ventas">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="module-body" id="ventas-body">
-                                        <div class="permission-item">
-                                            <span>Clientes</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[ventas][clientes]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="permission-item">
-                                            <span>Cotizaciones</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[ventas][cotizaciones]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="permission-item">
-                                            <span>Oportunidades</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[ventas][oportunidades]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Módulo Recursos Humanos -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('recursoshumanos-body')">
-                                        <h5 class="module-title"><i class="fas fa-users me-2"></i>Recursos Humanos
-                                        </h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle"
-                                                data-module="recursoshumanos">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="module-body" id="recursoshumanos-body">
-                                        <div class="permission-item">
-                                            <span>Altas de empleados</span>
-                                            <label class="switch">
-                                                <input type="checkbox"
-                                                    name="permissions[recursoshumanos][altasempleados]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="permission-item">
-                                            <span>L&O Chart</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[recursoshumanos][loadchart]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Módulo Sistemas -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('sistemas-body')">
-                                        <h5 class="module-title"><i class="fas fa-laptop-code me-2"></i>Sistemas</h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle" data-module="sistemas">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="module-body" id="sistemas-body">
-                                        <div class="permission-item">
-                                            <span>Gestión de roles</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[sistemas][gestionderoles]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="permission-item">
-                                            <span>Gestión de tickets</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[sistemas][tickets]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Columna 2 -->
-                            <div class="col-md-6">
-                                <!-- Módulo Suministro -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('suministro-body')">
-                                        <h5 class="module-title"><i class="fas fa-truck me-2"></i>Suministro</h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle" data-module="suministro">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="module-body" id="suministro-body">
-                                        <div class="permission-item">
-                                            <span>Pedidos</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[suministro][pedidos]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Módulo Operaciones -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('operaciones-body')">
-                                        <h5 class="module-title"><i class="fas fa-cog me-2"></i>Operaciones</h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle" data-module="operaciones">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="module-body" id="operaciones-body">
-                                        <div class="permission-item">
-                                            <span>Procesos</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[operaciones][procesos]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Módulo Almacén -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('almacen-body')">
-                                        <h5 class="module-title"><i class="fas fa-warehouse me-2"></i>Almacén</h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle" data-module="almacen">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="module-body" id="almacen-body">
-                                        <div class="permission-item">
-                                            <span>Inventario</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[almacen][inventario]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Módulo Geociencias -->
-                                <div class="module-area compact">
-                                    <div class="module-header" onclick="toggleModule('geociencias-body')">
-                                        <h5 class="module-title"><i class="fas fa-globe-americas me-2"></i>Geociencias
-                                        </h5>
-                                        <label class="switch" onclick="event.stopPropagation()">
-                                            <input type="checkbox" class="module-toggle" data-module="geociencias">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="module-body" id="geociencias-body">
-                                        <div class="permission-item">
-                                            <span>Exploraciones</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[geociencias][exploraciones]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="permission-item">
-                                            <span>Análisis</span>
-                                            <label class="switch">
-                                                <input type="checkbox" name="permissions[geociencias][analisis]">
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <input type="hidden" id="photo" name="photo">
                         </div>
 
-                    </div>
-
-                    <!-- Nueva sección de Rol y Permisos -->
-                    <div id="role-permissions" class="tab-content">
-                        <div class="row">
-                            <div class="col-12">
-                                <h4 class="section-title"><i class="fas fa-user-tag me-2"></i>Rol y Permisos</h4>
-                                <p class="text-muted mb-4">Asigne un rol y defina los permisos específicos para este
-                                    usuario.</p>
+                        <!-- Campos -->
+                        <div class="fields-col">
+                            <div class="fields-row">
+                                <div class="field-group" style="position:relative;">
+                                    <label class="field-label" for="name">Nombre Completo</label>
+                                    <div class="field-icon-wrap">
+                                        <i class="fas fa-user field-ico"></i>
+                                        <input type="text" class="field-input" id="name" name="name" placeholder="Nombre completo" required autocomplete="off">
+                                    </div>
+                                    <input type="hidden" id="employee_id" name="employee_id">
+                                    <div id="employeeSuggestions" class="suggestions-dropdown" style="display:none;"></div>
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label" for="username">Usuario</label>
+                                    <div class="field-icon-wrap">
+                                        <i class="fas fa-fingerprint field-ico"></i>
+                                        <input type="text" class="field-input" id="username" name="username" placeholder="nombre_usuario" required>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="col-md-6 mb-4">
-                                <label for="user_role" class="form-label">Rol del Usuario</label>
-                                <select class="form-select" id="user_role" name="user_role">
-                                    <option value="" selected disabled>Seleccione un rol</option>
-                                    <!-- Las opciones se llenarán dinámicamente con JavaScript -->
-                                </select>
+                            <div class="fields-row">
+                                <div class="field-group">
+                                    <label class="field-label" for="email">Correo</label>
+                                    <div class="field-icon-wrap">
+                                        <i class="fas fa-envelope field-ico"></i>
+                                        <input type="email" class="field-input" id="email" name="email" placeholder="correo@empresa.com" required>
+                                    </div>
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label" for="password">Contraseña</label>
+                                    <div class="field-icon-wrap">
+                                        <i class="fas fa-lock field-ico"></i>
+                                        <input type="password" class="field-input" id="password" name="password" placeholder="••••••••" required>
+                                        <button type="button" class="pwd-toggle" id="pwdToggle" onclick="togglePassword()">
+                                            <i class="fas fa-eye" id="pwdEye"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-
-                            <!-- Reemplaza la sección de permisos del rol con esto: -->
-                            <div class="col-12">
-                                <h5 class="subsection-title"><i class="fas fa-key me-2"></i>Permisos Directos</h5>
-                                <div class="permissions-grid" id="directPermissionsContainer">
-                                    <!-- Los permisos se cargarán dinámicamente aquí -->
-                                    <div class="text-center py-3">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Cargando permisos...</span>
-                                        </div>
+                            <div class="fields-row">
+                                <div class="field-group">
+                                    <label class="field-label" for="status">Estado</label>
+                                    <div class="field-icon-wrap">
+                                        <i class="fas fa-toggle-on field-ico"></i>
+                                        <select class="field-input field-select" id="status" name="status" required>
+                                            <option value="" disabled selected>Seleccionar estado</option>
+                                            <option value="active">Activo</option>
+                                            <option value="inactive">Inactivo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label" for="user_role">Rol</label>
+                                    <div class="field-icon-wrap">
+                                        <i class="fas fa-user-tag field-ico"></i>
+                                        <select class="field-input field-select" id="user_role" name="user_role">
+                                            <option value="" disabled selected>Seleccionar rol</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    <div class="row mt-4">
-                        <div class="col-12 text-end">
-                            <button type="button" onclick="closeNewUserModal()"
-                                class="btn btn-secondary me-2">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Guardar Permisos
-                            </button>
+                <!-- Sección: Permisos -->
+                <section class="form-section">
+                    <div class="section-header">
+                        <div class="section-dot"></div>
+                        <h3>Permisos y Accesos</h3>
+                    </div>
+
+                    <div class="perm-tabs">
+                        <button type="button" class="perm-tab active" data-tab="module-permissions">
+                            <i class="fas fa-cubes"></i> Módulos
+                        </button>
+                        <button type="button" class="perm-tab" data-tab="role-permissions">
+                            <i class="fas fa-shield-alt"></i> Permisos Directos
+                        </button>
+                    </div>
+
+                    <!-- Tab Módulos -->
+                    <div id="module-permissions" class="perm-tab-content active">
+                        <p class="tab-hint">Activa los módulos a los que el usuario tendrá acceso.</p>
+                        <div class="modules-grid">
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('administracion-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--admin"><i class="fas fa-cogs"></i></span>
+                                        <span class="mod-name">Administración</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="administracion">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="administracion-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[administracion][reembolsos]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gestión de reembolsos</span></label>
+                                </div>
+                            </div>
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('qhse-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--qhse"><i class="fas fa-shield-alt"></i></span>
+                                        <span class="mod-name">QHSE</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="qhse">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="qhse-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[qhse][gerenciamiento]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gerenciamiento</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[qhse][vescap]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>VESCAP</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[qhse][incidencias]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Incidencias</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[qhse][auditorias]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Auditorías</span></label>
+                                </div>
+                            </div>
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('ventas-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--ventas"><i class="fas fa-chart-line"></i></span>
+                                        <span class="mod-name">Ventas</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="ventas">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="ventas-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[ventas][clientes]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Clientes</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[ventas][cotizaciones]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Cotizaciones</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[ventas][oportunidades]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Oportunidades</span></label>
+                                </div>
+                            </div>
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('rh-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--rrhh"><i class="fas fa-users"></i></span>
+                                        <span class="mod-name">Recursos Humanos</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="rh">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="rh-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[rh][altasempleados]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Altas de empleados</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[rh][loadchart]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>L&amp;O Chart</span></label>
+                                </div>
+                            </div>
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('sistemas-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--sistemas"><i class="fas fa-laptop-code"></i></span>
+                                        <span class="mod-name">Sistemas</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="sistemas">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="sistemas-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[sistemas][gestionderoles]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gestión de roles</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[sistemas][tickets]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gestión de tickets</span></label>
+                                </div>
+                            </div>
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('suministro-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--suministro"><i class="fas fa-truck"></i></span>
+                                        <span class="mod-name">Suministro</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="suministro">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="suministro-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[suministro][pedidos]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Pedidos</span></label>
+                                </div>
+                            </div>
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('operaciones-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--operaciones"><i class="fas fa-cog"></i></span>
+                                        <span class="mod-name">Operaciones</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="operaciones">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="operaciones-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[operaciones][procesos]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Procesos</span></label>
+                                </div>
+                            </div>
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('almacen-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--almacen"><i class="fas fa-warehouse"></i></span>
+                                        <span class="mod-name">Almacén</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="almacen">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="almacen-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[almacen][inventario]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Inventario</span></label>
+                                </div>
+                            </div>
+
+                            <div class="mod-card">
+                                <div class="mod-card-head" onclick="toggleModule('geociencias-body')">
+                                    <div class="mod-card-left">
+                                        <span class="mod-icon mod--geo"><i class="fas fa-globe-americas"></i></span>
+                                        <span class="mod-name">Geociencias</span>
+                                    </div>
+                                    <label class="tog" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="module-toggle" data-module="geociencias">
+                                        <span class="tog-track"><span class="tog-thumb"></span></span>
+                                    </label>
+                                </div>
+                                <div class="mod-card-body" id="geociencias-body">
+                                    <label class="perm-row"><input type="checkbox" name="permissions[geociencias][exploraciones]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Exploraciones</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[geociencias][analisis]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Análisis</span></label>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                </form>
-            </div>
+
+                    <!-- Tab Permisos directos -->
+                    <div id="role-permissions" class="perm-tab-content">
+                        <p class="tab-hint">Asigna permisos específicos directamente al usuario.</p>
+                        <div class="direct-perms-grid" id="directPermissionsContainer">
+                            <div class="loading-perms">
+                                <div class="spin-ring"></div>
+                                <span>Cargando permisos...</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeNewUserModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-save"></i> Guardar Usuario
+                    </button>
+                </div>
+
+            </form>
         </div>
     </div>
+</div>
 
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.js"></script>
-    <script src="{{ asset('assets/js/sistemas/gestionderoles/index.js') }}"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.js"></script>
+<script src="{{ asset('assets/js/sistemas/gestionderoles/index.js') }}"></script>
 </body>
-
 </html>
