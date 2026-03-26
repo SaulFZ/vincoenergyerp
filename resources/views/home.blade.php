@@ -10,7 +10,8 @@
     {{-- FontAwesome --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
+    <link
+        rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
     {{-- CSS Principal --}}
     <link href="{{ asset('assets/css/home.css') }}" rel="stylesheet">
     @stack('styles')
@@ -84,7 +85,7 @@
                 @endif
 
                 {{-- Sección: Recursos Humanos --}}
-                @if (isset($userPermissions['recursoshumanos']))
+                @if (isset($userPermissions['rh']))
                     <div class="nav-group">
                         <div class="nav-header active">
                             <div class="nav-header-title">
@@ -94,15 +95,15 @@
                             <i class="fas fa-chevron-right arrow-icon"></i>
                         </div>
                         <ul class="nav-list active">
-                            @if (in_array('loadchart', $userPermissions['recursoshumanos']) || empty($userPermissions['recursoshumanos']))
-                                <li class="nav-item" data-route="/recursoshumanos/loadchart">
+                            @if (in_array('loadchart', $userPermissions['rh']) || empty($userPermissions['rh']))
+                                <li class="nav-item" data-route="/rh/loadchart">
                                     <i class="fas fa-chart-pie nav-icon"></i>
                                     <span class="nav-text">Mi LoadChart</span>
                                 </li>
                             @endif
 
-                            @if (in_array('altasempleados', $userPermissions['recursoshumanos']) || empty($userPermissions['recursoshumanos']))
-                                <li class="nav-item" data-route="/recursoshumanos/altasempleados">
+                            @if (in_array('altasempleados', $userPermissions['rh']) || empty($userPermissions['rh']))
+                                <li class="nav-item" data-route="/rh/altasempleados">
                                     <i class="fas fa-user-plus nav-icon"></i>
                                     <span class="nav-text">Altas Empleados</span>
                                 </li>
@@ -167,6 +168,33 @@
                                     <span class="nav-text">Gestión de Tickets</span>
                                 </li>
                             @endif
+                        </ul>
+                    </div>
+                @endif
+
+                {{-- Sección: operations --}}
+                @if (isset($userPermissions['operations']))
+                    <div class="nav-group">
+                        <div class="nav-header active">
+                            <div class="nav-header-title">
+                                <i class="fas fa-cogs"></i>
+                                <span>Operaciones</span>
+                            </div>
+                            <i class="fas fa-chevron-right arrow-icon"></i>
+                        </div>
+
+                        <ul class="nav-list active">
+
+                            {{-- Wells (Pozos) --}}
+                            @if (in_array('wells', $userPermissions['operations']) || empty($userPermissions['operations']))
+                                <li class="nav-item" data-route="/operations/wells">
+                                    <i class="fas fa-oil-can nav-icon"></i>
+                                    <span class="nav-text">Pozos</span>
+                                </li>
+                            @endif
+
+
+
                         </ul>
                     </div>
                 @endif
