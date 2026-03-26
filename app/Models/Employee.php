@@ -1,7 +1,7 @@
 <?php
 namespace App\Models;
 
-use App\Models\RecursosHumanos\LoadChart\EmployeeMonthlyWorkLog;
+use App\Models\RH\LoadChart\EmployeeMonthlyWorkLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -54,12 +54,12 @@ class Employee extends Model
 
     public function vacationBalance()
     {
-        return $this->hasOne(\App\Models\RecursosHumanos\LoadChart\EmployeeVacationBalance::class);
+        return $this->hasOne(\App\Models\RH\LoadChart\EmployeeVacationBalance::class);
     }
 
     public function squads()
     {
-        return $this->hasMany(\App\Models\RecursosHumanos\LoadChart\Squad::class, 'employee_id');
+        return $this->hasMany(\App\Models\RH\LoadChart\Squad::class, 'employee_id');
     }
     public function license()
 {

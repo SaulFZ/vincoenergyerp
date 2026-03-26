@@ -47,7 +47,7 @@ return new class extends Migration {
 
       // Contacto
       $table->string("phone")->nullable();
-      $table->string("email")->nullable();
+      $table->string("personal_email")->nullable();
 
       // Salud
       $table->text("medical_history")->nullable();
@@ -60,7 +60,7 @@ return new class extends Migration {
       $table->index("full_name");
       $table->index("employment_status");
       $table->index("employee_number");
-      $table->index("email");
+      $table->index("personal_email");
       $table->index(["department", "employment_status"]);
     });
   }

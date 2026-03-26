@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VES-OPS · Vinco Energy Services</title>
+<style>
+  :root {
+    --bg:         #f7f8fa;
+    --surface:    #ffffff;
+    --surface2:   #f0f2f5;
+    --border:     #e4e7ed;
+    --border2:    #c8cdd8;
+    --text:       #111827;
+    --text2:      #4b5563;
+    --text3:      #9ca3af;
+    --accent:       #1e4976;
+    --accent-light: #e8eff7;
+    --accent-hover: #163759;
+    --amber:        #b45309;
+    --amber-light:  #fef3c7;
+    --success:      #065f46;
+    --success-bg:   #d1fae5;
+    --success-text: #065f46;
+    --info:         #1e40af;
+    --info-bg:      #dbeafe;
+    --info-text:    #1e40af;
+    --warn:         #92400e;
+    --warn-bg:      #fef3c7;
+    --warn-text:    #92400e;
+    --danger:       #991b1b;
+    --danger-bg:    #fee2e2;
+    --danger-text:  #991b1b;
+    --radius:    8px;
+    --radius-lg: 14px;
+    --font:  'Segoe UI', system-ui, -apple-system, sans-serif;
+    --mono:  'Cascadia Code','Fira Code','Consolas',monospace;
+    --shadow:    0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+  header{background:var(--accent);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(30,73,118,.28)}
+  .header-inner{max-width:1300px;margin:0 auto;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-logo{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;letter-spacing:-1px}
+  .brand-name{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.3px}
+  .brand-sub{font-size:10px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.1em}
+  .nav{display:flex;gap:4px}
+  .nav-btn{padding:.4rem .9rem;border-radius:var(--radius);border:1px solid transparent;background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:13px;font-family:var(--font);transition:all .15s}
+  .nav-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+  .nav-btn.active{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.25)}
+  .btn{display:inline-flex;align-items:center;gap:5px;padding:.45rem 1rem;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;font-size:13px;font-family:var(--font);transition:all .15s;font-weight:500}
+  .btn:hover{background:var(--surface2)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{background:var(--accent-hover)}
+  .btn.sm{padding:.3rem .7rem;font-size:12px}
+  main{max-width:1300px;margin:0 auto;padding:1.5rem}
+  .view{display:none}
+  .view.active{display:block}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem}
+  .metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+  .metric-card.green::before{background:#10b981}
+  .metric-card.blue::before{background:#3b82f6}
+  .metric-card.amb::before{background:#f59e0b}
+  .metric-label{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);margin-bottom:.35rem;font-weight:600}
+  .metric-value{font-size:28px;font-weight:700;letter-spacing:-.5px}
+  .metric-value.green{color:#059669}
+  .metric-value.blue{color:#2563eb}
+  .metric-value.amb{color:var(--amber)}
+  .filters{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+  input[type=text],input[type=number],input[type=datetime-local],select,textarea{font-family:var(--font);font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.48rem .8rem;outline:none;width:100%;transition:border-color .15s,box-shadow .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(30,73,118,.1)}
+  .search-wrap{flex:1;min-width:200px;position:relative}
+  .search-wrap input{padding-left:2.1rem}
+  .search-icon{position:absolute;left:.65rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+  .filter-select{width:185px}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+  .table-head{display:grid;grid-template-columns:2.5rem 1.6fr 1.1fr 1.1fr .9fr auto;gap:8px;padding:.65rem 1.1rem;background:var(--accent);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:rgba(255,255,255,.7);font-weight:600}
+  .table-row{display:grid;grid-template-columns:2.5rem 1.6fr 1.1fr 1.1fr .9fr auto;gap:8px;padding:.8rem 1.1rem;border-bottom:1px solid var(--border);align-items:center;transition:background .1s;cursor:pointer}
+  .table-row:last-child{border-bottom:none}
+  .table-row:hover{background:var(--accent-light)}
+  .row-num{font-size:11px;color:var(--text3);font-family:var(--mono)}
+  .row-pozo .name{font-weight:600;font-size:13px}
+  .row-pozo .sub{font-size:11px;color:var(--text3);margin-top:1px}
+  .row-cliente .main{font-size:12px;font-weight:500}
+  .row-cliente .sub{font-size:11px;color:var(--text3)}
+  .row-mes .main{font-size:12px;font-weight:500}
+  .row-mes .sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+  .row-ing{font-size:11px;color:var(--text2)}
+  .badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;letter-spacing:.03em}
+  .badge.terminado{background:var(--success-bg);color:var(--success-text)}
+  .badge.activo{background:var(--info-bg);color:var(--info-text)}
+  .badge.cancelado{background:var(--danger-bg);color:var(--danger-text)}
+  .badge.pendiente{background:var(--warn-bg);color:var(--warn-text)}
+  .empty-state{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
+  .form-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:var(--shadow);display:flex;align-items:flex-start;justify-content:space-between}
+  .form-title{font-size:18px;font-weight:700;margin-bottom:.2rem}
+  .form-sub{font-size:12px;color:var(--text3)}
+  .stepper{display:flex;margin-bottom:1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.25rem;box-shadow:var(--shadow);overflow-x:auto}
+  .step-item{display:flex;align-items:center;flex:1;min-width:0}
+  .step-circle{min-width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:1.5px solid var(--border2);background:var(--surface);color:var(--text3);transition:all .2s}
+  .step-item.active .step-circle{background:var(--accent);border-color:var(--accent);color:#fff}
+  .step-item.done .step-circle{background:var(--success-bg);border-color:#10b981;color:var(--success)}
+  .step-label{font-size:11px;color:var(--text3);margin-left:7px;white-space:nowrap;transition:color .2s}
+  .step-item.active .step-label{color:var(--accent);font-weight:600}
+  .step-item.done .step-label{color:var(--success)}
+  .step-line{flex:1;height:1px;background:var(--border);margin:0 8px;min-width:16px}
+  .form-body{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;box-shadow:var(--shadow);margin-bottom:1rem}
+  .step-heading{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:2px solid var(--accent-light);font-weight:700}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+  .field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:4px;font-weight:600}
+  .section-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:.65rem;margin-top:1.25rem;text-transform:uppercase;letter-spacing:.05em}
+  .section-title:first-child{margin-top:0}
+  .radio-group{display:flex;gap:1.5rem;margin-bottom:1.25rem}
+  .radio-group label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;color:var(--text)}
+  .radio-group label input{width:auto}
+  .form-footer{display:flex;justify-content:space-between;align-items:center}
+  .progress-txt{font-size:11px;color:var(--text3)}
+  .success-wrap{max-width:560px;margin:3rem auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.5rem;text-align:center;box-shadow:var(--shadow-md)}
+  .success-icon{width:54px;height:54px;border-radius:50%;background:var(--success-bg);color:var(--success);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:22px;font-weight:700}
+  .success-title{font-size:20px;font-weight:700;margin-bottom:.5rem}
+  .success-sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
+  .summary-grid{background:var(--surface2);border-radius:var(--radius);padding:1rem 1.1rem;text-align:left;margin-bottom:1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:6px 1rem}
+  .summary-item{font-size:12px}
+  .summary-item span{color:var(--text3)}
+  .success-actions{display:flex;gap:8px;justify-content:center}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(17,24,39,.5);z-index:200;align-items:center;justify-content:center;padding:1rem}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md);border:1px solid var(--border)}
+  .modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:var(--surface);z-index:1;background:linear-gradient(to right,var(--accent-light),var(--surface))}
+  .modal-title{font-size:17px;font-weight:700}
+  .modal-sub{font-size:12px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+  .modal-close{background:none;border:1px solid var(--border);border-radius:var(--radius);width:28px;height:28px;cursor:pointer;color:var(--text2);font-size:15px;display:flex;align-items:center;justify-content:center}
+  .modal-close:hover{background:var(--surface2)}
+  .modal-body{padding:1.25rem 1.5rem}
+  .detail-section{margin-bottom:1.25rem}
+  .detail-section-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700;margin-bottom:.6rem;padding-bottom:.4rem;border-bottom:2px solid var(--accent-light)}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .detail-item .dl{color:var(--text3);margin-bottom:2px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .detail-item .dv{font-weight:500;color:var(--text);font-size:13px;word-break:break-word}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+  @media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.table-head,.table-row{grid-template-columns:2rem 1.5fr 1fr auto}.col-mes,.col-ing{display:none}.grid3{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.metrics{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.brand-sub{display:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">V</div>
+      <div>
+        <div class="brand-name">VES-OPS</div>
+        <div class="brand-sub">Vinco Energy Services S.A. de C.V.</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" id="navDash" onclick="showView('dashboard')">Dashboard</button>
+      <button class="nav-btn" id="navNew" onclick="showView('form')">+ Nuevo servicio</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="view active" id="vDashboard">
+    <div class="metrics" id="metricsRow"></div>
+    <div class="filters">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="searchInp" placeholder="Buscar pozo, cliente, ingeniero, OS…" oninput="renderTable()">
+      </div>
+      <select class="filter-select" id="filterStatus" onchange="renderTable()">
+        <option value="">Todos los estatus</option>
+        <option>TERMINADO</option><option>ACTIVO</option>
+        <option>SERVICIO CANCELADO</option><option>CANCELACION</option>
+      </select>
+      <select class="filter-select" id="filterMes" onchange="renderTable()">
+        <option value="">Todos los meses</option>
+        <option>Enero</option><option>Febrero</option><option>Marzo</option>
+        <option>Abril</option><option>Mayo</option><option>Junio</option>
+        <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+        <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+      </select>
+      <select class="filter-select" id="filterCliente" onchange="renderTable()">
+        <option value="">Todos los clientes</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head">
+        <span>#</span><span>Pozo</span><span>Cliente · Servicio</span>
+        <span class="col-mes">Mes · Orden de Servicio</span>
+        <span class="col-ing">Ingeniero</span><span>Estatus</span>
+      </div>
+      <div id="tableBody"></div>
+    </div>
+  </div>
+
+  <div class="view" id="vForm">
+    <div class="form-header">
+      <div><div class="form-title">Registro de nuevo servicio</div><div class="form-sub">Complete los 6 pasos para registrar la operación completa</div></div>
+      <button class="btn sm" onclick="showView('dashboard')">← Volver</button>
+    </div>
+    <div class="stepper" id="stepperBar"></div>
+    <div class="form-body" id="formBody"></div>
+    <div class="form-footer">
+      <button class="btn" id="btnPrev" onclick="navStep(-1)">← Anterior</button>
+      <span class="progress-txt" id="progressTxt"></span>
+      <button class="btn primary" id="btnNext" onclick="navStep(1)">Siguiente →</button>
+    </div>
+  </div>
+
+  <div class="view" id="vSuccess"></div>
+</main>
+
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title" id="modalTitle">—</div><div class="modal-sub" id="modalSub">—</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const INGENIEROS=['OBED CHAVEZ GASPAR','LAZARO FRANCISCO SANTIAGO DELGADO','SALVADOR GERARDO VELASCO LOPEZ','JOSE ROBERTO JALOMO ROCHA','ANGEL MARIO LOPEZ GOMEZ','JUAN ANTONIO CANCINO VARGAS','LUIS ANTONIO HERNANDEZ JIMENEZ','CARLOS OCTAVIO BAUTISTA GONZALEZ','NOEL ARTEMIO GOMEZ JIMENEZ'];
+const CUADRILLA=['CHRISTIAN NERI JIMENEZ SALAS','CARLOS OSMAR HERNANDEZ IZQUIERDO','ALDO RAMIREZ GUILLERMO','ANGEL GABRIEL HERNANDEZ MAGAÑA','EDWIN RAFAEL COLINA LANDA','RUBEN MAGAÑA RAMOS','HECTOR RAFAEL MERODIO CASTILLO','GABRIEL HERNANDEZ OLAN','JESUS AURELIO MORALES COLLADO','JORGE ARMANDO GARCIA NOCHEBUENA','RICARDO PURECO ALEJANDRO','RAMON BASTAR MEJIA','SANTIAGO SUAREZ MARTINEZ','JOSE ANTONIO ACOSTA CAMPOS','JUAN ANTONIO DE LA O MENDEZ','KEVIN GERARDO RODRIGUEZ OVANDO','LUIS ALBERTO TORRES HERNANDEZ','DIEGO ANTONIO TRINIDAD DE LA CRUZ','ANTONIO RAVANALES ESCALANTE','LUIS OSWALDO HERNANDEZ LOPEZ'];
+const CLIENTES=['BLUE MARINE','PERENCO','WDEA/H. ENERGY','PEMEX','GEOTERMIA','GSM','GSM/BLOQUES','OPEX'];
+const SERVICIOS=['Registro PT','Disparos de Producción','Disparos de Abandono','Registro PLT','Registro PNN/PNG','TCP','Registro caliper OH','Registro CBL-VDL','Suministro de Operaciones','Servicio de Presta cable'];
+const URES=['VH-202','VH-206','VH-209','VH-211','VH-212','CABINA 02','GSM'];
+const PLANAS=['VH-201','VH-207','VH-208','VH-210','RENTA DE GRUA/PLANA'];
+const PICKS=['VH-105','VH-106','VH-107','VH-110','VH-111'];
+const ECPS=['ECP 1410-300','ECP 1410-301'];
+const CHIPS=['Chip 24167','Chip: 340063 Modelo H','Chip H -P938','Chip-340016'];
+const UNIDADES=['VIPER 01','RENTA DE GRUA/PLANA'];
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const STATUSES=['TERMINADO','ACTIVO','SERVICIO CANCELADO','CANCELACION'];
+const STEP_LABELS=['Identificación','Equipo','Servicio','Operación','Personal','Cierre'];
+
+let services=[
+  {id:1,pozo:'ONEL 23',tipo:'Marina',activo:'',cliente:'BLUE MARINE',ure:'CABINA 02',grua:'',plana:'',ecp:'ECP 1410-300',pick:'',chip:'Chip: 340063 Modelo H',uadic:'',equipo:'Con equipo',servicio:'Registro PT',mes:'Enero',os:'VES-MCR-OS-1518',dias_esp:12,ini:'18/01/2026 12:30',fin:'20/01/2026 6:30',prof:4248,ini_reg:4238,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro PT',status:'TERMINADO',horas:47.5,esp_op:0,npt:0,corridas:2,cfalla:0,ing1:'OBED CHAVEZ GASPAR',ing2:'',c1:'CHRISTIAN NERI JIMENEZ SALAS',c2:'CARLOS OSMAR HERNANDEZ IZQUIERDO',c3:'ALDO RAMIREZ GUILLERMO',c4:'ANGEL GABRIEL HERNANDEZ MAGAÑA',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'PENDIENTE',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:2,pozo:'PLATAO 5',tipo:'Tierra',activo:'',cliente:'',ure:'',grua:'',plana:'',ecp:'',pick:'VH-111',chip:'',uadic:'',equipo:'Con equipo',servicio:'Servicio de Presta cable',mes:'Enero',os:'VES-WL-OS-1519',dias_esp:0,ini:'10/01/2026',fin:'15/01/2026',prof:0,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'NA',status:'SERVICIO CANCELADO',horas:0,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'LAZARO FRANCISCO SANTIAGO DELGADO',ing2:'',c1:'EDWIN RAFAEL COLINA LANDA',c2:'RUBEN MAGAÑA RAMOS',c3:'HECTOR RAFAEL MERODIO CASTILLO',c4:'GABRIEL HERNANDEZ OLAN',pj:'OK',rf:'NA',rd:'NA',rb:'NA',fsal:'10/01/2025 10:00',fmov:'NA',fret:'15/01/2026'},
+  {id:3,pozo:'CIERRO PRIETO 1-435D (1 Inter)',tipo:'Tierra',activo:'',cliente:'GEOTERMIA',ure:'VH-209',grua:'',plana:'VH-207',ecp:'',pick:'VH-110',chip:'Chip H -P938',uadic:'',equipo:'Sin equipo',servicio:'Registro caliper OH',mes:'Enero',os:'VES-WL-OS-1525',dias_esp:0,ini:'29/01/2026 7:00',fin:'01/02/2026',prof:2474.4,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro PT',status:'TERMINADO',horas:30,esp_op:0,npt:0,corridas:1,cfalla:0,ing1:'SALVADOR GERARDO VELASCO LOPEZ',ing2:'NOEL ARTEMIO GOMEZ JIMENEZ',c1:'JESUS AURELIO MORALES COLLADO',c2:'JORGE ARMANDO GARCIA NOCHEBUENA',c3:'',c4:'',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'PENDIENTE',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:4,pozo:'CIERRO PRIETO 1-435D (2 Inter)',tipo:'Tierra',activo:'',cliente:'GEOTERMIA',ure:'VH-209',grua:'',plana:'VH-207',ecp:'',pick:'VH-110',chip:'Chip H -P938',uadic:'',equipo:'Sin equipo',servicio:'Registro caliper OH',mes:'Enero',os:'VES-WL-OS-1126',dias_esp:0,ini:'NA',fin:'NA',prof:0,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'CANCELACION',status:'SERVICIO CANCELADO',horas:21,esp_op:24,npt:0,corridas:0,cfalla:0,ing1:'SALVADOR GERARDO VELASCO LOPEZ',ing2:'NOEL ARTEMIO GOMEZ JIMENEZ',c1:'JESUS AURELIO MORALES COLLADO',c2:'JORGE ARMANDO GARCIA NOCHEBUENA',c3:'',c4:'',pj:'OK',rf:'NA',rd:'NA',rb:'NA',fsal:'PENDIENTE',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:5,pozo:'BACAB 3',tipo:'Marina',activo:'',cliente:'OPEX',ure:'',grua:'',plana:'',ecp:'',pick:'',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Suministro',mes:'Enero',os:'VES-WL-OS-1521',dias_esp:0,ini:'NA',fin:'NA',prof:0,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'NA',status:'SERVICIO CANCELADO',horas:0,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'JOSE ROBERTO JALOMO ROCHA',ing2:'',c1:'EDWIN RAFAEL COLINA LANDA',c2:'',c3:'',c4:'',pj:'OK',rf:'NA',rd:'NA',rb:'NA',fsal:'PENDIENTE',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:6,pozo:'SANTUARIO 403',tipo:'Tierra',activo:'',cliente:'PERENCO',ure:'VH-206',grua:'VH-204',plana:'VH-201',ecp:'',pick:'VH-105',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Registro PLT',mes:'Enero',os:'VES-WL-OS-1522',dias_esp:0,ini:'26/01/2026 11:00',fin:'29/01/2026',prof:2974.38,ini_reg:2972.02,fin_reg:0,int_reg:822.02,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro PLT',status:'TERMINADO',horas:80,esp_op:0,npt:0,corridas:2,cfalla:0,ing1:'JOSE ROBERTO JALOMO ROCHA',ing2:'CARLOS OCTAVIO BAUTISTA GONZALEZ',c1:'RICARDO PURECO ALEJANDRO',c2:'RAMON BASTAR MEJIA',c3:'SANTIAGO SUAREZ MARTINEZ',c4:'CARLOS OSMAR HERNANDEZ IZQUIERDO',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'26/01/2026 6:41',fmov:'NA',fret:'29/01/2026'},
+  {id:7,pozo:'OGARRIO 1433',tipo:'Tierra',activo:'',cliente:'WDEA/H. ENERGY',ure:'VH-211',grua:'VH-210',plana:'',ecp:'',pick:'VH-111',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Disparos de Producción',mes:'Enero',os:'VES-WL-OS-1523',dias_esp:0,ini:'26/01/2026 8:00',fin:'29/01/2026 11:00',prof:2110,ini_reg:0,fin_reg:0,int_reg:0,int_dis:9,diam:'2" FASE 60°, 20 CPM',punch:'NA',srv_real:'Disparos de Producción',status:'TERMINADO',horas:33.5,esp_op:41,npt:0,corridas:5,cfalla:0,ing1:'LAZARO FRANCISCO SANTIAGO DELGADO',ing2:'LUIS ANTONIO HERNANDEZ JIMENEZ',c1:'EDWIN RAFAEL COLINA LANDA',c2:'RUBEN MAGAÑA RAMOS',c3:'JUAN ANTONIO DE LA O MENDEZ',c4:'HECTOR RAFAEL MERODIO CASTILLO',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'26/01/2026 6:12',fmov:'NA',fret:'29/01/2025 11:00'},
+  {id:8,pozo:'OGARRIO 827',tipo:'Tierra',activo:'',cliente:'WDEA/H. ENERGY',ure:'VH-211',grua:'VH-210',plana:'',ecp:'',pick:'VH-111',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Registro PNN/PNG',mes:'Enero',os:'VES-WL-OS-1524',dias_esp:0,ini:'29/01/2026 11:00',fin:'31/01/2026 9:30',prof:2340,ini_reg:2340,fin_reg:0,int_reg:70,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro PNN/PNG',status:'TERMINADO',horas:19.5,esp_op:27,npt:0,corridas:2,cfalla:0,ing1:'LUIS ANTONIO HERNANDEZ JIMENEZ',ing2:'',c1:'EDWIN RAFAEL COLINA LANDA',c2:'RUBEN MAGAÑA RAMOS',c3:'JUAN ANTONIO DE LA O MENDEZ',c4:'HECTOR RAFAEL MERODIO CASTILLO',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'26/01/2026 6:12',fmov:'NA',fret:'31/01/2026 12:00'},
+  {id:9,pozo:'YAXCHE 46',tipo:'Tierra',activo:'',cliente:'PEMEX',ure:'',grua:'',plana:'',ecp:'',pick:'',chip:'',uadic:'',equipo:'Con equipo',servicio:'Suministro de Operaciones',mes:'Febrero',os:'VES-MCR-OS-1527',dias_esp:0,ini:'02/02/2026 8:00',fin:'02/02/2026 24:00',prof:3225,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'RCT 2 1/2"',punch:'CORTE: 3,199 M',srv_real:'Suministro de Operaciones',status:'TERMINADO',horas:15,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'ANGEL MARIO LOPEZ GOMEZ',ing2:'',c1:'',c2:'',c3:'',c4:'',pj:'OK',rf:'NA',rd:'NA',rb:'NA',fsal:'PENDIENTE',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:10,pozo:'SANTUARIO 402',tipo:'Tierra',activo:'',cliente:'PERENCO',ure:'VH-206',grua:'VH-204',plana:'VH-201',ecp:'',pick:'VH-105',chip:'Chip 24167',uadic:'',equipo:'Sin equipo',servicio:'Registro PLT',mes:'Febrero',os:'VES-WL-OS-1528',dias_esp:0,ini:'03/02/2026 9:30',fin:'05/02/2026 22:00',prof:3292.67,ini_reg:3292.67,fin_reg:0,int_reg:342.67,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro PLT',status:'TERMINADO',horas:63,esp_op:0,npt:0,corridas:2,cfalla:0,ing1:'JOSE ROBERTO JALOMO ROCHA',ing2:'CARLOS OCTAVIO BAUTISTA GONZALEZ',c1:'RICARDO PURECO ALEJANDRO',c2:'RAMON BASTAR MEJIA',c3:'KEVIN GERARDO RODRIGUEZ OVANDO',c4:'CARLOS OSMAR HERNANDEZ IZQUIERDO',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'03/02/2026 6:28',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:11,pozo:'OGARRIO 811',tipo:'Tierra',activo:'',cliente:'WDEA/H. ENERGY',ure:'VH-212',grua:'VH-210',plana:'',ecp:'ECP 1410-301',pick:'VH-111',chip:'Chip: 340063 Modelo H',uadic:'',equipo:'Sin equipo',servicio:'Disparos de Producción',mes:'Febrero',os:'VES-WL-OS-1529',dias_esp:0,ini:'03/02/2026 8:00',fin:'05/02/2026 10:00',prof:1864,ini_reg:0,fin_reg:0,int_reg:0,int_dis:4,diam:'2" FASE 60°, 20 CPM',punch:'NA',srv_real:'Disparos de Producción',status:'TERMINADO',horas:22,esp_op:29,npt:0,corridas:3,cfalla:0,ing1:'OBED CHAVEZ GASPAR',ing2:'',c1:'JOSE ANTONIO ACOSTA CAMPOS',c2:'ALDO RAMIREZ GUILLERMO',c3:'ANGEL GABRIEL HERNANDEZ MAGAÑA',c4:'LUIS ALBERTO TORRES HERNANDEZ',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'03/02/2026 6:15',fmov:'05/02/2026 10:00',fret:'NA'},
+  {id:12,pozo:'OGARRIO 818D (1 Inter)',tipo:'Tierra',activo:'',cliente:'WDEA/H. ENERGY',ure:'VH-212',grua:'VH-210',plana:'',ecp:'ECP 1410-301',pick:'VH-111',chip:'Chip: 340063 Modelo H',uadic:'VH-111',equipo:'Sin equipo',servicio:'Registro PNN/PNG',mes:'Febrero',os:'VES-WL-OS-1531',dias_esp:0,ini:'05/02/2026 11:00',fin:'06/02/2026 8:00',prof:0,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'NA',status:'CANCELACION',horas:0,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'ANGEL MARIO LOPEZ GOMEZ',ing2:'',c1:'JOSE ANTONIO ACOSTA CAMPOS',c2:'ALDO RAMIREZ GUILLERMO',c3:'ANGEL GABRIEL HERNANDEZ MAGAÑA',c4:'LUIS ALBERTO TORRES HERNANDEZ',pj:'OK',rf:'NA',rd:'NA',rb:'NA',fsal:'05/02/2026 10:00',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:13,pozo:'SANTUARIO 501',tipo:'Tierra',activo:'',cliente:'PERENCO',ure:'VH-206',grua:'VH-204',plana:'VH-201',ecp:'',pick:'VH-105',chip:'Chip 24167',uadic:'',equipo:'Sin equipo',servicio:'Registro PLT',mes:'Febrero',os:'VES-WL-OS-1532',dias_esp:0,ini:'06/02/2026 7:00',fin:'09/02/2026 11:30',prof:2862,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro PLT',status:'TERMINADO',horas:73,esp_op:0,npt:0,corridas:2,cfalla:0,ing1:'JOSE ROBERTO JALOMO ROCHA',ing2:'OBED CHAVEZ GASPAR',c1:'RICARDO PURECO ALEJANDRO',c2:'RAMON BASTAR MEJIA',c3:'KEVIN GERARDO RODRIGUEZ OVANDO',c4:'CARLOS OSMAR HERNANDEZ IZQUIERDO',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'03/02/2026 6:28',fmov:'NA',fret:'09/02/2026 13:14'},
+  {id:14,pozo:'IXACHI 22',tipo:'Tierra',activo:'ACTIVO DE EXPLORACION TERRESTRE SUR',cliente:'GSM',ure:'CABINA 02',grua:'',plana:'VH-201',ecp:'',pick:'VH-107',chip:'',uadic:'',equipo:'Con equipo',servicio:'TCP',mes:'Febrero',os:'VES-TCP-OS-1534',dias_esp:0,ini:'09/02/2026 8:00',fin:'14/02/2026 12:30',prof:7545.65,ini_reg:0,fin_reg:0,int_reg:0,int_dis:60,diam:'4 1/2" fase 60 16.4 con HNS',punch:'NA',srv_real:'TCP',status:'TERMINADO',horas:124.5,esp_op:0,npt:0,corridas:1,cfalla:0,ing1:'SALVADOR GERARDO VELASCO LOPEZ',ing2:'',c1:'JOSE ANTONIO ACOSTA CAMPOS',c2:'GABRIEL HERNANDEZ OLAN',c3:'SANTIAGO SUAREZ MARTINEZ',c4:'',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'OK',fsal:'11/02/2026 6:55',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:15,pozo:'CIERRO PRIETO 1-435D (3 Inter)',tipo:'Tierra',activo:'',cliente:'GEOTERMIA',ure:'VH-209',grua:'',plana:'VH-207',ecp:'',pick:'VH-110',chip:'Chip H -P938',uadic:'',equipo:'Sin equipo',servicio:'Registro PT',mes:'Febrero',os:'VES-WL-OS-1535',dias_esp:0,ini:'12/02/2026 13:00',fin:'13/02/2026 3:00',prof:2476,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro PT',status:'TERMINADO',horas:18,esp_op:0,npt:0,corridas:1,cfalla:0,ing1:'SALVADOR GERARDO VELASCO LOPEZ',ing2:'NOEL ARTEMIO GOMEZ JIMENEZ',c1:'JESUS AURELIO MORALES COLLADO',c2:'JORGE ARMANDO GARCIA NOCHEBUENA',c3:'',c4:'',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'PENDIENTE',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:16,pozo:'IXACHI 61',tipo:'Tierra',activo:'ACTIVO DE EXPLORACION TERRESTRE SUR',cliente:'GSM',ure:'VH-202',grua:'',plana:'VH-208',ecp:'',pick:'VH-106',chip:'',uadic:'VIPER 01',equipo:'Con equipo',servicio:'TCP',mes:'Febrero',os:'VES-TCP-OS-1530',dias_esp:1,ini:'10/02/2026 19:00',fin:'17/02/2026 9:00',prof:6985,ini_reg:0,fin_reg:0,int_reg:0,int_dis:60,diam:'NA',punch:'NA',srv_real:'TCP',status:'TERMINADO',horas:288.5,esp_op:0,npt:0,corridas:2,cfalla:0,ing1:'JUAN ANTONIO CANCINO VARGAS',ing2:'CARLOS OCTAVIO BAUTISTA GONZALEZ',c1:'DIEGO ANTONIO TRINIDAD DE LA CRUZ',c2:'ANTONIO RAVANALES ESCALANTE',c3:'LUIS ALBERTO TORRES HERNANDEZ',c4:'',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'OK',fsal:'04/02/2026 8:29',fmov:'NA',fret:'17/02/2026 9:00'},
+  {id:17,pozo:'OGARRIO 818D (2 Inter)',tipo:'Tierra',activo:'',cliente:'WDEA/H. ENERGY',ure:'VH-206',grua:'VH-210',plana:'',ecp:'ECP 1410-301',pick:'VH-106',chip:'Chip H -P938',uadic:'',equipo:'Sin equipo',servicio:'Registro PNN/PNG',mes:'Febrero',os:'VES-WL-OS-1533',dias_esp:0,ini:'16/02/2026 8:00',fin:'17/02/2026 11:00',prof:2472,ini_reg:2472,fin_reg:0,int_reg:273,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro PNN/PNG',status:'TERMINADO',horas:27,esp_op:0,npt:0,corridas:2,cfalla:0,ing1:'OBED CHAVEZ GASPAR',ing2:'',c1:'CHRISTIAN NERI JIMENEZ SALAS',c2:'ALDO RAMIREZ GUILLERMO',c3:'CARLOS OSMAR HERNANDEZ IZQUIERDO',c4:'JUAN ANTONIO DE LA O MENDEZ',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'OK',fsal:'16/02/2026 6:00',fmov:'NA',fret:'PENDIENTE'},
+  {id:18,pozo:'SAMARIA 685',tipo:'Tierra',activo:'',cliente:'PEMEX',ure:'',grua:'VH-210',plana:'',ecp:'',pick:'VH-107',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Suministro de Operaciones',mes:'Febrero',os:'VES-WL-OS-1534',dias_esp:0,ini:'19/02/2026 15:00',fin:'20/02/2026 3:00',prof:830,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'PTC 2 1/2"',punch:'PUNCHER 1: 830 M / PUNCHER 2: 829 M',srv_real:'Suministro de Operaciones',status:'TERMINADO',horas:16,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'OBED CHAVEZ GASPAR',ing2:'',c1:'EDWIN RAFAEL COLINA LANDA',c2:'HECTOR RAFAEL MERODIO CASTILLO',c3:'',c4:'',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'19/02/2026 1:38',fmov:'NA',fret:'PENDIENTE'},
+  {id:19,pozo:'SAMARIA 758',tipo:'Tierra',activo:'',cliente:'PEMEX',ure:'',grua:'VH-210',plana:'',ecp:'',pick:'VH-107',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Suministro de Operaciones',mes:'Febrero',os:'VES-WL-OS-1535',dias_esp:0,ini:'20/02/2026 11:30',fin:'20/02/2026 20:30',prof:845,ini_reg:845,fin_reg:0,int_reg:145,int_dis:0,diam:'PTC 1 11/16"',punch:'PUNCHER 1: 839 M / PUNCHER 2: 838 M',srv_real:'Suministro de Operaciones',status:'TERMINADO',horas:10.5,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'JOSE ROBERTO JALOMO ROCHA',ing2:'',c1:'EDWIN RAFAEL COLINA LANDA',c2:'HECTOR RAFAEL MERODIO CASTILLO',c3:'',c4:'',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'20/02/2026 11:30',fmov:'NA',fret:'PENDIENTE'},
+  {id:20,pozo:'SAMARIA 694',tipo:'Tierra',activo:'',cliente:'PEMEX',ure:'',grua:'',plana:'',ecp:'',pick:'VH-107',chip:'',uadic:'RENTA DE GRUA/PLANA',equipo:'Sin equipo',servicio:'Suministro de Operaciones',mes:'Febrero',os:'VES-WL-OS-1536',dias_esp:0,ini:'21/02/2026 11:30',fin:'21/02/2026 21:30',prof:881,ini_reg:881,fin_reg:0,int_reg:61,int_dis:0,diam:'PTC 1 11/16"',punch:'PUNCHER 1: 876 M / PUNCHER 2: 875 M',srv_real:'Suministro de Operaciones',status:'TERMINADO',horas:13.5,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'LUIS ANTONIO HERNANDEZ JIMENEZ',ing2:'',c1:'ALDO RAMIREZ GUILLERMO',c2:'',c3:'',c4:'',pj:'OK',rf:'OK',rd:'OK',rb:'OK',fsal:'21/02/2026 7:38',fmov:'NA',fret:'21/02/2026 20:30'},
+  {id:21,pozo:'OCHPAN 1 EXP',tipo:'Tierra',activo:'',cliente:'PEMEX',ure:'VH-211',grua:'VH-210',plana:'',ecp:'',pick:'VH-111',chip:'Chip-340016',uadic:'',equipo:'Sin equipo',servicio:'Disparos de Abandono',mes:'Febrero',os:'VES-WL-OS-1537',dias_esp:2,ini:'23/02/2026 8:00',fin:'25/02/2026 9:30',prof:334.5,ini_reg:331,fin_reg:0,int_reg:331,int_dis:5,diam:'PUNCHER 2"',punch:'NA',srv_real:'Disparos de Abandono',status:'TERMINADO',horas:49.5,esp_op:0,npt:0,corridas:4,cfalla:0,ing1:'JOSE ROBERTO JALOMO ROCHA',ing2:'',c1:'EDWIN RAFAEL COLINA LANDA',c2:'HECTOR RAFAEL MERODIO CASTILLO',c3:'JUAN ANTONIO DE LA O MENDEZ',c4:'RAMON BASTAR MEJIA',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'OK',fsal:'21/02/2026 10:50',fmov:'25/02/2026 15:30',fret:'PENDIENTE'},
+  {id:22,pozo:'OGARRIO 1516',tipo:'Tierra',activo:'',cliente:'WDEA/H. ENERGY',ure:'VH-212',grua:'',plana:'VH-201',ecp:'',pick:'VH-106',chip:'',uadic:'RENTA DE GRUA/PLANA',equipo:'Sin equipo',servicio:'Disparos de Producción',mes:'Febrero',os:'VES-WL-OS-1538',dias_esp:0,ini:'23/02/2026 7:00',fin:'26/02/2026 11:00',prof:1845,ini_reg:0,fin_reg:0,int_reg:0,int_dis:4,diam:'2" FASE 60°, 20 CPM',punch:'NA',srv_real:'Disparos de Producción',status:'TERMINADO',horas:28,esp_op:48,npt:0,corridas:5,cfalla:0,ing1:'OBED CHAVEZ GASPAR',ing2:'',c1:'RICARDO PURECO ALEJANDRO',c2:'RUBEN MAGAÑA RAMOS',c3:'ALDO RAMIREZ GUILLERMO',c4:'KEVIN GERARDO RODRIGUEZ OVANDO',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'OK',fsal:'23/02/2026 7:00',fmov:'26/02/2026 11:30',fret:'PENDIENTE'},
+  {id:23,pozo:'OGARRIO 827',tipo:'Tierra',activo:'',cliente:'WDEA/H. ENERGY',ure:'VH-212',grua:'',plana:'VH-201',ecp:'',pick:'VH-106',chip:'',uadic:'RENTA DE GRUA/PLANA',equipo:'Sin equipo',servicio:'Disparos de Producción',mes:'Febrero',os:'VES-WL-OS-1539',dias_esp:0,ini:'26/02/2026 11:30',fin:'01/03/2026 10:00',prof:2339,ini_reg:0,fin_reg:0,int_reg:0,int_dis:6,diam:'2" FASE 60°, 20 CPM',punch:'NA',srv_real:'Disparos de Producción',status:'TERMINADO',horas:28.5,esp_op:42,npt:0,corridas:4,cfalla:0,ing1:'OBED CHAVEZ GASPAR',ing2:'',c1:'ALDO RAMIREZ GUILLERMO',c2:'LUIS ALBERTO TORRES HERNANDEZ',c3:'RICARDO PURECO ALEJANDRO',c4:'RUBEN MAGAÑA RAMOS',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'OK',fsal:'26/02/2026 11:30',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:24,pozo:'TECANI 1 EXP',tipo:'Tierra',activo:'',cliente:'PEMEX',ure:'VH-211',grua:'VH-210',plana:'',ecp:'',pick:'VH-111',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Disparos de Abandono',mes:'Marzo',os:'VES-WL-OS-1540',dias_esp:3,ini:'27/02/2026 11:30',fin:'01/03/2026 17:00',prof:577.05,ini_reg:574.5,fin_reg:0,int_reg:114.5,int_dis:2,diam:'PUNCHER 2"',punch:'NA',srv_real:'Disparos de Abandono',status:'TERMINADO',horas:31.5,esp_op:5,npt:0,corridas:4,cfalla:0,ing1:'JOSE ROBERTO JALOMO ROCHA',ing2:'',c1:'EDWIN RAFAEL COLINA LANDA',c2:'HECTOR RAFAEL MERODIO CASTILLO',c3:'JUAN ANTONIO DE LA O MENDEZ',c4:'RAMON BASTAR MEJIA',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'OK',fsal:'27/02/2026 15:30',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:25,pozo:'CIERRO PRIETO 1-435D (4 Inter)',tipo:'Tierra',activo:'',cliente:'GEOTERMIA',ure:'VH-209',grua:'',plana:'VH-207',ecp:'',pick:'VH-110',chip:'Chip H -P938',uadic:'',equipo:'Sin equipo',servicio:'Registro CBL-VDL',mes:'Marzo',os:'VES-WL-OS-1541',dias_esp:0,ini:'27/02/2026 19:00',fin:'01/03/2026 18:30',prof:2469,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'NA',punch:'NA',srv_real:'Registro CBL-VDL',status:'TERMINADO',horas:47.5,esp_op:24,npt:0,corridas:2,cfalla:0,ing1:'SALVADOR GERARDO VELASCO LOPEZ',ing2:'NOEL ARTEMIO GOMEZ JIMENEZ',c1:'JESUS AURELIO MORALES COLLADO',c2:'JORGE ARMANDO GARCIA NOCHEBUENA',c3:'',c4:'',pj:'OK',rf:'NA',rd:'NA',rb:'NA',fsal:'PENDIENTE',fmov:'PENDIENTE',fret:'07/03/2026'},
+  {id:26,pozo:'JAMALEM 1 EXP',tipo:'Tierra',activo:'',cliente:'GSM/BLOQUES',ure:'VH-211',grua:'',plana:'',ecp:'',pick:'VH-105',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Disparos de Abandono',mes:'Marzo',os:'VES-WL-OS-1542',dias_esp:3,ini:'02/03/2026 00:00',fin:'07/03/2026 12:30',prof:812,ini_reg:0,fin_reg:0,int_reg:0,int_dis:2,diam:'PUNCHER 2"',punch:'NA',srv_real:'Disparos de Abandono',status:'TERMINADO',horas:34.5,esp_op:26,npt:0,corridas:3,cfalla:0,ing1:'CARLOS OCTAVIO BAUTISTA GONZALEZ',ing2:'',c1:'JOSE ANTONIO ACOSTA CAMPOS',c2:'SANTIAGO SUAREZ MARTINEZ',c3:'DIEGO ANTONIO TRINIDAD DE LA CRUZ',c4:'GABRIEL HERNANDEZ OLAN',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'OK',fsal:'25/02/2026 15:30',fmov:'NA',fret:'07/03/2026 15:44'},
+  {id:27,pozo:'CHAC 1007 (1 Inter)',tipo:'Marina',activo:'',cliente:'PEMEX',ure:'',grua:'',plana:'',ecp:'',pick:'VH-105',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Suministro de Operaciones',mes:'Marzo',os:'VES-MCR-OS-1543',dias_esp:242,ini:'NA',fin:'NA',prof:0,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'PENDIENTE',punch:'PENDIENTE',srv_real:'CANCELACION',status:'SERVICIO CANCELADO',horas:0,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'ANGEL MARIO LOPEZ GOMEZ',ing2:'',c1:'ANGEL GABRIEL HERNANDEZ MAGAÑA',c2:'',c3:'',c4:'',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'PENDIENTE',fsal:'06/03/2026 17:00',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:28,pozo:'IXACHI 1103',tipo:'Tierra',activo:'',cliente:'GSM',ure:'VH-202',grua:'RENTA DE GRUA/PLANA',plana:'VH-208',ecp:'',pick:'',chip:'',uadic:'VIPER 01',equipo:'Sin equipo',servicio:'TCP',mes:'Marzo',os:'VES-TCP-OS-1544',dias_esp:0,ini:'PENDIENTE',fin:'PENDIENTE',prof:0,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'PENDIENTE',punch:'PENDIENTE',srv_real:'ACTIVO',status:'ACTIVO',horas:0,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'JUAN ANTONIO CANCINO VARGAS',ing2:'',c1:'JOSE ANTONIO ACOSTA CAMPOS',c2:'SANTIAGO SUAREZ MARTINEZ',c3:'ANTONIO RAVANALES ESCALANTE',c4:'DIEGO ANTONIO TRINIDAD DE LA CRUZ',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'PENDIENTE',fsal:'11/03/2026 5:53',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:29,pozo:'OGARRIO 1489',tipo:'Tierra',activo:'',cliente:'WDEA/H. ENERGY',ure:'VH-212',grua:'VH-210',plana:'VH-201',ecp:'',pick:'VH-106',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Disparos de Producción',mes:'Marzo',os:'VES-WL-OS-1545',dias_esp:0,ini:'PENDIENTE',fin:'PENDIENTE',prof:0,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'PENDIENTE',punch:'PENDIENTE',srv_real:'ACTIVO',status:'ACTIVO',horas:0,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'CARLOS OCTAVIO BAUTISTA GONZALEZ',ing2:'',c1:'CHRISTIAN NERI JIMENEZ SALAS',c2:'JORGE ARMANDO GARCIA NOCHEBUENA',c3:'LUIS OSWALDO HERNANDEZ LOPEZ',c4:'GABRIEL HERNANDEZ OLAN',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'PENDIENTE',fsal:'12/03/2026 6:00',fmov:'PENDIENTE',fret:'PENDIENTE'},
+  {id:30,pozo:'CHAC 1007 (2 Inter)',tipo:'Tierra',activo:'',cliente:'PEMEX',ure:'CABINA 02',grua:'',plana:'',ecp:'',pick:'',chip:'',uadic:'',equipo:'Sin equipo',servicio:'Registro PNN/PNG',mes:'Marzo',os:'VES-WL-OS-1546',dias_esp:0,ini:'PENDIENTE',fin:'PENDIENTE',prof:0,ini_reg:0,fin_reg:0,int_reg:0,int_dis:0,diam:'PENDIENTE',punch:'PENDIENTE',srv_real:'ACTIVO',status:'ACTIVO',horas:0,esp_op:0,npt:0,corridas:0,cfalla:0,ing1:'OBED CHAVEZ GASPAR',ing2:'',c1:'RICARDO PURECO ALEJANDRO',c2:'ALDO RAMIREZ GUILLERMO',c3:'LUIS ALBERTO TORRES HERNANDEZ',c4:'DIEGO ANTONIO TRINIDAD DE LA CRUZ',pj:'PENDIENTE',rf:'PENDIENTE',rd:'PENDIENTE',rb:'PENDIENTE',fsal:'12/03/2026 6:00',fmov:'PENDIENTE',fret:'PENDIENTE'},
+];
+
+let currentStep=1,formData={};
+const bc=s=>s==='TERMINADO'?'terminado':s==='ACTIVO'?'activo':s.includes('CANCEL')?'cancelado':'pendiente';
+const opt=(arr,blank)=>(blank?['—',...arr]:arr).map(o=>`<option>${o}</option>`).join('');
+const fld=(id,lbl,type='text',ph='')=>`<div class="field"><label for="${id}">${lbl}</label><input type="${type}" id="${id}" placeholder="${ph}"></div>`;
+const sfld=(id,lbl,arr,blank=true)=>`<div class="field"><label for="${id}">${lbl}</label><select id="${id}">${opt(arr,blank)}</select></div>`;
+const sdoc=(id,lbl)=>`<div class="field"><label for="${id}">${lbl}</label><select id="${id}"><option>OK</option><option>NA</option><option>PENDIENTE</option></select></div>`;
+
+function showView(v){
+  ['vDashboard','vForm','vSuccess'].forEach(id=>{const el=document.getElementById(id);el.style.display='none';el.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('v'+v.charAt(0).toUpperCase()+v.slice(1));
+  if(el){el.style.display='block';el.classList.add('active');}
+  const nb=document.getElementById(v==='dashboard'?'navDash':v==='form'?'navNew':'');
+  if(nb)nb.classList.add('active');
+  if(v==='dashboard'){renderMetrics();populateClientFilter();renderTable();}
+  if(v==='form'){currentStep=1;formData={};renderStepper();renderFormStep();}
+}
+
+function renderMetrics(){
+  const term=services.filter(s=>s.status==='TERMINADO').length;
+  const act=services.filter(s=>s.status==='ACTIVO').length;
+  const hrs=services.reduce((a,s)=>a+(s.horas||0),0);
+  document.getElementById('metricsRow').innerHTML=`
+    <div class="metric-card"><div class="metric-label">Total operaciones</div><div class="metric-value">${services.length}</div></div>
+    <div class="metric-card green"><div class="metric-label">Terminadas</div><div class="metric-value green">${term}</div></div>
+    <div class="metric-card blue"><div class="metric-label">Activas</div><div class="metric-value blue">${act}</div></div>
+    <div class="metric-card amb"><div class="metric-label">Horas op. totales</div><div class="metric-value amb">${hrs.toFixed(1)}</div></div>`;
+}
+
+function populateClientFilter(){
+  const s=document.getElementById('filterCliente'),cur=s.value;
+  const cl=[...new Set(services.map(x=>x.cliente).filter(Boolean))].sort();
+  s.innerHTML=`<option value="">Todos los clientes</option>`+cl.map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('');
+}
+
+function renderTable(){
+  const q=document.getElementById('searchInp').value.toLowerCase();
+  const fS=document.getElementById('filterStatus').value;
+  const fM=document.getElementById('filterMes').value;
+  const fC=document.getElementById('filterCliente').value;
+  const f=services.filter(s=>(!q||[s.pozo,s.cliente,s.servicio,s.os,s.ing1].join(' ').toLowerCase().includes(q))&&(!fS||s.status===fS)&&(!fM||s.mes===fM)&&(!fC||s.cliente===fC));
+  const b=document.getElementById('tableBody');
+  if(!f.length){b.innerHTML=`<div class="empty-state">Sin resultados</div>`;return;}
+  b.innerHTML=f.map(s=>`<div class="table-row" onclick="openDetail(${s.id})">
+    <span class="row-num">${s.id}</span>
+    <div class="row-pozo"><div class="name">${s.pozo}</div><div class="sub">${s.tipo} · ${s.equipo}</div></div>
+    <div class="row-cliente"><div class="main">${s.cliente||'—'}</div><div class="sub">${s.servicio}</div></div>
+    <div class="row-mes col-mes"><div class="main">${s.mes}</div><div class="sub">${s.os}</div></div>
+    <div class="row-ing col-ing">${s.ing1||'—'}</div>
+    <span class="badge ${bc(s.status)}">${s.status}</span>
+  </div>`).join('');
+}
+
+function openDetail(id){
+  const s=services.find(x=>x.id===id);if(!s)return;
+  const dv=v=>v&&v!=='NA'&&v!=='0'&&v!==0?v:'—';
+  const cq=[s.c1,s.c2,s.c3,s.c4].filter(c=>c&&c!=='—').join(', ')||'—';
+  document.getElementById('modalTitle').textContent=s.pozo;
+  document.getElementById('modalSub').textContent=`${s.servicio} · ${s.mes} · ${s.os}`;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="detail-section"><div class="detail-section-title">Identificación</div><div class="detail-grid">
+      <div class="detail-item"><div class="dl">Pozo</div><div class="dv">${s.pozo}</div></div>
+      <div class="detail-item"><div class="dl">Tipo</div><div class="dv">${s.tipo}</div></div>
+      <div class="detail-item"><div class="dl">Cliente</div><div class="dv">${dv(s.cliente)}</div></div>
+      <div class="detail-item"><div class="dl">Con / Sin equipo</div><div class="dv">${s.equipo}</div></div>
+      <div class="detail-item"><div class="dl">Activo</div><div class="dv">${dv(s.activo)}</div></div>
+      <div class="detail-item"><div class="dl">Estatus</div><div class="dv"><span class="badge ${bc(s.status)}">${s.status}</span></div></div>
+    </div></div>
+    <div class="detail-section"><div class="detail-section-title">Equipo</div><div class="detail-grid">
+      <div class="detail-item"><div class="dl">URE</div><div class="dv">${dv(s.ure)}</div></div>
+      <div class="detail-item"><div class="dl">Grúa</div><div class="dv">${dv(s.grua)}</div></div>
+      <div class="detail-item"><div class="dl">Plana</div><div class="dv">${dv(s.plana)}</div></div>
+      <div class="detail-item"><div class="dl">ECP</div><div class="dv">${dv(s.ecp)}</div></div>
+      <div class="detail-item"><div class="dl">Pick Up</div><div class="dv">${dv(s.pick)}</div></div>
+      <div class="detail-item"><div class="dl">CHIP</div><div class="dv">${dv(s.chip)}</div></div>
+      <div class="detail-item"><div class="dl">Unidad adicional</div><div class="dv">${dv(s.uadic)}</div></div>
+    </div></div>
+    <div class="detail-section"><div class="detail-section-title">Servicio</div><div class="detail-grid">
+      <div class="detail-item"><div class="dl">Servicio</div><div class="dv">${s.servicio}</div></div>
+      <div class="detail-item"><div class="dl">Servicio realizado</div><div class="dv">${dv(s.srv_real)}</div></div>
+      <div class="detail-item"><div class="dl">Mes</div><div class="dv">${s.mes}</div></div>
+      <div class="detail-item"><div class="dl">OS</div><div class="dv">${s.os}</div></div>
+      <div class="detail-item"><div class="dl">Inicio operación</div><div class="dv">${dv(s.ini)}</div></div>
+      <div class="detail-item"><div class="dl">Fin operación</div><div class="dv">${dv(s.fin)}</div></div>
+      <div class="detail-item"><div class="dl">Días espera previo</div><div class="dv">${s.dias_esp}</div></div>
+    </div></div>
+    <div class="detail-section"><div class="detail-section-title">Operación</div><div class="detail-grid">
+      <div class="detail-item"><div class="dl">Prof. total (m)</div><div class="dv">${s.prof}</div></div>
+      <div class="detail-item"><div class="dl">Inicio registro (m)</div><div class="dv">${dv(s.ini_reg)}</div></div>
+      <div class="detail-item"><div class="dl">Intervalo registrado (m)</div><div class="dv">${dv(s.int_reg)}</div></div>
+      <div class="detail-item"><div class="dl">Intervalo disparado (m)</div><div class="dv">${dv(s.int_dis)}</div></div>
+      <div class="detail-item"><div class="dl">Diámetro / Pistola</div><div class="dv">${dv(s.diam)}</div></div>
+      <div class="detail-item"><div class="dl">Prof. Puncher / Corte</div><div class="dv">${dv(s.punch)}</div></div>
+      <div class="detail-item"><div class="dl">Horas operación</div><div class="dv">${s.horas} h</div></div>
+      <div class="detail-item"><div class="dl">Espera op. (hrs)</div><div class="dv">${s.esp_op} h</div></div>
+      <div class="detail-item"><div class="dl">NPT</div><div class="dv">${s.npt} h</div></div>
+      <div class="detail-item"><div class="dl">No. corridas</div><div class="dv">${s.corridas}</div></div>
+      <div class="detail-item"><div class="dl">Corridas con falla</div><div class="dv">${s.cfalla}</div></div>
+    </div></div>
+    <div class="detail-section"><div class="detail-section-title">Personal</div><div class="detail-grid">
+      <div class="detail-item"><div class="dl">Ingeniero 1</div><div class="dv">${dv(s.ing1)}</div></div>
+      <div class="detail-item"><div class="dl">Ingeniero 2</div><div class="dv">${dv(s.ing2)}</div></div>
+      <div class="detail-item" style="grid-column:1/-1"><div class="dl">Cuadrilla</div><div class="dv">${cq}</div></div>
+    </div></div>
+    <div class="detail-section"><div class="detail-section-title">Cierre y documentación</div><div class="detail-grid">
+      <div class="detail-item"><div class="dl">Prejob</div><div class="dv">${s.pj}</div></div>
+      <div class="detail-item"><div class="dl">Reporte físico</div><div class="dv">${s.rf}</div></div>
+      <div class="detail-item"><div class="dl">Reporte digital</div><div class="dv">${s.rd}</div></div>
+      <div class="detail-item"><div class="dl">Relleno base de datos</div><div class="dv">${s.rb}</div></div>
+      <div class="detail-item"><div class="dl">Salida base</div><div class="dv">${dv(s.fsal)}</div></div>
+      <div class="detail-item"><div class="dl">Movió de pozo</div><div class="dv">${dv(s.fmov)}</div></div>
+      <div class="detail-item"><div class="dl">Retorno base</div><div class="dv">${dv(s.fret)}</div></div>
+    </div></div>`;
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeModal(){document.getElementById('detailModal').classList.remove('open');}
+document.getElementById('detailModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+function renderStepper(){
+  const STEP_LABELS_CONST=['Identificación','Equipo','Servicio','Operación','Personal','Cierre'];
+  document.getElementById('stepperBar').innerHTML=STEP_LABELS_CONST.map((l,i)=>{
+    const n=i+1,cls=n===currentStep?'active':n<currentStep?'done':'';
+    return`<div class="step-item ${cls}"><div class="step-circle">${n<currentStep?'✓':n}</div><span class="step-label">${l}</span></div>${i<5?'<div class="step-line"></div>':''}`;
+  }).join('');
+  document.getElementById('progressTxt').textContent=`Paso ${currentStep} de 6`;
+  document.getElementById('btnPrev').textContent=currentStep===1?'← Cancelar':'← Anterior';
+  document.getElementById('btnNext').textContent=currentStep===6?'Guardar servicio':'Siguiente →';
+}
+
+function renderFormStep(){
+  const STEP_LABELS_CONST=['Identificación','Equipo','Servicio','Operación','Personal','Cierre'];
+  document.getElementById('formBody').innerHTML=`<div class="step-heading">Paso ${currentStep} — ${STEP_LABELS_CONST[currentStep-1]}</div>`+buildStep(currentStep);
+  Object.keys(formData).forEach(k=>{
+    const el=document.getElementById('f_'+k);if(!el)return;
+    if(el.type==='radio'){const r=document.querySelector(`input[name="${k}"][value="${formData[k]}"]`);if(r)r.checked=true;}
+    else el.value=formData[k];
+  });
+}
+
+function buildStep(n){
+  if(n===1)return`<div class="grid2">${fld('f_pozo','Nombre del pozo','text','Ej: OGARRIO 1433')}${sfld('f_tipo','Tierra / Marina',['Tierra','Marina'],false)}${fld('f_activo','Activo (opcional)','text','Ej: ACTIVO DE EXPLORACION')}${sfld('f_cliente','Cliente',CLIENTES)}</div>`;
+  if(n===2)return`<div class="section-title">Con / Sin equipo</div><div class="radio-group"><label><input type="radio" name="equipo" value="Con equipo"> Con equipo</label><label><input type="radio" name="equipo" value="Sin equipo" checked> Sin equipo</label></div><div class="section-title">Unidades</div><div class="grid3">${sfld('f_ure','URE',URES)}${fld('f_grua','Grúa','text','Cód. o RENTA')}${sfld('f_plana','Plana',PLANAS)}${sfld('f_ecp','ECP',ECPS)}${sfld('f_pick','Pick Up',PICKS)}${sfld('f_chip','CHIP',CHIPS)}${sfld('f_uadic','Unidad adicional',UNIDADES)}</div>`;
+  if(n===3)return`<div class="grid2">${sfld('f_servicio','Servicio solicitado',SERVICIOS,false)}${sfld('f_mes','Mes',MESES,false)}${fld('f_os','Orden de servicio','text','VES-WL-OS-XXXX')}${fld('f_dias_esp','Días de espera previo','number','0')}${fld('f_ini','Fecha inicio operación','datetime-local')}${fld('f_fin','Fecha fin operación','datetime-local')}</div>`;
+  if(n===4)return`<div class="section-title">Parámetros del pozo</div><div class="grid3">${fld('f_prof','Profundidad total (m)','number','0')}${fld('f_ini_reg','Inicio registro (m)','number','0')}${fld('f_fin_reg','Fin registro (m)','number','0')}${fld('f_int_reg','Intervalo registrado (m)','number','0')}${fld('f_int_dis','Intervalo disparado (m)','number','0')}${fld('f_diam','Diámetro pistola','text','')}${fld('f_punch','Prof. Puncher / Corte','text','')}${fld('f_horas','Horas operación','number','0')}${fld('f_esp_op','Espera op. (hrs)','number','0')}${fld('f_npt','NPT (hrs)','number','0')}${fld('f_corridas','No. corridas','number','0')}${fld('f_cfalla','Corridas con falla','number','0')}</div><div class="section-title">Resultado</div><div class="grid2">${fld('f_srv_real','Servicio realizado','text','')}${sfld('f_status','Estatus',STATUSES,false)}</div>`;
+  if(n===5)return`<div class="section-title">Ingenieros</div><div class="grid2" style="margin-bottom:1.25rem">${sfld('f_ing1','Ingeniero 1',INGENIEROS)}${sfld('f_ing2','Ingeniero 2',INGENIEROS)}</div><div class="section-title">Cuadrilla</div><div class="grid2">${sfld('f_c1','Cuadrilla 1',CUADRILLA)}${sfld('f_c2','Cuadrilla 2',CUADRILLA)}${sfld('f_c3','Cuadrilla 3',CUADRILLA)}${sfld('f_c4','Cuadrilla 4',CUADRILLA)}</div>`;
+  if(n===6)return`<div class="section-title">Documentación</div><div class="grid4" style="margin-bottom:1.25rem">${sdoc('f_pj','Prejob')}${sdoc('f_rf','Reporte físico')}${sdoc('f_rd','Reporte digital')}${sdoc('f_rb','Relleno base de datos')}</div><div class="section-title">Fechas de movimiento</div><div class="grid3">${fld('f_fsal','Salida base / lateral','datetime-local')}${fld('f_fmov','Movió de pozo a pozo','datetime-local')}${fld('f_fret','Retorno a base','datetime-local')}</div>`;
+  return'';
+}
+
+function collectStep(n){
+  const g=id=>{const e=document.getElementById(id);return e?e.value:'';};
+  const r=nm=>{const e=document.querySelector(`input[name="${nm}"]:checked`);return e?e.value:'';};
+  if(n===1){formData.pozo=g('f_pozo');formData.tipo=g('f_tipo');formData.activo=g('f_activo');formData.cliente=g('f_cliente');}
+  if(n===2){formData.equipo=r('equipo')||'Sin equipo';formData.ure=g('f_ure');formData.grua=g('f_grua');formData.plana=g('f_plana');formData.ecp=g('f_ecp');formData.pick=g('f_pick');formData.chip=g('f_chip');formData.uadic=g('f_uadic');}
+  if(n===3){formData.servicio=g('f_servicio');formData.mes=g('f_mes');formData.os=g('f_os');formData.dias_esp=g('f_dias_esp');formData.ini=g('f_ini');formData.fin=g('f_fin');}
+  if(n===4){formData.prof=g('f_prof');formData.ini_reg=g('f_ini_reg');formData.fin_reg=g('f_fin_reg');formData.int_reg=g('f_int_reg');formData.int_dis=g('f_int_dis');formData.diam=g('f_diam');formData.punch=g('f_punch');formData.horas=g('f_horas');formData.esp_op=g('f_esp_op');formData.npt=g('f_npt');formData.corridas=g('f_corridas');formData.cfalla=g('f_cfalla');formData.srv_real=g('f_srv_real');formData.status=g('f_status');}
+  if(n===5){formData.ing1=g('f_ing1');formData.ing2=g('f_ing2');formData.c1=g('f_c1');formData.c2=g('f_c2');formData.c3=g('f_c3');formData.c4=g('f_c4');}
+  if(n===6){formData.pj=g('f_pj');formData.rf=g('f_rf');formData.rd=g('f_rd');formData.rb=g('f_rb');formData.fsal=g('f_fsal');formData.fmov=g('f_fmov');formData.fret=g('f_fret');}
+}
+
+function navStep(dir){
+  collectStep(currentStep);
+  if(dir===1&&currentStep===6){saveService();return;}
+  if(dir===-1&&currentStep===1){showView('dashboard');return;}
+  currentStep=Math.max(1,Math.min(6,currentStep+dir));
+  renderStepper();renderFormStep();
+}
+
+function saveService(){
+  const fd=formData;const cl=v=>(v==='—'?'':v)||'';
+  services.push({id:services.length+1,pozo:fd.pozo||'Sin nombre',tipo:fd.tipo||'Tierra',activo:fd.activo||'',cliente:cl(fd.cliente),ure:cl(fd.ure),grua:fd.grua||'',plana:cl(fd.plana),ecp:cl(fd.ecp),pick:cl(fd.pick),chip:cl(fd.chip),uadic:cl(fd.uadic),equipo:fd.equipo||'Sin equipo',servicio:fd.servicio||'',mes:fd.mes||'',os:fd.os||'',dias_esp:parseFloat(fd.dias_esp)||0,ini:fd.ini||'PENDIENTE',fin:fd.fin||'PENDIENTE',prof:parseFloat(fd.prof)||0,ini_reg:parseFloat(fd.ini_reg)||0,fin_reg:parseFloat(fd.fin_reg)||0,int_reg:parseFloat(fd.int_reg)||0,int_dis:parseFloat(fd.int_dis)||0,diam:fd.diam||'NA',punch:fd.punch||'NA',srv_real:fd.srv_real||'',status:fd.status||'ACTIVO',horas:parseFloat(fd.horas)||0,esp_op:parseFloat(fd.esp_op)||0,npt:parseFloat(fd.npt)||0,corridas:parseInt(fd.corridas)||0,cfalla:parseInt(fd.cfalla)||0,ing1:cl(fd.ing1),ing2:cl(fd.ing2),c1:cl(fd.c1),c2:cl(fd.c2),c3:cl(fd.c3),c4:cl(fd.c4),pj:fd.pj||'PENDIENTE',rf:fd.rf||'PENDIENTE',rd:fd.rd||'PENDIENTE',rb:fd.rb||'PENDIENTE',fsal:fd.fsal||'PENDIENTE',fmov:fd.fmov||'PENDIENTE',fret:fd.fret||'PENDIENTE'});
+  document.getElementById('vForm').style.display='none';
+  const vs=document.getElementById('vSuccess');vs.style.display='block';
+  vs.innerHTML=`<div class="success-wrap">
+    <div class="success-icon">✓</div>
+    <div class="success-title">Servicio registrado correctamente</div>
+    <div class="success-sub">${fd.pozo||'—'} · ${fd.servicio} · ${fd.mes}</div>
+    <div class="summary-grid">
+      <div class="summary-item"><span>OS: </span>${fd.os||'—'}</div>
+      <div class="summary-item"><span>Cliente: </span>${cl(fd.cliente)||'—'}</div>
+      <div class="summary-item"><span>Estatus: </span>${fd.status||'—'}</div>
+      <div class="summary-item"><span>Ingeniero: </span>${cl(fd.ing1)||'—'}</div>
+      <div class="summary-item"><span>Prof. total: </span>${fd.prof||0} m</div>
+      <div class="summary-item"><span>Horas op.: </span>${fd.horas||0} h</div>
+      <div class="summary-item"><span>No. corridas: </span>${fd.corridas||0}</div>
+      <div class="summary-item"><span>Equipo: </span>${fd.equipo||'—'}</div>
+      <div class="summary-item"><span>Prejob: </span>${fd.pj||'—'}</div>
+      <div class="summary-item"><span>Reporte digital: </span>${fd.rd||'—'}</div>
+    </div>
+    <div class="success-actions">
+      <button class="btn" onclick="showView('form')">+ Nuevo servicio</button>
+      <button class="btn primary" onclick="showView('dashboard')">Ver todos los servicios</button>
+    </div>
+  </div>`;
+}
+
+showView('dashboard');
+</script>
+</body>
+</html>

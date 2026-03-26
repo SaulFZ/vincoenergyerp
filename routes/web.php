@@ -14,16 +14,16 @@ use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStoreController;
 use App\Http\Controllers\Qhse\Gerenciamiento\StatsController;
 
 /* CONTROLADORES DE RECURSOS HUMANOS */
-use App\Http\Controllers\RecursosHumanos\LoadChart\ApprovalController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\AssignmentController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\CalendarController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\EmployeeVacationBalanceController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\FieldBonusController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\FortnightlyConfigController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\HistoryController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\InfoServicesController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\SquadController;
-use App\Http\Controllers\RecursosHumanos\LoadChart\StatsLoadController;
+use App\Http\Controllers\rh\LoadChart\ApprovalController;
+use App\Http\Controllers\rh\LoadChart\AssignmentController;
+use App\Http\Controllers\rh\LoadChart\CalendarController;
+use App\Http\Controllers\rh\LoadChart\EmployeeVacationBalanceController;
+use App\Http\Controllers\rh\LoadChart\FieldBonusController;
+use App\Http\Controllers\rh\LoadChart\FortnightlyConfigController;
+use App\Http\Controllers\rh\LoadChart\HistoryController;
+use App\Http\Controllers\rh\LoadChart\InfoServicesController;
+use App\Http\Controllers\rh\LoadChart\SquadController;
+use App\Http\Controllers\rh\LoadChart\StatsLoadController;
 
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
@@ -308,8 +308,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     // ===================================================
     // MÓDULO: RECURSOS HUMANOS Y SUBSISTEMAS
     // ===================================================
-    Route::prefix('recursoshumanos')
-        ->middleware('check.permission:recursoshumanos')
+    Route::prefix('rh')
+        ->middleware('check.permission:rh')
         ->group(function () {
             // ===================================================
             // GRUPO LOADCHART
@@ -320,8 +320,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::get('/', function () {
                     return redirect()->route('loadchart.calendar');
                 })
-                    ->name('recursoshumanos.loadchart')
-                    ->middleware('check.permission:recursoshumanos,loadchart');
+                    ->name('rh.loadchart')
+                    ->middleware('check.permission:rh,loadchart');
 
                 // --- RUTAS GESTIONADAS POR CalendarController ---
                 Route::controller(CalendarController::class)->group(function () {
@@ -392,16 +392,16 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::controller(AssignmentController::class)->group(function () {
                     Route::get('/review_assignments', 'index')
                         ->name('loadchart.review_assignments')
-                        ->middleware('check.permission:recursoshumanos,loadchart,review_assignments');
+                        ->middleware('check.permission:rh,loadchart,review_assignments');
                     Route::get('/review_assignments/employees', 'getEmployees')
                         ->name('loadchart.getEmployees')
-                        ->middleware('check.permission:recursoshumanos,loadchart,review_assignments');
+                        ->middleware('check.permission:rh,loadchart,review_assignments');
                     Route::post('/review_assignments/existing', 'getExistingAssignments')
                         ->name('loadchart.getExistingAssignments')
-                        ->middleware('check.permission:recursoshumanos,loadchart,review_assignments');
+                        ->middleware('check.permission:rh,loadchart,review_assignments');
                     Route::post('/review_assignments/save', 'saveAssignment')
                         ->name('loadchart.saveAssignment')
-                        ->middleware('check.permission:recursoshumanos,loadchart,review_assignments');
+                        ->middleware('check.permission:rh,loadchart,review_assignments');
                 });
 
                 // --- RUTAS DE BONOS DE CAMPO (FieldBonusController) ---
@@ -417,12 +417,12 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 Route::prefix('employee_vacation_balance')->controller(EmployeeVacationBalanceController::class)->group(function () {
                     Route::get('/', 'index')->name('vacation_balance.index');
+                    Route::get('/data', 'getData')->name('vacation_balance.data'); // 👈 NUEVA
                     Route::post('/', 'store');
                     Route::get('/{id}/edit', 'edit');
                     Route::put('/{id}', 'update');
                     Route::delete('/{id}', 'destroy');
                     Route::post('/force-update-years', 'forceUpdateYears');
-                    // 🥇 NUEVA RUTA PARA GENERAR EL REPORTE
                     Route::post('/generate-report', 'generateReport')->name('vacation_balance.generate_report');
                 });
 
@@ -434,10 +434,10 @@ Route::middleware(['web', 'auth'])->group(function () {
 
             // Subsistemas de RRHH (Rutas que no son de LoadChart)
             Route::get('/altasempleados', function () {
-                return view('modulos.recursoshumanos.altas.employees');
+                return view('modulos.rh.altas.employees');
             })
-                ->middleware('check.permission:recursoshumanos,altasempleados')
-                ->name('recursoshumanos.altasempleados');
+                ->middleware('check.permission:rh,altasempleados')
+                ->name('rh.altasempleados');
         });
 
     // ===================================================
