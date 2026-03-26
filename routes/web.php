@@ -14,16 +14,16 @@ use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStoreController;
 use App\Http\Controllers\Qhse\Gerenciamiento\StatsController;
 
 /* CONTROLADORES DE RECURSOS HUMANOS */
-use App\Http\Controllers\rh\LoadChart\ApprovalController;
-use App\Http\Controllers\rh\LoadChart\AssignmentController;
-use App\Http\Controllers\rh\LoadChart\CalendarController;
-use App\Http\Controllers\rh\LoadChart\EmployeeVacationBalanceController;
-use App\Http\Controllers\rh\LoadChart\FieldBonusController;
-use App\Http\Controllers\rh\LoadChart\FortnightlyConfigController;
-use App\Http\Controllers\rh\LoadChart\HistoryController;
-use App\Http\Controllers\rh\LoadChart\InfoServicesController;
-use App\Http\Controllers\rh\LoadChart\SquadController;
-use App\Http\Controllers\rh\LoadChart\StatsLoadController;
+use App\Http\Controllers\RH\LoadChart\ApprovalController;
+use App\Http\Controllers\RH\LoadChart\AssignmentController;
+use App\Http\Controllers\RH\LoadChart\CalendarController;
+use App\Http\Controllers\RH\LoadChart\EmployeeVacationBalanceController;
+use App\Http\Controllers\RH\LoadChart\FieldBonusController;
+use App\Http\Controllers\RH\LoadChart\FortnightlyConfigController;
+use App\Http\Controllers\RH\LoadChart\HistoryController;
+use App\Http\Controllers\RH\LoadChart\InfoServicesController;
+use App\Http\Controllers\RH\LoadChart\SquadController;
+use App\Http\Controllers\RH\LoadChart\StatsLoadController;
 
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Sistemas\RoleController;
