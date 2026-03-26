@@ -1,0 +1,1391 @@
+.content-layout {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    gap: 10px;
+}
+
+/* ======================================================= */
+/* SECCIÓN DE DETALLES DEL EMPLEADO                        */
+/* ======================================================= */
+
+.employee-details {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 8px 24px rgba(45, 55, 72, 0.08);
+    padding: 24px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+    border-top: 3px solid #d67e29;
+}
+
+.employee-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #e2e8f0;
+    gap: 16px;
+}
+
+.employee-photo-container {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    outline: 3px solid #d67e29;
+    outline-offset: 2px;
+    flex-shrink: 0;
+    background: #f7fafc;
+}
+
+.employee-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.employee-header-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.employee-header h2 {
+    color: #4a5568;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.employee-name-header {
+    color: #2d3748;
+    font-size: 17px;
+    font-weight: 700;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.25;
+}
+
+/* Info Groups */
+.employee-info {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.info-group {
+    background: #ffffff;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #334c95;
+    position: relative;
+    transition: box-shadow 0.2s ease, border-left-color 0.2s ease;
+}
+
+.info-group::before {
+    content: none;
+}
+
+.info-group:hover {
+    transform: none;
+    box-shadow: 0 2px 10px rgba(51, 76, 149, 0.08);
+    border-left-color: #d67e29;
+}
+
+.info-group h3 {
+    font-size: 10px;
+    color: #4a5568;
+    margin-bottom: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.info-group p {
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.vacation-days {
+    color: #d67e29 !important;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+
+/* ======================================================= */
+/* CALENDARIO DE CARGA (LOAD CHART)                        */
+/* ======================================================= */
+
+.load-chart-container {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 8px 24px rgba(45, 55, 72, 0.08);
+    padding: 20px 22px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.chart-header h2 {
+    color: #2d3748;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+}
+
+.chart-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Navegación de Meses */
+.month-navigation {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 4px;
+}
+
+.month-navigation button {
+    background: none;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2d3748;
+    transition: background 0.15s ease, color 0.15s ease;
+    font-size: 13px;
+}
+
+.month-navigation button:hover {
+    background: #2d3748;
+    color: #ffffff;
+}
+
+.month-navigation span {
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 110px;
+    text-align: center;
+    color: #2d3748;
+}
+
+/* Botones */
+.btn {
+    padding: 7px 15px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.2px;
+}
+
+.btn-primary {
+    background-color: #2d3748;
+    color: #ffffff;
+    border-color: #2d3748;
+}
+
+.btn-primary:hover {
+    background-color: #4a5568;
+    box-shadow: 0 2px 8px rgba(45, 55, 72, 0.2);
+}
+
+.btn-orange {
+    background-color: #d67e29;
+    color: #ffffff;
+    border-color: #d67e29;
+}
+
+.btn-orange:hover {
+    background-color: #c06d1f;
+    box-shadow: 0 2px 8px rgba(214, 126, 41, 0.3);
+}
+
+
+/* ======================================================= */
+/* CALENDARIO                                              */
+/* ======================================================= */
+
+.calendar-container {
+    overflow-x: auto;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.calendar {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    font-size: 13px;
+    min-width: 600px;
+    table-layout: fixed;
+}
+
+.calendar th {
+    background-color: #2d3748;
+    color: #ffffff;
+    padding: 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    width: 14.2857%;
+}
+
+.calendar td {
+    height: 78px;
+    vertical-align: top;
+    padding: 6px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border: 1px solid #c7c9cc;
+    box-sizing: border-box;
+    width: 14.2857%;
+    min-height: 78px;
+    background: #ffffff;
+}
+
+.calendar td:hover {
+    background-color: #f7fafc;
+}
+
+.calendar .other-month {
+    background-color: #f9fafb;
+    color: #a0aec0;
+}
+
+.calendar .in-payroll-period {
+    background-color: #ffffff;
+    color: inherit;
+}
+
+.calendar .current-d {
+    background-color: rgba(51, 76, 149, 0.05);
+    border: 2px solid #334c95 !important;
+}
+
+.day-number {
+    font-weight: 700;
+    font-size: 13px;
+    display: inline-block;
+    margin-bottom: 3px;
+    color: #2d3748;
+}
+
+/* ======================================================= */
+/* TAGS DE ACTIVIDAD                                       */
+/* ======================================================= */
+
+.activity-tag {
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 10px;
+    color: #ffffff;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+    min-height: 18px;
+    line-height: 13px;
+    margin-top: 2px;
+    letter-spacing: 0.2px;
+}
+
+.activity-tag.work-base      { background-color: #334c95; }
+.activity-tag.work-well      { background-color: #6475aa; }
+.activity-tag.home-office    { background-color: #7293ff; }
+.activity-tag.traveling      { background-color: #a2b5ff; color: #2d3748; }
+.activity-tag.rest           { background-color: #118b20; }
+.activity-tag.vacation       { background-color: #59983e; }
+.activity-tag.training       { background-color: #a5a5a5; }
+.activity-tag.medical        { background-color: #dd840fe0; }
+.activity-tag.commissioned   { background-color: #249399; }
+.activity-tag.absence        { background-color: #7d4e4e; }
+.activity-tag.permission     { background-color: #49c0c9; color: #2d3748; }
+
+
+/* ======================================================= */
+/* LOADING OVERLAY                                         */
+/* ======================================================= */
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.405);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    border-radius: 12px;
+    transition: opacity 0.25s ease;
+    opacity: 0;
+}
+
+.loading-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.loading-spinner-lg {
+    display: inline-block;
+    width: 38px;
+    height: 38px;
+    border: 3px solid #e2e8f0;
+    border-radius: 50%;
+    border-top-color: #334c95;
+    animation: spin 0.9s ease-in-out infinite;
+}
+
+.loading-message {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a5568;
+    margin-left: 12px;
+}
+
+.calendar tbody tr td.loading {
+    display: none;
+}
+
+
+/* ======================================================= */
+/* TOOLTIP                                                 */
+/* ======================================================= */
+
+.calendar-tooltip {
+    position: absolute;
+    top: -34px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #2d3748;
+    color: #ffffff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.calendar-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #2d3748 transparent transparent transparent;
+}
+
+.calendar td:hover .calendar-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* ======================================================= */
+/* ICONOS Y ESTADOS                                        */
+/* ======================================================= */
+
+.day-header-info {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: calc(100% - 15px);
+}
+
+.tags-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-end;
+    min-width: 0;
+}
+
+.tags-wrapper .activity-tag {
+    width: max-content;
+    max-width: 100%;
+    margin-top: 0 !important;
+}
+
+/* Iconos de Estado */
+.status-icon {
+    font-size: 11px;
+    z-index: 10;
+}
+
+.status-icon.approved     { color: #64946f; }
+.status-icon.under-review { color: #ffd900; }
+.status-icon.reviewed     { color: #da8544; }
+.status-icon.rejected     { color: #f35900; filter: drop-shadow(0 0 1px #ffffff); }
+
+.status-indicator.reviewed { background-color: #da8544; }
+
+/* Iconos de Nómina */
+.payroll-icon {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    font-size: 10px;
+    z-index: 10;
+}
+
+.payroll-start-1 { color: #00a700; }
+.payroll-start-2 { color: #004bad; }
+.payroll-end     { color: #d61c1c; }
+
+/* Día Festivo */
+.holiday-icon {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    width: 15px;
+    height: 15px;
+    z-index: 10;
+}
+
+
+/* ======================================================= */
+/* LEYENDA DE ACTIVIDADES                                  */
+/* ======================================================= */
+
+.activity-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+    gap: 8px 14px;
+    margin-top: 16px;
+    background: #dee1e449;
+    border-radius: 10px;
+    font-size: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #2d3748;
+    font-weight: 500;
+}
+
+.legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.legend-color.work-base    { background-color: #334c95; }
+.legend-color.work-well    { background-color: #6475aa; }
+.legend-color.home-office  { background-color: #7293ff; }
+.legend-color.traveling    { background-color: #a2b5ff; }
+.legend-color.rest         { background-color: #118b20; }
+.legend-color.vacation     { background-color: #59983e; }
+.legend-color.training     { background-color: #a5a5a5; }
+.legend-color.medical      { background-color: #dd840fe0; }
+.legend-color.commissioned { background-color: #249399; }
+
+/* Iconos de Leyenda */
+.legend-approved,
+.legend-reviewed,
+.legend-not-approved,
+.legend-under-review,
+.legend-payroll-start-1,
+.legend-payroll-start-2,
+.legend-payroll-end {
+    width: 15px;
+    text-align: center;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.legend-approved        { color: #64946f; }
+.legend-reviewed        { color: #da8544; }
+.legend-not-approved,
+.fa-exclamation-triangle { color: #f35900; filter: drop-shadow(0 0 1px #817c7c); }
+.legend-under-review    { color: #ffd900; }
+.legend-payroll-start-1 { color: #00a700; }
+.legend-payroll-start-2 { color: #004bad; }
+.legend-payroll-end     { color: #d61c1c; }
+
+.legend-holiday-icon {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+
+
+/* ======================================================= */
+/* AUTOCOMPLETADO DE POZOS (Buscador)                      */
+/* ======================================================= */
+
+/* Aseguramos que el contenedor padre sea el ancla */
+#well-name-field {
+    position: relative;
+}
+
+.autocomplete-list {
+    position: absolute;
+    top: calc(100% + 4px); /* Pequeña separación del input */
+    left: 0;
+    right: 0;
+    background-color: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 9999; /* Asegura que flote sobre todo (calendario, modales) */
+    list-style: none;
+    padding: 6px 0;
+    margin: 0;
+    box-shadow: 0 8px 25px rgba(45, 55, 72, 0.12); /* Sombra amplia y elegante */
+
+    /* Animación de aparición */
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: slideDownFade 0.2s ease-out forwards;
+}
+
+@keyframes slideDownFade {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar moderno y delgado para la lista */
+.autocomplete-list::-webkit-scrollbar {
+    width: 6px;
+}
+.autocomplete-list::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+}
+.autocomplete-list::-webkit-scrollbar-thumb {
+    background-color: #cbd5e0;
+    border-radius: 10px;
+}
+.autocomplete-list::-webkit-scrollbar-thumb:hover {
+    background-color: var(--medium-gray);
+}
+
+/* Diseño de cada ítem de la lista */
+.autocomplete-list li {
+    padding: 10px 16px;
+    cursor: pointer;
+    color: var(--dark-gray);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Espaciado perfecto entre ícono y texto */
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f8fafc; /* Línea separadora casi invisible */
+}
+
+.autocomplete-list li:last-child {
+    border-bottom: none;
+}
+
+/* El texto que coincide con la búsqueda (negritas) */
+.autocomplete-list li strong {
+    color: var(--primary-blue);
+    font-weight: 800;
+}
+
+/* Ícono del pozo */
+.autocomplete-list li i {
+    color: var(--primary-orange);
+    font-size: 14px;
+    width: 16px; /* Fija el ancho para que los textos no "bailen" */
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+/* Interacción (Hover) */
+.autocomplete-list li:hover {
+    background-color: var(--background-gray);
+    color: var(--primary-blue);
+    padding-left: 20px; /* Efecto de desplazamiento sutil a la derecha */
+}
+
+.autocomplete-list li:hover i {
+    transform: scale(1.15); /* El ícono crece un poco */
+}
+
+/* ======================================================= */
+/* ESTADOS ESPECIALES: Buscando... y Sin Resultados        */
+/* ======================================================= */
+
+.autocomplete-list li.searching-indicator,
+.autocomplete-list li.no-results {
+    justify-content: center; /* Texto centrado */
+    padding: 16px;
+    cursor: default;
+    background-color: var(--white);
+    font-weight: 600;
+}
+
+/* Anulamos el efecto hover para los estados informativos */
+.autocomplete-list li.searching-indicator:hover,
+.autocomplete-list li.no-results:hover {
+    background-color: var(--white);
+    padding-left: 16px;
+    color: inherit;
+}
+
+/* Diseño de "Buscando..." */
+.autocomplete-list li.searching-indicator {
+    color: var(--primary-blue);
+}
+
+.autocomplete-list li.searching-indicator i {
+    color: var(--primary-blue);
+    animation: spin 1s linear infinite; /* Animación de rotación del ícono */
+}
+
+/* Diseño de "No hay resultados" */
+.autocomplete-list li.no-results {
+    color: var(--medium-gray);
+    font-style: italic;
+}
+
+.autocomplete-list li.no-results i {
+    color: var(--medium-gray);
+    transform: none; /* Evita que crezca */
+}
+
+
+/* ======================================================= */
+/* 6. ESTILOS DE MODAL Y FORMULARIO */
+/* ======================================================= */
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    box-sizing: border-box;
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 10px;
+    width: 95%;
+    max-width: 500px;
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.1), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    animation: modalFadeIn 0.3s ease-out;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.modal-content:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 15px 20px -4px rgba(0, 0, 0, 0.1), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    background: var(--dark-gray);
+    color: white;
+    padding: 15px 20px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.header-icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.modal-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    flex-grow: 1;
+    color: white;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+}
+
+.close-modal:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 0;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* Pestañas (Tabs) */
+.form-tabs {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 20px;
+    background-color: #f8fafc;
+}
+
+.tab-btn {
+    padding: 12px 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--medium-gray);
+    position: relative;
+    transition: all 0.3s ease;
+    margin-bottom: -1px;
+}
+
+/* Contenido de la Pestaña */
+.tab-content {
+    padding: 20px;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ======================================================= */
+/* 7. ELEMENTOS DEL FORMULARIO */
+/* ======================================================= */
+.form-group {
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: var(--dark-gray);
+    font-size: 13px;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 10px;
+    color: var(--medium-gray);
+    z-index: 1;
+    font-size: 14px;
+}
+
+.input-with-icon input {
+    padding-left: 32px !important;
+}
+
+.input-custom,
+.select-custom {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    background-color: white;
+    color: var(--dark-gray);
+    min-height: 38px;
+}
+
+.input-custom:focus,
+.select-custom:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(51, 76, 149, 0.1);
+}
+
+.input-custom:disabled,
+.select-custom:disabled {
+    background-color: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Custom Select para Tipo de Actividad */
+.custom-select {
+    position: relative;
+    width: 100%;
+}
+
+.select-header {
+    padding: 9px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    transition: all 0.3s ease;
+    min-height: 38px;
+}
+
+.select-header:hover {
+    border-color: var(--primary-blue);
+}
+
+.select-header.open {
+    border-radius: 6px 6px 0 0;
+    border-bottom-color: transparent;
+}
+
+.select-header.open i {
+    transform: rotate(180deg);
+    color: var(--primary-blue);
+}
+
+.select-options {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    background: white;
+    border: 1px solid transparent;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+    z-index: 10;
+    transition: max-height 0.3s ease, border-color 0.3s ease;
+}
+
+.select-options.open {
+    max-height: 500px;
+    overflow-y: hidden;
+    border-color: #e2e8f0;
+    border-top: none;
+}
+
+.activity-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.activity-option:last-child {
+    border-bottom: none;
+}
+
+.activity-option:hover {
+    background-color: #f8fafc;
+}
+
+.activity-option.selected {
+    background-color: #f0f4ff;
+    border-left: 3px solid var(--primary-blue);
+}
+
+.option-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.activity-label {
+    font-size: 12px;
+    color: var(--dark-gray);
+    font-weight: 500;
+}
+
+.activity-code {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--background-gray);
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+
+/* Opciones de Tipo de Trabajo (Radio Buttons) */
+.work-type-options {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.work-type-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    flex: 1;
+    transition: all 0.3s ease;
+}
+
+.work-type-option:hover {
+    border-color: var(--primary-blue);
+    background-color: rgba(51, 76, 149, 0.03);
+}
+
+.work-type-option.selected {
+    border-color: var(--primary-blue);
+    background-color: #f0f4ff;
+}
+
+.work-type-option input[type="radio"] {
+    display: none;
+}
+
+.work-type-label {
+    font-size: 13px;
+    color: var(--dark-gray);
+}
+
+.work-type-option.selected .work-type-label {
+    color: var(--primary-blue);
+    font-weight: 500;
+}
+
+/* Opciones de Bono de Servicio */
+.service-bonus-options {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.service-bonus-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    flex: 1;
+    transition: all 0.3s ease;
+    text-align: center;
+    justify-content: center;
+}
+
+.service-bonus-option:hover {
+    border-color: var(--primary-blue);
+    background-color: rgba(51, 76, 149, 0.03);
+    transform: translateY(-1px);
+}
+
+.service-bonus-option.selected {
+    border-color: var(--primary-blue);
+    background-color: #f0f4ff;
+    box-shadow: 0 2px 8px rgba(51, 76, 149, 0.1);
+}
+
+.service-bonus-option input[type="radio"] {
+    display: none;
+}
+
+.service-bonus-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark-gray);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.service-bonus-option.selected .service-bonus-label {
+    color: var(--primary-blue);
+}
+
+.service-bonus-option[data-value="no"] .service-bonus-label i {
+    color: #e53e3e;
+}
+
+.service-bonus-option[data-value="si"] .service-bonus-label i {
+    color: #38a169;
+}
+
+.service-bonus-option[data-value="no"].selected .service-bonus-label i,
+.service-bonus-option[data-value="si"].selected .service-bonus-label i {
+    color: var(--primary-blue);
+}
+
+/* Texto de Ayuda del Formulario */
+.form-help {
+    color: #64748b;
+    font-size: 11px;
+    margin-top: 3px;
+    display: block;
+    font-style: italic;
+}
+
+/* Campo "Well Name" */
+#well-name-field .input-with-icon i {
+    color: #475f92;
+}
+
+#well-name {
+    transition: all 0.3s ease;
+}
+
+#well-name:focus {
+    border-color: #1e3b7a;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+/* Acciones del Formulario */
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background-color: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 6px;
+}
+
+/* ======================================================= */
+/* 8. ESTADOS DE VALIDACIÓN Y BLOQUEO */
+/* ======================================================= */
+
+/* Campo Rechazado (Validation Error) */
+.rejected-field {
+    border: 1px solid #e53e3e !important;
+    box-shadow: 0 0 0 1px #e53e3e !important;
+}
+
+.work-type-options.rejected-field,
+.service-bonus-options.rejected-field {
+    border: 1px solid #e53e3e !important;
+    border-radius: 8px;
+    padding: 8px 12px;
+    background-color: #fff5f5;
+    box-shadow: none !important;
+}
+
+.rejection-message {
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-left: 3px solid #e53e3e;
+    background-color: #fff5f5;
+    border-radius: 4px;
+}
+
+.rejection-message .rejection-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #c53030;
+}
+
+.error-message {
+    color: #e53e3e;
+    font-size: 11px;
+    margin-top: 4px;
+    display: none;
+}
+
+/* Indicador de Bloqueo (Lock Indicator) */
+.lock-indicator {
+    position: absolute;
+    top: -4px;
+    right: 0;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: var(--white);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    opacity: 0.95;
+    transition: background-color 0.3s ease;
+}
+
+.lock-indicator i {
+    font-size: 9px;
+}
+
+.form-group:has(.lock-indicator) label {
+    font-style: italic;
+    color: var(--medium-gray);
+}
+
+/* ======================================================= */
+/* 9. RESPONSIVE Y MEDIA QUERIES - HEADER Y CALENDARIO MEJORADO */
+/* ======================================================= */
+
+/* Media Query para Móviles/Tabletas pequeñas (<= 768px) */
+@media (max-width: 768px) {
+    .content-layout {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .employee-details {
+        position: static;
+        margin-bottom: 0;
+    }
+
+    .employee-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .employee-photo-container {
+        margin: 0 auto;
+    }
+
+    .employee-header-content {
+        flex: 1;
+        min-width: auto;
+        width: 100%;
+    }
+
+    .employee-name-header {
+        text-align: center;
+        width: 100%;
+        line-height: 1.2;
+    }
+
+    .employee-info {
+        grid-template-columns: 1fr;
+    }
+
+    .load-chart-container {
+        padding: 12px;
+        overflow-x: auto;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .chart-actions {
+        width: 100%;
+        justify-content: space-between;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .month-navigation {
+        flex: 1;
+        justify-content: space-between;
+        min-width: 50%;
+    }
+
+    .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .calendar {
+        min-width: 500px;
+        table-layout: fixed;
+    }
+
+    .calendar td {
+        height: 70px;
+        padding: 3px;
+        min-height: 70px;
+        width: 14.2857%;
+    }
+
+    .day-header-info {
+        position: static;
+        top: initial;
+        right: initial;
+        justify-content: flex-end;
+        margin-bottom: 2px;
+    }
+
+    .day-number {
+        position: relative;
+        top: 0;
+        left: 0;
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+
+    .activity-tag {
+        text-align: center;
+        padding: 1px;
+        font-size: 8px;
+        min-height: 12px;
+        line-height: 10px;
+        margin: 1px auto 0 auto;
+        display: block;
+        width: 95%;
+        box-sizing: border-box;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tags-wrapper {
+        width: 100%;
+        align-items: center;
+        /* Centra los tags en móviles */
+    }
+
+    .tags-wrapper .activity-tag {
+        width: 95%;
+        /* Mantiene el tamaño largo en teléfonos */
+    }
+
+    .modal-content {
+        margin: 5px;
+        width: calc(100% - 10px);
+    }
+
+    .form-tabs {
+        padding: 0 10px;
+    }
+
+    .tab-content {
+        padding: 15px;
+    }
+
+    .work-type-options,
+    .service-bonus-options {
+        flex-direction: column;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        padding: 10px;
+    }
+}
