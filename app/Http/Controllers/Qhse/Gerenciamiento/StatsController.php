@@ -21,6 +21,6 @@ class StatsController extends Controller
         // $viajesActivos = Journey::where('estatus', 'En Curso')->count();
         // ---------------------------------------------------------
 
-        return view('modulos.qhse.gerenciamiento.stats');
+        return view('modules.qhse.gerenciamiento.stats');
     }
 }

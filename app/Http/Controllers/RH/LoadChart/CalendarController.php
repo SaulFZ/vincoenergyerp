@@ -10,7 +10,8 @@ use App\Models\RH\LoadChart\FieldBonus;
 use App\Models\RH\LoadChart\FortnightlyConfig;
 use App\Models\RH\LoadChart\Meal;
 use App\Models\RH\LoadChart\Services;
-use App\Models\Supply\Procurement\SupplyContract; // <-- IMPORTACIÓN NUEVA
+use App\Models\RH\OrgManagement\Area;
+use App\Models\Supply\Procurement\SupplyContract;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,8 @@ class CalendarController extends Controller
         $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
         $isForModal = $request->has('employee_id') || $request->ajax();
 
-        $employee = Employee::with('user')->find($employeeId);
+        // Cargamos el empleado junto con el usuario y el área
+        $employee = Employee::with(['user', 'area'])->find($employeeId);
 
         if (! $employee) {
             if ($isForModal) {
@@ -67,7 +69,15 @@ class CalendarController extends Controller
         }
 
         $hire_date = $this->formatDate($employee->hire_date);
-        $photo     = $employee->photo ? asset($employee->photo) : asset('assets/img/perfil.png');
+
+        $photo = asset('assets/img/perfil.png');
+        if ($employee->photo) {
+            if (str_starts_with($employee->photo, 'assets/')) {
+                $photo = asset($employee->photo);
+            } else {
+                $photo = asset('storage/' . $employee->photo);
+            }
+        }
 
         $services = Services::select(
             'operation_type', 'service_type', 'service_performed', 'identifier',
@@ -142,13 +152,18 @@ class CalendarController extends Controller
                 ->get();
         }
 
-        // 📦 LÓGICA DE SUMINISTRO (Actualizada para traer los contratos)
+        // Extraemos los nombres de Área y Departamento de forma segura usando la relación
+        $areaName = $employee->area ? strtolower(trim($employee->area->name)) : '';
+
+        $departamentoObj = $employee->department()->first();
+        $deptName = $departamentoObj ? strtolower(trim($departamentoObj->name)) : '';
+
         $isSuministro = false;
         $supplyContracts = collect();
-        if ($employee && $employee->department) {
-            if (in_array(strtolower(trim($employee->department)), ['administracion', 'suministros', 'suministro'])) {
+        if ($employee) {
+            if (in_array($areaName, ['administracion', 'suministros', 'suministro', 'administración']) ||
+                in_array($deptName, ['administracion', 'suministros', 'suministro', 'administración'])) {
                 $isSuministro = true;
-                // Traemos los contratos ordenados por número (puedes agregar un ->where('status', 'active') si lo necesitas)
                 $supplyContracts = SupplyContract::orderBy('number')->get();
             }
         }
@@ -158,9 +173,10 @@ class CalendarController extends Controller
             'Operador de Campo 4', 'Operador de Campo 5', 'Operador de Campo 6',
             'Auxiliar Mecanico', 'Auxiliar General', 'Mecánico General',
         ];
+
         $requiresBaseDescription = (
             $employee &&
-            $employee->department === 'Operaciones' &&
+            ($areaName === 'operaciones' || $deptName === 'operaciones') &&
             in_array($employee->job_title, $operativosValidos)
         );
 
@@ -176,12 +192,8 @@ class CalendarController extends Controller
 
         $showServiceBonusOption = $currentUserHasServicePermission || ($isForModal && $employeeHasServicePermission);
 
-        $departments = Employee::select('department')
-            ->distinct()
-            ->whereNotNull('department')
-            ->where('department', '!=', '')
-            ->orderBy('department')
-            ->pluck('department');
+        // Obtenemos la lista de áreas activas para el combo de "Comisionado"
+        $areasList = Area::where('is_active', 1)->orderBy('name')->pluck('name');
 
         $viewData = [
             'employee'                => $employee,
@@ -202,15 +214,15 @@ class CalendarController extends Controller
             'isForModal'              => $isForModal,
             'isGuardia'               => $isGuardiaEmpleado,
             'isSuministro'            => $isSuministro,
-            'supplyContracts'         => $supplyContracts, // <-- SE ENVÍA A LA VISTA
+            'supplyContracts'         => $supplyContracts,
             'requiresBaseDescription' => $requiresBaseDescription,
             'showServiceBonusOption'  => $showServiceBonusOption,
-            'departments'             => $departments,
+            'areasList'               => $areasList,
         ];
 
         if ($isForModal) {
             try {
-                $html = View::make('modulos.rh.loadchart.calendar_partial', $viewData)->render();
+                $html = View::make('modules.rh.loadchart.calendar_partial', $viewData)->render();
 
                 return response()->json([
                     'success' => true,
@@ -224,7 +236,7 @@ class CalendarController extends Controller
                 ], 500);
             }
         } else {
-            return view('modulos.rh.loadchart.calendar', $viewData);
+            return view('modules.rh.loadchart.calendar', $viewData);
         }
     }
 
@@ -349,7 +361,7 @@ class CalendarController extends Controller
         ];
     }
 
-public function searchWells(Request $request)
+    public function searchWells(Request $request)
     {
         $term = trim($request->input('q'));
 
@@ -357,23 +369,15 @@ public function searchWells(Request $request)
             return response()->json([]);
         }
 
-        // 1. Limpiamos el término: cambiamos guiones por espacios
-        // para estandarizar la búsqueda del usuario.
         $cleanTerm = str_replace('-', ' ', $term);
-
-        // 2. Dividimos la búsqueda en palabras clave (ej. "ogarrio 14" -> ["ogarrio", "14"])
         $keywords = array_filter(explode(' ', $cleanTerm));
 
         $query = Well::where('status', 'active');
 
-        // 3. Aplicamos un filtro dinámico por cada palabra clave
-        // Esto permite encontrar "Ogarrio-1452D" aunque el usuario teclee "oga 14"
         foreach ($keywords as $keyword) {
             $query->where('name', 'LIKE', '%' . $keyword . '%');
         }
 
-        // 4. Aumentamos el límite a 20 y ordenamos alfabéticamente
-        // para que sea más fácil de leer si hay muchos resultados
         $wells = $query->orderBy('name', 'asc')
             ->limit(20)
             ->get(['id', 'name']);
@@ -468,7 +472,6 @@ public function searchWells(Request $request)
                 $activityData['commissioned_to']      = $request->commissioned_to;
                 $activityData['well_name']            = $request->well_name;
 
-                // Validación pozo backend
                 if ($activityType === 'P' && $request->filled('well_name')) {
                     $validWell = \App\Models\Operations\Well::where('name', $request->well_name)
                         ->where('status', 'active')
@@ -487,11 +490,9 @@ public function searchWells(Request $request)
                 $activityData['travel_destination']        = $request->travel_destination;
                 $activityData['travel_reason']             = $request->travel_reason;
 
-                // --- NUEVOS CAMPOS DE VIAJE / SUMINISTRO ---
                 $activityData['contract_number']           = $activityType === 'V' ? $request->contract_number : null;
                 $activityData['travel_service_type']       = $activityType === 'V' ? $request->travel_service_type : null;
                 $activityData['is_continuation']           = $activityType === 'V' ? ($request->is_continuation ?? false) : false;
-                // -------------------------------------------
 
                 $activityData['base_activity_description'] = $activityType === 'B' ? $request->base_activity_description : null;
 
@@ -515,7 +516,6 @@ public function searchWells(Request $request)
                 }
             }
 
-            // Procesar bonos de comida
             if ($request->has('food_bonus_number')) {
                 if ($request->filled('food_bonus_number')) {
                     $meal = Meal::where('meal_number', $request->food_bonus_number)->first();
@@ -542,7 +542,6 @@ public function searchWells(Request $request)
                 }
             }
 
-            // Procesar bono de campo
             if ($request->has('field_bonus_identifier')) {
                 $employeeBonusCategory = $employee->job_title;
                 $quantity              = 1;
@@ -594,7 +593,6 @@ public function searchWells(Request $request)
                 }
             }
 
-            // Procesar servicios
             if ($request->has('service_identifier')) {
                 $serviceIdentifierProvided = $request->filled('service_identifier');
 

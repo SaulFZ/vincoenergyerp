@@ -26,8 +26,8 @@ use App\Http\Controllers\RH\LoadChart\SquadController;
 use App\Http\Controllers\RH\LoadChart\StatsLoadController;
 
 /* CONTROLADORES DE SISTEMAS */
-use App\Http\Controllers\Sistemas\RoleController;
-use App\Http\Controllers\Sistemas\Tickets\TicketController;
+use App\Http\Controllers\Systems\Tickets\TicketController;
+use App\Http\Controllers\Systems\UserManagement\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 // ===================================================
@@ -157,43 +157,43 @@ Route::middleware(['web', 'auth'])->group(function () {
             // Aquí puedes agregar futuros submódulos de administración (ej. /nomina, /facturacion)
         });
 
-    // ===================================================
-    // MÓDULO: SISTEMAS Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('sistemas')
-        ->middleware('check.permission:sistemas')
+    Route::prefix('systems')
+        ->middleware('check.permission:systems')
         ->group(function () {
+
             // ===================================================
-            // GRUPO: GESTIÓN DE ROLES
-            // Prefijo: /sistemas/gestionderoles
+            // GRUPO: USER MANAGEMENT (Gestión de Usuarios)
+            // Prefijo: /systems/user-management
             // ===================================================
-            Route::prefix('gestionderoles')->group(function () {
+            Route::prefix('user-management')->group(function () {
+
                 // 1. Redirección automática:
-                // Si el usuario entra a /sistemas/gestionderoles,
-                // lo mandamos a la lista principal de roles.
+                // Si el usuario entra a /systems/user-management,
+                // lo mandamos a la lista principal de usuarios.
                 Route::get('/', function () {
-                    return redirect()->route('sistemas.roles.index');
+                    return redirect()->route('systems.users.index');
                 })
-                    ->name('sistemas.gestionderoles')
-                    ->middleware('check.permission:sistemas,gestionderoles');
+                    ->name('systems.user-management')
+                    ->middleware('check.permission:systems,user-management');
 
                 // --- RUTAS DE RECURSOS (CRUD) ---
-                Route::resource('roles', RoleController::class)
+                // Cambiamos 'roles' por 'users' porque estás gestionando usuarios.
+                Route::resource('users', UserManagementController::class)
                     ->except(['show'])
                     ->names([
-                        'index'   => 'sistemas.roles.index',
-                        'create'  => 'sistemas.roles.create',
-                        'store'   => 'sistemas.roles.store',
-                        'edit'    => 'sistemas.roles.edit',
-                        'update'  => 'sistemas.roles.update',
-                        'destroy' => 'sistemas.roles.destroy',
+                        'index'   => 'systems.users.index',
+                        'create'  => 'systems.users.create',
+                        'store'   => 'systems.users.store',
+                        'edit'    => 'systems.users.edit',
+                        'update'  => 'systems.users.update',
+                        'destroy' => 'systems.users.destroy',
                     ]);
 
-                // --- RUTAS AUXILIARES (RoleController) ---
-                Route::controller(RoleController::class)->group(function () {
-                    Route::get('get-permissions', 'getPermissions')->name('sistemas.roles.permissions');
-                    Route::get('get-roles', 'getRoles')->name('sistemas.roles.list');
-                    Route::get('search-employees', 'searchEmployees')->name('sistemas.roles.search');
+                // --- RUTAS AUXILIARES (UserManagementController) ---
+                Route::controller(UserManagementController::class)->group(function () {
+                    Route::get('get-permissions', 'getPermissions')->name('systems.users.permissions');
+                    Route::get('get-roles', 'getRoles')->name('systems.users.list');
+                    Route::get('search-employees', 'searchEmployees')->name('systems.users.search');
                 });
             });
 
@@ -203,19 +203,18 @@ Route::middleware(['web', 'auth'])->group(function () {
             Route::prefix('tickets')->group(function () {
                 // Redirección automática a la vista principal de tickets
                 Route::get('/', function () {
-                    return redirect()->route('tickets.index');
+                    return redirect()->route('systems.tickets.index');
                 })
-                    ->name('sistemas.tickets')
-                    ->middleware('check.permission:sistemas,tickets');
+                    ->name('systems.tickets')
+                    ->middleware('check.permission:systems,tickets');
 
                 // Rutas gestionadas por TicketController
-                // Nota: He usado 'index' para el dashboard de soporte
                 Route::controller(TicketController::class)->group(function () {
-                    Route::get('/management_tickets', 'index')->name('tickets.index');
+                    // Cambié 'management_tickets' por 'management-tickets' para mantener el kebab-case
+                    Route::get('/management-tickets', 'index')->name('systems.tickets.index');
                 });
             });
         });
-
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS QHSE
     // ===================================================
@@ -434,7 +433,7 @@ Route::middleware(['web', 'auth'])->group(function () {
 
             // Subsistemas de RRHH (Rutas que no son de LoadChart)
             Route::get('/altasempleados', function () {
-                return view('modulos.rh.altas.employees');
+                return view('modules.rh.altas.employees');
             })
                 ->middleware('check.permission:rh,altasempleados')
                 ->name('rh.altasempleados');
@@ -448,24 +447,24 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->group(function () {
             // Página principal Ventas
             Route::get('/', function () {
-                return view('modulos.ventas.ventashome');
+                return view('modules.ventas.ventashome');
             })->name('modulo.ventas');
 
             // Subsistemas de Ventas
             Route::get('/clientes', function () {
-                return view('modulos.ventas.sistemas.clientes.index');
+                return view('modules.ventas.sistemas.clientes.index');
             })
                 ->middleware('check.permission:ventas,clientes')
                 ->name('ventas.clientes');
 
             Route::get('/cotizaciones', function () {
-                return view('modulos.ventas.sistemas.cotizaciones.index');
+                return view('modules.ventas.sistemas.cotizaciones.index');
             })
                 ->middleware('check.permission:ventas,cotizaciones')
                 ->name('ventas.cotizaciones');
 
             Route::get('/oportunidades', function () {
-                return view('modulos.ventas.sistemas.oportunidades.index');
+                return view('modules.ventas.sistemas.oportunidades.index');
             })
                 ->middleware('check.permission:ventas,oportunidades')
                 ->name('ventas.oportunidades');
@@ -475,7 +474,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: SUMINISTRO
     // ===================================================
     Route::get('/suministro', function () {
-        return view('modulos.suministros.suministroshome');
+        return view('modules.suministros.suministroshome');
     })
         ->middleware('check.permission:suministro')
         ->name('modulo.suministro');
@@ -484,7 +483,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: OPERACIONES
     // ===================================================
     Route::get('/operaciones', function () {
-        return view('modulos.operaciones.operacioneshome');
+        return view('modules.operaciones.operacioneshome');
     })
         ->middleware('check.permission:operaciones')
         ->name('modulo.operaciones');
@@ -493,7 +492,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: ALMACÉN
     // ===================================================
     Route::get('/almacen', function () {
-        return view('modulos.almacen.index');
+        return view('modules.almacen.index');
     })
         ->middleware('check.permission:almacen')
         ->name('modulo.almacen');
@@ -506,18 +505,18 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->group(function () {
             // Página principal Geociencias
             Route::get('/', function () {
-                return view('modulos.geociencias.geocienciashome');
+                return view('modules.geociencias.geocienciashome');
             })->name('modulo.geociencias');
 
             // Subsistemas de Geociencias
             Route::get('/exploraciones', function () {
-                return view('modulos.geociencias.sistemas.exploraciones.index');
+                return view('modules.geociencias.sistemas.exploraciones.index');
             })
                 ->middleware('check.permission:geociencias,exploraciones')
                 ->name('geociencias.exploraciones');
 
             Route::get('/analisis', function () {
-                return view('modulos.geociencias.sistemas.analisis.index');
+                return view('modules.geociencias.sistemas.analisis.index');
             })
                 ->middleware('check.permission:geociencias,analisis')
                 ->name('geociencias.analisis');

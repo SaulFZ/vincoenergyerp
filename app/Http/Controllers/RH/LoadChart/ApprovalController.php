@@ -8,6 +8,8 @@ use App\Models\RH\LoadChart\EmployeeMonthlyWorkLog;
 use App\Models\RH\LoadChart\EmployeeVacationBalance;
 use App\Models\RH\LoadChart\FortnightlyConfig;
 use App\Models\RH\LoadChart\LoadChartAssignment;
+use App\Models\RH\OrgManagement\Area;
+
 use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -155,7 +157,7 @@ class ApprovalController extends Controller
     /**
      * Muestra la vista principal.
      */
-    public function index()
+  public function index()
     {
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
@@ -168,11 +170,8 @@ class ApprovalController extends Controller
         $assignedEmployeeIds = $this->getAssignedEmployeeIds();
         $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
 
-        $departments = Employee::select('department')
-            ->whereNotNull('department')
-            ->distinct()
-            ->orderBy('department')
-            ->pluck('department');
+        // ✅ AHORA OBTENEMOS LAS ÁREAS EN LUGAR DE LOS DEPARTAMENTOS
+        $areas = Area::where('is_active', 1)->orderBy('name')->pluck('name');
 
         $positions = Employee::select('position')
             ->whereNotNull('position')
@@ -180,13 +179,17 @@ class ApprovalController extends Controller
             ->orderBy('position')
             ->pluck('position');
 
-        // ⭐ AQUÍ SE AGREGÓ 'job_title' AL SELECT
-        $employeeQuery = Employee::with(['employeeMonthlyWorkLogs' => function ($query) use ($currentMonth, $currentYear) {
-            $query->where('month_and_year', Carbon::createFromDate($currentYear, $currentMonth, 1)->format('Y-m'));
-        }])
-            ->with('squads')
-            ->where('employment_status', 'active')  // ✅ Solo empleados activos
-            ->select('id', 'full_name', 'employee_number', 'position', 'department', 'job_title');
+        // ✅ AGREGAMOS 'area_id' y 'department_id' AL SELECT Y CARGAMOS LAS RELACIONES
+        $employeeQuery = Employee::with([
+            'employeeMonthlyWorkLogs' => function ($query) use ($currentMonth, $currentYear) {
+                $query->where('month_and_year', Carbon::createFromDate($currentYear, $currentMonth, 1)->format('Y-m'));
+            },
+            'squads',
+            'area',        // Eager load de Área
+            'department'   // Eager load de Departamento
+        ])
+            ->where('employment_status', 'active')
+            ->select('id', 'full_name', 'employee_number', 'position', 'area_id', 'department_id', 'job_title');
 
         $employees = $employeeQuery->get();
 
@@ -207,9 +210,10 @@ class ApprovalController extends Controller
         $canSeeAmounts = PermissionHelper::hasDirectPermission('ver_montos');
         $userPermissions = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
-        return view('modulos.rh.loadchart.approval', compact(
+        // ✅ Pasamos $areas a la vista
+        return view('modules.rh.loadchart.approval', compact(
             'employees', 'workLogsData', 'fortnightlyConfig', 'monthlyDays', 'currentMonth', 'currentYear',
-            'canSeeAmounts', 'loadChartAssignments', 'userPermissions', 'departments', 'positions'
+            'canSeeAmounts', 'loadChartAssignments', 'userPermissions', 'areas', 'positions'
         ));
     }
 
@@ -283,7 +287,7 @@ class ApprovalController extends Controller
         }
     }
 
-    public function getApprovalData($year, $month)
+   public function getApprovalData($year, $month)
     {
         try {
             if ($year < 2020 || $year > 2030 || $month < 1 || $month > 12) {
@@ -297,22 +301,23 @@ class ApprovalController extends Controller
             $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
             $assignedEmployeeIds = $this->getAssignedEmployeeIds();
 
-            // MODIFICACIÓN CLAVE (getApprovalData): Cargamos TODOS los empleados si tiene 'ver_filtros',
-            // de lo contrario, solo cargamos a los asignados.
-            // ⭐ AQUÍ SE AGREGÓ 'job_title' AL SELECT PARA LAS PETICIONES AJAX
-            $employeeQuery = Employee::with(['employeeMonthlyWorkLogs' => function ($query) use ($month, $year) {
-                $query->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'));
-            }])
-                ->with('squads')
-                ->where('employment_status', 'active')  // ✅ Solo empleados activos
-                ->select('id', 'full_name', 'employee_number', 'position', 'department', 'job_title');
+            // ✅ IGUAL QUE EN INDEX, CARGAMOS LAS RELACIONES
+            $employeeQuery = Employee::with([
+                'employeeMonthlyWorkLogs' => function ($query) use ($month, $year) {
+                    $query->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'));
+                },
+                'squads',
+                'area',
+                'department'
+            ])
+                ->where('employment_status', 'active')
+                ->select('id', 'full_name', 'employee_number', 'position', 'area_id', 'department_id', 'job_title');
 
             if (!$canSeeFilters) {
                 $employeeQuery->whereIn('id', $assignedEmployeeIds);
             }
 
             $employees = $employeeQuery->get();
-            // FIN MODIFICACIÓN
 
             $workLogsData = [];
             foreach ($employees as $employee) {
@@ -327,12 +332,10 @@ class ApprovalController extends Controller
                 }
             }
 
-            // Obtenemos todas las asignaciones para poder determinar los permisos en el JS
             $loadChartAssignments = LoadChartAssignment::all();
             $canSeeAmounts = PermissionHelper::hasDirectPermission('ver_montos');
             $userPermissions = ['is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()), 'is_approver' => $loadChartAssignments->contains('approver_id', auth()->id())];
 
-            // ⚠️ La respuesta de AJAX AHORA INCLUYE LOS DATOS DEL EMPLEADO
             return response()->json([
                 'success' => true,
                 'employees' => $employees,

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\RH\LoadChart;
 
 use App\Http\Controllers\Controller;
@@ -16,16 +17,16 @@ class StatsLoadController extends Controller
     // ──────────────────────────────────────────────────────────────
 
     private const MONTH_NAMES = [
-        1  => 'Enero', 2    => 'Febrero', 3    => 'Marzo',
-        4  => 'Abril', 5    => 'Mayo', 6       => 'Junio',
-        7  => 'Julio', 8    => 'Agosto', 9     => 'Septiembre',
-        10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+        1  => 'Enero',      2  => 'Febrero',   3  => 'Marzo',
+        4  => 'Abril',      5  => 'Mayo',       6  => 'Junio',
+        7  => 'Julio',      8  => 'Agosto',     9  => 'Septiembre',
+        10 => 'Octubre',    11 => 'Noviembre',  12 => 'Diciembre',
     ];
 
     private const MONTH_PREFIXES = [
-        1 => 'ene', 2  => 'feb', 3  => 'mar', 4  => 'abr',
-        5 => 'may', 6  => 'jun', 7  => 'jul', 8  => 'ago',
-        9 => 'sep', 10 => 'oct', 11 => 'nov', 12 => 'dic',
+        1  => 'ene',  2  => 'feb',  3  => 'mar',  4  => 'abr',
+        5  => 'may',  6  => 'jun',  7  => 'jul',  8  => 'ago',
+        9  => 'sep',  10 => 'oct',  11 => 'nov',  12 => 'dic',
     ];
 
     // ──────────────────────────────────────────────────────────────
@@ -34,7 +35,7 @@ class StatsLoadController extends Controller
 
     public function index(): \Illuminate\View\View
     {
-        return view('modulos.rh.loadchart.stats');
+        return view('modules.rh.loadchart.stats');
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -50,15 +51,16 @@ class StatsLoadController extends Controller
                 ->get()
                 ->keyBy('month');
 
-            $logs = EmployeeMonthlyWorkLog::with('employee')
+            // ✅ Añadimos .area al Eager Loading
+            $logs = EmployeeMonthlyWorkLog::with(['employee.area'])
                 ->where('month_and_year', 'like', $year . '-%')
                 ->get();
 
-            $empleadosMap = []; // [employee_id => array]
-            $areasMap     = []; // [area_name => array] ⭐ NUEVO MAPA DE ÁREAS
-            $quincenaMap  = []; // [globalQ     => array]
-            $pozosMap     = []; // [pozo_mes_q  => array]
-            $serviciosMap = []; // [service+fecha => array]
+            $empleadosMap  = [];   // [employee_id => array]
+            $areasMap      = [];   // [area_name => array] ⭐ MAPA DE ÁREAS
+            $quincenaMap   = [];   // [globalQ     => array]
+            $pozosMap      = [];   // [pozo_mes_q  => array]
+            $serviciosMap  = [];   // [service+fecha => array]
 
             foreach ($logs as $log) {
                 $employee = $log->employee;
@@ -101,33 +103,42 @@ class StatsLoadController extends Controller
                             ($empleadosMap[$empId][$key] ?? 0) + $fieldBonusDay, 2
                         );
 
-                        // ⭐ 2. ACUMULAR AL ÁREA (Lógica de Comisionados)
+                        // ⭐ 2. ACUMULAR AL ÁREA (Lógica de Comisionados y Detalles para Modal)
                         $actType = $activity['activity_type'] ?? 'N';
-                        $vType   = $activity['activity_type_vespertina'] ?? 'N';
+                        $vType = $activity['activity_type_vespertina'] ?? 'N';
 
-                        $isCommissioned = ($actType === 'C' || $vType === 'C') && ! empty($activity['commissioned_to']);
+                        $isCommissioned = ($actType === 'C' || $vType === 'C') && !empty($activity['commissioned_to']);
 
-                        $empArea    = strtoupper(trim($employee->department ?? 'SIN ÁREA'));
+                        // ✅ Extraemos el nombre del área origen desde la relación
+                        $empAreaName = $employee->area ? $employee->area->name : 'SIN ÁREA';
+                        $empArea = strtoupper(trim($empAreaName));
+
                         $targetArea = $isCommissioned ? strtoupper(trim($activity['commissioned_to'])) : $empArea;
 
-                        if (! isset($areasMap[$targetArea])) {
+                        if (!isset($areasMap[$targetArea])) {
                             $areasMap[$targetArea] = ['area' => $targetArea];
                         }
-                        if (! isset($areasMap[$targetArea][$key])) {
-                            $areasMap[$targetArea][$key] = ['normal' => 0.0, 'comisionado' => 0.0, 'comisionado_fuentes' => []];
+                        if (!isset($areasMap[$targetArea][$key])) {
+                            // Se añade el array de detalles
+                            $areasMap[$targetArea][$key] = [
+                                'normal' => 0.0,
+                                'comisionado' => 0.0,
+                                'comisionados_detalles' => []
+                            ];
                         }
 
                         if ($isCommissioned) {
                             $areasMap[$targetArea][$key]['comisionado'] += $fieldBonusDay;
 
-                            // ⭐ NUEVO: Registrar el nombre del empleado Y su área de origen
-                            $empName   = $empleadosMap[$empId]['nombre'];
-                            $fuenteKey = $empName . ' (De: ' . $empArea . ')';
+                            $empName = $empleadosMap[$empId]['nombre'];
 
-                            if (! isset($areasMap[$targetArea][$key]['comisionado_fuentes'][$fuenteKey])) {
-                                $areasMap[$targetArea][$key]['comisionado_fuentes'][$fuenteKey] = 0.0;
-                            }
-                            $areasMap[$targetArea][$key]['comisionado_fuentes'][$fuenteKey] += $fieldBonusDay;
+                            // Guardamos el detalle individual para renderizar en el modal
+                            $areasMap[$targetArea][$key]['comisionados_detalles'][] = [
+                                'fecha'       => $date,
+                                'empleado'    => $empName,
+                                'area_origen' => $empArea,
+                                'monto'       => $fieldBonusDay
+                            ];
 
                         } else {
                             $areasMap[$targetArea][$key]['normal'] += $fieldBonusDay;
@@ -143,7 +154,7 @@ class StatsLoadController extends Controller
                     );
 
                     // ── Pozos (actividades tipo P con well_name) ──────────
-                    if (($activity['activity_type'] ?? '') === 'P' && ! empty($activity['well_name'])) {
+                    if (($activity['activity_type'] ?? '') === 'P' && !empty($activity['well_name'])) {
                         $this->accumulatePozo(
                             $pozosMap,
                             $activity['well_name'],
@@ -167,13 +178,13 @@ class StatsLoadController extends Controller
 
             ksort($quincenaMap);
             $quincenaArray = $this->attachPctDif(array_values($quincenaMap));
-            $mesData       = $this->buildMesData($quincenaArray);
+            $mesData = $this->buildMesData($quincenaArray);
 
             return response()->json([
                 'success'       => true,
                 'year'          => $year,
                 'empleadosData' => array_values($empleadosMap),
-                'areasData'     => array_values($areasMap), // ⭐ SE ENVÍA AL FRONTEND
+                'areasData'     => array_values($areasMap),
                 'quincenasData' => $quincenaArray,
                 'mesData'       => $mesData,
                 'pozosData'     => array_values($pozosMap),
@@ -203,8 +214,8 @@ class StatsLoadController extends Controller
 
         if ($fullName === '') {
             $fullName = strtoupper(trim(implode(' ', array_filter([
-                $employee->first_name ?? null,
-                $employee->second_name ?? null,
+                $employee->first_name    ?? null,
+                $employee->second_name   ?? null,
                 $employee->first_surname ?? null,
                 $employee->second_surname ?? null,
             ]))));
@@ -216,11 +227,14 @@ class StatsLoadController extends Controller
 
         $clave = $employee->employee_number ?? 'V' . str_pad($employee->id, 5, '0', STR_PAD_LEFT);
 
+        // ✅ Extraemos el nombre del área origen desde la relación
+        $empAreaName = $employee->area ? $employee->area->name : 'SIN ÁREA';
+
         $base = [
             'id'     => $employee->id,
             'clave'  => strtoupper((string) $clave),
             'nombre' => $fullName,
-            'area'   => strtoupper($employee->department ?? 'SIN ÁREA'),
+            'area'   => strtoupper($empAreaName), // ✅ Usamos el nombre extraído
         ];
 
         foreach (self::MONTH_PREFIXES as $p) {
@@ -235,7 +249,7 @@ class StatsLoadController extends Controller
     {
         return (float) array_reduce(
             $bonuses,
-            static fn(float $c, array $b): float => $c + (float) ($b['daily_amount'] ?? 0),
+            static fn (float $c, array $b): float => $c + (float) ($b['daily_amount'] ?? 0),
             0.0
         );
     }
@@ -270,18 +284,20 @@ class StatsLoadController extends Controller
             ];
         }
 
-        $map[$globalQ]['bonosMxn']        = round($map[$globalQ]['bonosMxn'] + $fieldBonusDay, 2);
+        $map[$globalQ]['bonosMxn'] = round($map[$globalQ]['bonosMxn'] + $fieldBonusDay, 2);
         $map[$globalQ]['serviciosCount'] += count($activity['services_list'] ?? []);
 
-        if ($fieldBonusDay > 0 && stripos($employee->department ?? '', 'suministro') !== false) {
+        // ✅ Revisamos si el área actual es Suministros
+        $empAreaName = $employee->area ? $employee->area->name : '';
+        if ($fieldBonusDay > 0 && stripos($empAreaName, 'suministro') !== false) {
             $map[$globalQ]['_suministrosEmp'][$employee->id] = true;
-            $map[$globalQ]['suministrosCount']               = count($map[$globalQ]['_suministrosEmp']);
+            $map[$globalQ]['suministrosCount'] = count($map[$globalQ]['_suministrosEmp']);
         }
     }
 
     private function accumulatePozo(array &$map, string $wellName, int $monthNum, int $qNum, float $cost): void
     {
-        $quinLabel     = $qNum === 1 ? '1RA QUINCENA' : '2DA QUINCENA';
+        $quinLabel = $qNum === 1 ? '1RA QUINCENA' : '2DA QUINCENA';
         $wellNameClean = trim($wellName);
         $pozoKey       = $wellNameClean . '_' . $monthNum . '_' . $qNum;
 
@@ -298,9 +314,9 @@ class StatsLoadController extends Controller
 
     private function accumulateServicio(array &$map, array $svc, int $monthNum, int $qNum, string $activityDate, Employee $employee): void
     {
-        $identifier = $svc['service_identifier'] ?? 'SIN_ID';
-        $realDate   = $svc['service_real_date'] ?? $activityDate;
-        $key        = $identifier . '_' . $realDate . '_' . $employee->id;
+        $identifier  = $svc['service_identifier'] ?? 'SIN_ID';
+        $realDate    = $svc['service_real_date']   ?? $activityDate;
+        $key         = $identifier . '_' . $realDate . '_' . $employee->id;
 
         if (isset($map[$key])) {
             return;
@@ -310,11 +326,11 @@ class StatsLoadController extends Controller
             'mes'                => self::MONTH_NAMES[$monthNum],
             'quincena'           => $qNum === 1 ? '1RA QUINCENA' : '2DA QUINCENA',
             'service_identifier' => $identifier,
-            'service_name'       => $svc['service_name'] ?? $svc['service_description'] ?? '',
-            'service_performed'  => $svc['service_performed'] ?? '',
-            'amount'             => (float) ($svc['amount'] ?? 0),
-            'currency'           => $svc['currency'] ?? 'MXN',
-            'status'             => $svc['status'] ?? 'under_review',
+            'service_name'       => $svc['service_name']      ?? $svc['service_description'] ?? '',
+            'service_performed'  => $svc['service_performed']  ?? '',
+            'amount'             => (float) ($svc['amount']    ?? 0),
+            'currency'           => $svc['currency']           ?? 'MXN',
+            'status'             => $svc['status']             ?? 'under_review',
             'service_real_date'  => $realDate,
             'empleado_id'        => $employee->id,
             'empleado_nombre'    => strtoupper((string) ($employee->full_name ?? '')),

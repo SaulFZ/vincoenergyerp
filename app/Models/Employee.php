@@ -1,46 +1,54 @@
 <?php
+
 namespace App\Models;
 
-use App\Models\RH\LoadChart\EmployeeMonthlyWorkLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+// Importamos los modelos de la nueva ubicación
+use App\Models\RH\OrgManagement\Area;
+use App\Models\RH\OrgManagement\Department;
+use App\Models\RH\LoadChart\EmployeeMonthlyWorkLog;
 
 class Employee extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        "employee_number",
-        "photo",
-        "hire_date",
-        "employment_status",
-        "position",
-        "job_title",
-        "manager",
-        "department",
-        "first_name",
-        "second_name",
-        "first_name",
-        "first_surname",
-        "second_surname",
-        "full_name",
-        "gender",
-        "birth_date",
-        "nationality",
-        "rfc",
-        "unique_population_code",
-        "social_security_number",
-        "blood_type",
-        "phone",
-        "email",
+        "employee_number", "photo", "hire_date", "employment_status",
+        "position", "job_title", "first_name", "second_name",
+        "first_surname", "second_surname", "full_name", "gender",
+        "birth_date", "nationality", "rfc", "unique_population_code",
+        "social_security_number", "blood_type", "phone", "personal_email",
         "medical_history",
+        "area_id", "department_id", "manager_id", // Nuevas relaciones
     ];
 
     protected $dates = ["deleted_at"];
-
-    // Agregamos un Accessor (campo virtual) para obtener el email del destinatario.
-    // Esto es crucial si el campo 'email' en la tabla 'employees' es nulo o si prefieres el email del usuario.
     protected $appends = ['recipient_email'];
+
+    // --- RELACIONES DE ESTRUCTURA ORGANIZACIONAL ---
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class, 'area_id');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    public function manager()
+    {
+        return $this->belongsTo(Employee::class, 'manager_id');
+    }
+
+    public function subordinates()
+    {
+        return $this->hasMany(Employee::class, 'manager_id');
+    }
+
+    // --- RELACIONES EXISTENTES ---
 
     public function user()
     {
@@ -61,24 +69,20 @@ class Employee extends Model
     {
         return $this->hasMany(\App\Models\RH\LoadChart\Squad::class, 'employee_id');
     }
+
     public function license()
-{
-    // Laravel busca automáticamente 'employee_id' en la tabla 'employee_licenses'
-    return $this->hasOne(EmployeeLicense::class);
-}
-    /**
-     * Accessor para obtener el email para el envío del correo.
-     * Retorna el email del empleado o el email del usuario asociado.
-     * Esto asegura que siempre intentemos enviar a una dirección válida.
-     */
+    {
+        return $this->hasOne(EmployeeLicense::class);
+    }
+
+    // --- ACCESSORS ---
+
     public function getRecipientEmailAttribute()
     {
-        // 1. Intentar con el email directo del empleado
-        if ($this->email) {
-            return $this->email;
+        if ($this->personal_email) {
+            return $this->personal_email;
         }
 
-        // 2. Si no hay email directo, intentar con el email de la cuenta de usuario asociada
         if ($this->user && $this->user->email) {
             return $this->user->email;
         }

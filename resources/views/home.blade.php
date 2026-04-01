@@ -53,7 +53,7 @@
             <div class="sidebar-content">
                 @php
                     $userPermissions = Auth::check()
-                        ? \App\Models\Sistemas\UserPermission::getUserPermissions(Auth::id())
+                        ? \App\Models\Systems\UserManagement\UserPermission::getUserPermissions(Auth::id())
                         : [];
                 @endphp
 
@@ -146,7 +146,7 @@
                 @endif
 
                 {{-- Sección: Sistemas --}}
-                @if (isset($userPermissions['sistemas']))
+                @if (isset($userPermissions['systems']))
                     <div class="nav-group">
                         <div class="nav-header active">
                             <div class="nav-header-title">
@@ -156,14 +156,14 @@
                             <i class="fas fa-chevron-right arrow-icon"></i>
                         </div>
                         <ul class="nav-list active">
-                            @if (in_array('gestionderoles', $userPermissions['sistemas']) || empty($userPermissions['sistemas']))
-                                <li class="nav-item" data-route="/sistemas/gestionderoles">
+                            @if (in_array('user-management', $userPermissions['systems']) || empty($userPermissions['systems']))
+                                <li class="nav-item" data-route="/systems/user-management">
                                     <i class="fas fa-user-shield nav-icon"></i>
                                     <span class="nav-text">Gestión de Roles</span>
                                 </li>
                             @endif
-                            @if (in_array('tickets', $userPermissions['sistemas']) || empty($userPermissions['sistemas']))
-                                <li class="nav-item" data-route="/sistemas/tickets">
+                            @if (in_array('tickets', $userPermissions['systems']) || empty($userPermissions['systems']))
+                                <li class="nav-item" data-route="/systems/tickets">
                                     <i class="fas fa-ticket-alt nav-icon"></i>
                                     <span class="nav-text">Gestión de Tickets</span>
                                 </li>

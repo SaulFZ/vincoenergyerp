@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\RH\LoadChart\Squad;
+use App\Models\RH\OrgManagement\Area; // ✅ IMPORTANTE: Agregar el modelo Area
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +16,10 @@ class SquadController extends Controller
     {
         // Cache operadores por 1 hora para mejor performance
         $operadores = Cache::remember('operadores_list', 3600, function() {
-            return Employee::where('department', 'Operaciones')
+            // ✅ AHORA FILTRAMOS UTILIZANDO LA RELACIÓN ÁREA
+            return Employee::whereHas('area', function ($query) {
+                    $query->where('name', 'Operaciones');
+                })
                 ->whereNotNull('employee_number')
                 ->whereNotNull('full_name')
                 ->select('employee_number', 'full_name')
@@ -25,7 +29,7 @@ class SquadController extends Controller
 
         $squads = $this->getSquadsWithEmployees();
 
-        return view('modulos.rh.loadchart.approval', [
+        return view('modules.rh.loadchart.approval', [
             'operadores' => $operadores,
             'squads' => $squads
         ]);
@@ -35,7 +39,10 @@ class SquadController extends Controller
     {
         // Versión optimizada con caché
         $operadores = Cache::remember('operadores_api_list', 3600, function() {
-            return Employee::where('department', 'Operaciones')
+            // ✅ AHORA FILTRAMOS UTILIZANDO LA RELACIÓN ÁREA
+            return Employee::whereHas('area', function ($query) {
+                    $query->where('name', 'Operaciones');
+                })
                 ->whereNotNull('employee_number')
                 ->whereNotNull('full_name')
                 ->select('employee_number', 'full_name')

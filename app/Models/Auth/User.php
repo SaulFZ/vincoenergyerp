@@ -49,7 +49,7 @@ class User extends Authenticatable
 
     public function permissions()
     {
-        return $this->hasOne(\App\Models\Sistemas\UserPermission::class);
+        return $this->hasOne(\App\Models\Systems\UserManagement\UserPermission::class);
     }
 
     public function isActive()

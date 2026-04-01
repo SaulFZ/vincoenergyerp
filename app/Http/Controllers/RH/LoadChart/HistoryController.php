@@ -22,18 +22,18 @@ class HistoryController extends Controller
         $employeeId = $user->employee_id;
 
         if (!$employeeId) {
-            return view('modulos.rh.loadchart.history', [
+            return view('modules.rh.loadchart.history', [
                 'employee' => null,
                 'historyData' => collect([]),
                 'error_message' => 'No se encontró un empleado asociado a tu cuenta de usuario.',
             ]);
         }
 
-        // Obtener los datos del empleado
-        $employee = Employee::find($employeeId);
+        // ✅ Obtener los datos del empleado, asegurando que cargamos 'area' y 'department'
+        $employee = Employee::with(['area', 'department'])->find($employeeId);
 
         if (!$employee) {
-            return view('modulos.rh.loadchart.history', [
+            return view('modules.rh.loadchart.history', [
                 'employee' => null,
                 'historyData' => collect([]),
                 'error_message' => 'Empleado no encontrado en el sistema.',
@@ -52,7 +52,7 @@ class HistoryController extends Controller
         // Preparar datos para la vista
         $historyData = $this->formatHistoryData($historyLogs);
 
-        return view('modulos.rh.loadchart.history', [
+        return view('modules.rh.loadchart.history', [
             'employee' => $employee,
             'historyData' => $historyData,
             'filters' => [
@@ -397,8 +397,8 @@ class HistoryController extends Controller
                 ], 404);
             }
 
-            // Obtener los datos del empleado
-            $employee = Employee::find($employeeId);
+            // ✅ Obtenemos los datos del empleado junto con su área
+            $employee = Employee::with(['area', 'department'])->find($employeeId);
 
             if (!$employee) {
                 return response()->json([

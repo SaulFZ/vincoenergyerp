@@ -1,4 +1,3 @@
-
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function () {
     initializeServicesModal();
@@ -101,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
         servicesPlaceholder.innerHTML = '<p>Cargando servicios...</p>';
         bonusesPlaceholder.innerHTML = '<p>Cargando bonos...</p>';
         if (searchInput) {
-             searchInput.value = ''; // Limpiar la búsqueda al cargar
+            searchInput.value = ''; // Limpiar la búsqueda al cargar
         }
 
 
@@ -818,437 +817,437 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // ================================================================
-// === MODAL DE CONFIGURACIÓN DE QUINCENAS =======================
-// ================================================================
+    // === MODAL DE CONFIGURACIÓN DE QUINCENAS =======================
+    // ================================================================
 
-function initializeQuincenaModal() {
-    const quincenaModal = document.getElementById("quincena-modal");
-    const openBtn = document.getElementById("days-quincena");
-    const quincenaCloseBtn = quincenaModal.querySelector(".quincena-close-btn");
-    const cancelBtn = quincenaModal.querySelector(".quincena-cancel-btn");
-    const saveBtn = quincenaModal.querySelector(".quincena-save-btn");
-    const editBtn = quincenaModal.querySelector(".quincena-edit-btn");
-    const prevMonthBtn = quincenaModal.querySelector(".quincena-prev-month");
-    const nextMonthBtn = quincenaModal.querySelector(".quincena-next-month");
-    const monthTitle = quincenaModal.querySelector(".quincena-month-title");
-    const calendarGrid = quincenaModal.querySelector(".quincena-calendar-grid");
+    function initializeQuincenaModal() {
+        const quincenaModal = document.getElementById("quincena-modal");
+        const openBtn = document.getElementById("days-quincena");
+        const quincenaCloseBtn = quincenaModal.querySelector(".quincena-close-btn");
+        const cancelBtn = quincenaModal.querySelector(".quincena-cancel-btn");
+        const saveBtn = quincenaModal.querySelector(".quincena-save-btn");
+        const editBtn = quincenaModal.querySelector(".quincena-edit-btn");
+        const prevMonthBtn = quincenaModal.querySelector(".quincena-prev-month");
+        const nextMonthBtn = quincenaModal.querySelector(".quincena-next-month");
+        const monthTitle = quincenaModal.querySelector(".quincena-month-title");
+        const calendarGrid = quincenaModal.querySelector(".quincena-calendar-grid");
 
-    // Inputs de fechas
-    const q1StartInput = document.getElementById("q1-start");
-    const q1EndInput = document.getElementById("q1-end");
-    const q2StartInput = document.getElementById("q2-start");
-    const q2EndInput = document.getElementById("q2-end");
+        // Inputs de fechas
+        const q1StartInput = document.getElementById("q1-start");
+        const q1EndInput = document.getElementById("q1-end");
+        const q2StartInput = document.getElementById("q2-start");
+        const q2EndInput = document.getElementById("q2-end");
 
-    let currentDate = new Date();
-    let currentQuincenaConfig = null;
-    let originalQuincenaConfig = null;
+        let currentDate = new Date();
+        let currentQuincenaConfig = null;
+        let originalQuincenaConfig = null;
 
-    if (openBtn) {
-        openBtn.addEventListener("click", function () {
-            quincenaModal.style.display = "flex";
-            loadCurrentMonthConfig();
-        });
-    }
+        if (openBtn) {
+            openBtn.addEventListener("click", function () {
+                quincenaModal.style.display = "flex";
+                loadCurrentMonthConfig();
+            });
+        }
 
-    function closeQuincenaModal() {
-        quincenaModal.style.display = "none";
-        resetForm();
-    }
+        function closeQuincenaModal() {
+            quincenaModal.style.display = "none";
+            resetForm();
+        }
 
-    if (quincenaCloseBtn) quincenaCloseBtn.addEventListener("click", closeQuincenaModal);
+        if (quincenaCloseBtn) quincenaCloseBtn.addEventListener("click", closeQuincenaModal);
 
-    if (cancelBtn) {
-        cancelBtn.addEventListener("click", function () {
-            if (originalQuincenaConfig) {
-                populateFormWithConfig(originalQuincenaConfig);
-            }
-            disableEditMode();
-        });
-    }
+        if (cancelBtn) {
+            cancelBtn.addEventListener("click", function () {
+                if (originalQuincenaConfig) {
+                    populateFormWithConfig(originalQuincenaConfig);
+                }
+                disableEditMode();
+            });
+        }
 
-    if (editBtn) editBtn.addEventListener("click", enableEditMode);
+        if (editBtn) editBtn.addEventListener("click", enableEditMode);
 
-    if (prevMonthBtn) {
-        prevMonthBtn.addEventListener("click", function () {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            loadCurrentMonthConfig();
-        });
-    }
+        if (prevMonthBtn) {
+            prevMonthBtn.addEventListener("click", function () {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                loadCurrentMonthConfig();
+            });
+        }
 
-    if (nextMonthBtn) {
-        nextMonthBtn.addEventListener("click", function () {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            loadCurrentMonthConfig();
-        });
-    }
+        if (nextMonthBtn) {
+            nextMonthBtn.addEventListener("click", function () {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                loadCurrentMonthConfig();
+            });
+        }
 
-    if (saveBtn) {
-        saveBtn.addEventListener("click", saveQuincenaConfig);
-    }
-
-    document.querySelectorAll('.quincena-date-input').forEach(input => {
-        input.addEventListener("change", updateCalendarFromInputs);
-    });
-
-    function enableEditMode() {
-        saveBtn.disabled = false;
-        editBtn.style.display = 'none';
-        cancelBtn.style.display = 'inline-flex';
+        if (saveBtn) {
+            saveBtn.addEventListener("click", saveQuincenaConfig);
+        }
 
         document.querySelectorAll('.quincena-date-input').forEach(input => {
-            input.removeAttribute('readonly');
+            input.addEventListener("change", updateCalendarFromInputs);
         });
 
-        showNotification('Modo de edición activado. Puedes modificar las fechas.', 'info');
-        renderQuincenaCalendar(currentDate);
-    }
+        function enableEditMode() {
+            saveBtn.disabled = false;
+            editBtn.style.display = 'none';
+            cancelBtn.style.display = 'inline-flex';
 
-    function disableEditMode() {
-        saveBtn.disabled = true;
-        editBtn.style.display = 'inline-flex';
-        cancelBtn.style.display = 'none';
+            document.querySelectorAll('.quincena-date-input').forEach(input => {
+                input.removeAttribute('readonly');
+            });
 
-        document.querySelectorAll('.quincena-date-input').forEach(input => {
-            input.setAttribute('readonly', true);
-        });
+            showNotification('Modo de edición activado. Puedes modificar las fechas.', 'info');
+            renderQuincenaCalendar(currentDate);
+        }
 
-        renderQuincenaCalendar(currentDate);
-    }
+        function disableEditMode() {
+            saveBtn.disabled = true;
+            editBtn.style.display = 'inline-flex';
+            cancelBtn.style.display = 'none';
 
-    async function loadCurrentMonthConfig() {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1;
+            document.querySelectorAll('.quincena-date-input').forEach(input => {
+                input.setAttribute('readonly', true);
+            });
 
-        try {
-            const response = await fetch(`/rh/loadchart/fortnightly-config/${year}/${month}`);
+            renderQuincenaCalendar(currentDate);
+        }
 
-            if (response.ok) {
-                const config = await response.json();
-                if (config) {
-                    currentQuincenaConfig = config;
+        async function loadCurrentMonthConfig() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth() + 1;
+
+            try {
+                const response = await fetch(`/rh/loadchart/fortnightly-config/${year}/${month}`);
+
+                if (response.ok) {
+                    const config = await response.json();
+                    if (config) {
+                        currentQuincenaConfig = config;
+                    } else {
+                        currentQuincenaConfig = await generateDefaultConfig(year, month);
+                    }
                 } else {
                     currentQuincenaConfig = await generateDefaultConfig(year, month);
                 }
-            } else {
-                currentQuincenaConfig = await generateDefaultConfig(year, month);
-            }
 
-            originalQuincenaConfig = { ...currentQuincenaConfig };
-            populateFormWithConfig(currentQuincenaConfig);
-            disableEditMode();
-        } catch (error) {
-            console.error('Error loading config:', error);
-            currentQuincenaConfig = await generateDefaultConfig(year, month);
-            originalQuincenaConfig = { ...currentQuincenaConfig };
-            populateFormWithConfig(currentQuincenaConfig);
-            disableEditMode();
-        }
-    }
-
-    async function generateDefaultConfig(year, month) {
-        try {
-            const response = await fetch('/rh/loadchart/fortnightly-config/generate-default', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ year, month })
-            });
-
-            const result = await response.json();
-            if (response.ok) {
-                return result.data;
-            }
-        } catch (error) {
-            console.error('Error generating default config:', error);
-        }
-
-        const firstDay = new Date(year, month - 1, 1);
-        const lastDay = new Date(year, month, 0);
-        const fifteenthDay = new Date(year, month - 1, 15);
-        const sixteenthDay = new Date(year, month - 1, 16);
-
-        if (sixteenthDay.getMonth() + 1 !== month) {
-            sixteenthDay.setDate(lastDay.getDate());
-        }
-
-        return {
-            year: year,
-            month: month,
-            q1_start: formatDateForInput(firstDay),
-            q1_end: formatDateForInput(fifteenthDay),
-            q2_start: formatDateForInput(sixteenthDay),
-            q2_end: formatDateForInput(lastDay)
-        };
-    }
-
-    function populateFormWithConfig(config) {
-        q1StartInput.value = config.q1_start ? new Date(config.q1_start).toISOString().split('T')[0] : '';
-        q1EndInput.value = config.q1_end ? new Date(config.q1_end).toISOString().split('T')[0] : '';
-        q2StartInput.value = config.q2_start ? new Date(config.q2_start).toISOString().split('T')[0] : '';
-        q2EndInput.value = config.q2_end ? new Date(config.q2_end).toISOString().split('T')[0] : '';
-
-        renderQuincenaCalendar(currentDate);
-    }
-
-    function formatDateForInput(date) {
-        const d = new Date(date);
-        let month = '' + (d.getMonth() + 1);
-        let day = '' + d.getDate();
-        const year = d.getFullYear();
-
-        if (month.length < 2) month = '0' + month;
-        if (day.length < 2) day = '0' + day;
-
-        return [year, month, day].join('-');
-    }
-
-    function updateCalendarFromInputs() {
-        renderQuincenaCalendar(currentDate);
-    }
-
-    function isDateInQuincena(date) {
-        const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
-        const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
-        const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
-        const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
-
-        const testDate = new Date(date);
-        testDate.setHours(0, 0, 0, 0);
-
-        const isQ1 = q1Start && q1End && testDate >= q1Start && testDate <= q1End;
-        const isQ2 = q2Start && q2End && testDate >= q2Start && testDate <= q2End;
-
-        return isQ1 || isQ2;
-    }
-
-    function isBoundaryDay(date) {
-        const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
-        const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
-        const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
-        const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
-
-        const testDate = new Date(date);
-        testDate.setHours(0, 0, 0, 0);
-
-        let isStart = false;
-        let isEnd = false;
-
-        if (q1Start && testDate.getTime() === q1Start.getTime()) isStart = true;
-        if (q1End && testDate.getTime() === q1End.getTime()) isEnd = true;
-        if (q2Start && testDate.getTime() === q2Start.getTime()) isStart = true;
-        if (q2End && testDate.getTime() === q2End.getTime()) isEnd = true;
-
-        return { isStart, isEnd };
-    }
-
-    function renderQuincenaCalendar(date) {
-        const year = date.getFullYear();
-        const month = date.getMonth();
-
-        monthTitle.textContent = `${getMonthName(month)} ${year}`;
-
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const firstDayOfWeek = firstDay.getDay();
-
-        while (calendarGrid.firstChild) {
-            calendarGrid.removeChild(calendarGrid.firstChild);
-        }
-
-        const dayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-        dayLabels.forEach(label => {
-            const labelCell = document.createElement("div");
-            labelCell.className = "quincena-day-label";
-            labelCell.textContent = label;
-            calendarGrid.appendChild(labelCell);
-        });
-
-        const prevMonthLastDay = new Date(year, month, 0);
-        const prevMonthDaysCount = 5;
-        const offset = (firstDayOfWeek - prevMonthDaysCount + 7) % 7;
-
-        for (let i = 0; i < offset; i++) {
-            const emptyCell = document.createElement("div");
-            emptyCell.className = "quincena-day-cell empty-cell";
-            calendarGrid.appendChild(emptyCell);
-        }
-
-        for (let i = prevMonthDaysCount - 1; i >= 0; i--) {
-            const day = prevMonthLastDay.getDate() - i;
-            const prevMonthDate = new Date(prevMonthLastDay.getFullYear(), prevMonthLastDay.getMonth(), day);
-
-            const dayCell = document.createElement("div");
-            dayCell.className = "quincena-day-cell other-month-day";
-            dayCell.textContent = day;
-
-            if (isDateInQuincena(prevMonthDate)) {
-                dayCell.classList.add("quincena-selected");
-            }
-
-            const boundary = isBoundaryDay(prevMonthDate);
-            if (boundary.isStart) {
-                dayCell.classList.add("quincena-start");
-            }
-            if (boundary.isEnd) {
-                dayCell.classList.add("quincena-end");
-            }
-
-            dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(prevMonthDate.getMonth())} ${prevMonthDate.getFullYear()}`);
-            dayCell.classList.add('has-tooltip');
-            calendarGrid.appendChild(dayCell);
-        }
-
-        for (let day = 1; day <= lastDay.getDate(); day++) {
-            const dayCell = document.createElement("div");
-            dayCell.className = "quincena-day-cell";
-            dayCell.textContent = day;
-
-            const cellDate = new Date(year, month, day);
-
-            if (isDateInQuincena(cellDate)) {
-                dayCell.classList.add("quincena-selected");
-            }
-
-            const boundary = isBoundaryDay(cellDate);
-            if (boundary.isStart) {
-                dayCell.classList.add("quincena-start");
-            }
-            if (boundary.isEnd) {
-                dayCell.classList.add("quincena-end");
-            }
-
-            dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(month)} ${year}`);
-            dayCell.classList.add('has-tooltip');
-            calendarGrid.appendChild(dayCell);
-        }
-
-        const cellsUsed = offset + prevMonthDaysCount + lastDay.getDate();
-        const totalCells = Math.ceil(cellsUsed / 7) * 7;
-        const remainingCells = totalCells - cellsUsed;
-
-        for (let i = 0; i < remainingCells; i++) {
-            const emptyCell = document.createElement("div");
-            emptyCell.className = "quincena-day-cell empty-cell";
-            calendarGrid.appendChild(emptyCell);
-        }
-    }
-
-    async function saveQuincenaConfig() {
-        // Prevenir doble ejecución
-        if (this.saving) return;
-        this.saving = true;
-
-        const saveBtn = document.querySelector(".quincena-save-btn");
-
-        if (!q1StartInput.value || !q1EndInput.value || !q2StartInput.value || !q2EndInput.value) {
-            showNotification('Por favor, complete todas las fechas', 'error');
-            this.saving = false;
-            return;
-        }
-
-        const q1Start = new Date(q1StartInput.value + 'T00:00:00');
-        const q1End = new Date(q1EndInput.value + 'T00:00:00');
-        const q2Start = new Date(q2StartInput.value + 'T00:00:00');
-        const q2End = new Date(q2EndInput.value + 'T00:00:00');
-
-        if (q1Start > q1End) {
-            showNotification('La fecha de inicio de la primera quincena debe ser anterior a la de fin.', 'error');
-            this.saving = false;
-            return;
-        }
-
-        if (q1End.getTime() >= q2Start.getTime()) {
-            showNotification('La primera quincena debe terminar antes de que inicie la segunda.', 'error');
-            this.saving = false;
-            return;
-        }
-
-        if (q2Start > q2End) {
-            showNotification('La fecha de inicio de la segunda quincena debe ser anterior a la de fin.', 'error');
-            this.saving = false;
-            return;
-        }
-
-        const configData = {
-            year: currentDate.getFullYear(),
-            month: currentDate.getMonth() + 1,
-            q1_start: q1StartInput.value,
-            q1_end: q1EndInput.value,
-            q2_start: q2StartInput.value,
-            q2_end: q2EndInput.value,
-            _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        };
-
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-        try {
-            const response = await fetch('/rh/loadchart/fortnightly-config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': configData._token
-                },
-                body: JSON.stringify(configData)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                showNotification('Configuración guardada exitosamente', 'success');
-                currentQuincenaConfig = result.data;
                 originalQuincenaConfig = { ...currentQuincenaConfig };
                 populateFormWithConfig(currentQuincenaConfig);
                 disableEditMode();
-            } else {
-                const errorMessage = result.errors ? Object.values(result.errors).flat().join('<br>') : result.message;
-                showNotification(errorMessage || 'Error al guardar la configuración', 'error');
+            } catch (error) {
+                console.error('Error loading config:', error);
+                currentQuincenaConfig = await generateDefaultConfig(year, month);
+                originalQuincenaConfig = { ...currentQuincenaConfig };
+                populateFormWithConfig(currentQuincenaConfig);
+                disableEditMode();
             }
-        } catch (error) {
-            showNotification('Error al guardar la configuración', 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
-            this.saving = false;
+        }
+
+        async function generateDefaultConfig(year, month) {
+            try {
+                const response = await fetch('/rh/loadchart/fortnightly-config/generate-default', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ year, month })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    return result.data;
+                }
+            } catch (error) {
+                console.error('Error generating default config:', error);
+            }
+
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+            const fifteenthDay = new Date(year, month - 1, 15);
+            const sixteenthDay = new Date(year, month - 1, 16);
+
+            if (sixteenthDay.getMonth() + 1 !== month) {
+                sixteenthDay.setDate(lastDay.getDate());
+            }
+
+            return {
+                year: year,
+                month: month,
+                q1_start: formatDateForInput(firstDay),
+                q1_end: formatDateForInput(fifteenthDay),
+                q2_start: formatDateForInput(sixteenthDay),
+                q2_end: formatDateForInput(lastDay)
+            };
+        }
+
+        function populateFormWithConfig(config) {
+            q1StartInput.value = config.q1_start ? new Date(config.q1_start).toISOString().split('T')[0] : '';
+            q1EndInput.value = config.q1_end ? new Date(config.q1_end).toISOString().split('T')[0] : '';
+            q2StartInput.value = config.q2_start ? new Date(config.q2_start).toISOString().split('T')[0] : '';
+            q2EndInput.value = config.q2_end ? new Date(config.q2_end).toISOString().split('T')[0] : '';
+
+            renderQuincenaCalendar(currentDate);
+        }
+
+        function formatDateForInput(date) {
+            const d = new Date(date);
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        }
+
+        function updateCalendarFromInputs() {
+            renderQuincenaCalendar(currentDate);
+        }
+
+        function isDateInQuincena(date) {
+            const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
+            const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
+            const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
+            const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
+
+            const testDate = new Date(date);
+            testDate.setHours(0, 0, 0, 0);
+
+            const isQ1 = q1Start && q1End && testDate >= q1Start && testDate <= q1End;
+            const isQ2 = q2Start && q2End && testDate >= q2Start && testDate <= q2End;
+
+            return isQ1 || isQ2;
+        }
+
+        function isBoundaryDay(date) {
+            const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
+            const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
+            const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
+            const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
+
+            const testDate = new Date(date);
+            testDate.setHours(0, 0, 0, 0);
+
+            let isStart = false;
+            let isEnd = false;
+
+            if (q1Start && testDate.getTime() === q1Start.getTime()) isStart = true;
+            if (q1End && testDate.getTime() === q1End.getTime()) isEnd = true;
+            if (q2Start && testDate.getTime() === q2Start.getTime()) isStart = true;
+            if (q2End && testDate.getTime() === q2End.getTime()) isEnd = true;
+
+            return { isStart, isEnd };
+        }
+
+        function renderQuincenaCalendar(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth();
+
+            monthTitle.textContent = `${getMonthName(month)} ${year}`;
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const firstDayOfWeek = firstDay.getDay();
+
+            while (calendarGrid.firstChild) {
+                calendarGrid.removeChild(calendarGrid.firstChild);
+            }
+
+            const dayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+            dayLabels.forEach(label => {
+                const labelCell = document.createElement("div");
+                labelCell.className = "quincena-day-label";
+                labelCell.textContent = label;
+                calendarGrid.appendChild(labelCell);
+            });
+
+            const prevMonthLastDay = new Date(year, month, 0);
+            const prevMonthDaysCount = 5;
+            const offset = (firstDayOfWeek - prevMonthDaysCount + 7) % 7;
+
+            for (let i = 0; i < offset; i++) {
+                const emptyCell = document.createElement("div");
+                emptyCell.className = "quincena-day-cell empty-cell";
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            for (let i = prevMonthDaysCount - 1; i >= 0; i--) {
+                const day = prevMonthLastDay.getDate() - i;
+                const prevMonthDate = new Date(prevMonthLastDay.getFullYear(), prevMonthLastDay.getMonth(), day);
+
+                const dayCell = document.createElement("div");
+                dayCell.className = "quincena-day-cell other-month-day";
+                dayCell.textContent = day;
+
+                if (isDateInQuincena(prevMonthDate)) {
+                    dayCell.classList.add("quincena-selected");
+                }
+
+                const boundary = isBoundaryDay(prevMonthDate);
+                if (boundary.isStart) {
+                    dayCell.classList.add("quincena-start");
+                }
+                if (boundary.isEnd) {
+                    dayCell.classList.add("quincena-end");
+                }
+
+                dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(prevMonthDate.getMonth())} ${prevMonthDate.getFullYear()}`);
+                dayCell.classList.add('has-tooltip');
+                calendarGrid.appendChild(dayCell);
+            }
+
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dayCell = document.createElement("div");
+                dayCell.className = "quincena-day-cell";
+                dayCell.textContent = day;
+
+                const cellDate = new Date(year, month, day);
+
+                if (isDateInQuincena(cellDate)) {
+                    dayCell.classList.add("quincena-selected");
+                }
+
+                const boundary = isBoundaryDay(cellDate);
+                if (boundary.isStart) {
+                    dayCell.classList.add("quincena-start");
+                }
+                if (boundary.isEnd) {
+                    dayCell.classList.add("quincena-end");
+                }
+
+                dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(month)} ${year}`);
+                dayCell.classList.add('has-tooltip');
+                calendarGrid.appendChild(dayCell);
+            }
+
+            const cellsUsed = offset + prevMonthDaysCount + lastDay.getDate();
+            const totalCells = Math.ceil(cellsUsed / 7) * 7;
+            const remainingCells = totalCells - cellsUsed;
+
+            for (let i = 0; i < remainingCells; i++) {
+                const emptyCell = document.createElement("div");
+                emptyCell.className = "quincena-day-cell empty-cell";
+                calendarGrid.appendChild(emptyCell);
+            }
+        }
+
+        async function saveQuincenaConfig() {
+            // Prevenir doble ejecución
+            if (this.saving) return;
+            this.saving = true;
+
+            const saveBtn = document.querySelector(".quincena-save-btn");
+
+            if (!q1StartInput.value || !q1EndInput.value || !q2StartInput.value || !q2EndInput.value) {
+                showNotification('Por favor, complete todas las fechas', 'error');
+                this.saving = false;
+                return;
+            }
+
+            const q1Start = new Date(q1StartInput.value + 'T00:00:00');
+            const q1End = new Date(q1EndInput.value + 'T00:00:00');
+            const q2Start = new Date(q2StartInput.value + 'T00:00:00');
+            const q2End = new Date(q2EndInput.value + 'T00:00:00');
+
+            if (q1Start > q1End) {
+                showNotification('La fecha de inicio de la primera quincena debe ser anterior a la de fin.', 'error');
+                this.saving = false;
+                return;
+            }
+
+            if (q1End.getTime() >= q2Start.getTime()) {
+                showNotification('La primera quincena debe terminar antes de que inicie la segunda.', 'error');
+                this.saving = false;
+                return;
+            }
+
+            if (q2Start > q2End) {
+                showNotification('La fecha de inicio de la segunda quincena debe ser anterior a la de fin.', 'error');
+                this.saving = false;
+                return;
+            }
+
+            const configData = {
+                year: currentDate.getFullYear(),
+                month: currentDate.getMonth() + 1,
+                q1_start: q1StartInput.value,
+                q1_end: q1EndInput.value,
+                q2_start: q2StartInput.value,
+                q2_end: q2EndInput.value,
+                _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            };
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+            try {
+                const response = await fetch('/rh/loadchart/fortnightly-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': configData._token
+                    },
+                    body: JSON.stringify(configData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showNotification('Configuración guardada exitosamente', 'success');
+                    currentQuincenaConfig = result.data;
+                    originalQuincenaConfig = { ...currentQuincenaConfig };
+                    populateFormWithConfig(currentQuincenaConfig);
+                    disableEditMode();
+                } else {
+                    const errorMessage = result.errors ? Object.values(result.errors).flat().join('<br>') : result.message;
+                    showNotification(errorMessage || 'Error al guardar la configuración', 'error');
+                }
+            } catch (error) {
+                showNotification('Error al guardar la configuración', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+                this.saving = false;
+            }
+        }
+
+        function resetForm() {
+            currentQuincenaConfig = null;
+            originalQuincenaConfig = null;
+            q1StartInput.value = '';
+            q1EndInput.value = '';
+            q2StartInput.value = '';
+            q2EndInput.value = '';
+            disableEditMode();
+            renderQuincenaCalendar(currentDate);
+        }
+
+        function getMonthName(monthIndex) {
+            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            return months[monthIndex];
         }
     }
 
-    function resetForm() {
-        currentQuincenaConfig = null;
-        originalQuincenaConfig = null;
-        q1StartInput.value = '';
-        q1EndInput.value = '';
-        q2StartInput.value = '';
-        q2EndInput.value = '';
-        disableEditMode();
-        renderQuincenaCalendar(currentDate);
+    // Función para mostrar notificaciones (debe estar disponible globalmente)
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement("div");
+        notification.className = `notification ${type}`;
+
+        const icon = type === 'success' ? 'fa-check-circle' :
+            type === 'error' ? 'fa-exclamation-circle' :
+                'fa-info-circle';
+
+        notification.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+        document.body.appendChild(notification);
+
+        setTimeout(() => notification.classList.add('show'), 100);
+
+        setTimeout(() => {
+            notification.classList.add("fade-out");
+            setTimeout(() => notification.remove(), 500);
+        }, 4000);
     }
-
-    function getMonthName(monthIndex) {
-        const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        return months[monthIndex];
-    }
-}
-
-// Función para mostrar notificaciones (debe estar disponible globalmente)
-function showNotification(message, type = 'info') {
-    const notification = document.createElement("div");
-    notification.className = `notification ${type}`;
-
-    const icon = type === 'success' ? 'fa-check-circle' :
-                 type === 'error' ? 'fa-exclamation-circle' :
-                 'fa-info-circle';
-
-    notification.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
-    document.body.appendChild(notification);
-
-    setTimeout(() => notification.classList.add('show'), 100);
-
-    setTimeout(() => {
-        notification.classList.add("fade-out");
-        setTimeout(() => notification.remove(), 500);
-    }, 4000);
-}
 });

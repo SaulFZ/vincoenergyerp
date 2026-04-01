@@ -16,29 +16,36 @@ class EmployeeVacationBalanceController extends Controller
 {
     public function index()
     {
+        // ✅ Agregada la relación 'area' al Eager Loading
         $vacationBalances = EmployeeVacationBalance::with(['employee' => function ($query) {
-            $query->select('id', 'full_name', 'hire_date', 'employee_number', 'department');
+            $query->select('id', 'full_name', 'hire_date', 'employee_number', 'area_id')->with('area');
         }])
             ->orderBy('employee_id')
             ->get();
 
-        $employees = Employee::select('id', 'full_name', 'hire_date', 'department', 'employee_number')->orderBy('full_name')->get();
-        $departments = $employees->pluck('department')->unique()->filter()->sort()->values();
+        // ✅ Agregada la relación 'area' a los empleados cargados
+        $employees = Employee::with('area')->select('id', 'full_name', 'hire_date', 'area_id', 'employee_number')->orderBy('full_name')->get();
+
+        // ✅ Extraemos los nombres de las áreas en lugar de los departamentos
+        $areas = $employees->map(function ($employee) {
+            return $employee->area ? $employee->area->name : null;
+        })->unique()->filter()->sort()->values();
 
         $vacationDaysTaken = $this->getConsolidatedVacationDaysTaken();
 
-        return view('modulos.rh.loadchart.employee_vacation_balance', [
+        return view('modules.rh.loadchart.employee_vacation_balance', [
             'vacationBalances'  => $vacationBalances,
             'employees'         => $employees,
-            'departments'       => $departments,
+            'departments'       => $areas, // Pasamos las áreas usando la variable esperada por la vista
             'vacationDaysTaken' => $vacationDaysTaken,
         ]);
     }
 
     private function getConsolidatedVacationDaysTaken(): array
     {
+        // ✅ Agregada la relación 'area'
         $logsWithVacations = EmployeeMonthlyWorkLog::with(['employee' => function ($query) {
-            $query->select('id', 'full_name', 'hire_date', 'employee_number', 'department');
+            $query->select('id', 'full_name', 'hire_date', 'employee_number', 'area_id')->with('area');
         }])
             ->whereNotNull('daily_activities')
             ->get();
@@ -64,7 +71,7 @@ class EmployeeVacationBalanceController extends Controller
                     'employee_number'           => $employee->employee_number ?? 'N/A',
                     'full_name'                 => $employee->full_name,
                     'hire_date'                 => $employee->hire_date,
-                    'area'                      => $employee->department,
+                    'area'                      => $employee->area ? $employee->area->name : 'N/A', // ✅ Usa Área
                     'total_vacation_days_count' => 0,
                     'vacation_days_details'     => [],
                 ];
@@ -179,20 +186,21 @@ class EmployeeVacationBalanceController extends Controller
     }
 
     public function getData(): \Illuminate\Http\JsonResponse
-{
-    $vacationBalances = EmployeeVacationBalance::with(['employee' => function ($query) {
-        $query->select('id', 'full_name', 'hire_date', 'employee_number', 'department');
-    }])
-        ->orderBy('employee_id')
-        ->get();
+    {
+        // ✅ Carga relación area en AJAX
+        $vacationBalances = EmployeeVacationBalance::with(['employee' => function ($query) {
+            $query->select('id', 'full_name', 'hire_date', 'employee_number', 'area_id')->with('area');
+        }])
+            ->orderBy('employee_id')
+            ->get();
 
-    $vacationDaysTaken = $this->getConsolidatedVacationDaysTaken();
+        $vacationDaysTaken = $this->getConsolidatedVacationDaysTaken();
 
-    return response()->json([
-        'vacationBalances'  => $vacationBalances,
-        'vacationDaysTaken' => $vacationDaysTaken,
-    ]);
-}
+        return response()->json([
+            'vacationBalances'  => $vacationBalances,
+            'vacationDaysTaken' => $vacationDaysTaken,
+        ]);
+    }
 
     public function destroy($id)
     {
@@ -218,7 +226,7 @@ class EmployeeVacationBalanceController extends Controller
             'report_type' => 'required|in:AVAILABLE,TAKEN',
             'date_from' => 'nullable|date',
             'date_to' => 'nullable|date|after_or_equal:date_from',
-            'departments' => 'nullable|array',
+            'departments' => 'nullable|array', // Lo mantenemos como variable, pero buscará áreas
             'departments.*' => 'string',
             'employees' => 'nullable|array',
             'employees.*' => 'exists:employees,id',
@@ -237,16 +245,17 @@ class EmployeeVacationBalanceController extends Controller
         $reportType = $request->report_type;
         $reportData = [];
         $title = '';
-        $summaryByDepartment = [];
+        $summaryByArea = []; // Renombrado lógicamente
 
         try {
             if ($reportType === 'AVAILABLE') {
                 $title = 'Reporte de Días de Vacaciones Disponibles';
                 $query = EmployeeVacationBalance::query();
 
+                // ✅ Filtramos por nombre de Área
                 $query->when($request->filled('departments'), function ($q) use ($request) {
-                    $q->whereHas('employee', function ($q2) use ($request) {
-                        $q2->whereIn('department', $request->departments);
+                    $q->whereHas('employee.area', function ($q2) use ($request) {
+                        $q2->whereIn('name', $request->departments);
                     });
                 });
 
@@ -254,33 +263,33 @@ class EmployeeVacationBalanceController extends Controller
                     $q->whereIn('employee_id', $request->employees);
                 });
 
+                // ✅ Cargamos Área
                 $balances = $query->with(['employee' => function ($q) {
-                    $q->select('id', 'full_name', 'employee_number', 'department');
+                    $q->select('id', 'full_name', 'employee_number', 'area_id')->with('area');
                 }])->get();
 
                 foreach ($balances as $balance) {
-                    $department = $balance->employee->department ?? 'Sin Departamento';
+                    $area = $balance->employee->area ? $balance->employee->area->name : 'Sin Área';
 
-                    if (!isset($summaryByDepartment[$department])) {
-                        $summaryByDepartment[$department] = [
+                    if (!isset($summaryByArea[$area])) {
+                        $summaryByArea[$area] = [
                             'total_employees' => 0,
                             'total_vacation_days' => 0,
                         ];
                     }
 
-                    $summaryByDepartment[$department]['total_employees']++;
-                    $summaryByDepartment[$department]['total_vacation_days'] += $balance->vacation_days_available;
+                    $summaryByArea[$area]['total_employees']++;
+                    $summaryByArea[$area]['total_vacation_days'] += $balance->vacation_days_available;
 
                     $reportData[] = [
                         'employee_number' => $balance->employee->employee_number ?? 'N/A',
                         'full_name' => $balance->employee->full_name ?? 'Empleado Desconocido',
-                        'area' => $department,
+                        'area' => $area,
                         'vacation_days_available' => $balance->vacation_days_available,
                         'years_of_service' => $balance->years_of_service,
                     ];
                 }
 
-                // Ordenar el reporte AVAILABLE por Área (Departamento)
                 usort($reportData, function ($a, $b) {
                     return strcmp($a['area'], $b['area']);
                 });
@@ -292,7 +301,10 @@ class EmployeeVacationBalanceController extends Controller
                 $query->when($request->filled('departments') || $request->filled('employees'), function ($q) use ($request) {
                     $q->whereHas('employee', function ($q2) use ($request) {
                         if ($request->filled('departments')) {
-                            $q2->whereIn('department', $request->departments);
+                            // ✅ Filtro por Área en TAKEN
+                            $q2->whereHas('area', function($q3) use ($request) {
+                                $q3->whereIn('name', $request->departments);
+                            });
                         }
                         if ($request->filled('employees')) {
                             $q2->whereIn('id', $request->employees);
@@ -301,7 +313,7 @@ class EmployeeVacationBalanceController extends Controller
                 });
 
                 $logs = $query->with(['employee' => function ($q) {
-                    $q->select('id', 'full_name', 'employee_number', 'department');
+                    $q->select('id', 'full_name', 'employee_number', 'area_id')->with('area');
                 }])->get();
 
                 $startDate = $request->filled('date_from') ? Carbon::parse($request->date_from) : null;
@@ -311,7 +323,7 @@ class EmployeeVacationBalanceController extends Controller
                 foreach ($logs as $log) {
                     $details = $log->getVacationActivities();
                     $availableDays = EmployeeVacationBalance::where('employee_id', $log->employee_id)->value('vacation_days_available');
-                    $department = $log->employee->department ?? 'Sin Departamento';
+                    $area = $log->employee->area ? $log->employee->area->name : 'Sin Área';
 
                     foreach ($details as $detail) {
                         $date = Carbon::parse($detail['date']);
@@ -320,12 +332,11 @@ class EmployeeVacationBalanceController extends Controller
                             continue;
                         }
 
-                        // Normalizar estatus para la comparación con el filtro
                         $statusNormalized = str_replace(' ', '_', $detail['status']);
 
                         if (in_array($statusNormalized, $statusFilter)) {
-                            if (!isset($summaryByDepartment[$department])) {
-                                $summaryByDepartment[$department] = [
+                            if (!isset($summaryByArea[$area])) {
+                                $summaryByArea[$area] = [
                                     'total_days' => 0,
                                     'approved' => 0,
                                     'reviewed' => 0,
@@ -335,16 +346,16 @@ class EmployeeVacationBalanceController extends Controller
                             }
 
                             $statusKey = strtolower($statusNormalized);
-                            if (array_key_exists($statusKey, $summaryByDepartment[$department])) {
-                                $summaryByDepartment[$department][$statusKey]++;
+                            if (array_key_exists($statusKey, $summaryByArea[$area])) {
+                                $summaryByArea[$area][$statusKey]++;
                             }
 
-                            $summaryByDepartment[$department]['total_days']++;
+                            $summaryByArea[$area]['total_days']++;
 
                             $reportData[] = [
                                 'employee_number' => $log->employee->employee_number ?? 'N/A',
                                 'full_name' => $log->employee->full_name ?? 'Empleado Desconocido',
-                                'area' => $department,
+                                'area' => $area,
                                 'date' => $date->format('d/m/Y'),
                                 'status' => $detail['status'],
                                 'vacation_days_available' => $availableDays ?? 'N/A',
@@ -353,7 +364,6 @@ class EmployeeVacationBalanceController extends Controller
                     }
                 }
 
-                // Ordenar los datos por departamento y luego por fecha (para el reporte TAKEN)
                 usort($reportData, function ($a, $b) {
                     $deptCompare = strcmp($a['area'], $b['area']);
                     if ($deptCompare !== 0) {
@@ -368,7 +378,7 @@ class EmployeeVacationBalanceController extends Controller
             $data = [
                 'title' => $title,
                 'reportData' => $reportData,
-                'summaryByDepartment' => $summaryByDepartment,
+                'summaryByDepartment' => $summaryByArea, // Usamos la misma clave para que tu PDF Blade no se rompa
                 'reportType' => $reportType,
                 'filters' => [
                     'date_from' => $request->date_from,
@@ -382,7 +392,6 @@ class EmployeeVacationBalanceController extends Controller
 
             $pdf = Pdf::loadView('modulos.recursoshumanos.loadchart.reports.vacation_report_pdf', $data);
 
-            // 🌟 LÍNEA CORREGIDA: Eliminamos el tipo de reporte del nombre
             return $pdf->download('reporte_vacaciones_' . Carbon::now()->format('Y-m-d') . '.pdf');
 
         } catch (\Exception $e) {

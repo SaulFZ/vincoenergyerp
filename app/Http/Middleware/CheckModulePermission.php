@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Sistemas\UserPermission;
+use App\Models\Systems\UserManagement\UserPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Closure;

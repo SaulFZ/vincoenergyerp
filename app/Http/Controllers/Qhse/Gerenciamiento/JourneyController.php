@@ -61,7 +61,7 @@ class JourneyController extends Controller
         ];
 
         return view(
-            'modulos.qhse.gerenciamiento.journey_management',
+            'modules.qhse.gerenciamiento.journey_management',
             compact('userData', 'employees')
         );
     }

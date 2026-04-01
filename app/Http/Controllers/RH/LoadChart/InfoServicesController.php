@@ -18,7 +18,7 @@ class InfoServicesController extends Controller
         $services = Services::getGroupedServices();
         $bonuses = FieldBonus::all();
         // Remove the `dd($services);` and return the view
-        return view('modulos.rh.loadchart.approval', [
+        return view('modules.rh.loadchart.approval', [
             'services' => $services,
             'bonuses' => $bonuses,
         ]);

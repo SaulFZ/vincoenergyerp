@@ -84,14 +84,13 @@ class LoginController extends Controller
             return redirect()->route('login')->with('error', 'El proceso de restablecimiento no fue iniciado o el enlace es inválido.');
         }
 
-        // 3. Re-verificar el código para checar expiración (ya que podría haber pasado tiempo desde verifyCode)
+        // 3. Re-verificar el código para checar expiración
         $resetRecord = DB::table('password_reset_tokens')
             ->where('email', $email)
             ->where('token', $token)
             ->first();
 
         if (!$resetRecord) {
-            // Limpiar sesión y redirigir
             $request->session()->forget([self::SESSION_EMAIL_KEY, self::SESSION_TOKEN_KEY]);
             return redirect()->route('login')->with('error', 'El proceso de restablecimiento es inválido. Por favor, reinicia el proceso.');
         }
@@ -103,7 +102,6 @@ class LoginController extends Controller
             return redirect()->route('login')->with('error', 'El código ha expirado. Por favor, solicita uno nuevo.');
         }
 
-        // Si todo es válido, se muestra el formulario con los datos
         return view('auth.passwords.reset', [
             'email' => $email,
             'token' => $token
@@ -115,31 +113,38 @@ class LoginController extends Controller
      */
     public function getUserEmail(Request $request)
     {
-        // Lógica sin cambios
         $request->validate(['username' => 'required|string']);
 
-        $user = User::where('username', $request->username)->first();
+        // Traemos al usuario junto con su relación 'employee' para poder checar el correo personal
+        $user = User::with('employee')->where('username', $request->username)->first();
 
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'No se encontró un usuario con ese nombre de usuario.'], 404);
         }
 
-        if (empty($user->email)) {
-            return response()->json(['success' => false, 'message' => 'Este usuario no tiene un correo electrónico asociado para la recuperación.'], 422);
+        // ✅ LÓGICA DE DETECCIÓN DE CORREO (Corporativo primero, luego personal)
+        $targetEmail = !empty($user->email) ? $user->email : ($user->employee->personal_email ?? null);
+
+        if (empty($targetEmail)) {
+            return response()->json(['success' => false, 'message' => 'Este usuario no tiene un correo corporativo ni personal asociado para la recuperación.'], 422);
         }
 
         // Ocultar parte del correo para privacidad (ej: vi***@vincoenergy.com)
-        $emailParts = explode('@', $user->email);
+        $emailParts = explode('@', $targetEmail);
         $localPart = $emailParts[0];
-        // Enmascarar la parte local, dejando los primeros dos y el dominio visible.
         $maskedLocalPart = strlen($localPart) > 2
             ? substr($localPart, 0, 2) . str_repeat('*', strlen($localPart) - 2)
             : str_repeat('*', strlen($localPart));
 
         $maskedEmail = $maskedLocalPart . '@' . $emailParts[1];
 
-        // Se incluye el nombre completo del usuario para el mail
-        return response()->json(['success' => true, 'email' => $user->email, 'maskedEmail' => $maskedEmail, 'userName' => $user->name ?? $user->username]);
+        // Devolvemos el correo que se usará (targetEmail)
+        return response()->json([
+            'success' => true,
+            'email' => $targetEmail,
+            'maskedEmail' => $maskedEmail,
+            'userName' => $user->name ?? $user->username
+        ]);
     }
 
     /**
@@ -149,22 +154,23 @@ class LoginController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        $user = User::where('email', $request->email)->first();
+        // ✅ BUSCAR USUARIO POR CORREO CORPORATIVO O PERSONAL
+        $user = User::where('email', $request->email)
+                    ->orWhereHas('employee', function ($query) use ($request) {
+                        $query->where('personal_email', $request->email);
+                    })->first();
 
         if (!$user) {
             Log::warning('Intento de enviar código de reseteo a correo no registrado: ' . $request->email);
             return response()->json(['success' => true, 'message' => 'Si el correo existe, se ha enviado un código de 6 dígitos.']);
         }
 
-        // Obtener el nombre de usuario (asumiendo que 'name' es el campo a mostrar)
         $userName = $user->name ?? $user->username;
-
-        // Generar código de 6 dígitos
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        // Guardar código en la base de datos con expiración de 5 minutos
+        // Guardar código en la BD (usamos el correo validado que nos mandó el front)
         DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $user->email],
+            ['email' => $request->email],
             [
                 'token' => $code,
                 'created_at' => Carbon::now()
@@ -172,8 +178,7 @@ class LoginController extends Controller
         );
 
         try {
-            // Se pasa el nombre de usuario a la clase de correo
-            Mail::to($user->email)->send(new PasswordResetMail($code, self::CODE_EXPIRATION_MINUTES, $userName));
+            Mail::to($request->email)->send(new PasswordResetMail($code, self::CODE_EXPIRATION_MINUTES, $userName));
         } catch (\Exception $e) {
             Log::error('Error al enviar correo de recuperación: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'No se pudo enviar el correo de recuperación. Inténtalo más tarde.'], 500);
@@ -201,18 +206,13 @@ class LoginController extends Controller
             return response()->json(['success' => false, 'message' => 'El código es inválido.'], 422);
         }
 
-        // Verificar que no haya expirado (5 minutos)
         if (Carbon::parse($resetRecord->created_at)->addMinutes(self::CODE_EXPIRATION_MINUTES)->isPast()) {
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
             return response()->json(['success' => false, 'message' => 'El código ha expirado. Solicita uno nuevo.'], 422);
         }
 
-        // --- CAMBIO CLAVE POR SEGURIDAD ---
-        // Almacenar el email y el código validado en la sesión
         $request->session()->put(self::SESSION_EMAIL_KEY, $request->email);
         $request->session()->put(self::SESSION_TOKEN_KEY, $request->code);
-        // El token en la BD sigue activo por 5 minutos
-        // ---------------------------------
 
         return response()->json(['success' => true, 'message' => 'Código verificado correctamente.', 'redirect' => route('password.resetForm')]);
     }
@@ -222,7 +222,6 @@ class LoginController extends Controller
      */
     public function resetPassword(Request $request)
     {
-        // 1. Validar inputs de nueva contraseña
         try {
             $request->validate([
                 'email' => 'required|email',
@@ -237,32 +236,28 @@ class LoginController extends Controller
             ], 422);
         }
 
-        // 2. Re-verificación final del token antes de cambiar
         $resetRecord = DB::table('password_reset_tokens')
             ->where('email', $request->email)
             ->where('token', $request->code)
             ->first();
 
-        // 3. Checar token y expiración
         if (!$resetRecord || Carbon::parse($resetRecord->created_at)->addMinutes(self::CODE_EXPIRATION_MINUTES)->isPast()) {
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-
-            // Limpiar la sesión al fallar
             $request->session()->forget([self::SESSION_EMAIL_KEY, self::SESSION_TOKEN_KEY]);
-
             return response()->json(['success' => false, 'message' => 'El código es inválido o ha expirado. Por favor, reinicia el proceso.'], 422);
         }
 
-        $user = User::where('email', $request->email)->first();
+        // ✅ BUSCAR USUARIO POR CORREO CORPORATIVO O PERSONAL PARA ACTUALIZAR PASSWORD
+        $user = User::where('email', $request->email)
+                    ->orWhereHas('employee', function ($query) use ($request) {
+                        $query->where('personal_email', $request->email);
+                    })->first();
 
         if ($user) {
-            // 4. Actualizar contraseña y limpiar
             $user->password = Hash::make($request->password);
             $user->save();
 
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-
-            // Limpiar la sesión al finalizar con éxito
             $request->session()->forget([self::SESSION_EMAIL_KEY, self::SESSION_TOKEN_KEY]);
 
             return response()->json([
@@ -272,7 +267,6 @@ class LoginController extends Controller
             ]);
         }
 
-        // Limpiar la sesión en caso de error inesperado (aunque el email ya se validó antes)
         $request->session()->forget([self::SESSION_EMAIL_KEY, self::SESSION_TOKEN_KEY]);
         return response()->json(['success' => false, 'message' => 'Ocurrió un error inesperado.'], 500);
     }

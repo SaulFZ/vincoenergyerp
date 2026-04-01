@@ -67,6 +67,9 @@ function initializeModalCalendarScripts(employeeId) {
     const travelServiceTypeField = document.getElementById('travel-service-type-field');
     const travelServiceTypeInput = document.getElementById('travel-service-type');
 
+    // 🆕 NUEVO: Elementos de Comisionado
+    const commissionedActivityTypeField = document.getElementById('commissioned-activity-type-field');
+    const commissionedActivityTypeSelect = document.getElementById('commissioned-activity-type');
 
     if (isGuardia) {
         if (normalActivityGroup) normalActivityGroup.style.display = 'none';
@@ -429,6 +432,7 @@ function initializeModalCalendarScripts(employeeId) {
             if (continuationField) continuationField.style.display = 'none';
             if (contractNumberField) contractNumberField.style.display = 'none';
             if (travelServiceTypeField) travelServiceTypeField.style.display = 'none';
+            if (commissionedActivityTypeField) commissionedActivityTypeField.style.display = 'none';
 
             if (baseDescGroup) baseDescGroup.style.display = 'none';
             vacationError.style.display = 'none';
@@ -454,6 +458,7 @@ function initializeModalCalendarScripts(employeeId) {
         if (contractNumberField) contractNumberField.style.display = 'none';
         if (travelServiceTypeField) travelServiceTypeField.style.display = 'none';
         if (isContinuationCheckbox) isContinuationCheckbox.checked = false;
+        if (commissionedActivityTypeField) commissionedActivityTypeField.style.display = 'none';
 
         if (activityType === 'B' && requiresBaseDesc) {
             baseDescGroup.style.display = 'block';
@@ -481,6 +486,7 @@ function initializeModalCalendarScripts(employeeId) {
         } else if (activityType === 'C') {
             if (baseDescGroup) baseDescGroup.style.display = 'none';
             commissionedField.style.display = 'block';
+            commissionedActivityTypeField.style.display = 'block'; // 🆕 Mostrar el nuevo campo
             conditionalFields.style.display = 'block';
             if (foodBonusContainer) foodBonusContainer.style.display = 'none';
             if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
@@ -562,6 +568,7 @@ function initializeModalCalendarScripts(employeeId) {
             travelReasonInput.value = '';
             commissionedSelect.selectedIndex = 0;
             if (contractNumberInput) contractNumberInput.value = '';
+            if (commissionedActivityTypeSelect) commissionedActivityTypeSelect.selectedIndex = 0;
 
             const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
             const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
@@ -707,7 +714,8 @@ function initializeModalCalendarScripts(employeeId) {
             document.getElementById('guardia-bonus-quantity'),
             // Nuevos
             document.getElementById('contract-number'), document.getElementById('travel-service-type'),
-            document.getElementById('is-continuation')
+            document.getElementById('is-continuation'),
+            document.getElementById('commissioned-activity-type') // 🆕 Nuevo campo
         ];
         const serviceElements = [
             ...document.querySelectorAll('.work-type-option'),
@@ -901,6 +909,7 @@ function initializeModalCalendarScripts(employeeId) {
             const travelDestinationInput = document.getElementById('travel-destination');
             const travelReasonInput = document.getElementById('travel-reason');
             const activityTypeOptions = document.querySelectorAll('.activity-option');
+            const commissionedActivityTypeSelectEl = document.getElementById('commissioned-activity-type'); // 🆕
 
             toggleFieldLock(activityTypeSelectContainer, isActivityLocked, activityStatus);
             activityTypeOptions.forEach(option => toggleFieldLock(option, isActivityLocked, activityStatus));
@@ -908,6 +917,9 @@ function initializeModalCalendarScripts(employeeId) {
             toggleFieldLock(wellNameInput, isActivityLocked, activityStatus);
             toggleFieldLock(travelDestinationInput, isActivityLocked, activityStatus);
             toggleFieldLock(travelReasonInput, isActivityLocked, activityStatus);
+            if (commissionedActivityTypeSelectEl) {
+                toggleFieldLock(commissionedActivityTypeSelectEl, isActivityLocked, activityStatus);
+            }
 
             if (isSuministro) {
                 toggleFieldLock(document.getElementById('contract-number'), isActivityLocked, activityStatus);
@@ -1075,10 +1087,16 @@ function populateModalWithActivity(activity) {
             handleActivityTypeChange(activity.activity_type || 'N');
         }
 
+        // 🆕 POBLAR TIPO DE ACTIVIDAD EN COMISIONADO
+        if (activity.activity_type === 'C' && activity.commissioned_activity_type) {
+            commissionedActivityTypeSelect.value = activity.commissioned_activity_type;
+        }
+
         if (activity.activity_type === 'C' && activity.commissioned_to) {
             document.getElementById('commissioned-field').style.display = 'block';
             document.getElementById('commissioned-select').value = activity.commissioned_to;
         }
+
         if (activity.well_name) {
             document.getElementById('well-name').value = activity.well_name;
         }
@@ -1370,9 +1388,13 @@ function populateModalWithActivity(activity) {
         }
     }
 
- function resetAdditionalForms() {
+function resetAdditionalForms() {
         document.getElementById('commissioned-field').style.display = 'none';
         document.getElementById('commissioned-select').selectedIndex = 0;
+        if (commissionedActivityTypeSelect) {
+            commissionedActivityTypeSelect.selectedIndex = 0;
+            commissionedActivityTypeField.style.display = 'none';
+        }
         document.getElementById('well-name-field').style.display = 'none';
         document.getElementById('well-name').value = '';
 
@@ -1809,6 +1831,7 @@ function populateModalWithActivity(activity) {
                 const activityType = document.getElementById('activity-type').value;
                 formData.activity_type = activityType || 'N';
                 formData.commissioned_to = activityType === 'C' ? document.getElementById('commissioned-select').value : null;
+                formData.commissioned_activity_type = activityType === 'C' ? commissionedActivityTypeSelect.value : null; // 🆕 Nuevo campo
                 formData.well_name = activityType === 'P' ? document.getElementById('well-name').value : null;
 
                 // ---> SECCIÓN DE VIAJE ACTUALIZADA
@@ -1884,6 +1907,11 @@ function populateModalWithActivity(activity) {
                 }
                 if (activityType === 'C' && !formData.commissioned_to) {
                     document.getElementById('commissioned-error').style.display = 'block';
+                    isValid = false;
+                }
+                // 🆕 Validación para tipo de actividad en comisionado
+                if (activityType === 'C' && !formData.commissioned_activity_type) {
+                    document.getElementById('commissioned-activity-type-error').style.display = 'block';
                     isValid = false;
                 }
                 if (activityType === 'P' && !formData.well_name.trim()) {
@@ -2167,13 +2195,13 @@ function populateModalWithActivity(activity) {
             currentPayrollDates = data.payrollDates;
 
             let newTableHTML = '';
-            let currentRow = '<tr>';
+            let currentRow = ' <tbody><tr>';
 
             let firstDayOfMonthIndex = new Date(data.currentYear, data.currentMonth - 1, 1).getDay();
             firstDayOfMonthIndex = firstDayOfMonthIndex === 0 ? 6 : firstDayOfMonthIndex - 1;
 
             for (let i = 0; i < firstDayOfMonthIndex; i++) {
-                currentRow += `<td class="other-month" data-date=""></td>`;
+                currentRow += `<td class="other-month" data-date=""> </td>`;
             }
 
             data.calendarDays.forEach((day, index) => {
@@ -2210,7 +2238,7 @@ function populateModalWithActivity(activity) {
             let daysToAdd = 7 - (cellCount % 7);
             if (daysToAdd !== 7) {
                 for (let i = 0; i < daysToAdd; i++) {
-                    currentRow += `<td class="other-month" data-date=""></td>`;
+                    currentRow += `<td class="other-month" data-date=""> </td>`;
                 }
                 newTableHTML += currentRow + '</tr>';
             }
