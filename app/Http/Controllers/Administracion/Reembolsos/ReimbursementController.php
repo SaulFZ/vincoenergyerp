@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Auth\User;
 use App\Models\Core\VehicleUnit;
 use App\Models\Employee;
-use App\Models\Qhse\Gerenciamiento\Destination;
 use Illuminate\Support\Facades\Auth;
 
 class ReimbursementController extends Controller
@@ -17,7 +16,7 @@ class ReimbursementController extends Controller
     public function index()
     {
         // Asegúrate de que esta ruta coincida con la ubicación de tu archivo Blade
-        return view('modulos.administracion.reembolsos.reimbursements');
+        return view('modules.administracion.reembolsos.reimbursements');
     }
 
     // Aquí puedes dejar vacíos por ahora los demás métodos que definiste en tus rutas
