@@ -38,24 +38,8 @@ return new class extends Migration
             $table->date('hire_date');
             $table->string('position');
             $table->string('job_title')->nullable();
-
             // ---------------------------------------------------------
-            // 4. DATOS DE CONTACTO
-            // ---------------------------------------------------------
-            $table->string('phone')->nullable();
-            $table->string('personal_email')->nullable();
-
-            // ---------------------------------------------------------
-            // 5. DOCUMENTACIÓN LEGAL Y SALUD
-            // ---------------------------------------------------------
-            $table->string('rfc')->nullable();
-            $table->string('unique_population_code')->nullable(); // CURP
-            $table->string('social_security_number')->nullable(); // NSS
-            $table->string('blood_type')->nullable();
-            $table->text('medical_history')->nullable();
-
-            // ---------------------------------------------------------
-            // 6. ESTRUCTURA ORGANIZACIONAL (LAS NUEVAS RELACIONES)
+            // 4. ESTRUCTURA ORGANIZACIONAL (LAS NUEVAS RELACIONES)
             // ---------------------------------------------------------
             // Área a la que pertenece (Ej: Operativa, Administrativa)
             // Se define como nullable() temporalmente por si hay registros huérfanos durante la migración de datos.
@@ -77,6 +61,23 @@ return new class extends Migration
                   ->on('employees')
                   ->onDelete('set null')
                   ->onUpdate('cascade');
+
+            // ---------------------------------------------------------
+            // 5. DATOS DE CONTACTO
+            // ---------------------------------------------------------
+            $table->string('phone')->nullable();
+            $table->string('personal_email')->nullable();
+
+            // ---------------------------------------------------------
+            // 6. DOCUMENTACIÓN LEGAL Y SALUD
+            // ---------------------------------------------------------
+            $table->string('rfc')->nullable();
+            $table->string('unique_population_code')->nullable(); // CURP
+            $table->string('social_security_number')->nullable(); // NSS
+            $table->string('blood_type')->nullable();
+            $table->text('medical_history')->nullable();
+
+
 
             // ---------------------------------------------------------
             // 7. AUDITORÍA Y CONTROL (TIMESTAMPS)
