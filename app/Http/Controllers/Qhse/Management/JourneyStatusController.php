@@ -1,9 +1,9 @@
 <?php
-namespace App\Http\Controllers\Qhse\Gerenciamiento;
+namespace App\Http\Controllers\Qhse\Management;
 
 use App\Http\Controllers\Controller;
-use App\Models\Qhse\Gerenciamiento\Journey;
-use App\Models\Qhse\Gerenciamiento\JourneyLog;
+use App\Models\Qhse\Management\Journey;
+use App\Models\Qhse\Management\JourneyLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -119,7 +119,7 @@ class JourneyStatusController extends Controller
                 $newApprover = \App\Models\Auth\User::find($nuevoAprobadorId);
                 if ($newApprover && $newApprover->email) {
                     \Illuminate\Support\Facades\Mail::to($newApprover->email)
-                        ->send(new \App\Mail\Qhse\Gerenciamiento\JourneyApprovalMail($journey));
+                        ->send(new \App\Mail\Qhse\Management\JourneyApprovalMail($journey));
                 }
             } catch (\Exception $mailEx) {
                 \Illuminate\Support\Facades\Log::error('Error enviando correo cambio aprobador: ' . $mailEx->getMessage());

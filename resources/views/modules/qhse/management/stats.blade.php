@@ -1,4 +1,4 @@
-@extends('modulos.qhse.gerenciamiento.index')
+@extends('modules.qhse.management.index')
 
 @push('css')
 <style>

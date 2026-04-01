@@ -296,7 +296,7 @@
                                     </label>
                                 </div>
                                 <div class="mod-card-body" id="qhse-body">
-                                    <label class="perm-row"><input type="checkbox" name="permissions[qhse][gerenciamiento]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gerenciamiento</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[qhse][management]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>management</span></label>
                                     <label class="perm-row"><input type="checkbox" name="permissions[qhse][vescap]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>VESCAP</span></label>
                                     <label class="perm-row"><input type="checkbox" name="permissions[qhse][incidencias]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Incidencias</span></label>
                                     <label class="perm-row"><input type="checkbox" name="permissions[qhse][auditorias]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Auditorías</span></label>

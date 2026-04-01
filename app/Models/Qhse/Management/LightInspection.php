@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Qhse\Gerenciamiento;
+namespace App\Models\Qhse\Management;
 
 use Illuminate\Database\Eloquent\Model;
 

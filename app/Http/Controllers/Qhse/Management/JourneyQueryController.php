@@ -1,9 +1,9 @@
 <?php
-namespace App\Http\Controllers\Qhse\Gerenciamiento;
+namespace App\Http\Controllers\Qhse\Management;
 
 use App\Helpers\PermissionHelper;
 use App\Http\Controllers\Controller;
-use App\Models\Qhse\Gerenciamiento\Journey;
+use App\Models\Qhse\Management\Journey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -234,7 +234,7 @@ class JourneyQueryController extends Controller
                 ? \Carbon\Carbon::parse($request->get('context_date'))
                 : now();
 
-            $lastUnit = \App\Models\Qhse\Gerenciamiento\JourneyUnit::with(['lightInspection', 'heavyInspection'])
+            $lastUnit = \App\Models\Qhse\Management\JourneyUnit::with(['lightInspection', 'heavyInspection'])
                 ->where('economic_number', $economic_number)
                 ->whereHas('journey', function ($q) use ($contextDate) {
                     // REGLA DE ORO: La fecha del viaje debe ser estrictamente MENOR (<) a la fecha de contexto.

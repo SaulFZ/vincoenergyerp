@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Qhse\Gerenciamiento;
+namespace App\Http\Controllers\Qhse\Management;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -21,6 +21,6 @@ class StatsController extends Controller
         // $viajesActivos = Journey::where('estatus', 'En Curso')->count();
         // ---------------------------------------------------------
 
-        return view('modules.qhse.gerenciamiento.stats');
+        return view('modules.qhse.management.stats');
     }
 }

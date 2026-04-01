@@ -1,16 +1,16 @@
 <?php
-namespace App\Http\Controllers\Qhse\Gerenciamiento;
+namespace App\Http\Controllers\Qhse\Management;
 
 use App\Http\Controllers\Controller;
-use App\Mail\Qhse\Gerenciamiento\JourneyApprovalMail;
+use App\Mail\Qhse\Management\JourneyApprovalMail;
 use App\Models\Auth\User;
-use App\Models\Qhse\Gerenciamiento\HeavyInspection;
-use App\Models\Qhse\Gerenciamiento\Journey;
-use App\Models\Qhse\Gerenciamiento\JourneyLog;
-use App\Models\Qhse\Gerenciamiento\JourneyUnit;
-use App\Models\Qhse\Gerenciamiento\LightInspection;
-use App\Models\Qhse\Gerenciamiento\PreConvoyMeeting;
-use App\Models\Qhse\Gerenciamiento\RiskAssessment;
+use App\Models\Qhse\Management\HeavyInspection;
+use App\Models\Qhse\Management\Journey;
+use App\Models\Qhse\Management\JourneyLog;
+use App\Models\Qhse\Management\JourneyUnit;
+use App\Models\Qhse\Management\LightInspection;
+use App\Models\Qhse\Management\PreConvoyMeeting;
+use App\Models\Qhse\Management\RiskAssessment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -464,7 +464,7 @@ class JourneyStoreController extends Controller
                 }
                 // Caso 2: Si es archivo subido (Input file)
                 elseif (isset($fotoData['file']) && $fotoData['file'] instanceof \Illuminate\Http\UploadedFile) {
-                    $folder   = "qhse/gerenciamiento/anomalias{$typeSuffix}/{$folio}";
+                    $folder   = "qhse/management/anomalias{$typeSuffix}/{$folio}";
                     $fileName = 'anomalia_' . time() . '_' . ($index + 1) . '.' . $fotoData['file']->getClientOriginalExtension();
                     $path     = $fotoData['file']->storeAs($folder, $fileName, 'public');
                     $paths[]  = $path;
@@ -495,9 +495,9 @@ class JourneyStoreController extends Controller
                 return null;
             }
 
-            // 2. Construir la ruta: qhse/gerenciamiento/anomaliasL/GV-00001/anomalia_17000000.jpg
+            // 2. Construir la ruta: qhse/management/anomaliasL/GV-00001/anomalia_17000000.jpg
             $fileName   = 'anomalia_' . microtime(true) * 100 . '.' . $extension;
-            $folderPath = "qhse/gerenciamiento/anomalias{$typeSuffix}/{$folio}";
+            $folderPath = "qhse/management/anomalias{$typeSuffix}/{$folio}";
             $fullPath   = "{$folderPath}/{$fileName}";
 
             // 3. Guardar en disco public

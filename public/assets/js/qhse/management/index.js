@@ -30,7 +30,7 @@ function initApp() {
             e.preventDefault();
             const route = this.getAttribute('data-route');
             if (route) {
-                window.location.href = `/qhse/gerenciamiento/${route}`;
+                window.location.href = `/qhse/management/${route}`;
             }
         });
     });

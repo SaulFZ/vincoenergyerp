@@ -117,7 +117,7 @@ async function cargarViajes(page = 1) {
     }
 
     try {
-        let url = `/qhse/gerenciamiento/journeys?page=${currentPage}&per_page=${currentPerPage}`;
+        let url = `/qhse/management/journeys?page=${currentPage}&per_page=${currentPerPage}`;
 
         if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
         if (currentStatusGv !== "all") url += `&status_gv=${currentStatusGv}`;
@@ -369,7 +369,7 @@ async function abrirModalViaje(idViaje) {
     });
 
     try {
-        const response = await fetch(`/qhse/gerenciamiento/journeys/${idViaje}`);
+        const response = await fetch(`/qhse/management/journeys/${idViaje}`);
         const result = await response.json();
 
         if (!result.success) {
@@ -1124,7 +1124,7 @@ async function abrirModalCambiarAprobador(viajeId, nivelRiesgo) {
     let aprobadores = [];
     try {
         const response = await fetch(
-            `/qhse/gerenciamiento/autorizadores/${nivelRiesgo}`,
+            `/qhse/management/autorizadores/${nivelRiesgo}`,
         );
         const result = await response.json();
         if (result.success) aprobadores = result.data;
@@ -1188,7 +1188,7 @@ async function abrirModalCambiarAprobador(viajeId, nivelRiesgo) {
 
     try {
         const response = await fetch(
-            `/qhse/gerenciamiento/journeys/${viajeId}/change-approver`,
+            `/qhse/management/journeys/${viajeId}/change-approver`,
             {
                 method: "PUT",
                 headers: {
@@ -1276,7 +1276,7 @@ function gestionarEstadoViaje(viajeId, accion) {
             try {
                 // El fetch se hace aquí adentro para bloquear el botón
                 const response = await fetch(
-                    `/qhse/gerenciamiento/journeys/${viajeId}/approval-status`,
+                    `/qhse/management/journeys/${viajeId}/approval-status`,
                     {
                         method: "PUT",
                         headers: {
@@ -1538,7 +1538,7 @@ function llenarModalEvaluacionLectura(assessment) {
 async function actualizarEstadisticas() {
     try {
         // 👇 AQUÍ ESTÁ EL CAMBIO: Actualizamos la URL a /journeys/stats
-        const response = await fetch("/qhse/gerenciamiento/journeys/stats");
+        const response = await fetch("/qhse/management/journeys/stats");
         const result = await response.json();
 
         if (result.success) {
@@ -1692,7 +1692,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // ====================================================================
 async function cargarFolioEstimado() {
     try {
-        const response = await fetch("/qhse/gerenciamiento/journeys/next-folio");
+        const response = await fetch("/qhse/management/journeys/next-folio");
         const data = await response.json();
 
         if (data.success) {
@@ -1847,7 +1847,7 @@ let detallesVehiculos = {}; // Aquí guardaremos marcas y propiedad
 
 async function cargarVehiculosDesdeBD() {
     try {
-        const response = await fetch("/qhse/gerenciamiento/vehicles");
+        const response = await fetch("/qhse/management/vehicles");
         if (!response.ok) throw new Error("Error al cargar vehículos");
 
         const data = await response.json();
@@ -1877,7 +1877,7 @@ async function cargarVehiculosDesdeBD() {
 
 async function cargarConductoresDesdeBD() {
     try {
-        const response = await fetch("/qhse/gerenciamiento/conductores");
+        const response = await fetch("/qhse/management/conductores");
         if (!response.ok) throw new Error("Error al cargar conductores");
 
         const data = await response.json();
@@ -1901,7 +1901,7 @@ async function cargarConductoresDesdeBD() {
 
 async function obtenerDestinosBackend() {
     try {
-        const response = await fetch("/qhse/gerenciamiento/get-destinations");
+        const response = await fetch("/qhse/management/get-destinations");
         const data = await response.json();
         if (data.success) {
             datosDestinosGlobal = data.data;
@@ -4343,7 +4343,7 @@ async function cargarFechaUltimaInspeccion(
     try {
         // Enviamos la fecha como parámetro de consulta
         const response = await fetch(
-            `/qhse/gerenciamiento/journeys/last-inspection/${encodeURIComponent(
+            `/qhse/management/journeys/last-inspection/${encodeURIComponent(
                 numeroEconomico,
             )}?context_date=${encodeURIComponent(fechaISO)}`,
         );
@@ -5777,7 +5777,7 @@ async function cargarAutorizadores(nivelRiesgo) {
 
     try {
         const response = await fetch(
-            `/qhse/gerenciamiento/autorizadores/${nivelRiesgo}`,
+            `/qhse/management/autorizadores/${nivelRiesgo}`,
         );
         const result = await response.json();
 
@@ -7251,7 +7251,7 @@ function enviarSolicitudAJAX() {
         data.reunion_pre_convoy = datosReunionConvoy;
     }
 
-    fetch("/qhse/gerenciamiento/journeys/store", {
+    fetch("/qhse/management/journeys/store", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -7507,7 +7507,7 @@ async function abrirModalRuta(idViaje, folioViaje) {
     });
 
     try {
-        const response = await fetch(`/qhse/gerenciamiento/journeys/${idViaje}`);
+        const response = await fetch(`/qhse/management/journeys/${idViaje}`);
         const result = await response.json();
 
         if (!result.success)
@@ -7596,7 +7596,7 @@ async function guardarEventoBackend(tipo, titulo, descripcion) {
     if (!viajeRutaActivoId) throw new Error("Sin viaje activo");
 
     const response = await fetch(
-        `/qhse/gerenciamiento/journeys/${viajeRutaActivoId}/log-event`,
+        `/qhse/management/journeys/${viajeRutaActivoId}/log-event`,
         {
             method: "POST",
             headers: {
@@ -7763,7 +7763,7 @@ async function abrirModalHistorial(folioViaje) {
         const folioReal = arguments.length > 1 ? arguments[1] : folioViaje;
         document.getElementById("lblHistorialViaje").innerText = folioReal;
 
-        const response = await fetch(`/qhse/gerenciamiento/journeys/${idViaje}`);
+        const response = await fetch(`/qhse/management/journeys/${idViaje}`);
         const result = await response.json();
 
         timeline.innerHTML = "";
@@ -7990,7 +7990,7 @@ function toggleEstadoViaje() {
         preConfirm: async () => {
             try {
                 const response = await fetch(
-                    `/qhse/gerenciamiento/journeys/${viajeRutaActivoId}/journey-status`,
+                    `/qhse/management/journeys/${viajeRutaActivoId}/journey-status`,
                     {
                         method: "PUT",
                         headers: {

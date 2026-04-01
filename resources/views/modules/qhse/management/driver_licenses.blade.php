@@ -1,4 +1,4 @@
-@extends('modulos.qhse.gerenciamiento.index')
+@extends('modules.qhse.management.index')
 
 @push('css')
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1076,7 +1076,7 @@
 
             try {
                 const res = await fetch(
-                    `{{ route('gerenciamiento.licenses') }}?page=${page}&per_page=${perPage}&search=${encodeURIComponent(search)}`, {
+                    `{{ route('management.licenses') }}?page=${page}&per_page=${perPage}&search=${encodeURIComponent(search)}`, {
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json'
@@ -1380,7 +1380,7 @@
 
             const id = document.getElementById('emp_id').value;
             const token = document.querySelector('input[name="_token"]').value;
-            const url = `/qhse/gerenciamiento/empleados/${id}/actualizar-licencias`;
+            const url = `/qhse/management/empleados/${id}/actualizar-licencias`;
 
             const body = {
                 driver_license_expires_at: getRawVal('f_lic') || null,

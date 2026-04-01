@@ -6,12 +6,12 @@ use App\Http\Controllers\Administracion\Reembolsos\ReimbursementController;
 use App\Http\Controllers\Auth\LoginController;
 
 /* CONTROLADORES DE RECURSOS QHSE */
-use App\Http\Controllers\Qhse\Gerenciamiento\DriverLicenseController;
-use App\Http\Controllers\Qhse\Gerenciamiento\JourneyController;
-use App\Http\Controllers\Qhse\Gerenciamiento\JourneyQueryController;
-use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStatusController;
-use App\Http\Controllers\Qhse\Gerenciamiento\JourneyStoreController;
-use App\Http\Controllers\Qhse\Gerenciamiento\StatsController;
+use App\Http\Controllers\Qhse\Management\DriverLicenseController;
+use App\Http\Controllers\Qhse\Management\JourneyController;
+use App\Http\Controllers\Qhse\Management\JourneyQueryController;
+use App\Http\Controllers\Qhse\Management\JourneyStatusController;
+use App\Http\Controllers\Qhse\Management\JourneyStoreController;
+use App\Http\Controllers\Qhse\Management\StatsController;
 
 /* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RH\LoadChart\ApprovalController;
@@ -225,25 +225,25 @@ Route::middleware(['web', 'auth'])->group(function () {
             // GRUPO GERENCIAMIENTO DE VIAJES
             // Prefijo: /qhse/gerenciamiento
             // ===================================================
-            Route::prefix('gerenciamiento')->group(function () {
+            Route::prefix('management')->group(function () {
                 // 1. Redirección automática
                 Route::get('/', function () {
-                    return redirect()->route('gerenciamiento.journey');
+                    return redirect()->route('management.journey');
                 })
-                    ->name('qhse.gerenciamiento')
-                    ->middleware('check.permission:qhse,gerenciamiento');
+                    ->name('qhse.management')
+                    ->middleware('check.permission:qhse,management');
 
                 // ---------------------------------------------------
                 // 2. VISTAS Y CARGA DE DATOS (Dropdowns, catálogos)
                 // Controlador: JourneyController
                 // ---------------------------------------------------
                 Route::controller(JourneyController::class)->group(function () {
-                    Route::get('/journey', 'index')->name('gerenciamiento.journey');
-                    Route::get('/employees', 'getEmployees')->name('gerenciamiento.empleados');
-                    Route::get('/get-destinations', 'getDestinations')->name('gerenciamiento.destinations');
-                    Route::get('/conductores', 'getConductores')->name('gerenciamiento.conductores');
-                    Route::get('/vehicles', 'getVehicles')->name('gerenciamiento.vehicles');
-                    Route::get('/autorizadores/{nivel}', 'getAutorizadores')->name('gerenciamiento.autorizadores');
+                    Route::get('/journey', 'index')->name('management.journey');
+                    Route::get('/employees', 'getEmployees')->name('management.empleados');
+                    Route::get('/get-destinations', 'getDestinations')->name('management.destinations');
+                    Route::get('/conductores', 'getConductores')->name('management.conductores');
+                    Route::get('/vehicles', 'getVehicles')->name('management.vehicles');
+                    Route::get('/autorizadores/{nivel}', 'getAutorizadores')->name('management.autorizadores');
                 });
 
                 // ---------------------------------------------------
@@ -252,20 +252,20 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // ---------------------------------------------------
                 // IMPORTANTE: Esta es la ruta que llama el fetch() en JS
                 Route::post('/journeys/store', [JourneyStoreController::class, 'store'])
-                    ->name('gerenciamiento.store');
+                    ->name('management.store');
 
                 // ---------------------------------------------------
                 // 4. CONSULTAS Y ESTADÍSTICAS (Tablas y Dashboard)
                 // Controlador: JourneyQueryController
                 // ---------------------------------------------------
                 Route::controller(JourneyQueryController::class)->group(function () {
-                    Route::get('/journeys', 'index')->name('gerenciamiento.list');
+                    Route::get('/journeys', 'index')->name('management.list');
                     // 👇 AQUÍ ESTÁ EL CAMBIO: Le agregamos /journeys/ antes de stats
-                    Route::get('/journeys/stats', 'getStats')->name('gerenciamiento.journeys.stats');
-                    Route::get('/journeys/next-folio', 'getNextFolio')->name('gerenciamiento.next-folio');
-                    Route::get('/journeys/last-inspection/{economic_number}', 'getLastInspectionDate')->name('gerenciamiento.last-inspection');
-                    Route::get('/destinations', 'getDestinations')->name('gerenciamiento.destinations');
-                    Route::get('/journeys/{id}', 'show')->name('gerenciamiento.show');
+                    Route::get('/journeys/stats', 'getStats')->name('management.journeys.stats');
+                    Route::get('/journeys/next-folio', 'getNextFolio')->name('management.next-folio');
+                    Route::get('/journeys/last-inspection/{economic_number}', 'getLastInspectionDate')->name('management.last-inspection');
+                    Route::get('/destinations', 'getDestinations')->name('management.destinations');
+                    Route::get('/journeys/{id}', 'show')->name('management.show');
                 });
 
                 // ---------------------------------------------------
@@ -273,11 +273,11 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // Controlador: JourneyStatusController
                 // ---------------------------------------------------
                 Route::controller(JourneyStatusController::class)->group(function () {
-                    Route::put('/journeys/{id}/approval-status', 'updateApprovalStatus')->name('gerenciamiento.approval_status');
-                    Route::put('/journeys/{id}/journey-status', 'updateJourneyStatus')->name('gerenciamiento.journey_status');
-                    Route::post('/journeys/{id}/log-event', 'logEvent')->name('gerenciamiento.log_event');
+                    Route::put('/journeys/{id}/approval-status', 'updateApprovalStatus')->name('management.approval_status');
+                    Route::put('/journeys/{id}/journey-status', 'updateJourneyStatus')->name('management.journey_status');
+                    Route::post('/journeys/{id}/log-event', 'logEvent')->name('management.log_event');
                     Route::put('/journeys/{id}/change-approver', 'changeApprover')
-                        ->name('gerenciamiento.change_approver');
+                        ->name('management.change_approver');
 
                 });
 
@@ -287,10 +287,10 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // ---------------------------------------------------
                 Route::controller(DriverLicenseController::class)->group(function () {
                     // Ruta para ver la tabla (la que pusimos en el nav)
-                    Route::get('/driver_licenses', 'index')->name('gerenciamiento.licenses');
+                    Route::get('/driver_licenses', 'index')->name('management.licenses');
 
                     // Ruta POST para guardar los datos desde el modal (AJAX)
-                    Route::post('/empleados/{id}/actualizar-licencias', 'updateLicenses')->name('gerenciamiento.update_licenses');
+                    Route::post('/empleados/{id}/actualizar-licencias', 'updateLicenses')->name('management.update_licenses');
                 });
 
                 // ---------------------------------------------------
@@ -299,7 +299,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // ---------------------------------------------------
                 Route::controller(StatsController::class)->group(function () {
                     // Usamos el método 'index' porque es la vista principal de este controlador
-                    Route::get('/stats', 'index')->name('gerenciamiento.stats');
+                    Route::get('/stats', 'index')->name('management.stats');
                 });
             });
         });

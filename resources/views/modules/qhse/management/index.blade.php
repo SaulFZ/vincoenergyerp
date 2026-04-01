@@ -13,8 +13,8 @@
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="{{ asset('assets/css/qhse/gerenciamiento/index.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/css/qhse/gerenciamiento/journey.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/qhse/management/index.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/qhse/management/journey.css') }}" rel="stylesheet">
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -70,7 +70,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    <script src="{{ asset('assets/js/qhse/gerenciamiento/index.js') }}"></script>
+    <script src="{{ asset('assets/js/qhse/management/index.js') }}"></script>
     <script src="{{ asset('assets/js/sessionTimer.js') }}"></script>
 
     @stack('scripts')

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Qhse\Gerenciamiento;
+namespace App\Http\Controllers\Qhse\Management;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -65,7 +65,7 @@ class DriverLicenseController extends Controller
         }
 
         // Carga inicial normal
-        return view('modules.qhse.gerenciamiento.driver_licenses', compact('empleados', 'perPage'));
+        return view('modules.qhse.management.driver_licenses', compact('empleados', 'perPage'));
     }
     /**
      * Recibe la petición AJAX para actualizar las fechas de los cursos y licencias

@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Qhse\Gerenciamiento;
+namespace App\Http\Controllers\Qhse\Management;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auth\User;
 use App\Models\Core\VehicleUnit;
 use App\Models\Employee;
-use App\Models\Qhse\Gerenciamiento\Destination;
+use App\Models\Qhse\Management\Destination;
 use Illuminate\Support\Facades\Auth;
 
 class JourneyController extends Controller
@@ -61,7 +61,7 @@ class JourneyController extends Controller
         ];
 
         return view(
-            'modules.qhse.gerenciamiento.journey_management',
+            'modules.qhse.management.journey_management',
             compact('userData', 'employees')
         );
     }

@@ -1,4 +1,4 @@
-@extends('modulos.qhse.gerenciamiento.index')
+@extends('modules.qhse.management.index')
 
 @section('content')
     <div class="dashboard-container">
@@ -2426,5 +2426,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/js/qhse/gerenciamiento/journey.js') }}"></script>
+    <script src="{{ asset('assets/js/qhse/management/journey.js') }}"></script>
 @endpush

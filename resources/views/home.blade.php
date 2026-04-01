@@ -123,8 +123,8 @@
                             <i class="fas fa-chevron-right arrow-icon"></i>
                         </div>
                         <ul class="nav-list active">
-                            @if (in_array('gerenciamiento', $userPermissions['qhse']) || empty($userPermissions['qhse']))
-                                <li class="nav-item" data-route="/qhse/gerenciamiento">
+                            @if (in_array('management', $userPermissions['qhse']) || empty($userPermissions['qhse']))
+                                <li class="nav-item" data-route="/qhse/management">
                                     <i class="fas fa-road nav-icon"></i>
                                     <span class="nav-text">Gerenciamiento De Viajes</span>
                                 </li>
