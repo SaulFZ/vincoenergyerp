@@ -29,7 +29,14 @@ use App\Http\Controllers\RH\LoadChart\StatsLoadController;
 use App\Http\Controllers\Systems\Tickets\TicketController;
 use App\Http\Controllers\Systems\UserManagement\UserManagementController;
 use Illuminate\Support\Facades\Route;
-
+Route::get('/crear-enlace-storage', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('storage:link');
+        return '¡Éxito! El enlace directo se creó correctamente. Ya puedes ver las fotos.';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
 // ===================================================
 // RUTAS DE AUTENTICACIÓN
 // ===================================================
