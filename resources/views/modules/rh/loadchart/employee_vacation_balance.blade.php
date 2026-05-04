@@ -10,7 +10,7 @@
             {{-- Sección del Formulario Original - OCULTA PERMANENTEMENTE --}}
             <div class="form-section" style="display: none;"></div>
 
-            <div class="list-section" style="width: 100%;">
+            <div class="list-section" style="width: 100%; max-width: 100%; min-width: 0;">
                 <div class="card">
                     <div class="card-header">
                         <div class="header-section" id="listHeader">
@@ -25,16 +25,15 @@
                             </button>
 
                             {{-- FILTROS PARA LA TABLA --}}
-                            <div class="table-filters" id="mainTableFilters" style="display: flex; gap: 10px;">
-                                {{-- ✅ CAMBIO VISUAL: "Deptos" a "Áreas" --}}
-                                <select id="filterDepartment" class="select-custom" style="padding: 10px 12px;">
+                            <div class="table-filters" id="mainTableFilters">
+                                <select id="filterDepartment" class="select-custom">
                                     <option value="">Todas las Áreas</option>
                                     @foreach ($departments as $dept)
                                         <option value="{{ $dept }}">{{ $dept }}</option>
                                     @endforeach
                                 </select>
 
-                                <select id="filterRestMode" class="select-custom" style="padding: 10px 12px;">
+                                <select id="filterRestMode" class="select-custom">
                                     <option value="">Todas las Modalidades</option>
                                     <option value="5x2">5x2</option>
                                     <option value="6x1">6x1</option>
@@ -64,19 +63,19 @@
                         </div>
                     </div>
 
-                    <div class="card-body">
-                        {{-- Contenedor para la vista de Balances Disponibles --}}
+                    <div class="card-body" style="width: 100%; overflow: hidden;">
+                        {{-- Contenedor para la vista de Balances Disponibles (Vista de Tabla Normal) --}}
                         <div id="balanceViewContainer">
                             <div class="table-responsive">
                                 <table class="data-table">
                                     <thead>
                                         <tr>
                                             <th>Empleado</th>
-                                            <th>Área</th> {{-- ✅ CAMBIADO DE DEPARTAMENTO A ÁREA --}}
+                                            <th>Área</th>
                                             <th>Fecha de Ingreso</th>
                                             <th>Años de Servicio</th>
                                             <th>Modalidad Descanso</th>
-                                            <th>Días de Vacaciones</th>
+                                            <th>Días Disponibles</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -85,28 +84,12 @@
                             </div>
                         </div>
 
-                        {{-- Contenedor para la vista de Vacaciones Tomadas --}}
-                        <div id="takenViewContainer" style="display: none;">
-                            <div class="table-responsive">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>No. Empleado</th>
-                                            <th>Nombre del Empleado</th>
-                                            <th>Fecha de Ingreso</th>
-                                            <th>Área</th>
-                                            <th>Días Disponibles</th>
-                                            <th>Últimos Días Tomados</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="takenTableBody"></tbody>
-                                </table>
-                            </div>
+                        {{-- Contenedor para la vista de Vacaciones Tomadas (Estilo Calendario Gantt Continuo) --}}
+                        <div id="takenViewContainer" style="display: none; width: 100%;">
                         </div>
 
-                        {{-- PAGINACIÓN --}}
-                        <div class="pagination-container">
+                        {{-- PAGINACIÓN (Se oculta dinámicamente en la vista Gantt) --}}
+                        <div class="pagination-container" id="mainPaginationContainer">
                             <div class="per-page-selector">
                                 <span>Mostrar:</span>
                                 <select id="perPageSelector" class="select-custom">
@@ -213,7 +196,7 @@
 
     {{-- MODAL PARA VER HISTORIAL COMPLETO DE VACACIONES --}}
     <div class="modal" id="historyModal">
-        <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
                 <h3><i class="fas fa-history"></i> Historial Completo de Vacaciones</h3>
                 <button class="close-modal" id="closeHistoryModalBtn">&times;</button>
@@ -238,25 +221,30 @@
                 <div class="history-summary"
                     style="margin-bottom: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px;">
                     <h5 style="margin: 0 0 10px 0; color: #2d3748;">Resumen</h5>
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center;">
                         <div>
-                            <div style="font-size: 24px; font-weight: bold; color: var(--success);" id="totalApproved">0
-                            </div>
-                            <div style="font-size: 12px; color: #4a5568;">Aprobados</div>
+                            <div style="font-size: 24px; font-weight: bold; color: var(--under-review);"
+                                id="totalUnderReview">0</div>
+                            <div style="font-size: 11px; color: #4a5568; font-weight: 600;">Bajo Revisión</div>
                         </div>
                         <div>
-                            <div style="font-size: 24px; font-weight: bold; color: var(--warning);" id="totalPending">0
-                            </div>
-                            <div style="font-size: 12px; color: #4a5568;">Pendientes</div>
+                            <div style="font-size: 24px; font-weight: bold; color: var(--reviewed-detail);"
+                                id="totalReviewed">0</div>
+                            <div style="font-size: 11px; color: #4a5568; font-weight: 600;">Revisados</div>
                         </div>
                         <div>
-                            <div style="font-size: 24px; font-weight: bold; color: var(--danger);" id="totalRejected">0
-                            </div>
-                            <div style="font-size: 12px; color: #4a5568;">Rechazados</div>
+                            <div style="font-size: 24px; font-weight: bold; color: var(--approved-detail);"
+                                id="totalApproved">0</div>
+                            <div style="font-size: 11px; color: #4a5568; font-weight: 600;">Aprobados</div>
                         </div>
                         <div>
+                            <div style="font-size: 24px; font-weight: bold; color: var(--rejected-detail);"
+                                id="totalRejected">0</div>
+                            <div style="font-size: 11px; color: #4a5568; font-weight: 600;">Rechazados</div>
+                        </div>
+                        <div style="border-left: 2px solid #cbd5e0;">
                             <div style="font-size: 24px; font-weight: bold; color: #4299e1;" id="totalDays">0</div>
-                            <div style="font-size: 12px; color: #4a5568;">Total Días</div>
+                            <div style="font-size: 11px; color: #4a5568; font-weight: 600;">Total Días</div>
                         </div>
                     </div>
                 </div>
@@ -282,7 +270,7 @@
         </div>
     </div>
 
-    {{-- MODAL FLOTANTE PARA GENERACIÓN DE REPORTES - MEJORADO --}}
+    {{-- MODAL FLOTANTE PARA GENERACIÓN DE REPORTES --}}
     <div class="modal" id="reportModal">
         <div class="modal-content" style="max-width: 750px;">
             <div class="modal-header"
@@ -312,7 +300,7 @@
                             </select>
                         </div>
 
-                        {{-- RANGO DE FECHAS (Visible solo para Días Tomados) --}}
+                        {{-- RANGO DE FECHAS --}}
                         <div id="date_range_group"
                             style="display: none; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border: 1px dashed #cbd5e0; padding: 15px; border-radius: 6px;">
                             <div class="form-group">
@@ -359,9 +347,9 @@
                                 </div>
                                 <div class="checkbox-group" id="employee_checkbox_group" style="max-height: 150px;">
                                     @foreach ($employees as $employee)
-                                        {{-- ✅ USAMOS EL NOMBRE DEL ÁREA --}}
                                         <label class="checkbox-label employee-option"
-                                            data-department="{{ $employee->area ? $employee->area->name : '' }}" style="display: flex;">
+                                            data-department="{{ $employee->area ? $employee->area->name : '' }}"
+                                            style="display: flex;">
                                             <input type="checkbox" name="employees[]" value="{{ $employee->id }}"
                                                 checked>
                                             {{ $employee->full_name }} ({{ $employee->employee_number ?? 'N/A' }})
@@ -371,7 +359,7 @@
                             </div>
                         </div>
 
-                        {{-- FILTRO DE ESTATUS (Opcional, solo para Días Tomados) --}}
+                        {{-- FILTRO DE ESTATUS --}}
                         <div class="form-group" id="status_filter_group"
                             style="grid-column: 1 / -1; display: none; border: 1px dashed #cbd5e0; padding: 15px; border-radius: 6px;">
                             <label><i class="fas fa-info-circle"></i> Estatus de Días Tomados</label>
@@ -395,7 +383,7 @@
                     </div>
                 </form>
 
-                {{-- Resumen/Preview - Mejorado --}}
+                {{-- Resumen/Preview --}}
                 <div class="history-summary"
                     style="margin-top: 30px; padding: 15px; background: #fffbe6; border-radius: 8px; border: 1px solid #ffe8b1;">
                     <h5 style="margin: 0 0 10px 0; color: #744210;"><i class="fas fa-check-circle"></i> Resumen del
@@ -425,9 +413,7 @@
         </div>
     </div>
 
-
     <style>
-        /* Estilos CSS (Sin cambios en las variables base, solo añado para el modal de reportes) */
         :root {
             --dark-gray: #2d3748;
             --medium-gray: #4a5568;
@@ -436,13 +422,11 @@
             --primary-blue: #283848;
             --secondary-blue: #34495e;
             --white: #ffffff;
-            /* Colores Generales (Disponible, Por Vencer, Agotado) */
             --success: #48bb78;
             --warning: #f6ad55;
             --danger: #e53e3e;
             --dark-red: #9B2C2C;
 
-            /* Colores de Estado de Detalle */
             --under-review: #ffd900;
             --reviewed-detail: #da8544;
             --approved-detail: #64946f;
@@ -453,7 +437,6 @@
             padding: 20px;
         }
 
-        /* HACEMOS QUE EL LAYOUT SEA 1 COLUMNA, ya que la sección del formulario se oculta */
         .content-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -462,10 +445,7 @@
 
         .list-section {
             width: 100%;
-            /* Asegura que la lista ocupe todo el ancho */
         }
-
-        /* Fin de ajustes de layout */
 
         .card {
             background: var(--white);
@@ -484,18 +464,78 @@
             background-color: var(--background-gray);
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
+            flex-wrap: wrap; /* Asegura responsividad en móviles */
+            gap: 15px;
         }
 
-        .card-header h3 {
+        .header-section {
+            flex: 1; /* Permite que el título ocupe el espacio principal */
+            min-width: 250px;
+        }
+
+        .card-header h1 {
             color: var(--primary-blue);
             margin: 0;
             font-size: 1.5rem;
             display: flex;
             align-items: center;
+            margin-bottom: 5px;
         }
 
-        .card-header h3 i {
-            margin-right: 10px;
+        .card-header p {
+            margin: 0;
+            color: var(--medium-gray);
+            font-size: 0.9rem;
+        }
+
+        /* ---------------------------------------------------
+           CORRECCIÓN PARA MANTENER LOS BOTONES EN UNA SOLA FILA
+           --------------------------------------------------- */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: nowrap; /* Mantiene todo estrictamente en una línea */
+            overflow-x: auto; /* Permite scroll horizontal en pantallas muy pequeñas sin desbordar */
+            padding-bottom: 4px; /* Espacio para la barra de scroll si aparece */
+        }
+
+        /* Ocultar barra de scroll en navegadores Webkit para un look más limpio */
+        .header-actions::-webkit-scrollbar {
+            height: 6px;
+        }
+        .header-actions::-webkit-scrollbar-thumb {
+            background-color: var(--light-gray);
+            border-radius: 4px;
+        }
+
+        .table-filters {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: nowrap; /* Asegura que los selects también se queden en línea */
+        }
+
+        .search-box {
+            position: relative;
+            width: 250px;
+            flex-shrink: 0; /* Evita que el buscador se encoja demasiado */
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--medium-gray);
+        }
+
+        .search-box input {
+            padding: 10px 12px 10px 35px;
+            width: 100%;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            box-sizing: border-box;
         }
 
         .card-body {
@@ -522,11 +562,6 @@
             display: block;
         }
 
-        .form-group label i {
-            margin-right: 5px;
-            color: #4299e1;
-        }
-
         .input-custom,
         .select-custom {
             width: 100%;
@@ -534,10 +569,8 @@
             border: 1px solid var(--light-gray);
             border-radius: 6px;
             font-size: 1rem;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
             background-color: var(--white);
             box-sizing: border-box;
-            /* Asegura que padding no aumente el ancho */
         }
 
         .input-custom[readonly] {
@@ -573,12 +606,14 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            border: 1px solid transparent;
+            white-space: nowrap; /* Evita que el texto del botón salte de línea */
         }
 
         .btn-primary {
             background-color: var(--primary-blue);
             color: var(--white);
-            border: 1px solid var(--primary-blue);
+            border-color: var(--primary-blue);
         }
 
         .btn-primary:hover {
@@ -589,7 +624,7 @@
         .btn-outline {
             background-color: transparent;
             color: var(--medium-gray);
-            border: 1px solid var(--light-gray);
+            border-color: var(--light-gray);
         }
 
         .btn-outline:hover {
@@ -600,7 +635,7 @@
         .btn-info {
             background-color: #4299e1;
             color: var(--white);
-            border: 1px solid #4299e1;
+            border-color: #4299e1;
         }
 
         .btn-info:hover {
@@ -608,45 +643,9 @@
             border-color: #3182ce;
         }
 
-        .header-section h1 {
-            font-size: 1.5rem;
-            color: var(--primary-blue);
-            margin-bottom: 5px;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-            /* Permite que los botones se envuelvan en pantallas pequeñas */
-        }
-
-        .search-box {
-            position: relative;
-            width: 250px;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--medium-gray);
-            font-size: 1.1rem;
-        }
-
-        .search-box input {
-            padding: 10px 12px 10px 35px;
-            width: 100%;
-            border: 1px solid var(--light-gray);
-            border-radius: 6px;
-        }
-
         .data-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            border-collapse: collapse;
         }
 
         .data-table th,
@@ -660,7 +659,6 @@
             background-color: var(--primary-blue);
             color: var(--white);
             font-weight: 600;
-            text-transform: capitalize;
         }
 
         .data-table tbody tr:hover {
@@ -682,15 +680,11 @@
             gap: 5px;
         }
 
-        /* --- MEJORAS DE BOTONES DE ACCIÓN EN TABLA --- */
         .btn-icon {
             background: none;
             border: 1px solid transparent;
-            /* Base transparente */
             padding: 8px;
-            /* Aumentar el padding para mejor área de clic */
             border-radius: 8px;
-            /* Bordes más suaves */
             cursor: pointer;
             color: var(--medium-gray);
             transition: all 0.2s ease;
@@ -698,36 +692,21 @@
 
         .btn-icon:hover {
             background: var(--light-gray);
-            /* Fondo gris claro al pasar el mouse */
             color: var(--dark-gray);
         }
 
         .btn-edit:hover {
             color: var(--approved-detail);
-            /* Color verde para editar */
             border-color: var(--approved-detail);
             background: rgba(100, 148, 111, 0.1);
-            /* Fondo muy suave de color de éxito */
         }
 
         .btn-delete:hover {
             color: var(--rejected-detail);
-            /* Color naranja/rojo para eliminar */
             border-color: var(--rejected-detail);
             background: rgba(243, 89, 0, 0.1);
-            /* Fondo muy suave de color de peligro */
         }
 
-        .btn-history:hover {
-            color: #4299e1;
-            /* Color azul para historial */
-            border-color: #4299e1;
-            background: rgba(66, 153, 225, 0.1);
-        }
-
-        /* --- FIN DE MEJORAS DE BOTONES DE ACCIÓN --- */
-
-        /* ESTILOS DE ESTATUS GENERAL (Disponible, Por Vencer, Agotado) */
         .status-badge {
             display: inline-block;
             padding: 3px 7px;
@@ -737,51 +716,14 @@
             text-transform: uppercase;
         }
 
-        .status-badge.disponible {
-            background-color: var(--success);
-            color: var(--white);
-        }
+        .status-badge.disponible { background-color: var(--success); color: var(--white); }
+        .status-badge.por_vencer { background-color: var(--warning); color: #744210; }
+        .status-badge.agotado { background-color: var(--dark-red); color: var(--white); }
+        .status-badge.under_review, .status-badge.bajo_revision { background-color: var(--under-review); color: #4b3e00; }
+        .status-badge.reviewed, .status-badge.revisado { background-color: var(--reviewed-detail); color: var(--white); }
+        .status-badge.approved, .status-badge.aprobado { background-color: var(--approved-detail); color: var(--white); }
+        .status-badge.rejected, .status-badge.rechazado { background-color: var(--rejected-detail); color: var(--white); }
 
-        .status-badge.por_vencer {
-            background-color: var(--warning);
-            color: #744210;
-        }
-
-        .status-badge.agotado {
-            background-color: var(--dark-red);
-            color: var(--white);
-        }
-
-        /* ESTILOS DE ESTATUS DE DETALLE (Bajo Revision, Aprobado, Rechazado, Revisado) */
-        .status-badge.under_review,
-        .status-badge.bajo_revision {
-            background-color: var(--under-review);
-            color: #4b3e00;
-            text-transform: capitalize;
-        }
-
-        .status-badge.reviewed,
-        .status-badge.revisado {
-            background-color: var(--reviewed-detail);
-            color: var(--white);
-            text-transform: capitalize;
-        }
-
-        .status-badge.approved,
-        .status-badge.aprobado {
-            background-color: var(--approved-detail);
-            color: var(--white);
-            text-transform: capitalize;
-        }
-
-        .status-badge.rejected,
-        .status-badge.rechazado {
-            background-color: var(--rejected-detail);
-            color: var(--white);
-            text-transform: capitalize;
-        }
-
-        /* Estilos del Modal */
         .modal {
             display: none;
             position: fixed;
@@ -790,7 +732,6 @@
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
             background-color: rgba(0, 0, 0, 0.4);
             justify-content: center;
             align-items: center;
@@ -799,27 +740,10 @@
         .modal-content {
             background-color: var(--white);
             margin: auto;
-            padding: 0;
             border-radius: 10px;
             width: 90%;
             max-width: 400px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            animation: fadeIn 0.3s;
-        }
-
-        #formModal .modal-content {
-            max-width: 600px;
-            /* Ancho para el formulario */
-        }
-
-        #historyModal .modal-content {
-            max-width: 800px;
-            /* Ancho para el historial */
-        }
-
-        #reportModal .modal-content {
-            max-width: 750px;
-            /* Ancho para el reporte */
         }
 
         .modal-header {
@@ -844,11 +768,6 @@
             padding: 20px;
         }
 
-        #confirmModal .modal-body {
-            text-align: center;
-            /* Se mantiene para el modal de confirmación */
-        }
-
         .modal-footer {
             padding: 15px 20px;
             border-top: 1px solid var(--light-gray);
@@ -860,7 +779,7 @@
         .btn-danger {
             background-color: var(--danger);
             color: var(--white);
-            border: 1px solid var(--danger);
+            border-color: var(--danger);
         }
 
         .btn-danger:hover {
@@ -868,7 +787,6 @@
             border-color: #c53030;
         }
 
-        /* --- ESTILOS DE PAGINACIÓN --- */
         .pagination-container {
             display: flex;
             justify-content: space-between;
@@ -876,11 +794,6 @@
             margin-top: 20px;
             padding-top: 10px;
             border-top: 1px solid var(--light-gray);
-        }
-
-        .per-page-selector span {
-            color: var(--dark-gray);
-            margin-right: 5px;
         }
 
         .pagination-links {
@@ -894,7 +807,6 @@
             border-radius: 6px;
             text-decoration: none;
             color: var(--primary-blue);
-            transition: background-color 0.3s, color 0.3s;
             font-size: 0.9rem;
         }
 
@@ -905,7 +817,6 @@
         .pagination-item.active {
             background-color: var(--primary-blue);
             color: var(--white);
-            border-color: var(--primary-blue);
         }
 
         .pagination-item.disabled {
@@ -915,19 +826,6 @@
             background-color: #f7fafc;
         }
 
-        /* Estilos para días disponibles con estatus integrado */
-        .days-with-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .days-count {
-            font-weight: 600;
-            color: var(--dark-gray);
-        }
-
-        /* Estilos para los nuevos elementos del modal de reportes */
         .multi-select-container {
             border: 1px solid var(--light-gray);
             border-radius: 6px;
@@ -935,7 +833,6 @@
             max-height: 200px;
             overflow-y: auto;
             background-color: var(--white);
-            box-sizing: border-box;
         }
 
         .select-all-container {
@@ -960,18 +857,10 @@
             cursor: pointer;
             padding: 5px;
             border-radius: 4px;
-            transition: background-color 0.2s;
         }
 
         .checkbox-label:hover {
             background-color: var(--background-gray);
-        }
-
-        .checkbox-label input[type="checkbox"] {
-            margin: 0;
-            width: 16px;
-            height: 16px;
-            accent-color: var(--primary-blue);
         }
 
         .btn-clear {
@@ -981,17 +870,309 @@
             padding: 4px 8px;
             font-size: 0.8rem;
             cursor: pointer;
+        }
+
+        /* =========================================================================
+           ESTILOS: GANTT SPLIT-PANE CONTINUO CON SOLUCIÓN FLEXBOX Y DRAG TO SCROLL
+           ========================================================================= */
+        .gantt-container {
+            display: flex;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            background: var(--white);
+            height: 65vh;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            margin-top: 15px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .gantt-left-panel {
+            width: 320px;
+            min-width: 320px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #e2e8f0;
+            background: var(--white);
+            z-index: 10;
+            box-shadow: 3px 0 5px rgba(0, 0, 0, 0.03);
+        }
+
+        .gantt-right-panel {
+            flex-grow: 1;
+            flex-shrink: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: #fafbfc;
+            cursor: grab;
+        }
+
+        .gantt-right-panel.is-dragging { cursor: grabbing; }
+        .gantt-right-panel.is-dragging .gantt-right-body * { user-select: none; pointer-events: none; }
+
+        .gantt-header {
+            height: 66px;
+            flex-shrink: 0;
+            background: #fafbfc;
+            border-bottom: 1px solid var(--light-gray);
+            box-sizing: border-box;
+        }
+
+        .left-header {
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+        }
+
+        .right-header {
+            overflow: hidden;
+            background: #fafbfc;
+        }
+
+        .gantt-left-body {
+            flex-grow: 1;
+            overflow: hidden;
+            background: var(--white);
+        }
+
+        .gantt-right-body {
+            flex-grow: 1;
+            overflow-x: auto;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .gantt-months-row {
+            display: flex;
+            height: 30px;
+            border-bottom: 1px solid var(--light-gray);
+            box-sizing: border-box;
+        }
+
+        .gantt-month-cell {
+            border-right: 1px solid var(--light-gray);
+            box-sizing: border-box;
+            background: #f0f4f8;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gantt-month-name-sticky {
+            position: sticky;
+            left: 0;
+            display: inline-block;
+            padding: 0 15px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            text-transform: uppercase;
+            line-height: 30px;
+            white-space: nowrap;
+        }
+
+        .gantt-days-row {
+            display: flex;
+            height: 35px;
+        }
+
+        .gantt-day-cell {
+            width: 45px;
+            min-width: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
             color: var(--medium-gray);
+            border-right: 1px dashed #edf2f7;
+            box-sizing: border-box;
         }
 
-        .btn-clear:hover {
-            background-color: var(--light-gray);
+        .gantt-day-cell.weekend {
+            background: #e2e8f0;
+            color: #718096;
         }
 
-        /* Estilos para el resumen del reporte */
-        #report-summary-text>div {
-            margin-bottom: 5px;
+        .gantt-row {
+            height: 60px;
+            border-bottom: 1px solid var(--light-gray);
+            box-sizing: border-box;
         }
+
+        .left-row {
+            display: flex;
+            padding: 0 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .employee-info-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .emp-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .emp-details {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .emp-name {
+            font-weight: 600;
+            color: var(--dark-gray);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .emp-area {
+            font-size: 0.75rem;
+            color: var(--medium-gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-history-mini {
+            background: none;
+            border: none;
+            color: var(--medium-gray);
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.2s;
+            font-size: 1.2rem;
+        }
+
+        .btn-history-mini:hover {
+            color: #4299e1;
+        }
+
+        .right-row {
+            display: flex;
+            position: relative;
+        }
+
+        .gantt-grid-cell {
+            width: 45px;
+            min-width: 45px;
+            border-right: 1px dashed #edf2f7;
+            box-sizing: border-box;
+        }
+
+        .gantt-grid-cell.weekend {
+            background: rgba(240, 244, 248, 0.5);
+        }
+
+        .timeline-event-wrapper {
+            position: absolute;
+            top: 10px;
+            height: 40px;
+            padding: 0 3px;
+            box-sizing: border-box;
+            z-index: 5;
+        }
+
+        .timeline-event {
+            border-radius: 8px;
+            padding: 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+            height: 100%;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+            overflow: hidden;
+            white-space: nowrap;
+            width: 100%;
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .timeline-event:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .event-icon-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 0 5px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .event-icon { font-size: 0.8rem; }
+
+        .event-duration-container {
+            flex-grow: 1;
+            text-align: center;
+            padding: 0 3px;
+        }
+
+        .event-duration {
+            padding: 2px 4px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .timeline-event.single-day {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2px 0;
+        }
+
+        .timeline-event.single-day .event-icon-container {
+            height: auto;
+            padding: 0;
+            border-right: none !important;
+            background-color: transparent !important;
+            margin-bottom: 2px;
+        }
+
+        .timeline-event.single-day .event-icon { font-size: 0.85rem; }
+
+        .timeline-event.single-day .event-duration-container {
+            padding: 0;
+            line-height: 1;
+        }
+
+        .timeline-event.single-day .event-duration {
+            background-color: transparent !important;
+            font-size: 0.7rem;
+            padding: 0;
+        }
+
+        .gantt-right-body::-webkit-scrollbar { width: 12px; height: 12px; }
+        .gantt-right-body::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 6px; border: 2px solid white; }
+        .gantt-right-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; border: 2px solid white; }
+        .gantt-right-body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        [title] { position: relative; }
     </style>
 
     <script>
@@ -1008,6 +1189,9 @@
             let currentAction = '';
             let currentEmployeeHistory = null;
 
+            let lastScrollLeft = null;
+            let lastScrollTop = null;
+
             // ─── Referencias DOM ───────────────────────────────────────────────────
             const perPageSelector = document.getElementById('perPageSelector');
             let itemsPerPage = parseInt(perPageSelector.value);
@@ -1016,11 +1200,12 @@
             const toggleVacationViewBtn = document.getElementById('toggleVacationView');
             const balanceViewContainer = document.getElementById('balanceViewContainer');
             const takenViewContainer = document.getElementById('takenViewContainer');
-            const takenTableBody = document.getElementById('takenTableBody');
+            const paginationContainer = document.getElementById('mainPaginationContainer');
             const paginationLinksContainer = document.getElementById('pagination-links');
             const filterDepartment = document.getElementById('filterDepartment');
             const filterRestMode = document.getElementById('filterRestMode');
             const openReportModalBtn = document.getElementById('openReportModalBtn');
+            const openAddFormBtn = document.getElementById('openAddFormBtn');
 
             const formModal = document.getElementById('formModal');
             const formTitleModal = document.getElementById('formTitleModal');
@@ -1050,8 +1235,6 @@
             const statusFilterGroup = document.getElementById('status_filter_group');
             const dateFromInput = document.getElementById('date_from');
             const dateToInput = document.getElementById('date_to');
-            const dateFromError = document.getElementById('date_from_error');
-            const dateToError = document.getElementById('date_to_error');
 
             const selectAllDepartments = document.getElementById('select_all_departments');
             const departmentCheckboxGroup = document.getElementById('department_checkbox_group');
@@ -1059,19 +1242,7 @@
             const clearEmployeesBtn = document.getElementById('clear_employees');
             const employeeCheckboxGroup = document.getElementById('employee_checkbox_group');
 
-            const summaryType = document.getElementById('summary-type');
-            const summaryDepartments = document.getElementById('summary-departments');
-            const summaryEmployees = document.getElementById('summary-employees');
-            const summaryDates = document.getElementById('summary-dates');
-            const summaryDatesText = document.getElementById('summary-dates-text');
-            const summaryStatus = document.getElementById('summary-status');
-            const summaryStatusText = document.getElementById('summary-status-text');
-
             // ─── 🔄 REFRESH SIN RECARGAR PÁGINA ───────────────────────────────────
-            /**
-             * Obtiene datos frescos del servidor y re-renderiza la tabla
-             * sin perder filtros, búsqueda, página actual ni vista activa.
-             */
             async function refreshData() {
                 try {
                     const response = await fetch('/rh/loadchart/employee_vacation_balance/data', {
@@ -1083,28 +1254,15 @@
                     });
 
                     if (!response.ok) throw new Error('Error al obtener datos');
-
                     const json = await response.json();
 
-                    // Actualizar los arrays locales con datos frescos
                     vacationBalancesData = json.vacationBalances;
                     vacationDaysTakenData = json.vacationDaysTaken;
 
-                    // Re-renderizar conservando TODO el estado actual
                     renderTableAndPagination();
 
                 } catch (error) {
                     console.error('refreshData error:', error);
-                    // Solo como fallback extremo
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Aviso',
-                            text: 'No se pudieron actualizar los datos automáticamente. Recarga la página si los cambios no se reflejan.',
-                            timer: 4000,
-                            showConfirmButton: false,
-                        });
-                    }
                 }
             }
 
@@ -1116,20 +1274,19 @@
                 return dateString;
             }
 
-            function getMonthName(monthNumber) {
-                const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            function getMonthName(monthIndex) {
+                const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+                    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
                 ];
-                return months[monthNumber - 1] || 'Mes desconocido';
+                return months[monthIndex] || 'Mes';
             }
 
-            function getAvailableDaysForTakenView(employeeName) {
-                const normalizedName = employeeName.trim().toLowerCase();
-                const balanceEntry = vacationBalancesData.find(item => {
-                    const fullName = item.employee ? item.employee.full_name : '';
-                    return fullName.toLowerCase() === normalizedName;
-                });
-                return balanceEntry ? parseInt(balanceEntry.vacation_days_available) : 0;
+            function getInitials(name) {
+                let parts = name.trim().split(' ');
+                if (parts.length >= 2) {
+                    return (parts[0][0] + parts[1][0]).toUpperCase();
+                }
+                return name.substring(0, 2).toUpperCase();
             }
 
             function translateAndStyleStatus(statusEnglish) {
@@ -1137,78 +1294,80 @@
                 const map = {
                     under_review: {
                         display: 'Bajo Revisión',
-                        class: 'bajo_revision'
+                        class: 'bajo_revision',
+                        color: 'var(--warning)',
+                        icon: 'fa-clock',
+                        text: '#4b3e00',
+                        bgIcon: 'rgba(0,0,0,0.1)',
+                        bgDuration: 'rgba(0,0,0,0.15)'
                     },
                     reviewed: {
                         display: 'Revisado',
-                        class: 'revisado'
+                        class: 'revisado',
+                        color: 'var(--reviewed-detail)',
+                        icon: 'fa-clipboard-check',
+                        text: 'white',
+                        bgIcon: 'rgba(255,255,255,0.15)',
+                        bgDuration: 'rgba(255,255,255,0.25)'
                     },
                     approved: {
                         display: 'Aprobado',
-                        class: 'aprobado'
+                        class: 'aprobado',
+                        color: 'var(--approved-detail)',
+                        icon: 'fa-umbrella-beach',
+                        text: 'white',
+                        bgIcon: 'rgba(255,255,255,0.15)',
+                        bgDuration: 'rgba(255,255,255,0.25)'
                     },
                     rejected: {
                         display: 'Rechazado',
-                        class: 'rechazado'
+                        class: 'rechazado',
+                        color: 'var(--rejected-detail)',
+                        icon: 'fa-times-circle',
+                        text: 'white',
+                        bgIcon: 'rgba(255,255,255,0.15)',
+                        bgDuration: 'rgba(255,255,255,0.25)'
                     },
                 };
                 return map[normalizedStatus] ?? {
                     display: statusEnglish,
-                    class: normalizedStatus
+                    class: normalizedStatus,
+                    color: '#a0aec0',
+                    icon: 'fa-calendar-day',
+                    text: 'white',
+                    bgIcon: 'rgba(255,255,255,0.15)',
+                    bgDuration: 'rgba(255,255,255,0.25)'
                 };
             }
 
-            function isAnniversaryApproaching(hireDateString) {
-                if (!hireDateString || hireDateString === 'N/A') return false;
-                const parts = hireDateString.split('-');
-                if (parts.length !== 3) return false;
-
-                const today = new Date();
-                const hireDay = parseInt(parts[2]);
-                const hireMonth = parseInt(parts[1]) - 1;
-                let anniversary = new Date(today.getFullYear(), hireMonth, hireDay);
-                if (anniversary < today) anniversary.setFullYear(today.getFullYear() + 1);
-
-                const diffDays = Math.ceil((anniversary.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-                return diffDays > 0 && diffDays <= 30;
+            function captureScrollPosition() {
+                const rightBody = document.getElementById('ganttRightBody');
+                if (rightBody) {
+                    lastScrollLeft = rightBody.scrollLeft;
+                    lastScrollTop = rightBody.scrollTop;
+                }
             }
 
-            function getGeneralStatus(availableDays, hireDate) {
-                if (availableDays <= 0) return {
-                    text: 'AGOTADO',
-                    class: 'agotado'
-                };
-                if (isAnniversaryApproaching(hireDate)) return {
-                    text: 'POR VENCER',
-                    class: 'por_vencer'
-                };
-                return {
-                    text: 'DISPONIBLE',
-                    class: 'disponible'
-                };
-            }
-
-            // ─── Render ────────────────────────────────────────────────────────────
+            // ─── Renderizado Principal ────────────────────────────────────────────
             function initialize() {
                 renderTableAndPagination();
             }
 
             function renderTableAndPagination() {
+
+                if (!isBalanceView) {
+                    captureScrollPosition();
+                }
+
                 const searchTerm = searchInput.value.toLowerCase();
                 const deptFilter = filterDepartment.value;
                 const modeFilter = filterRestMode.value;
-                const dataToUse = isBalanceView ? vacationBalancesData : vacationDaysTakenData;
+
+                const dataToUse = isBalanceView ? vacationBalancesData : vacationBalancesData;
 
                 const filteredData = dataToUse.filter(item => {
-                    const fullName = isBalanceView ?
-                        (item.employee ? item.employee.full_name : '') :
-                        (item.full_name ?? '');
-
-                    // ✅ AHORA OBTENEMOS EL ÁREA EN LUGAR DEL DEPARTAMENTO
-                    const departmentName = isBalanceView ?
-                        (item.employee?.area?.name ?? '') :
-                        (item.area ?? '');
-
+                    const fullName = item.employee ? item.employee.full_name : '';
+                    const departmentName = item.employee?.area?.name ?? '';
                     const restMode = item.rest_mode || '5x2';
 
                     const matchesSearch = fullName.toLowerCase().includes(searchTerm);
@@ -1218,48 +1377,51 @@
                     return matchesSearch && matchesDept && matchesMode;
                 });
 
-                const isAll = itemsPerPage === 'all';
-                const totalPages = isAll ? 1 : Math.ceil(filteredData.length / itemsPerPage);
-
-                if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
-                else if (totalPages === 0) currentPage = 1;
-
-                const startIndex = isAll ? 0 : (currentPage - 1) * itemsPerPage;
-                const endIndex = isAll ? filteredData.length : startIndex + itemsPerPage;
-                const itemsToDisplay = filteredData.slice(startIndex, endIndex);
-
                 balanceViewContainer.style.display = isBalanceView ? 'block' : 'none';
                 takenViewContainer.style.display = isBalanceView ? 'none' : 'block';
 
                 if (isBalanceView) {
+                    paginationContainer.style.display = 'flex';
+
+                    const isAll = itemsPerPage === 'all';
+                    const totalPages = isAll ? 1 : Math.ceil(filteredData.length / itemsPerPage);
+
+                    if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+                    else if (totalPages === 0) currentPage = 1;
+
+                    const startIndex = isAll ? 0 : (currentPage - 1) * itemsPerPage;
+                    const endIndex = isAll ? filteredData.length : startIndex + itemsPerPage;
+                    const itemsToDisplay = filteredData.slice(startIndex, endIndex);
+
                     renderBalanceViewHeader();
                     renderBalanceTableRows(itemsToDisplay);
                     openReportModalBtn.style.display = 'none';
+                    renderPagination(totalPages);
                 } else {
+                    paginationContainer.style.display = 'none';
+
                     renderTakenViewHeader();
-                    renderTakenTableRows(itemsToDisplay);
+                    renderTimelineCalendar(filteredData);
                     openReportModalBtn.style.display = 'inline-flex';
                 }
-
-                renderPagination(totalPages);
             }
 
             function renderBalanceViewHeader() {
-                listHeader.innerHTML = `
-            <h1><i class="fas fa-list"></i> Balances de Vacaciones Registrados</h1>
-            <p>Administra los días de vacaciones y descanso disponibles para cada empleado</p>`;
-                toggleVacationViewBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Ver Vacaciones Tomadas';
+                listHeader.innerHTML =
+                    `<h1><i class="fas fa-list"></i> Balances de Vacaciones Registrados</h1><p>Administra los días de vacaciones y descanso disponibles para cada empleado</p>`;
+                toggleVacationViewBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Ver Calendario';
                 toggleVacationViewBtn.classList.replace('btn-outline', 'btn-primary');
                 filterRestMode.style.display = 'inline-block';
+                openAddFormBtn.style.setProperty('display', 'inline-flex', 'important'); // Mostrar botón agregar
             }
 
             function renderTakenViewHeader() {
-                listHeader.innerHTML = `
-            <h1><i class="fas fa-calendar-alt"></i> Historial de Vacaciones Tomadas</h1>
-            <p>Detalle de los días de vacaciones que han sido consumidos</p>`;
+                listHeader.innerHTML =
+                    `<h1><i class="fas fa-calendar-alt"></i> Calendario de Vacaciones</h1><p>Desplázate horizontalmente (Arrastrando) para ver la línea de tiempo del personal</p>`;
                 toggleVacationViewBtn.innerHTML = '<i class="fas fa-balance-scale"></i> Ver Balances Disponibles';
                 toggleVacationViewBtn.classList.replace('btn-primary', 'btn-outline');
                 filterRestMode.style.display = 'none';
+                openAddFormBtn.style.setProperty('display', 'none', 'important'); // Ocultar botón agregar
             }
 
             function renderBalanceTableRows(items) {
@@ -1272,12 +1434,8 @@
 
                 items.forEach(balance => {
                     const row = document.createElement('tr');
-                    row.dataset.balanceId = balance.id;
                     const employeeName = balance.employee?.full_name ?? 'Empleado no encontrado';
-
-                    // ✅ AHORA MOSTRAMOS EL ÁREA
                     const departmentName = balance.employee?.area?.name ?? 'N/A';
-
                     const hireDate = balance.employee ? formatHireDate(balance.employee.hire_date) : 'N/A';
 
                     row.innerHTML = `
@@ -1286,86 +1444,348 @@
                 <td>${hireDate}</td>
                 <td>${balance.years_of_service} años</td>
                 <td><span class="badge">${balance.rest_mode || '5x2'}</span></td>
-                <td><span class="badge">${balance.vacation_days_available} días</span></td>
+                <td><span class="badge" style="background:var(--primary-blue); color:white;">${balance.vacation_days_available} días</span></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-icon btn-edit"   title="Editar"    data-balance-id="${balance.id}"><i class="fas fa-edit"></i></button>
-                        <button class="btn-icon btn-delete" title="Eliminar"  data-balance-id="${balance.id}"><i class="fas fa-trash"></i></button>
+                        <button class="btn-icon btn-edit" title="Editar" data-balance-id="${balance.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon btn-delete" title="Eliminar" data-balance-id="${balance.id}"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>`;
                     tbody.appendChild(row);
                 });
             }
 
-            function renderTakenTableRows(items) {
-                takenTableBody.innerHTML = '';
+            // =================================================================================
+            // ✅ CALENDARIO GANTT CONTINUO
+            // =================================================================================
+            function renderTimelineCalendar(items) {
+                const container = document.getElementById('takenViewContainer');
+                container.innerHTML = '';
+
                 if (!items.length) {
-                    renderEmptyState(searchInput.value, false, takenTableBody);
+                    container.innerHTML = `<table style="width:100%"><tbody id="emptyTbody"></tbody></table>`;
+                    renderEmptyState(searchInput.value, false, document.getElementById('emptyTbody'));
                     return;
                 }
 
-                items.forEach(item => {
-                    const row = document.createElement('tr');
-                    const availableDays = getAvailableDaysForTakenView(item.full_name);
-                    const generalStatus = getGeneralStatus(availableDays, item.hire_date);
+                let minDate = new Date('2099-01-01');
+                let maxDate = new Date('1900-01-01');
+                let hasData = false;
 
-                    const recentDetails = item.vacation_days_details ? [...item.vacation_days_details]
-                        .filter(d => d.date).sort((a, b) => new Date(b
-                            .date) - new Date(a.date)).slice(0, 1) : [];
-
-                    const detailHtml = recentDetails.map(detail => {
-                        const s = translateAndStyleStatus(detail.status);
-                        return `<li style="margin-bottom:2px;">
-                    ${formatHireDate(detail.date)}:
-                    <span class="status-badge ${s.class}" title="${s.display}">${s.display}</span>
-                </li>`;
-                    }).join('');
-
-                    const totalDaysTaken = item.vacation_days_details?.length ?? 0;
-                    const overflowMsg = totalDaysTaken > 1 ?
-                        `<li style="color:var(--primary-blue);font-style:italic;font-weight:600;">+${totalDaysTaken - 1} más...</li>` :
-                        '';
-
-                    row.innerHTML = `
-                <td>${item.employee_number ?? 'N/A'}</td>
-                <td>${item.full_name}</td>
-                <td>${formatHireDate(item.hire_date)}</td>
-                <td>${item.area ?? 'N/A'}</td>
-                <td>
-                    <div class="days-with-status">
-                        <span class="days-count">${availableDays} días</span>
-                        <span class="status-badge ${generalStatus.class}">${generalStatus.text}</span>
-                    </div>
-                </td>
-                <td>${totalDaysTaken > 0
-                    ? `<ul style="list-style:none;padding:0;margin:0;font-size:.9em;">${detailHtml}${overflowMsg}</ul>`
-                    : 'No hay días tomados'}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn-icon btn-history" title="Ver Historial" data-employee-id="${item.full_name}">
-                            <i class="fas fa-history"></i>
-                        </button>
-                    </div>
-                </td>`;
-                    takenTableBody.appendChild(row);
+                vacationDaysTakenData.forEach(empTaken => {
+                    if (empTaken.vacation_days_details && empTaken.vacation_days_details.length > 0) {
+                        empTaken.vacation_days_details.forEach(d => {
+                            let dt = new Date(d.date + 'T00:00:00');
+                            if (dt < minDate) minDate = dt;
+                            if (dt > maxDate) maxDate = dt;
+                            hasData = true;
+                        });
+                    }
                 });
+
+                const today = new Date();
+                if (!hasData) {
+                    minDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    maxDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                } else {
+                    minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+                    maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 2, 0);
+                }
+
+                if (today < minDate) minDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                if (today > maxDate) maxDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+                let dateColumns = [];
+                let currDate = new Date(minDate);
+                while (currDate <= maxDate) {
+                    dateColumns.push(new Date(currDate));
+                    currDate.setDate(currDate.getDate() + 1);
+                }
+
+                const dayWidth = 45;
+                const totalGridWidth = dateColumns.length * dayWidth;
+
+                let monthsHtml = '';
+                let currentMonthStr = `${dateColumns[0].getMonth()}-${dateColumns[0].getFullYear()}`;
+                let currentMonthName = getMonthName(dateColumns[0].getMonth());
+                let currentYear = dateColumns[0].getFullYear();
+                let daysInMonthCount = 0;
+
+                dateColumns.forEach((dt, i) => {
+                    let dtStr = `${dt.getMonth()}-${dt.getFullYear()}`;
+                    if (dtStr !== currentMonthStr) {
+                        monthsHtml += `
+                        <div class="gantt-month-cell" style="width: ${daysInMonthCount * dayWidth}px;">
+                            <span class="gantt-month-name-sticky">${currentMonthName} ${currentYear}</span>
+                        </div>`;
+
+                        currentMonthStr = dtStr;
+                        currentMonthName = getMonthName(dt.getMonth());
+                        currentYear = dt.getFullYear();
+                        daysInMonthCount = 1;
+                    } else {
+                        daysInMonthCount++;
+                    }
+                });
+                if (daysInMonthCount > 0) {
+                    monthsHtml += `
+                    <div class="gantt-month-cell" style="width: ${daysInMonthCount * dayWidth}px;">
+                        <span class="gantt-month-name-sticky">${currentMonthName} ${currentYear}</span>
+                    </div>`;
+                }
+
+                const daysMap = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+                let daysHtml = '';
+                dateColumns.forEach(dt => {
+                    const isWeekend = (dt.getDay() === 0 || dt.getDay() === 6);
+                    daysHtml +=
+                        `<div class="gantt-day-cell ${isWeekend ? 'weekend' : ''}">${daysMap[dt.getDay()]} ${dt.getDate()}</div>`;
+                });
+
+                let leftBodyHtml = '';
+                let rightBodyHtml = '';
+
+                items.forEach(balanceEmp => {
+                    const empName = balanceEmp.employee ? balanceEmp.employee.full_name : 'N/A';
+                    const empArea = balanceEmp.employee?.area?.name ?? 'Sin área asignada';
+                    const avatarColor = stringToColor(empName);
+
+                    leftBodyHtml += `
+                        <div class="gantt-row left-row">
+                            <div class="employee-info-cell">
+                                <div class="emp-avatar" style="background-color: ${avatarColor}">${getInitials(empName)}</div>
+                                <div class="emp-details" title="${empName}">
+                                    <span class="emp-name">${empName}</span>
+                                    <span class="emp-area">${empArea}</span>
+                                </div>
+                                <button class="btn-history-mini btn-history" title="Ver bitácora" data-employee-id="${empName}">
+                                    <i class="fas fa-user-clock"></i>
+                                </button>
+                            </div>
+                        </div>`;
+
+                    let rowRight = `<div class="gantt-row right-row" style="width: ${totalGridWidth}px;">`;
+
+                    dateColumns.forEach(dt => {
+                        const isWeekend = (dt.getDay() === 0 || dt.getDay() === 6);
+                        rowRight +=
+                            `<div class="gantt-grid-cell ${isWeekend ? 'weekend' : ''}"></div>`;
+                    });
+
+                    let takenEmp = vacationDaysTakenData.find(t => t.full_name === empName);
+                    let details = takenEmp ? (takenEmp.vacation_days_details || []).slice().sort((a, b) =>
+                        new Date(a.date) - new Date(b.date)) : [];
+
+                    let blocks = [];
+                    let currentBlock = null;
+
+                    details.forEach(d => {
+                        let dDate = new Date(d.date + 'T00:00:00');
+                        if (!currentBlock) {
+                            currentBlock = {
+                                start: dDate,
+                                end: new Date(dDate),
+                                status: d.status,
+                                count: 1
+                            };
+                        } else {
+                            let expectedNext = new Date(currentBlock.end);
+                            expectedNext.setDate(expectedNext.getDate() + 1);
+
+                            if (dDate.getTime() === expectedNext.getTime() && currentBlock
+                                .status === d.status) {
+                                currentBlock.end = new Date(dDate);
+                                currentBlock.count++;
+                            } else {
+                                blocks.push({
+                                    ...currentBlock
+                                });
+                                currentBlock = {
+                                    start: dDate,
+                                    end: new Date(dDate),
+                                    status: d.status,
+                                    count: 1
+                                };
+                            }
+                        }
+                    });
+                    if (currentBlock) blocks.push(currentBlock);
+
+                    // Posicionar Píldoras con estilos dinámicos
+                    blocks.forEach(block => {
+                        let startIndex = dateColumns.findIndex(d => d.getTime() === block.start
+                            .getTime());
+                        if (startIndex !== -1) {
+                            let leftPx = startIndex * dayWidth;
+                            let widthPx = block.count * dayWidth;
+                            let statusStyle = translateAndStyleStatus(block.status);
+                            let tooltipDate = block.count === 1 ? block.start.toLocaleDateString() :
+                                `${block.start.toLocaleDateString()} al ${block.end.toLocaleDateString()}`;
+
+                            let singleDayClass = block.count === 1 ? 'single-day' : '';
+
+                            rowRight += `
+                            <div class="timeline-event-wrapper" style="left: ${leftPx}px; width: ${widthPx}px;">
+                                <div class="timeline-event ${singleDayClass}" style="background-color: ${statusStyle.color}; color: ${statusStyle.text};" title="${statusStyle.display} | ${tooltipDate}">
+                                    <div class="event-icon-container" style="background-color: ${block.count === 1 ? 'transparent' : statusStyle.bgIcon}; border-right: ${block.count === 1 ? 'none' : '1px solid rgba(255,255,255,0.1)'};">
+                                        <span class="event-icon"><i class="fas ${statusStyle.icon}"></i></span>
+                                    </div>
+                                    <div class="event-duration-container">
+                                        <span class="event-duration" style="background-color: ${block.count === 1 ? 'transparent' : statusStyle.bgDuration};">${block.count}d</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }
+                    });
+
+                    rowRight += `</div>`;
+                    rightBodyHtml += rowRight;
+                });
+
+                const splitPaneHtml = `
+                <div class="gantt-container" id="ganttMainContainer">
+                    <div class="gantt-left-panel">
+                        <div class="gantt-header left-header">
+                            <span style="font-weight: 700; color: var(--primary-blue); font-size: 0.95rem;">Personal / Área</span>
+                        </div>
+                        <div class="gantt-left-body" id="ganttLeftBody">
+                            ${leftBodyHtml}
+                        </div>
+                    </div>
+
+                    <div class="gantt-right-panel" id="ganttRightPanel">
+                        <div class="gantt-header right-header" id="ganttRightHeader">
+                            <div style="width: ${totalGridWidth}px;">
+                                <div class="gantt-months-row">${monthsHtml}</div>
+                                <div class="gantt-days-row">${daysHtml}</div>
+                            </div>
+                        </div>
+                        <div class="gantt-right-body" id="ganttRightBody">
+                            ${rightBodyHtml}
+                        </div>
+                    </div>
+                </div>`;
+
+                container.innerHTML = splitPaneHtml;
+
+                setTimeout(() => {
+                    const rightPanel = document.getElementById('ganttRightPanel');
+                    const rightBody = document.getElementById('ganttRightBody');
+                    const leftBody = document.getElementById('ganttLeftBody');
+                    const rightHeader = document.getElementById('ganttRightHeader');
+
+                    if (rightBody && leftBody && rightHeader) {
+
+                        if (lastScrollLeft !== null) {
+                            rightBody.style.scrollBehavior = 'auto';
+                            rightBody.scrollLeft = lastScrollLeft;
+                            rightBody.scrollTop = lastScrollTop;
+                            setTimeout(() => {
+                                rightBody.style.scrollBehavior = 'smooth';
+                            }, 50);
+                        } else {
+                            let todayIndex = dateColumns.findIndex(d =>
+                                d.getFullYear() === today.getFullYear() &&
+                                d.getMonth() === today.getMonth() &&
+                                d.getDate() === today.getDate()
+                            );
+
+                            if (todayIndex === -1) {
+                                todayIndex = dateColumns.findIndex(d =>
+                                    d.getFullYear() === today.getFullYear() &&
+                                    d.getMonth() === today.getMonth()
+                                );
+                            }
+
+                            if (todayIndex !== -1) {
+                                let scrollToPx = (todayIndex * dayWidth) - (rightBody.clientWidth / 2) + (
+                                    dayWidth / 2);
+                                rightBody.scrollLeft = Math.max(0, scrollToPx);
+                            }
+                        }
+
+                        rightBody.addEventListener('scroll', () => {
+                            leftBody.scrollTop = rightBody.scrollTop;
+                            rightHeader.scrollLeft = rightBody.scrollLeft;
+                        });
+
+                        leftBody.addEventListener('wheel', (e) => {
+                            rightBody.scrollTop += e.deltaY;
+                            e.preventDefault();
+                        }, {
+                            passive: false
+                        });
+
+                        let isDown = false;
+                        let startX;
+                        let scrollLeft;
+                        let startY;
+                        let scrollTop;
+
+                        rightPanel.addEventListener('mousedown', (e) => {
+                            isDown = true;
+                            rightPanel.classList.add('is-dragging');
+                            rightBody.style.scrollBehavior = 'auto';
+
+                            startX = e.pageX - rightBody.offsetLeft;
+                            scrollLeft = rightBody.scrollLeft;
+
+                            startY = e.pageY - rightBody.offsetTop;
+                            scrollTop = rightBody.scrollTop;
+                        });
+
+                        rightPanel.addEventListener('mouseleave', () => {
+                            isDown = false;
+                            rightPanel.classList.remove('is-dragging');
+                            rightBody.style.scrollBehavior = 'smooth';
+                        });
+
+                        rightPanel.addEventListener('mouseup', () => {
+                            isDown = false;
+                            rightPanel.classList.remove('is-dragging');
+                            rightBody.style.scrollBehavior = 'smooth';
+                        });
+
+                        rightPanel.addEventListener('mousemove', (e) => {
+                            if (!isDown) return;
+                            e.preventDefault();
+
+                            const x = e.pageX - rightBody.offsetLeft;
+                            const walkX = (x - startX) * 1.5;
+                            rightBody.scrollLeft = scrollLeft - walkX;
+
+                            const y = e.pageY - rightBody.offsetTop;
+                            const walkY = (y - startY) * 1.5;
+                            rightBody.scrollTop = scrollTop - walkY;
+                        });
+                    }
+                }, 50);
+            }
+
+            function stringToColor(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                let color = '#';
+                for (let i = 0; i < 3; i++) {
+                    let value = (hash >> (i * 8)) & 0xFF;
+                    value = Math.max(50, Math.min(150, value));
+                    color += ('00' + value.toString(16)).substr(-2);
+                }
+                return color;
             }
 
             function renderEmptyState(searchTerm, isBalance, targetBody) {
-                const message = searchTerm ?
-                    'No hay registros que coincidan con la búsqueda.' :
+                const message = searchTerm ? 'No hay registros que coincidan con la búsqueda.' :
                     (isBalance ? 'No hay balances de vacaciones registrados.' :
-                        'No hay historial de vacaciones tomadas.');
-                const detail = searchTerm ?
-                    'Intenta con otro término de búsqueda o ajusta los filtros.' :
-                    (isBalance ? 'Comienza agregando un balance.' :
-                        'Asegúrate de que los empleados hayan registrado días VAC en sus bitácoras.');
+                        'No hay historial de vacaciones tomadas en la base de datos.');
 
                 targetBody.innerHTML = `
-            <tr><td colspan="7">
-                <div class="empty-state" style="text-align:center;padding:30px;">
-                    <i class="fas fa-umbrella-beach" style="font-size:3em;color:var(--light-gray);margin-bottom:10px;"></i>
-                    <h4>${message}</h4><p>${detail}</p>
+            <tr><td colspan="100%">
+                <div class="empty-state" style="text-align:center;padding:50px;">
+                    <i class="fas fa-calendar-times" style="font-size:3em;color:var(--light-gray);margin-bottom:15px;"></i>
+                    <h4 style="color:var(--dark-gray);">${message}</h4>
                 </div>
             </td></tr>`;
             }
@@ -1388,12 +1808,7 @@
                 });
                 paginationLinksContainer.appendChild(prev);
 
-                const maxShow = 5;
-                let startPage = Math.max(1, currentPage - Math.floor(maxShow / 2));
-                let endPage = Math.min(totalPages, startPage + maxShow - 1);
-                if (endPage - startPage < maxShow - 1) startPage = Math.max(1, endPage - maxShow + 1);
-
-                for (let i = startPage; i <= endPage; i++) {
+                for (let i = 1; i <= totalPages; i++) {
                     const link = document.createElement('a');
                     link.href = '#';
                     link.className = 'pagination-item';
@@ -1422,12 +1837,11 @@
                 paginationLinksContainer.appendChild(next);
             }
 
-            // ─── CRUD ──────────────────────────────────────────────────────────────
+            // ─── LÓGICA DE CRUD DE BALANCES ───────────────
             async function saveBalance() {
                 const formData = new FormData(vacationForm);
                 const balanceId = formData.get('id');
-                const url = balanceId ?
-                    `/rh/loadchart/employee_vacation_balance/${balanceId}` :
+                const url = balanceId ? `/rh/loadchart/employee_vacation_balance/${balanceId}` :
                     '/rh/loadchart/employee_vacation_balance';
 
                 if (balanceId) {
@@ -1453,9 +1867,7 @@
                     const data = await response.json();
 
                     if (response.ok) {
-                        closeFormModal(); // 🔄 Cierra el modal PRIMERO
-
-                        // 🔄 Muestra éxito y refresca datos sin perder estado
+                        closeFormModal();
                         Swal?.fire({
                             icon: 'success',
                             title: '¡Éxito!',
@@ -1463,9 +1875,7 @@
                             timer: 1500,
                             showConfirmButton: false
                         });
-
-                        await refreshData(); // 🔄 Solo actualiza datos y re-renderiza
-
+                        await refreshData();
                     } else if (response.status === 422 && data.errors) {
                         const errorMessages = Object.values(data.errors).map(e => `<li>${e[0]}</li>`).join('');
                         Swal?.fire({
@@ -1499,8 +1909,7 @@
 
             async function editBalance(balanceId) {
                 try {
-                    const response = await fetch(
-                        `/rh/loadchart/employee_vacation_balance/${balanceId}/edit`);
+                    const response = await fetch(`/rh/loadchart/employee_vacation_balance/${balanceId}/edit`);
                     const balance = await response.json();
 
                     document.getElementById('balance_id').value = balance.id;
@@ -1527,30 +1936,23 @@
             function confirmDelete(balanceId) {
                 currentBalanceId = balanceId;
                 currentAction = 'delete';
-                document.getElementById('modalTitle').innerHTML =
-                    '<i class="fas fa-trash"></i> Confirmar Eliminación';
-                document.getElementById('confirmMessage').textContent =
-                    '¿Estás seguro de eliminar este balance? Esta acción no se puede deshacer.';
-                confirmActionBtn.classList.replace('btn-primary', 'btn-danger');
                 confirmModal.style.display = 'flex';
             }
 
             async function deleteBalance(balanceId) {
                 try {
-                    const response = await fetch(
-                        `/rh/loadchart/employee_vacation_balance/${balanceId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                    .getAttribute('content'),
-                                'Accept': 'application/json',
-                            },
-                        });
+                    const response = await fetch(`/rh/loadchart/employee_vacation_balance/${balanceId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                .getAttribute('content'),
+                            'Accept': 'application/json',
+                        },
+                    });
                     const data = await response.json();
 
                     if (response.ok) {
                         confirmModal.style.display = 'none';
-
                         Swal?.fire({
                             icon: 'success',
                             title: '¡Éxito!',
@@ -1558,8 +1960,7 @@
                             timer: 2000,
                             showConfirmButton: false
                         });
-
-                        await refreshData(); // 🔄 Refresca sin recargar página
+                        await refreshData();
                     } else {
                         Swal?.fire({
                             icon: 'error',
@@ -1570,7 +1971,7 @@
                 } catch (err) {
                     Swal?.fire({
                         icon: 'error',
-                        title: 'Error de Conexión',
+                        title: 'Error',
                         text: 'Verifica tu red.'
                     });
                 }
@@ -1578,14 +1979,8 @@
 
             function resetForm() {
                 vacationForm.reset();
-                currentBalanceId = null;
-                employeeIdSelect.value = '';
-                employeeIdHidden.value = '';
-                formTitleModal.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Balance';
-                submitBtnModal.innerHTML = '<i class="fas fa-save"></i> Guardar Balance';
                 document.getElementById('balance_id').value = '';
-                document.getElementById('rest_mode').value = '5x2';
-                document.getElementById('years_of_service').value = '';
+                formTitleModal.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Balance';
             }
 
             function closeFormModal() {
@@ -1593,12 +1988,12 @@
                 resetForm();
             }
 
-            // ─── Modal Historial ───────────────────────────────────────────────────
+            // ─── Modal Historial (ACTUALIZADO A 4 ESTATUS) ─────────────────────────
             function openHistoryModal(employeeData) {
                 currentEmployeeHistory = employeeData;
                 document.getElementById('historyEmployeeName').textContent = employeeData.full_name;
                 document.getElementById('historyEmployeeNumber').textContent = employeeData.employee_number ??
-                    'N/A';
+                'N/A';
                 document.getElementById('historyEmployeeArea').textContent = employeeData.area ?? 'N/A';
                 document.getElementById('historyHireDate').textContent = formatHireDate(employeeData.hire_date);
                 renderHistoryTable(employeeData.vacation_days_details);
@@ -1607,377 +2002,167 @@
 
             function renderHistoryTable(vacationDetails) {
                 historyTableBody.innerHTML = '';
+
+                // Reseteamos los contadores
+                let underReviewCount = 0;
+                let reviewedCount = 0;
+                let approvedCount = 0;
+                let rejectedCount = 0;
+
                 if (!vacationDetails?.length) {
-                    historyTableBody.innerHTML =
-                        `<tr><td colspan="5" style="text-align:center;padding:20px;"><i class="fas fa-inbox" style="font-size:48px;color:#cbd5e0;"></i><p>No hay registros</p></td></tr>`;
-                    updateHistorySummary(0, 0, 0, 0);
+                    updateHistorySummary(0, 0, 0, 0, 0);
                     return;
                 }
 
                 const sorted = [...vacationDetails].sort((a, b) => new Date(b.date) - new Date(a.date));
-                let totalApproved = 0,
-                    totalPending = 0,
-                    totalRejected = 0;
-
                 sorted.forEach(detail => {
-                    const d = new Date(detail.date);
+                    const d = new Date(detail.date + 'T00:00:00');
                     const s = translateAndStyleStatus(detail.status);
-                    const normalized = detail.status.toLowerCase().replace(/\s/g, '_');
 
-                    if (normalized === 'approved') totalApproved++;
-                    else if (normalized === 'under_review' || normalized === 'reviewed') totalPending++;
-                    else if (normalized === 'rejected') totalRejected++;
+                    // Sumamos para el resumen de 4 Estatus
+                    if (s.class === 'bajo_revision') underReviewCount++;
+                    else if (s.class === 'revisado') reviewedCount++;
+                    else if (s.class === 'aprobado') approvedCount++;
+                    else if (s.class === 'rechazado') rejectedCount++;
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
                 <td>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}</td>
-                <td>${getMonthName(d.getMonth() + 1)}</td>
+                <td>${getMonthName(d.getMonth())}</td>
                 <td>${d.getFullYear()}</td>
-                <td><span class="status-badge ${s.class}">${s.display}</span></td>
+                <td><span class="status-badge ${s.class}" style="background-color:${s.color}; color:${s.text};">${s.display}</span></td>
                 <td>Vacaciones</td>`;
                     historyTableBody.appendChild(row);
                 });
 
-                updateHistorySummary(totalApproved, totalPending, totalRejected, sorted.length);
+                updateHistorySummary(underReviewCount, reviewedCount, approvedCount, rejectedCount, sorted.length);
             }
 
-            function updateHistorySummary(approved, pending, rejected, total) {
+            function updateHistorySummary(underReview, reviewed, approved, rejected, total) {
+                document.getElementById('totalUnderReview').textContent = underReview;
+                document.getElementById('totalReviewed').textContent = reviewed;
                 document.getElementById('totalApproved').textContent = approved;
-                document.getElementById('totalPending').textContent = pending;
                 document.getElementById('totalRejected').textContent = rejected;
                 document.getElementById('totalDays').textContent = total;
             }
 
-            function filterHistory(term) {
-                if (!currentEmployeeHistory?.vacation_days_details) return;
-                const lower = term.toLowerCase();
-                const filtered = currentEmployeeHistory.vacation_days_details.filter(detail => {
-                    const d = new Date(detail.date);
-                    const formatted =
-                        `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
-                    return formatted.includes(lower) ||
-                        getMonthName(d.getMonth() + 1).toLowerCase().includes(lower) ||
-                        d.getFullYear().toString().includes(lower) ||
-                        translateAndStyleStatus(detail.status).display.toLowerCase().includes(lower);
-                });
-                renderHistoryTable(filtered);
-            }
-
             function closeHistoryModalFunc() {
                 historyModal.style.display = 'none';
-                currentEmployeeHistory = null;
-                searchHistoryInput.value = '';
             }
 
-            // ─── Modal Reportes ────────────────────────────────────────────────────
+ // ─── LÓGICA DE REPORTES PDF ──────────────────────────────────
             function toggleReportFilters() {
                 const isTaken = reportTypeSelect.value === 'TAKEN';
                 dateRangeGroup.style.display = isTaken ? 'grid' : 'none';
                 statusFilterGroup.style.display = isTaken ? 'block' : 'none';
-                dateFromError.textContent = '';
-                dateToError.textContent = '';
-                if (!isTaken) {
-                    toggleAllEmployees(true);
-                    selectAllEmployees.checked = true;
-                    selectAllEmployees.indeterminate = false;
-                }
-                updateReportSummary();
-            }
-
-            function updateReportSummary() {
-                const reportType = reportTypeSelect.value;
-                const selDepts = getSelectedDepartments();
-                const selEmps = getSelectedEmployees();
-                const totalDepts = document.querySelectorAll('#department_checkbox_group input[type="checkbox"]')
-                    .length;
-
-                summaryType.textContent = reportType === 'AVAILABLE' ? 'Días Disponibles' : 'Días Tomados';
-
-                summaryDepartments.textContent = selDepts.length === 0 ? 'Ninguno' :
-                    selDepts.length === totalDepts ? 'Todas' :
-                    selDepts.join(', ');
-
-                summaryEmployees.textContent = selEmps.length === 0 ? 'Ninguno' :
-                    selEmps.length === employeesData.length ? 'Todos' :
-                    `${selEmps.length} empleado(s)`;
-
-                summaryDates.style.display = reportType === 'TAKEN' ? 'block' : 'none';
-                summaryStatus.style.display = reportType === 'TAKEN' ? 'block' : 'none';
-
-                if (reportType === 'TAKEN') {
-                    summaryDatesText.textContent =
-                        `${dateFromInput.value ? formatDateForDisplay(dateFromInput.value) : 'Inicio'} a ${dateToInput.value ? formatDateForDisplay(dateToInput.value) : 'Fin'}`;
-                    const statuses = getSelectedStatuses().map(s => translateAndStyleStatus(s).display);
-                    summaryStatusText.textContent = statuses.length ? statuses.join(', ') : 'Ninguno';
-                }
-            }
-
-            function formatDateForDisplay(dateString) {
-                if (!dateString) return '';
-                const d = new Date(dateString + 'T00:00:00');
-                return d.toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
-            }
-
-            function getSelectedDepartments() {
-                return [...document.querySelectorAll('#department_checkbox_group input[type="checkbox"]:checked')]
-                    .map(c => c.value);
-            }
-
-            function getSelectedEmployees() {
-                return [...document.querySelectorAll('#employee_checkbox_group input[type="checkbox"]:checked')]
-                    .map(c => c.value);
-            }
-
-            function getSelectedStatuses() {
-                return [...document.querySelectorAll('#status_filter_group input[type="checkbox"]:checked')].map(
-                    c => c.value);
-            }
-
-            function filterEmployeesByDepartment() {
-                const selDepts = getSelectedDepartments();
-                const isAll = document.querySelectorAll('#department_checkbox_group input[type="checkbox"]')
-                    .length === selDepts.length;
-                document.querySelectorAll('.employee-option').forEach(option => {
-                    const dept = option.getAttribute('data-department');
-                    const checkbox = option.querySelector('input[type="checkbox"]');
-                    if (!selDepts.length) {
-                        option.style.display = 'none';
-                        checkbox.checked = false;
-                    } else if (selDepts.includes(dept)) {
-                        option.style.display = 'flex';
-                        if (isAll) checkbox.checked = true;
-                    } else {
-                        option.style.display = 'none';
-                        checkbox.checked = false;
-                    }
-                });
-                updateEmployeeSelectAllState();
-                updateReportSummary();
-            }
-
-            function updateDepartmentSelectAllState() {
-                const all = document.querySelectorAll('#department_checkbox_group input[type="checkbox"]');
-                const checked = document.querySelectorAll(
-                    '#department_checkbox_group input[type="checkbox"]:checked').length;
-                if (!all.length) return;
-                selectAllDepartments.checked = checked === all.length;
-                selectAllDepartments.indeterminate = checked > 0 && checked < all.length;
-            }
-
-            function updateEmployeeSelectAllState() {
-                const visible = document.querySelectorAll(
-                    '.employee-option[style*="display: flex"] input[type="checkbox"]');
-                const checked = document.querySelectorAll(
-                    '.employee-option[style*="display: flex"] input[type="checkbox"]:checked').length;
-                selectAllEmployees.disabled = !visible.length;
-                selectAllEmployees.checked = !!visible.length && checked === visible.length;
-                selectAllEmployees.indeterminate = checked > 0 && checked < visible.length;
-            }
-
-            function toggleAllDepartments(checked) {
-                document.querySelectorAll('#department_checkbox_group input[type="checkbox"]').forEach(c => c
-                    .checked = checked);
-                selectAllDepartments.indeterminate = false;
-                filterEmployeesByDepartment();
-            }
-
-            function toggleAllEmployees(checked) {
-                document.querySelectorAll('.employee-option[style*="display: flex"] input[type="checkbox"]')
-                    .forEach(c => c.checked = checked);
-                selectAllEmployees.indeterminate = false;
-                updateReportSummary();
-            }
-
-            function clearAllEmployees() {
-                document.querySelectorAll('#employee_checkbox_group input[type="checkbox"]').forEach(c => c
-                    .checked = false);
-                updateEmployeeSelectAllState();
-                updateReportSummary();
-            }
-
-            function validateReportForm() {
-                let isValid = true;
-                dateFromError.textContent = '';
-                dateToError.textContent = '';
-                if (reportTypeSelect.value === 'TAKEN' && dateFromInput.value && dateToInput.value && new Date(
-                        dateFromInput.value) > new Date(dateToInput.value)) {
-                    dateToError.textContent = 'La fecha hasta debe ser igual o posterior a la fecha desde.';
-                    isValid = false;
-                }
-                return isValid;
-            }
-
-            function getReportFormData() {
-                const data = {};
-                for (let [key, value] of new FormData(reportForm).entries()) {
-                    if (key === '_token') continue;
-                    if (key.endsWith('[]')) {
-                        const k = key.slice(0, -2);
-                        data[k] = data[k] ?? [];
-                        data[k].push(value);
-                    } else {
-                        data[key] = value;
-                    }
-                }
-                data.departments = data.departments ?? [];
-                data.employees = data.employees ?? [];
-                data.status_filter = data.report_type !== 'TAKEN' ? ['Approved', 'Reviewed', 'Under_Review',
-                        'Rejected'
-                    ] :
-                    (data.status_filter?.length ? data.status_filter : ['Approved']);
-                if (data.report_type !== 'TAKEN') {
-                    data.date_from = null;
-                    data.date_to = null;
-                }
-                return data;
             }
 
             async function generateReport() {
-                if (!validateReportForm()) return;
-
                 generateReportBtn.disabled = true;
                 generateReportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
 
-                const reportData = getReportFormData();
-                const params = new URLSearchParams();
-                for (const key in reportData) {
-                    if (Array.isArray(reportData[key])) reportData[key].forEach(v => params.append(key + '[]',
-                        v));
-                    else if (reportData[key] !== null) params.append(key, reportData[key]);
-                }
-                params.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute(
-                    'content'));
+                // ✅ CORRECCIÓN: Se usa "new URLSearchParams" correctamente
+                const formData = new FormData(reportForm);
+                const params = new URLSearchParams(formData);
 
                 try {
-                    const response = await fetch(
-                        '/rh/loadchart/employee_vacation_balance/generate-report', {
-                            method: 'POST',
-                            headers: {
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: params.toString(),
-                        });
+                    const response = await fetch('/rh/loadchart/employee_vacation_balance/generate-report', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            // ✅ Agregamos explícitamente el token CSRF por seguridad
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: params,
+                    });
 
-                    if (response.headers.get('content-type')?.includes('application/json')) {
-                        const data = await response.json();
-                        if (response.status === 422 && data.errors) {
-                            const msgs = Object.values(data.errors).map(e => `<li>${e[0]}</li>`).join('');
-                            if (data.errors.date_from) dateFromError.textContent = data.errors.date_from[0];
-                            if (data.errors.date_to) dateToError.textContent = data.errors.date_to[0];
-                            Swal?.fire({
-                                icon: 'warning',
-                                title: '¡Revisa los Filtros!',
-                                html: `<ul>${msgs}</ul>`,
-                                confirmButtonText: 'Corregir'
-                            });
-                        } else {
-                            Swal?.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: data.message ?? 'Error desconocido.'
-                            });
-                        }
-                    } else if (response.ok) {
+                    // Verificamos si la respuesta es exitosa y NO es JSON (lo que significa que es el PDF)
+                    if (response.ok && !response.headers.get('content-type')?.includes('application/json')) {
                         const blob = await response.blob();
-                        const disposition = response.headers.get('Content-Disposition') ?? '';
-                        const match = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
-                        const filename = match ? match[1].replace(/['"]/g, '') : 'reporte_vacaciones.pdf';
-
                         const url = window.URL.createObjectURL(blob);
-                        const a = Object.assign(document.createElement('a'), {
-                            href: url,
-                            download: filename,
-                            style: 'display:none'
-                        });
+                        const a = document.createElement('a');
+                        a.href = url;
+
+                        // Nombre dinámico para el archivo
+                        const typeStr = reportTypeSelect.value === 'AVAILABLE' ? 'disponibles' : 'tomadas';
+                        a.download = `reporte_vacaciones_${typeStr}.pdf`;
+
                         document.body.appendChild(a);
                         a.click();
-                        document.body.removeChild(a);
-                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                        window.URL.revokeObjectURL(url); // Limpiamos la memoria
 
-                        Swal?.fire({
-                            icon: 'success',
-                            title: '¡Reporte Generado!',
-                            text: `${filename} descargado.`,
-                            timer: 3000,
-                            showConfirmButton: false
-                        });
-                        closeReportModalFunc();
+                        reportModal.style.display = 'none';
                     } else {
-                        Swal?.fire({
-                            icon: 'error',
-                            title: `Error HTTP ${response.status}`,
-                            text: 'Error en el servidor.',
-                            confirmButtonText: 'Aceptar'
-                        });
+                        // Si el backend devolvió un JSON (error de validación o error interno)
+                        const data = await response.json();
+
+                        if (response.status === 422) {
+                            // Error de validación (ej. falta seleccionar algo)
+                            const errorMessages = Object.values(data.errors).map(e => `<li>${e[0]}</li>`).join('');
+                            Swal?.fire({
+                                icon: 'warning',
+                                title: 'Faltan datos',
+                                html: `<ul style="text-align: left; margin: 0;">${errorMessages}</ul>`,
+                                confirmButtonText: 'Entendido'
+                            });
+                        } else {
+                            // Error 500 u otro
+                            Swal?.fire({
+                                icon: 'error',
+                                title: 'Error al generar',
+                                text: data.message || 'Ocurrió un problema en el servidor al crear el PDF.',
+                                confirmButtonText: 'Cerrar'
+                            });
+                        }
                     }
                 } catch (err) {
+                    console.error("Error en la petición del reporte:", err);
                     Swal?.fire({
                         icon: 'error',
-                        title: 'Error de Conexión',
-                        text: 'Verifica tu red.',
+                        title: 'Error de Red',
+                        text: 'No se pudo conectar con el servidor. Verifica tu conexión.',
                         confirmButtonText: 'Aceptar'
                     });
                 } finally {
+                    // Restauramos el botón a su estado original
                     generateReportBtn.disabled = false;
                     generateReportBtn.innerHTML = '<i class="fas fa-download"></i> Generar Reporte PDF';
                 }
             }
 
-            function closeReportModalFunc() {
-                reportModal.style.display = 'none';
-                dateFromError.textContent = '';
-                dateToError.textContent = '';
-            }
+            // ─── Listeners ────────────────────────────────────────────────────────
+            toggleVacationViewBtn.addEventListener('click', () => {
+                isBalanceView = !isBalanceView;
 
-            // ─── Event Listeners ───────────────────────────────────────────────────
-            document.getElementById('openAddFormBtn').addEventListener('click', () => {
+                if (isBalanceView) {
+                    lastScrollLeft = null;
+                    lastScrollTop = null;
+                }
+
+                currentPage = 1;
+                renderTableAndPagination();
+            });
+
+            // ✅ RECUPERAMOS LOS LISTENERS DEL FORMULARIO
+            openAddFormBtn.addEventListener('click', () => {
                 if (isBalanceView) {
                     resetForm();
                     formModal.style.display = 'flex';
                 }
             });
+
             vacationForm.addEventListener('submit', e => {
                 e.preventDefault();
                 saveBalance();
             });
+
             cancelEditModal.addEventListener('click', closeFormModal);
             closeFormModalBtn.addEventListener('click', closeFormModal);
 
-            toggleVacationViewBtn.addEventListener('click', () => {
-                isBalanceView = !isBalanceView;
-                currentPage = 1;
-                searchInput.value = '';
-                renderTableAndPagination();
-            });
 
-            perPageSelector.addEventListener('change', function() {
-                itemsPerPage = this.value === 'all' ? 'all' : parseInt(this.value);
-                currentPage = 1;
-                renderTableAndPagination();
-            });
-
-            searchInput.addEventListener('input', () => {
-                currentPage = 1;
-                renderTableAndPagination();
-            });
-            filterDepartment.addEventListener('change', () => {
-                currentPage = 1;
-                renderTableAndPagination();
-            });
-            filterRestMode.addEventListener('change', () => {
-                currentPage = 1;
-                renderTableAndPagination();
-            });
-            searchHistoryInput.addEventListener('input', function() {
-                filterHistory(this.value);
-            });
-
+            // Delegación de clics para tabla de balances e historial
             document.addEventListener('click', function(e) {
                 if (isBalanceView) {
                     const editBtn = e.target.closest('.btn-edit');
@@ -1987,74 +2172,48 @@
                 } else {
                     const historyBtn = e.target.closest('.btn-history');
                     if (historyBtn) {
-                        const emp = vacationDaysTakenData.find(i => i.full_name === historyBtn.dataset
-                            .employeeId);
-                        if (emp) openHistoryModal(emp);
+                        const empName = historyBtn.dataset.employeeId;
+                        const takenEmp = vacationDaysTakenData.find(i => i.full_name === empName);
+
+                        if (takenEmp && takenEmp.vacation_days_details && takenEmp.vacation_days_details
+                            .length > 0) {
+                            openHistoryModal(takenEmp);
+                        } else {
+                            const mockEmp = {
+                                full_name: empName,
+                                area: historyBtn.closest('.employee-info-cell').querySelector(
+                                    '.emp-area').textContent,
+                                employee_number: 'N/A',
+                                hire_date: 'N/A',
+                                vacation_days_details: []
+                            };
+                            openHistoryModal(mockEmp);
+                        }
                     }
                 }
             });
 
-            confirmActionBtn.addEventListener('click', async () => {
-                if (currentAction === 'delete' && currentBalanceId) {
-                    await deleteBalance(currentBalanceId);
-                    currentAction = '';
-                    currentBalanceId = null;
-                }
-            });
-
-            document.getElementById('cancelConfirm').addEventListener('click', () => confirmModal.style.display =
-                'none');
-            document.getElementById('closeConfirmModalBtn').addEventListener('click', () => confirmModal.style
-                .display = 'none');
-            closeHistoryModalBtn.addEventListener('click', closeHistoryModalFunc);
-            closeHistoryModal.addEventListener('click', closeHistoryModalFunc);
-
             openReportModalBtn.addEventListener('click', () => {
                 reportModal.style.display = 'flex';
                 toggleReportFilters();
-                updateReportSummary();
             });
-            closeReportModalBtn.addEventListener('click', closeReportModalFunc);
-            cancelReportModal.addEventListener('click', closeReportModalFunc);
-            reportTypeSelect.addEventListener('change', toggleReportFilters);
-            dateFromInput.addEventListener('change', () => {
-                validateReportForm();
-                updateReportSummary();
-            });
-            dateToInput.addEventListener('change', () => {
-                validateReportForm();
-                updateReportSummary();
-            });
+            closeReportModalBtn.addEventListener('click', () => reportModal.style.display = 'none');
+            cancelReportModal.addEventListener('click', () => reportModal.style.display = 'none');
             generateReportBtn.addEventListener('click', generateReport);
+            reportTypeSelect.addEventListener('change', toggleReportFilters);
+            closeHistoryModalBtn.addEventListener('click', closeHistoryModalFunc);
+            closeHistoryModal.addEventListener('click', closeHistoryModalFunc);
 
-            selectAllDepartments.addEventListener('change', function() {
-                toggleAllDepartments(this.checked);
+            searchInput.addEventListener('input', () => {
+                currentPage = 1;
+                renderTableAndPagination();
             });
-            departmentCheckboxGroup.addEventListener('change', () => {
-                updateDepartmentSelectAllState();
-                filterEmployeesByDepartment();
-            });
-            selectAllEmployees.addEventListener('change', function() {
-                toggleAllEmployees(this.checked);
-            });
-            employeeCheckboxGroup.addEventListener('change', () => {
-                updateEmployeeSelectAllState();
-                updateReportSummary();
-            });
-            clearEmployeesBtn.addEventListener('click', clearAllEmployees);
-            statusFilterGroup.addEventListener('change', updateReportSummary);
-
-            window.addEventListener('click', e => {
-                if (e.target === confirmModal) confirmModal.style.display = 'none';
-                if (e.target === formModal) closeFormModal();
-                if (e.target === historyModal) closeHistoryModalFunc();
-                if (e.target === reportModal) closeReportModalFunc();
+            filterDepartment.addEventListener('change', () => {
+                currentPage = 1;
+                renderTableAndPagination();
             });
 
-            // ─── Inicializar ───────────────────────────────────────────────────────
             initialize();
-            updateDepartmentSelectAllState();
-            updateEmployeeSelectAllState();
         });
     </script>
 @endsection

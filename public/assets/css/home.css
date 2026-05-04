@@ -1,37 +1,57 @@
 :root {
-    /* --- COLORES MARCA --- */
-    --naranja: #d67e29;
-    --naranja-hover: #e58932;
-    --naranja-suave: rgba(214, 126, 41, 0.15);
-
-    --azul: #334c95;
+    /* Colores principales */
     --azul-oscuro: #1a2a5f;
     --azul-medio: #2c4285;
+    --azul-claro: #3b57bd;
+    --naranja: #d67e29;
+    --naranja-suave: rgba(214, 126, 41, 0.15);
 
+    /* UI / Fondos */
+    --fondo-app: #f4f7fe;
     --blanco: #ffffff;
+    --borde-suave: #e2e8f0;
+
+    /* Textos */
     --texto-principal: #1e293b;
     --texto-secundario: #64748b;
-    --fondo-app: #f1f5f9;
+    --texto-sidebar: rgba(255, 255, 255, 0.7);
 
-    /* --- UI CONFIG --- */
-    --header-height: 64px;
-    --sidebar-width: 260px;
-    --radius-md: 10px;
-    --radius-sm: 6px;
-    --sombra-header: 0 2px 10px rgba(0,0,0,0.15);
-    --sombra-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --transicion: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    /* Sombras y transiciones */
+    --sombra-card: 0 4px 12px rgba(0, 0, 0, 0.03);
+    --transicion: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* RESET BÁSICO */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
 body {
-    font-family: "Poppins", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Poppins", sans-serif;
     background-color: var(--fondo-app);
     color: var(--texto-principal);
-    line-height: 1.5;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .dashboard {
@@ -39,12 +59,10 @@ body {
     min-height: 100vh;
 }
 
-/* =========================================
-   1. HEADER
-   ========================================= */
+/* === HEADER === */
 .header {
-    height: var(--header-height);
-    background-color: var(--azul-oscuro);
+    height: 70px;
+    background: var(--azul-oscuro);
     position: fixed;
     top: 0;
     width: 100%;
@@ -53,160 +71,151 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
-    box-shadow: var(--sombra-header);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .header-left {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 24px;
 }
 
-/* Contenedor del Logo + Texto */
 .brand-container {
+    cursor: pointer;
+    transition: var(--transicion);
     display: flex;
     align-items: center;
-    gap: 12px;
+    height: 100%;
 }
 
+/* LOGO BLANCO Y TRANSICIONES */
 .brand-logo {
-    height: 70px;
-    width: auto;
+    height: 45px;
+    max-width: 100%;
     object-fit: contain;
-    /* Descomenta si tu logo es negro y necesitas invertirlo a blanco */
-    /* filter: brightness(0) invert(1); */
+    transition: opacity 0.2s ease, transform 0.3s ease;
+    /* Pone el logo en blanco. Si tu logo ya es blanco, borra la línea de abajo */
+    filter: brightness(0) invert(1);
 }
 
-/* Estilo del nombre de la compañía (Parte Blanca) */
-.company-name {
-    color: var(--blanco);
-    font-size: 1.25rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin: 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    white-space: nowrap; /* Evita que se rompa en dos líneas */
+.brand-logo:hover {
+    transform: scale(1.03);
 }
 
-/* Estilo del ERP (Parte Naranja) */
-.erp-text {
-    color: var(--naranja);
-    font-weight: 800; /* Un poco más grueso para resaltar */
-    margin-left: 8px; /* Separación entre Energy y ERP */
-}
-
-/* Botón Móvil */
 .menu-toggle {
     display: none;
     background: transparent;
     border: none;
     color: var(--blanco);
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     cursor: pointer;
-    padding: 5px;
 }
 
-/* =========================================
-   2. SIDEBAR
-   ========================================= */
+/* === SIDEBAR === */
 .sidebar {
-    width: var(--sidebar-width);
+    width: 280px;
     background: var(--azul-oscuro);
     position: fixed;
-    top: var(--header-height);
+    top: 70px;
     bottom: 0;
     left: 0;
     z-index: 90;
     overflow-y: auto;
     transition: var(--transicion);
-    border-right: 1px solid rgba(255,255,255,0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-content {
-    padding: 20px 10px;
+    padding: 20px 16px;
 }
 
 .nav-group {
-    margin-bottom: 5px;
+    margin-bottom: 8px;
 }
 
-/* Headers del Menú */
 .nav-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 12px 15px;
+    align-items: center;
+    padding: 12px 16px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--texto-sidebar);
+    font-size: 0.85rem;
     font-weight: 600;
-    font-size: 0.95rem;
-    border-radius: var(--radius-sm);
-    transition: background 0.2s;
+    text-transform: uppercase;
+    border-radius: 8px;
+    transition: var(--transicion);
 }
 
 .nav-header:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--blanco);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-header.active {
     color: var(--blanco);
 }
 
 .nav-header-title {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 
 .nav-header-title i {
-    width: 20px;
+    width: 22px;
     text-align: center;
+    font-size: 1.1rem;
+    transition: color 0.3s;
+}
+
+.nav-header.active .nav-header-title i {
     color: var(--naranja);
 }
 
 .arrow-icon {
-    font-size: 0.75rem;
-    transition: transform 0.3s ease;
+    font-size: 0.8rem;
+    transition: transform 0.3s;
     opacity: 0.7;
 }
 
-/* Listas internas */
 .nav-list {
     list-style: none;
     overflow: hidden;
-    transition: max-height 0.3s ease-out;
-    background-color: rgba(0, 0, 0, 0.15);
-    border-radius: var(--radius-sm);
-    margin-top: 2px;
+    transition: max-height 0.35s ease;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    margin-top: 4px;
 }
 
-/* Items individuales */
 .nav-item {
-    padding: 10px 15px 10px 48px;
+    padding: 12px 16px 12px 48px;
+    margin: 4px 8px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9rem;
+    color: var(--texto-sidebar);
+    font-size: 0.95rem;
     cursor: pointer;
-    transition: all 0.2s;
-    border-left: 3px solid transparent;
+    transition: var(--transicion);
+    position: relative;
 }
 
 .nav-item .nav-icon {
-    margin-right: 10px;
-    font-size: 0.9rem;
-    width: 18px;
+    margin-right: 12px;
+    width: 20px;
     text-align: center;
 }
 
 .nav-item:hover {
     color: var(--blanco);
-    background-color: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(4px);
 }
 
 .nav-item.active {
-    color: var(--blanco);
-    background: linear-gradient(90deg, rgba(214, 126, 41, 0.2) 0%, transparent 100%);
-    border-left-color: var(--naranja);
+    color: var(--naranja);
+    background: var(--naranja-suave);
     font-weight: 600;
 }
 
@@ -214,91 +223,217 @@ body {
     color: var(--naranja);
 }
 
-/* =========================================
-   3. CONTENIDO PRINCIPAL
-   ========================================= */
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 15%;
+    height: 70%;
+    width: 4px;
+    background: var(--naranja);
+    border-radius: 0 4px 4px 0;
+}
+
+/* === MAIN CONTENT === */
 .main-content {
-    margin-left: var(--sidebar-width);
-    margin-top: var(--header-height);
+    margin-left: 280px;
+    margin-top: 70px;
     flex: 1;
-    padding: 30px;
-    width: 100%;
+    padding: 30px 40px;
+    transition: var(--transicion);
 }
 
 .content-wrapper {
-    max-width: 1200px;
+    max-width: 1440px;
     margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
 }
 
-/* =========================================
-   4. EMPTY STATE
-   ========================================= */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === EMPTY STATE (Notificaciones / Sin contenido) === */
 .empty-state-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 60vh;
+    height: calc(100vh - 150px);
+    /* Centra perfectamente quitando el alto del header */
 }
 
 .empty-state-card {
     background: var(--blanco);
-    padding: 50px 30px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--sombra-card);
+    padding: 60px 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--borde-suave);
     text-align: center;
-    max-width: 450px;
+    max-width: 480px;
     width: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.empty-state-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.08);
 }
 
 .icon-circle {
-    width: 80px;
-    height: 80px;
-    background-color: var(--naranja-suave);
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--naranja-suave) 0%, rgba(255, 255, 255, 0) 100%);
+    border: 1px solid var(--naranja-suave);
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
+    animation: pulseSoft 2.5s infinite;
+    /* Animación de pulso añadida */
+}
+
+@keyframes pulseSoft {
+    0% {
+        box-shadow: 0 0 0 0 rgba(214, 126, 41, 0.3);
+    }
+
+    70% {
+        box-shadow: 0 0 0 15px rgba(214, 126, 41, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(214, 126, 41, 0);
+    }
 }
 
 .icon-circle i {
-    font-size: 2.2rem;
+    font-size: 2.8rem;
     color: var(--naranja);
 }
 
 .empty-title {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     color: var(--azul-oscuro);
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     font-weight: 700;
+    letter-spacing: -0.5px;
 }
 
 .empty-description {
     color: var(--texto-secundario);
-    font-size: 1rem;
-    line-height: 1.6;
+    font-size: 1.05rem;
+    line-height: 1.7;
 }
 
-/* =========================================
-   5. RESPONSIVE
-   ========================================= */
+/* === MINIFICADO (ESCRITORIO) === */
+@media (min-width: 769px) {
+    body.sidebar-minimized .sidebar {
+        width: 85px;
+    }
+
+    body.sidebar-minimized .main-content {
+        margin-left: 85px;
+        width: calc(100% - 85px);
+    }
+
+    /* Ajustes específicos para el logo en modo minificado */
+    body.sidebar-minimized .brand-container {
+        width: 60px;
+        /* Le da el espacio justo al logo pequeño */
+        justify-content: center;
+    }
+
+    body.sidebar-minimized .brand-logo {
+        height: 38px;
+        /* Altura controlada para que no se corte */
+    }
+
+    body.sidebar-minimized .nav-header-title span,
+    body.sidebar-minimized .nav-text,
+    body.sidebar-minimized .arrow-icon {
+        display: none;
+    }
+
+    body.sidebar-minimized .nav-header {
+        justify-content: center;
+        padding: 14px 0;
+    }
+
+    body.sidebar-minimized .nav-item {
+        justify-content: center;
+        padding: 12px 0;
+    }
+
+    body.sidebar-minimized .nav-item .nav-icon {
+        margin-right: 0;
+        font-size: 1.2rem;
+    }
+
+    body.sidebar-minimized .nav-item.active::before {
+        left: 0;
+        border-radius: 0 4px 4px 0;
+    }
+
+    /* Tooltips en modo minificado */
+    body.sidebar-minimized .nav-header::after,
+    body.sidebar-minimized .nav-item::after {
+        content: attr(data-name);
+        position: absolute;
+        left: 88px;
+        top: 50%;
+        transform: translateY(-50%) translateX(-10px);
+        background: var(--azul-oscuro);
+        color: var(--blanco);
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: var(--transicion);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+
+    body.sidebar-minimized .nav-header:hover::after,
+    body.sidebar-minimized .nav-item:hover::after {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+/* === RESPONSIVE MÓVIL === */
+@media (max-width: 992px) {
+    .main-content {
+        padding: 24px;
+    }
+}
+
 @media (max-width: 768px) {
     .menu-toggle {
         display: block;
     }
 
     .header {
-        padding: 0 15px;
-    }
-
-    .company-name {
-        font-size: 1.1rem; /* Texto un poco más pequeño en móvil */
+        padding: 0 20px;
     }
 
     .sidebar {
         transform: translateX(-100%);
         width: 280px;
-        box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
     }
 
     .sidebar.open {
@@ -307,7 +442,8 @@ body {
 
     .main-content {
         margin-left: 0;
-        padding: 15px;
+        width: 100%;
+        padding: 20px;
     }
 
     .sidebar-overlay {
@@ -316,16 +452,20 @@ body {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(26, 42, 95, 0.5);
+        backdrop-filter: blur(4px);
         z-index: 80;
         opacity: 0;
         visibility: hidden;
-        transition: opacity 0.3s;
-        backdrop-filter: blur(2px);
+        transition: var(--transicion);
     }
 
     .sidebar-overlay.show {
         opacity: 1;
         visibility: visible;
+    }
+
+    .empty-state-card {
+        padding: 40px 20px;
     }
 }

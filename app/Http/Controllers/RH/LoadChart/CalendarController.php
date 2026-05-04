@@ -2,22 +2,26 @@
 namespace App\Http\Controllers\RH\LoadChart;
 
 use App\Http\Controllers\Controller;
+use App\Mail\RH\LoadChart\CommissionNotificationMail;
 use App\Models\Employee;
 use App\Models\Operations\Well;
 use App\Models\RH\LoadChart\EmployeeMonthlyWorkLog;
 use App\Models\RH\LoadChart\EmployeeVacationBalance;
 use App\Models\RH\LoadChart\FieldBonus;
 use App\Models\RH\LoadChart\FortnightlyConfig;
+use App\Models\RH\LoadChart\LoadChartAssignment;
 use App\Models\RH\LoadChart\Meal;
 use App\Models\RH\LoadChart\Services;
 use App\Models\RH\OrgManagement\Area;
 use App\Models\Supply\Procurement\SupplyContract;
+use App\Models\Auth\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 use Yasumi\Yasumi;
 
@@ -156,14 +160,14 @@ class CalendarController extends Controller
         $areaName = $employee->area ? strtolower(trim($employee->area->name)) : '';
 
         $departamentoObj = $employee->department()->first();
-        $deptName = $departamentoObj ? strtolower(trim($departamentoObj->name)) : '';
+        $deptName        = $departamentoObj ? strtolower(trim($departamentoObj->name)) : '';
 
-        $isSuministro = false;
+        $isSuministro    = false;
         $supplyContracts = collect();
         if ($employee) {
-            if (in_array($areaName, ['administracion', 'suministros', 'suministro', 'administración']) ||
-                in_array($deptName, ['administracion', 'suministros', 'suministro', 'administración'])) {
-                $isSuministro = true;
+            if (in_array($areaName, ['', 'suministros', 'suministro']) ||
+                in_array($deptName, ['', 'suministros', 'suministro'])) {
+                $isSuministro    = true;
                 $supplyContracts = SupplyContract::orderBy('number')->get();
             }
         }
@@ -370,7 +374,7 @@ class CalendarController extends Controller
         }
 
         $cleanTerm = str_replace('-', ' ', $term);
-        $keywords = array_filter(explode(' ', $cleanTerm));
+        $keywords  = array_filter(explode(' ', $cleanTerm));
 
         $query = Well::where('status', 'active');
 
@@ -415,6 +419,97 @@ class CalendarController extends Controller
         }
 
         return false;
+    }
+
+/**
+     * Envía notificaciones cuando un empleado es comisionado a un área.
+     */
+private function sendCommissionNotifications(Employee $employee, $date, $areaName, $commissionActivityType)
+    {
+        Log::info("=== INICIANDO NOTIFICACIÓN DE COMISIÓN ===");
+        Log::info("Empleado: {$employee->full_name}, Área destino: {$areaName}");
+
+        $emailsToSend = collect();
+
+        $addEmailFromUserOrEmployee = function ($user, $empRecord, $motivo) use (&$emailsToSend) {
+            $email = null;
+            if ($user && !empty(trim($user->email))) {
+                $email = trim($user->email);
+            } elseif ($empRecord && !empty(trim($empRecord->personal_email))) {
+                $email = trim($empRecord->personal_email);
+            }
+
+            if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                Log::info("✔ Correo encontrado para [$motivo]: $email");
+                $emailsToSend->push($email);
+            } else {
+                Log::warning("✖ Sin correo válido para [$motivo]");
+            }
+        };
+
+        // 1. Revisor y Aprobador
+        $assignment = LoadChartAssignment::findByEmployee($employee->id);
+        if ($assignment) {
+            if ($assignment->reviewer_id) {
+                $reviewerUser = User::find($assignment->reviewer_id);
+                $reviewerEmp  = $reviewerUser ? $reviewerUser->employee : null;
+                $addEmailFromUserOrEmployee($reviewerUser, $reviewerEmp, 'Revisor');
+            }
+            if ($assignment->approver_id) {
+                $approverUser = User::find($assignment->approver_id);
+                $approverEmp  = $approverUser ? $approverUser->employee : null;
+                $addEmailFromUserOrEmployee($approverUser, $approverEmp, 'Aprobador');
+            }
+        } else {
+            Log::warning("✖ El empleado no tiene LoadChartAssignment asignado.");
+        }
+
+        // 2. Jerarquía de Áreas
+        $area = Area::with('parentArea')->where('name', $areaName)->first();
+        $currentArea = $area;
+
+        while ($currentArea) {
+            if ($currentArea->responsible_id) {
+                $responsibleEmp = Employee::find($currentArea->responsible_id);
+                if ($responsibleEmp) {
+                    $responsibleUser = $responsibleEmp->user;
+                    $addEmailFromUserOrEmployee($responsibleUser, $responsibleEmp, "Responsable de Área: {$currentArea->name}");
+                }
+            } else {
+                Log::warning("✖ El área {$currentArea->name} no tiene responsible_id.");
+            }
+            $currentArea = $currentArea->parentArea;
+        }
+
+        // 3. Permisos
+        try {
+            $usersWithPermission = User::whereHas('directPermissions', function ($query) {
+                $query->where('name', 'recibir_notificacion_comision');
+            })->get();
+
+            Log::info("Usuarios con permiso encontrados: " . $usersWithPermission->count());
+
+            foreach ($usersWithPermission as $userWithPerm) {
+                $empWithPerm = $userWithPerm->employee;
+                $addEmailFromUserOrEmployee($userWithPerm, $empWithPerm, 'Permiso Especial');
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error buscando permisos: ' . $e->getMessage());
+        }
+
+        $uniqueEmails = $emailsToSend->unique()->values()->toArray();
+        Log::info("📧 Total de correos únicos a enviar: ", $uniqueEmails);
+
+        if (!empty($uniqueEmails)) {
+            Mail::to($uniqueEmails)->send(
+                new CommissionNotificationMail($employee, $area, $date, $commissionActivityType)
+            );
+            Log::info("✅ Correos enviados a Mailer.");
+        } else {
+            Log::warning("⚠️ No se envió el correo porque la lista de destinatarios está vacía.");
+        }
+
+        Log::info("=== FIN NOTIFICACIÓN DE COMISIÓN ===");
     }
 
     public function saveActivity(Request $request)
@@ -486,15 +581,18 @@ class CalendarController extends Controller
                     }
                 }
 
-                $activityData['has_service_bonus']         = $request->has_service_bonus;
-                $activityData['travel_destination']        = $request->travel_destination;
-                $activityData['travel_reason']             = $request->travel_reason;
+                $activityData['has_service_bonus']  = $request->has_service_bonus;
+                $activityData['travel_destination'] = $request->travel_destination;
+                $activityData['travel_reason']      = $request->travel_reason;
 
-                $activityData['contract_number']           = $activityType === 'V' ? $request->contract_number : null;
-                $activityData['travel_service_type']       = $activityType === 'V' ? $request->travel_service_type : null;
-                $activityData['is_continuation']           = $activityType === 'V' ? ($request->is_continuation ?? false) : false;
+                $activityData['contract_number']     = $activityType === 'V' ? $request->contract_number : null;
+                $activityData['travel_service_type'] = $activityType === 'V' ? $request->travel_service_type : null;
+                $activityData['is_continuation']     = $activityType === 'V' ? ($request->is_continuation ?? false) : false;
 
                 $activityData['base_activity_description'] = $activityType === 'B' ? $request->base_activity_description : null;
+
+                // Capturamos el nuevo campo de actividad en comisionado
+                $activityData['commissioned_activity_type'] = $activityType === 'C' ? $request->commissioned_activity_type : null;
 
                 if ($request->has('activity_type_vespertina')) {
                     $activityData['activity_type_vespertina']        = $request->activity_type_vespertina;
@@ -668,9 +766,25 @@ class CalendarController extends Controller
 
             $activityData['day_status'] = $this->recalculateDayStatus($activityData);
 
-            $monthlyLog->addDailyActivity($request->date, $activityData);
+    $monthlyLog->addDailyActivity($request->date, $activityData);
             $monthlyLog->save();
             DB::commit();
+
+            // INICIO - NOTIFICACIÓN DE COMISIÓN (Después del commit exitoso)
+            if (($activityData['activity_type'] ?? '') === 'C') {
+                try {
+                    $this->sendCommissionNotifications(
+                        $employee,
+                        $request->date,
+                        $request->commissioned_to,
+                        $request->commissioned_activity_type
+                    );
+                } catch (\Throwable $e) { // <--- CLAVE: Usar \Throwable aquí
+                    // Solo registramos el error, no detenemos el proceso ya que la DB se actualizó bien
+                    Log::error('Error al enviar correos de comisión: ' . $e->getMessage());
+                }
+            }
+            // FIN - NOTIFICACIÓN DE COMISIÓN
 
             return response()->json([
                 'success' => true,

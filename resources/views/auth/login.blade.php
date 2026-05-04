@@ -178,7 +178,7 @@
                 }
             });
 
-            // --- 5. LOGIN AJAX ---
+          // --- 5. LOGIN AJAX ---
             $('#loginForm').on('submit', function(e) {
                 e.preventDefault();
                 let btn = $('.btn-login');
@@ -190,8 +190,8 @@
                     data: $(this).serialize(),
                     dataType: 'json',
                     success: function(resp) {
+                        // Solo entra aquí si el código HTTP es 200 (Login exitoso)
                         if (resp.success) {
-                            // Animación de salida exitosa antes de redirigir
                             gsap.to(".login-wrapper", {
                                 duration: 0.5,
                                 opacity: 0,
@@ -207,12 +207,27 @@
                         }
                     },
                     error: function(xhr, status, error) {
+                        btn.removeClass('loading').prop('disabled', false);
+
                         if (xhr.status === 419) {
+                            // Expiración del token CSRF
                             window.location.reload();
+                        } else if (xhr.status === 401) {
+                            // 401: Credenciales incorrectas (Devuelto por tu controlador)
+                            let response = xhr.responseJSON;
+                            showError(response && response.message ? response.message : 'Credenciales inválidas.');
+                        } else if (xhr.status === 422) {
+                            // 422: Validaciones fallidas de Laravel (Ej. campos vacíos)
+                            let errors = xhr.responseJSON.errors;
+                            let errorMsg = '';
+                            for (let field in errors) {
+                                errorMsg += errors[field][0] + '<br>';
+                            }
+                            showError(errorMsg || 'Por favor, llena los campos requeridos.');
                         } else {
+                            // 500 u otros errores de servidor
                             console.error(error);
-                            showError('Sin conexión al servidor.');
-                            btn.removeClass('loading').prop('disabled', false);
+                            showError('Error de conexión al servidor.');
                         }
                     }
                 });
@@ -337,3 +352,23 @@
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

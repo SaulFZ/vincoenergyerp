@@ -149,10 +149,11 @@ function initializeModalCalendarScripts(employeeId) {
             if (this.checked) {
                 travelDestinationInput.value = this.dataset.prevDest || '';
                 travelReasonInput.value = this.dataset.prevReason || '';
-                travelDestinationInput.readOnly = true;
-                travelReasonInput.readOnly = true;
-                travelDestinationInput.style.backgroundColor = '#eef2f5';
-                travelReasonInput.style.backgroundColor = '#eef2f5';
+                // MODIFICACIÓN: Ya no se bloquean para permitir edición/adición de información
+                travelDestinationInput.readOnly = false;
+                travelReasonInput.readOnly = false;
+                travelDestinationInput.style.backgroundColor = '';
+                travelReasonInput.style.backgroundColor = '';
 
                 if (isSuministro) {
                     contractNumberInput.value = this.dataset.prevContract || '';
@@ -1124,14 +1125,14 @@ function populateModalWithActivity(activity) {
                 travelServiceTypeInput.value = activity.travel_service_type || '';
             }
 
-            // Aplicar estilos de solo lectura si es continuación
+            // Aplicar estilos si es continuación (MODIFICADO: Ya no se bloquean los inputs de viaje)
             if (isCont) {
-                travelDestinationInput.readOnly = true;
-                travelReasonInput.readOnly = true;
-                travelDestinationInput.style.backgroundColor = '#eef2f5';
-                travelReasonInput.style.backgroundColor = '#eef2f5';
+                travelDestinationInput.readOnly = false; // Ya no se bloquea
+                travelReasonInput.readOnly = false;      // Ya no se bloquea
+                travelDestinationInput.style.backgroundColor = '';
+                travelReasonInput.style.backgroundColor = '';
                 if (isSuministro) {
-                    contractNumberInput.disabled = true; // <-- Select bloqueado
+                    contractNumberInput.disabled = true; // <-- Select bloqueado (se mantiene por ser de Suministro/Contrato)
                     contractNumberInput.style.backgroundColor = '#eef2f5';
                     // Mantenemos el select de servicio desbloqueado para poder cambiar de actividad
                     travelServiceTypeInput.disabled = false;

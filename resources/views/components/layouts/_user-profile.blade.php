@@ -21,19 +21,16 @@
     $departmentName = null;
 
     if ($employee) {
-        // 1. Obtener Área (Aquí no hay choque porque ya borraste la columna de texto 'area')
+        // 1. Obtener Área
         if ($employee->area_id && $employee->area) {
             $areaName = $employee->area->name;
         }
 
         // 2. Obtener Departamento
         if ($employee->department_id) {
-            // Forzamos la relación usando los paréntesis () y ->first()
-            // para que Laravel no nos traiga la columna de texto por error.
             $deptRelation = $employee->department()->first();
             $departmentName = $deptRelation ? $deptRelation->name : null;
         } else {
-            // Si NO tiene department_id, leemos la columna vieja de texto cruda
             $textoViejo = $employee->getAttributes()['department'] ?? null;
             if (!empty($textoViejo) && $textoViejo !== $areaName) {
                 $departmentName = $textoViejo;
@@ -89,17 +86,13 @@
        ESTILOS BASE Y UTILITARIOS
      ========================================================================== */
     :root {
-        /* Colores Primarios Intensos */
         --color-primary-male: #0f5db6;
         --color-primary-male-dark: #0756b0;
         --color-primary-female: #D81B60;
         --color-primary-female-dark: #AD1457;
-
-        /* Colores Neutros de Hover y Estado */
         --color-neutral-hover: #e9ecef;
         --color-neutral-text: #343a40;
         --color-online: #28a745;
-
         --color-secondary: #6c757d;
         --color-danger: #dc3545;
         --color-success: #28a745;
@@ -176,6 +169,10 @@
         background: white;
         box-shadow: var(--sombra);
         border: 1px solid #dee2e6;
+
+        /* ✅ Evita que el contenedor crezca indefinidamente */
+        min-width: 0;
+        max-width: 220px;
     }
 
     .user-profile:hover {
@@ -188,6 +185,7 @@
         position: relative;
         width: 40px;
         height: 40px;
+        flex-shrink: 0; /* ✅ La foto nunca se encoge */
     }
 
     .user-photo,
@@ -227,10 +225,16 @@
         background-color: var(--color-online);
     }
 
+    /* ✅ CLAVE: Nombre con ellipsis cuando es muy largo */
     .user-name {
         font-weight: 600;
         font-size: 0.95rem;
         color: var(--color-dark);
+        max-width: 120px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        min-width: 0;
     }
 
     /* --- Dropdown --- */
@@ -287,16 +291,28 @@
         color: white;
         font-size: 20px;
         box-shadow: var(--sombra);
+        flex-shrink: 0;
     }
 
     .dropdown-username {
         font-weight: 700;
         font-size: 15px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 
     .dropdown-email {
         font-size: 13px;
         color: var(--color-secondary);
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .dropdown-user-info {
+        min-width: 0;
+        flex: 1;
     }
 
     .dropdown-divider {
@@ -411,7 +427,6 @@
             transform: translateY(-20px) scale(0.98);
             opacity: 0;
         }
-
         to {
             transform: translateY(0) scale(1);
             opacity: 1;
@@ -590,7 +605,6 @@
         margin-bottom: 25px;
     }
 
-    /* Stats */
     .profile-stats {
         display: flex;
         justify-content: space-around;
@@ -1041,7 +1055,6 @@
                             <div class="profile-position">{{ $employee->job_title }}</div>
                         @endif
 
-                        {{-- ✅ MODIFICADO: Mostrar Área y (si existe) Departamento --}}
                         @if ($areaName || $departmentName)
                             <div class="profile-department" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                                 @if($areaName)

@@ -14,7 +14,6 @@
 </head>
 <body>
 
-<!-- ════════ HEADER ════════ -->
 <header class="header">
     <div class="header-inner">
         <div class="header-brand">
@@ -34,10 +33,8 @@
     </div>
 </header>
 
-<!-- ════════ MAIN ════════ -->
 <main class="main-wrapper">
 
-    <!-- Stats -->
     <div class="stats-bar" id="statsBar">
         <div class="stat-card">
             <div class="stat-icon stat-icon--blue"><i class="fas fa-users"></i></div>
@@ -69,7 +66,6 @@
         </div>
     </div>
 
-    <!-- Panel tabla -->
     <div class="panel">
         <div class="panel-controls">
             <div class="search-wrap">
@@ -134,7 +130,6 @@
 
 </main>
 
-<!-- ════════ MODAL NUEVO / EDITAR ════════ -->
 <div class="modal-backdrop" id="newUserModal">
     <div class="modal-box">
 
@@ -154,14 +149,12 @@
         <div class="modal-body">
             <form id="permissionsForm" autocomplete="off">
 
-                <!-- Sección: Datos -->
                 <section class="form-section">
                     <div class="section-header">
                         <div class="section-dot"></div>
                         <h3>Datos del Usuario</h3>
                     </div>
                     <div class="form-grid">
-                        <!-- Foto -->
                         <div class="photo-col">
                             <label class="field-label">Foto</label>
                             <div class="photo-ring" id="photoPreview">
@@ -171,7 +164,7 @@
                                 </div>
                             </div>
                             <div class="photo-btns">
-                                <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                                <input type="file" id="photoInput" accept="image/*" style="width: 0; height: 0; position: absolute; opacity: 0; overflow: hidden;">
                                 <button type="button" class="btn-photo-change" onclick="document.getElementById('photoInput').click()">
                                     <i class="fas fa-upload"></i> Cambiar
                                 </button>
@@ -182,7 +175,6 @@
                             <input type="hidden" id="photo" name="photo">
                         </div>
 
-                        <!-- Campos -->
                         <div class="fields-col">
                             <div class="fields-row">
                                 <div class="field-group" style="position:relative;">
@@ -247,7 +239,6 @@
                     </div>
                 </section>
 
-                <!-- Sección: Permisos -->
                 <section class="form-section">
                     <div class="section-header">
                         <div class="section-dot"></div>
@@ -263,7 +254,6 @@
                         </button>
                     </div>
 
-                    <!-- Tab Módulos -->
                     <div id="module-permissions" class="perm-tab-content active">
                         <p class="tab-hint">Activa los módulos a los que el usuario tendrá acceso.</p>
                         <div class="modules-grid">
@@ -333,7 +323,7 @@
                                     </label>
                                 </div>
                                 <div class="mod-card-body" id="rh-body">
-                                    <label class="perm-row"><input type="checkbox" name="permissions[rh][altasempleados]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Altas de empleados</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[rh][orgmanagement]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Altas de empleados</span></label>
                                     <label class="perm-row"><input type="checkbox" name="permissions[rh][loadchart]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>L&amp;O Chart</span></label>
                                 </div>
                             </div>
@@ -423,7 +413,6 @@
                         </div>
                     </div>
 
-                    <!-- Tab Permisos directos -->
                     <div id="role-permissions" class="perm-tab-content">
                         <p class="tab-hint">Asigna permisos específicos directamente al usuario.</p>
                         <div class="direct-perms-grid" id="directPermissionsContainer">

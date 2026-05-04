@@ -1,4 +1,4 @@
-@extends('modules.rh.altas.index')
+@extends('modules.rh.orgmanagement.index')
 
 @push('styles')
     <link href="{{ asset('assets/css/rh/altas/index.css') }}" rel="stylesheet">

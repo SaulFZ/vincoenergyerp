@@ -2,10 +2,10 @@
 /* 1. ESTILOS GENERALES Y RESETS */
 /* ======================================================= */
 
-/* Variables de Color (Respetando los del Load Chart) */
+/* Variables de Color y UI */
 :root {
     --primary-blue: #334c95;
-    --blue-dark: #263a74; /* Añadido para el degradado del header nuevo */
+    --blue-dark: #263a74;
     --primary-orange: #d67e29;
     --dark-gray: #2d3748;
     --medium-gray: #4a5568;
@@ -37,6 +37,10 @@
     --payroll-start-1: #00a700;
     --payroll-start-2: #004bad;
     --payroll-end: #d61c1c;
+}
+
+html {
+    scroll-behavior: smooth; /* Mejora: Navegación fluida por anclas */
 }
 
 * {
@@ -141,6 +145,7 @@ body {
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     white-space: nowrap;
@@ -149,6 +154,12 @@ body {
 .nav-link:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-1px);
+}
+
+/* Mejora: Accesibilidad para navegación por teclado */
+.nav-link:focus-visible {
+    outline: 2px solid var(--primary-orange);
+    outline-offset: 2px;
 }
 
 .nav-link.active {
@@ -219,39 +230,31 @@ body {
         padding: 0;
     }
 
-    .logo-img {
-        width: auto !important;
-        height: 36px !important;
-    }
-
     .logo-img img {
-        height: 100%;
+        height: 36px; /* Ajuste limpio sin !important */
         width: auto;
     }
 
     .nav-main {
         flex: 1;
         flex-wrap: nowrap;
-        justify-content: flex-end; /* Alineado a la derecha en móviles */
+        justify-content: flex-end;
         gap: 12px;
         overflow-x: auto;
         scrollbar-width: none;
+        -webkit-overflow-scrolling: touch; /* Mejora: scroll suave en iOS/Móviles */
     }
 
     .nav-main::-webkit-scrollbar {
         display: none;
     }
 
-    /* Convertir enlaces a botones circulares en móvil */
     .nav-link {
         font-size: 0 !important;
         padding: 0;
         width: 38px;
         height: 38px;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         gap: 0;
         flex-shrink: 0;
     }

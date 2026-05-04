@@ -8,20 +8,15 @@ let itemsPerPage = 10;
 let totalPages   = 1;
 let editingUserId = null;
 
-// Corregido: En archivos .js externos no se puede usar Blade {{ asset() }}
 const DEFAULT_PHOTO_SRC = "/assets/img/fotouser.png";
 
-/* ── Ayudante de Rutas de Imágenes (Soporta fotos viejas y nuevas) ── */
+/* ── Ayudante de Rutas de Imágenes ── */
 function getImageUrl(path) {
     if (!path) return DEFAULT_PHOTO_SRC;
-    // Si ya es base64 o una URL completa
     if (path.startsWith('data:') || path.startsWith('http')) return path;
-    // Si es una foto vieja que ya está en public/assets
     if (path.startsWith('assets/')) return `/${path}`;
-    // Si es una foto nueva que está en storage (Ej: rh/employees/photos/...)
     if (path.startsWith('rh/')) return `/storage/${path}`;
-
-    return `/${path}`; // Por defecto
+    return `/${path}`;
 }
 
 /* ── Shuffle ── */
@@ -49,7 +44,6 @@ const MODULE_CLASSES = {
     'Almacén': 'almacen', 'Geociencias': 'geociencias',
 };
 
-/* Iconos por módulo para el modal de vista */
 const MODULE_ICONS = {
     'Administración': 'fa-cogs', 'QHSE': 'fa-shield-alt', 'Ventas': 'fa-chart-line',
     'Recursos Humanos': 'fa-users', 'Suministro': 'fa-truck',
@@ -57,7 +51,6 @@ const MODULE_ICONS = {
     'Almacén': 'fa-warehouse', 'Geociencias': 'fa-globe-americas',
 };
 
-/* Colores de icono para módulos en vista (reutiliza las clases de mod-icon) */
 const MODULE_ICON_CLASSES = {
     'Administración': 'mod--admin', 'QHSE': 'mod--qhse', 'Ventas': 'mod--ventas',
     'Recursos Humanos': 'mod--rrhh', 'Suministro': 'mod--suministro',
@@ -118,7 +111,6 @@ function animateNumber(id, target) {
 /* ── API: load users ── */
 async function loadUsers() {
     try {
-        // ✅ CORRECCIÓN: systems en lugar de sistemas, y users en lugar de roles
         const res  = await fetch('/systems/user-management/users', {
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
         });
@@ -136,7 +128,6 @@ async function loadUsers() {
 /* ── API: load roles ── */
 async function loadRoles() {
     try {
-        // ✅ CORRECCIÓN: systems en lugar de sistemas
         const res  = await fetch('/systems/user-management/get-roles', {
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
         });
@@ -154,7 +145,6 @@ async function loadRoles() {
 /* ── API: load permissions ── */
 async function loadPermissions() {
     try {
-        // ✅ CORRECCIÓN: systems en lugar de sistemas
         const res  = await fetch('/systems/user-management/get-permissions', {
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
         });
@@ -195,7 +185,6 @@ function clearDirectPermissions() {
 /* ── Search employees ── */
 async function searchEmployees(query) {
     try {
-        // ✅ CORRECCIÓN: systems en lugar de sistemas
         const res = await fetch(`/systems/user-management/search-employees?query=${encodeURIComponent(query)}`, {
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
         });
@@ -266,12 +255,23 @@ function setupPhotoUpload() {
     input.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
+
+        // Validación preventiva de peso máximo (ej: 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            Swal.fire('Foto muy pesada', 'La imagen es demasiado grande. Selecciona una menor a 2MB.', 'warning');
+            this.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = e => {
             display.src    = e.target.result;
             hidden.value   = e.target.result;
             remove.style.display = 'inline-flex';
             preview.classList.add('has-photo');
+
+            // INFALIBLE: Resetear el input para permitir reselección libre de la misma imagen
+            input.value = '';
         };
         reader.readAsDataURL(file);
     });
@@ -375,7 +375,6 @@ function viewUser(userId) {
     const totalPerms   = perms.length;
     const totalModules = Object.keys(grouped).length;
 
-    /* Construir bloques de módulos */
     const modulesHtml = totalModules
         ? shuffleArray(Object.entries(grouped)).map(([mod, ps]) => {
             const ico   = MODULE_ICONS[mod]        || 'fa-folder';
@@ -534,7 +533,7 @@ function editUser(userId) {
 
     if (user.employee_photo) {
         pd.src = getImageUrl(user.employee_photo);
-        ph.value = user.employee_photo; // Mantener la ruta original para el backend
+        ph.value = user.employee_photo;
         rb.style.display = 'inline-flex';
         pp.classList.add('has-photo');
     } else {
@@ -581,7 +580,6 @@ async function deleteUser(userId) {
     if (!confirm.isConfirmed) return;
 
     try {
-        // ✅ CORRECCIÓN: systems/user-management/users en lugar de /roles/
         const res  = await fetch(`/systems/user-management/users/${userId}`, {
             method: 'DELETE',
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
@@ -746,6 +744,16 @@ if (typeof $ !== 'undefined') {
                 $('#email').addClass('is-invalid'); hasErrors = true;
             }
 
+            // Alerta extra si se intenta enviar foto sin un employee_id ligado
+            if ($('#photo').val() && !$('#employee_id').val() && !$('#photo').val().startsWith('rh/')) {
+                Swal.fire({
+                    title: 'Advertencia',
+                    text: 'Estás subiendo una foto pero el usuario no está correctamente vinculado a un registro de empleado. Búscalo en la lista desplegable.',
+                    icon: 'warning'
+                });
+                return;
+            }
+
             if (hasErrors) {
                 Swal.fire({ title:'Campos incompletos', text:'Completa todos los campos requeridos.', icon:'error', confirmButtonColor:'#DC143C' });
                 return;
@@ -775,13 +783,11 @@ if (typeof $ !== 'undefined') {
                 });
             });
 
-            // Loading
             const btn     = document.querySelector('.btn-save');
             const origTxt = btn.innerHTML;
             btn.innerHTML = '<div class="spin-ring" style="width:14px;height:14px;border-width:2px;border-top-color:#fff;"></div>&nbsp;Guardando...';
             btn.disabled  = true;
 
-            // ✅ CORRECCIÓN: systems/user-management/users en lugar de /roles/
             const url    = editingUserId ? `/systems/user-management/users/${editingUserId}` : '/systems/user-management/users';
             const method = editingUserId ? 'PUT' : 'POST';
 
@@ -803,15 +809,18 @@ if (typeof $ !== 'undefined') {
                     }
                 },
                 error: function (xhr) {
+                    console.error("AJAX Error:", xhr); // <-- Para ver si el servidor cortó la conexión por peso
                     btn.innerHTML = origTxt; btn.disabled = false;
-                    if (xhr.responseJSON?.errors) {
+                    if (xhr.status === 413) {
+                        Swal.fire({ title:'Fallo del servidor', text:'La imagen es demasiado grande y el servidor rechazó la solicitud.', icon:'error', confirmButtonColor:'#DC143C' });
+                    } else if (xhr.responseJSON?.errors) {
                         const errs = xhr.responseJSON.errors;
                         let list = '<ul style="text-align:left;margin:.5rem 0 0;">';
                         for (const f in errs) { $(`#${f}`).addClass('is-invalid'); list += `<li>${errs[f][0]}</li>`; }
                         list += '</ul>';
                         Swal.fire({ title:'Error de validación', html:list, icon:'error', confirmButtonColor:'#DC143C' });
                     } else {
-                        Swal.fire({ title:'Error', text: xhr.responseJSON?.message || 'Error en la solicitud.', icon:'error', confirmButtonColor:'#DC143C' });
+                        Swal.fire({ title:'Error', text: xhr.responseJSON?.message || 'Error en la solicitud HTTP.', icon:'error', confirmButtonColor:'#DC143C' });
                     }
                 },
             });

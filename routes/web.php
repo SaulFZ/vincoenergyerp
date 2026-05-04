@@ -27,6 +27,11 @@ use App\Http\Controllers\RH\LoadChart\StatsLoadController;
 
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Systems\Tickets\TicketController;
+use App\Http\Controllers\Systems\Tickets\TicketQueryController;
+use App\Http\Controllers\Systems\Tickets\TicketStatsQueryController;
+use App\Http\Controllers\Systems\Tickets\TicketStatusController;
+// Arriba en tus importaciones...
+use App\Http\Controllers\Systems\Tickets\TicketStoreController;
 use App\Http\Controllers\Systems\UserManagement\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +41,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
 // Rutas para restablecer contraseña
 // PASO 1: Obtener el correo asociado al nombre de usuario (AJAX desde Login)
 Route::post('password/get-email', [LoginController::class, 'getUserEmail'])->name('password.getUserEmail');
@@ -46,8 +52,7 @@ Route::post('password/send-code', [LoginController::class, 'sendResetCode'])->na
 // PASO 3: Verificar el código ingresado (AJAX desde Login)
 Route::post('password/verify-code', [LoginController::class, 'verifyResetCode'])->name('password.verifyCode');
 
-// NUEVA RUTA: Mostrar el formulario de restablecimiento, sin parámetros en la URL (PASO 4.a)
-// El email y el token se obtendrán de la sesión.
+// PASO 4: Mostrar el formulario de restablecimiento, sin parámetros en la URL (PASO 4.a)
 Route::get('password/reset', [LoginController::class, 'showResetForm'])->name('password.resetForm');
 
 // RUTA FINAL: Actualizar la contraseña (POST desde reset.blade.php)
@@ -121,42 +126,14 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/concepts', 'getConcepts')->name('reimbursements.concepts');
                 });
 
-                // ---------------------------------------------------
-                // 3. GUARDADO DE NUEVO REEMBOLSO Y ARCHIVOS
-                // Controlador: ReimbursementStoreController
-                // ---------------------------------------------------
-                Route::post('/store', [ReimbursementStoreController::class, 'store'])
-                    ->name('reimbursements.store');
-
-                // Ruta para recibir el XML y validarlo
-                Route::post('/validate-xml', [ReimbursementStoreController::class, 'validateXmlSat'])
-                    ->name('reimbursements.validate_xml');
-
-                // ---------------------------------------------------
-                // 4. CONSULTAS Y ESTADÍSTICAS (Tablas y Folios)
-                // Controlador: ReimbursementQueryController
-                // ---------------------------------------------------
-                Route::controller(ReimbursementQueryController::class)->group(function () {
-                    Route::get('/list', 'list')->name('reimbursements.list');
-                    Route::get('/next-folio', 'getNextFolio')->name('reimbursements.next-folio');
-                    Route::get('/stats', 'getStats')->name('reimbursements.stats');
-                    Route::get('/{id}', 'show')->name('reimbursements.show');
-                });
-
-                // ---------------------------------------------------
-                // 5. ACTUALIZACIÓN DE ESTADOS Y FIRMAS (Flujo de aprobación)
-                // Controlador: ReimbursementStatusController
-                // ---------------------------------------------------
-                Route::controller(ReimbursementStatusController::class)->group(function () {
-                    // Manejo de estados: Requested -> Authorized -> Approved -> Paid
-                    Route::put('/{id}/approval-status', 'updateApprovalStatus')->name('reimbursements.approval_status');
-                    Route::post('/{id}/log-event', 'logEvent')->name('reimbursements.log_event');
-                });
             });
 
             // Aquí puedes agregar futuros submódulos de administración (ej. /nomina, /facturacion)
         });
 
+    // ===================================================
+    // MÓDULO: SISTEMAS Y SUBSISTEMAS SISTEMAS
+    // ===================================================
     Route::prefix('systems')
         ->middleware('check.permission:systems')
         ->group(function () {
@@ -197,21 +174,43 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
             });
 
-            // ---------------------------------------------------
-            // SUBSISTEMA 2: GESTIÓN DE TICKETS (SOPORTE)
-            // ---------------------------------------------------
+            // ===================================================
+            // SUBSISTEMA 2: GESTIÓN DE TICKETS (SOPORTE TI)
+            // Prefijo: /systems/tickets
+            // ===================================================
             Route::prefix('tickets')->group(function () {
-                // Redirección automática a la vista principal de tickets
+
+                // Redirección automática a la vista principal
                 Route::get('/', function () {
                     return redirect()->route('systems.tickets.index');
-                })
-                    ->name('systems.tickets')
+                })->name('systems.tickets')
                     ->middleware('check.permission:systems,tickets');
 
-                // Rutas gestionadas por TicketController
+                // 1. VISTAS PRINCIPALES
                 Route::controller(TicketController::class)->group(function () {
-                    // Cambié 'management_tickets' por 'management-tickets' para mantener el kebab-case
                     Route::get('/management-tickets', 'index')->name('systems.tickets.index');
+                    Route::get('/stats', 'stats')->name('systems.tickets.stats'); // <--- NUEVA RUTA
+                });
+
+                // 2. CONSULTAS DE DATOS (AJAX)
+                Route::controller(TicketQueryController::class)->group(function () {
+                    Route::get('/get-tickets', 'getTickets')->name('systems.tickets.get');
+                    Route::get('/show/{id}', 'show')->name('systems.tickets.show');
+                });
+
+                // 3. CREACIÓN DE REGISTROS
+                Route::controller(TicketStoreController::class)->group(function () {
+                    Route::post('/store', 'store')->name('systems.tickets.store');
+                });
+
+                // 4. ACTUALIZACIÓN DE ESTADOS
+                Route::controller(TicketStatusController::class)->group(function () {
+                    Route::put('/update-status/{id}', 'update')->name('systems.tickets.update');
+                });
+
+                // 5. CONSULTAS DE ESTADÍSTICAS (Tu nueva lógica)
+                Route::controller(TicketStatsQueryController::class)->group(function () {
+                    Route::get('/get-global-stats', 'getGlobalStats')->name('systems.tickets.stats.data');
                 });
             });
         });
@@ -432,11 +431,11 @@ Route::middleware(['web', 'auth'])->group(function () {
             });
 
             // Subsistemas de RRHH (Rutas que no son de LoadChart)
-            Route::get('/altasempleados', function () {
-                return view('modules.rh.altas.employees');
+            Route::get('/orgmanagement', function () {
+                return view('modules.rh.orgmanagement.employees');
             })
-                ->middleware('check.permission:rh,altasempleados')
-                ->name('rh.altasempleados');
+                ->middleware('check.permission:rh,orgmanagement')
+                ->name('rh.orgmanagement');
         });
 
     // ===================================================
