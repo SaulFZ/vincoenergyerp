@@ -5,56 +5,67 @@ namespace App\Http\Controllers\Systems\Tickets;
 use App\Http\Controllers\Controller;
 use App\Models\Systems\Tickets\Ticket;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-class TicketQueryController extends Controller
+class TicketStoreController extends Controller
 {
-    /** Obtiene los datos para la tabla principal */
-    public function getTickets(Request $request)
+    /**
+     * Procesa la creación de un nuevo ticket desde el portal de usuario.
+     * Implementa validación estricta y transacciones ACID para evitar huérfanos.
+     */
+    public function store(Request $request)
     {
-        // Cargamos la relación del área a través del empleado del usuario
-        $tickets = Ticket::with(['user.employee.area', 'assignedTo'])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($ticket) {
-                return [
-                    'id'              => $ticket->id,
-                    'display_id'      => $ticket->display_id, // TK-001
-                    'folio'           => $ticket->folio,
-                    'created_at'      => $ticket->created_at->format('d/m/Y'),
-                    'subject'         => $ticket->subject,
-                    'user_name'       => $ticket->user->name ?? 'N/A',
-                    // Buscamos el nombre del área; si falla, mostramos el código como respaldo
-                    'department_name' => $ticket->user->employee->area->name ?? $ticket->department_code,
-                    'priority'        => $ticket->priority,
-                    'status'          => $ticket->status,
-                ];
+        // 1. Validación Minimalista: Solo requerimos lo que el usuario realmente aporta.
+        // La prioridad y el estado han sido delegados completamente a la lógica de negocio.
+        $request->validate([
+            'area_code'   => 'required|string|max:10',
+            'subject'     => 'required|string|max:255',
+            'description' => 'required|string',
+        ]);
+
+        try {
+            // 2. Transacción de Base de Datos (ACID Compliance)
+            return DB::transaction(function () use ($request) {
+
+                $code = strtoupper(trim($request->area_code));
+
+                // 3. Generación Concurrente del Folio (Pessimistic Read avoidance approach)
+                // En sistemas de alto tráfico, calcular el max() es más seguro que count() si se borran registros,
+                // pero count() funciona bien si usamos SoftDeletes.
+                $count = Ticket::where('department_code', $code)->count();
+                $folio = $code . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+
+                // 4. Inserción con Default Triage
+                $ticket = Ticket::create([
+                    'folio'           => $folio,
+                    'department_code' => $code,
+                    'user_id'         => auth()->id(),
+                    'subject'         => $request->subject,
+                    'description'     => $request->description,
+                    'priority'        => 'media', // Asignación automática para evaluación de Sistemas
+                    'status'          => 'nuevo', // Estado inicial inmutable por el usuario
+                ]);
+
+                // 5. Respuesta JSON Inmediata para el renderizado asíncrono
+                return response()->json([
+                    'success' => true,
+                    'message' => 'El ticket ha sido registrado en la cola de soporte.',
+                    'folio'   => $folio
+                ], 201);
             });
 
-        return response()->json($tickets);
-    }
+        } catch (\Exception $e) {
+            // 6. Registro Silencioso de Errores Críticos (Log)
+            Log::critical('[Vinco One ERP] Error en creación de Ticket: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'payload' => $request->all()
+            ]);
 
-    /** Obtiene 1 solo ticket para llenar el Panel Lateral */
-    public function show($id)
-    {
-        // Cargamos la misma relación para el detalle
-        $ticket = Ticket::with(['user.employee.area', 'trackings.user'])->findOrFail($id);
-
-        return response()->json([
-            'success' => true,
-            'ticket'  => [
-                'id'              => $ticket->id,
-                'display_id'      => $ticket->display_id,
-                'folio'           => $ticket->folio,
-                'status'          => $ticket->status,
-                'priority'        => $ticket->priority,
-                'subject'         => $ticket->subject,
-                'description'     => $ticket->description,
-                // Agregamos el nombre del departamento aquí también
-                'department_name' => $ticket->user->employee->area->name ?? $ticket->department_code,
-                'user_name'       => $ticket->user->name ?? 'N/A',
-                'created_at'      => $ticket->created_at->format('d/m/Y'),
-                'trackings'       => $ticket->trackings // Historial de comentarios
-            ]
-        ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Fallo de integridad al registrar el ticket. El equipo técnico ha sido notificado.'
+            ], 500);
+        }
     }
 }
