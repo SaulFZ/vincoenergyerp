@@ -43,7 +43,7 @@ class TicketStoreController extends Controller
                     'user_id'         => auth()->id(),
                     'subject'         => $request->subject,
                     'description'     => $request->description,
-                    'priority'        => 'media', // Asignación automática para evaluación de Sistemas
+                    'priority'        => 'sin clasificar', // Asignación automática para evaluación de Sistemas
                     'status'          => 'nuevo', // Estado inicial inmutable por el usuario
                 ]);
 
