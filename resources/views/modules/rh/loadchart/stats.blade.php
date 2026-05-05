@@ -1162,6 +1162,63 @@
                     </table>
                 </div>
 
+                {{-- NUVAS TABLAS: TRIMESTRE (Q) y AREAS --}}
+                <div style="margin-top: 30px;">
+                    <h3 class="table-subtitle" style="margin-bottom:15px;">RESUMEN POR TRIMESTRE (Q)</h3>
+                    <div class="table-container" style="margin-bottom: 25px;">
+                        <table id="utilizacion-q-table" class="data-table" style="min-width: 1200px;">
+                            <thead>
+                                <tr>
+                                    <th class="sticky-col text-left">TRIMESTRE</th>
+                                    <th class="text-center">BASE</th><th class="text-center">POZO</th><th class="text-center">COMISIÓN</th><th class="text-center">CASA</th><th class="text-center">VIAJE</th>
+                                    <th class="text-center">DESCANSO</th><th class="text-center">VACACIONES</th><th class="text-center">MÉDICO</th><th class="text-center">ENTRENA.</th><th class="text-center">AUSENCIA</th><th class="text-center">PERMISO</th>
+                                    <th class="text-center">TOTAL DÍAS</th><th class="text-center">DÍAS UTILIZADOS</th><th class="text-center">TOTAL %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="utilizacion-q-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px; flex-wrap: wrap; gap:10px;">
+                        <h3 class="table-subtitle" style="margin-bottom:0;">RESUMEN POR ÁREA Y GRAFICACIÓN</h3>
+                        <div class="table-filters" style="margin-bottom: 0; padding: 10px; background: transparent; border: none; gap: 10px;">
+                            <div class="filter-group" style="min-width: 150px;">
+                                <label class="filter-label">Trimestre</label>
+                                <select id="util-q-filter" class="select-field" onchange="renderUtilizacionAreaAndCharts()">
+                                    <option value="TODOS">Todos (Anual)</option>
+                                    <option value="Q1">Q1</option>
+                                    <option value="Q2">Q2</option>
+                                    <option value="Q3">Q3</option>
+                                    <option value="Q4">Q4</option>
+                                </select>
+                            </div>
+                            <div class="filter-group" style="min-width: 150px;">
+                                <label class="filter-label">Área</label>
+                                <select id="util-area-filter" class="select-field" onchange="renderUtilizacionAreaAndCharts()">
+                                    <option value="TODAS">Todas las Áreas</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container" style="margin-bottom: 25px;">
+                        <table id="utilizacion-area-table" class="data-table" style="min-width: 1200px;">
+                            <thead>
+                                <tr>
+                                    <th class="sticky-col text-left">ÁREA</th>
+                                    <th class="text-center">BASE</th><th class="text-center">POZO</th><th class="text-center">COMISIÓN</th><th class="text-center">CASA</th><th class="text-center">VIAJE</th>
+                                    <th class="text-center">DESCANSO</th><th class="text-center">VACACIONES</th><th class="text-center">MÉDICO</th><th class="text-center">ENTRENA.</th><th class="text-center">AUSENCIA</th><th class="text-center">PERMISO</th>
+                                    <th class="text-center">TOTAL DÍAS</th><th class="text-center">DÍAS UTILIZADOS</th><th class="text-center">TOTAL %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="utilizacion-area-tbody"></tbody>
+                            <tfoot id="utilizacion-area-tfoot"></tfoot>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="dashboard-grid">
                     <div class="grid-column">
                         <div class="chart-container" style="height: 400px;">
@@ -1245,8 +1302,8 @@
                                     <th class="text-center" title="Entrenamiento">E</th>
                                     <th class="text-center" title="Ausencia">A</th>
                                     <th class="text-center" title="Permiso">PE</th>
-                                    <th class="text-center" style="background-color: #1a252f; min-width: 80px;">TOTAL</th>
-                                    <th class="text-center" style="background-color: #1a252f; min-width: 80px;"
+                                    <th class="text-center" style="background-color: #1a252f; min-width: 80px; color: var(--white) !important;">TOTAL</th>
+                                    <th class="text-center" style="background-color: #1a252f; min-width: 80px; color: var(--white) !important;"
                                         title="Porcentaje de Utilización">% UTIL.</th>
                                 </tr>
                             </thead>
@@ -2020,7 +2077,10 @@
 
                     makeTableSortable('actividades-table');
                     makeTableSortable('actividades-q-table');
+
                     makeTableSortable('utilizacion-table');
+                    makeTableSortable('utilizacion-q-table');
+                    makeTableSortable('utilizacion-area-table');
 
                 } catch (e) {
                     console.error(e);
@@ -2098,7 +2158,7 @@
                     if (prefix === 'emp') { renderEmpleados(); makeTableSortable('empleados-table'); }
                     if (prefix === 'area') { renderAreas(); makeTableSortable('areas-table'); }
                     if (prefix === 'pozo') { renderPozos(); makeTableSortable('pozos-table'); }
-                    if (prefix === 'act') { renderActividades(); makeTableSortable('actividades-table'); makeTableSortable('actividades-q-table'); renderUtilizacion(); }
+                    if (prefix === 'act') { renderActividades(); makeTableSortable('actividades-table'); makeTableSortable('actividades-q-table'); renderUtilizacion(); makeTableSortable('utilizacion-table'); makeTableSortable('utilizacion-q-table'); makeTableSortable('utilizacion-area-table'); }
                 }
             }
 
@@ -2108,7 +2168,7 @@
                 if (prefix === 'emp') { renderEmpleados(); makeTableSortable('empleados-table'); }
                 if (prefix === 'area') { renderAreas(); makeTableSortable('areas-table'); }
                 if (prefix === 'pozo') { renderPozos(); makeTableSortable('pozos-table'); }
-                if (prefix === 'act') { renderActividades(); makeTableSortable('actividades-table'); makeTableSortable('actividades-q-table'); renderUtilizacion(); }
+                if (prefix === 'act') { renderActividades(); makeTableSortable('actividades-table'); makeTableSortable('actividades-q-table'); renderUtilizacion(); makeTableSortable('utilizacion-table'); makeTableSortable('utilizacion-q-table'); makeTableSortable('utilizacion-area-table'); }
             }
 
             document.getElementById('emp-trimestre-filter').addEventListener('change', () => handleTrimestreChange('emp'));
@@ -2726,12 +2786,12 @@
                 let yB = 0, yP = 0, yC = 0, yTC = 0, yV = 0, yD = 0, yVAC = 0, yM = 0, yE = 0, yA = 0, yPE = 0;
                 let activeMonthsCount = 0;
 
-                // Variables para la tabla Trimestral (Q)
+                // Variables para la tabla Trimestral (Q) - SIEMPRE RENDERIZARÁ LOS 4 AUNQUE ESTÉN VACÍOS
                 const qMap = {
-                    'Q1': { meses: ['ENERO','FEBRERO','MARZO'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, hasData: false },
-                    'Q2': { meses: ['ABRIL','MAYO','JUNIO'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, hasData: false },
-                    'Q3': { meses: ['JULIO','AGOSTO','SEPTIEMBRE'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, hasData: false },
-                    'Q4': { meses: ['OCTUBRE','NOVIEMBRE','DICIEMBRE'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, hasData: false }
+                    'Q1': { meses: ['ENERO','FEBRERO','MARZO'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0} },
+                    'Q2': { meses: ['ABRIL','MAYO','JUNIO'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0} },
+                    'Q3': { meses: ['JULIO','AGOSTO','SEPTIEMBRE'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0} },
+                    'Q4': { meses: ['OCTUBRE','NOVIEMBRE','DICIEMBRE'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0} }
                 };
 
                 // Variables para graficar los meses individuales
@@ -2755,336 +2815,350 @@
 
                     const totalMes = mB + mP + mC + mTC + mV + mD + mVAC + mM + mE + mA + mPE;
 
-                    if (totalMes > 0 && hcMes > 0) {
+                    // SIEMPRE SE RENDERIZAN LOS MESES (así estén en ceros)
+                    if (totalMes > 0 || hcMes > 0) {
                         activeMonthsCount++;
-
-                        // Promedios Mensuales por Persona
-                        let aB = mB/hcMes, aP = mP/hcMes, aC = mC/hcMes, aTC = mTC/hcMes, aV = mV/hcMes;
-                        let aD = mD/hcMes, aVAC = mVAC/hcMes, aM = mM/hcMes, aE = mE/hcMes, aA = mA/hcMes, aPE = mPE/hcMes;
-
-                        // % Utilización del mes: Utilizados = Base + Pozo + Viaje + Entrenamiento + TC + Comisionado
-                        const utilMes = mB + mP + mC + mTC + mV + mE;
-                        const pctMes = totalMes > 0 ? (utilMes / totalMes) * 100 : 0;
-
-                        // Sumatoria ABSOLUTA para el promedio Anual de la Tabla 1
-                        yB += mB; yP += mP; yC += mC; yTC += mTC; yV += mV;
-                        yD += mD; yVAC += mVAC; yM += mM; yE += mE; yA += mA; yPE += mPE;
-
-                        // Guardar para gráfica si es mes a mes
-                        labelsMes.push(mesName);
-                        dsBase.push(mB); dsPozo.push(mP); dsCom.push(mC); dsCasa.push(mTC); dsViaje.push(mV);
-                        dsDesc.push(mD); dsVac.push(mVAC); dsMed.push(mM); dsEntre.push(mE); dsAus.push(mA); dsPerm.push(mPE);
-
-                        // Asignar al Trimestre correspondiente
-                        for (const [qKey, qData] of Object.entries(qMap)) {
-                            if (qData.meses.includes(mesName)) {
-                                qData.hasData = true;
-                                qData.abs.B += mB; qData.abs.P += mP; qData.abs.C += mC; qData.abs.TC += mTC; qData.abs.V += mV;
-                                qData.abs.D += mD; qData.abs.VAC += mVAC; qData.abs.M += mM; qData.abs.E += mE; qData.abs.A += mA; qData.abs.PE += mPE;
-
-                                // El promedio del Quarter es la suma de los promedios de sus meses
-                                qData.avg.B += aB; qData.avg.P += aP; qData.avg.C += aC; qData.avg.TC += aTC; qData.avg.V += aV;
-                                qData.avg.D += aD; qData.avg.VAC += aVAC; qData.avg.M += aM; qData.avg.E += aE; qData.avg.A += aA; qData.avg.PE += aPE;
-                            }
-                        }
-
-                        // RENDER FILA MENSUAL
-                        const tr = document.createElement('tr');
-                        tr.classList.add('clickable-act');
-                        tr.title = 'Clic para ver detalle por empleado de este mes';
-                        tr.addEventListener('click', () => openActModal(mesOriginal));
-
-                        tr.innerHTML = `
-                            <td class="sticky-col text-left"><strong>${mesName}</strong></td>
-                            <!-- ABSOLUTOS -->
-                            <td class="text-center">${mB}</td><td class="text-center">${mP}</td><td class="text-center">${mC}</td>
-                            <td class="text-center">${mTC}</td><td class="text-center">${mV}</td><td class="text-center">${mD}</td>
-                            <td class="text-center">${mVAC}</td><td class="text-center">${mM}</td><td class="text-center">${mE}</td>
-                            <td class="text-center">${mA}</td><td class="text-center">${mPE}</td>
-                            <!-- PROMEDIOS -->
-                            <td class="text-center col-promedio">${aB.toFixed(1)}</td><td class="text-center col-promedio">${aP.toFixed(1)}</td><td class="text-center col-promedio">${aC.toFixed(1)}</td>
-                            <td class="text-center col-promedio">${aTC.toFixed(1)}</td><td class="text-center col-promedio">${aV.toFixed(1)}</td><td class="text-center col-promedio">${aD.toFixed(1)}</td>
-                            <td class="text-center col-promedio">${aVAC.toFixed(1)}</td><td class="text-center col-promedio">${aM.toFixed(1)}</td><td class="text-center col-promedio">${aE.toFixed(1)}</td>
-                            <td class="text-center col-promedio">${aA.toFixed(1)}</td><td class="text-center col-promedio">${aPE.toFixed(1)}</td>
-                            <!-- UTILIZACION -->
-                            <td class="text-center" style="font-weight:bold;">${Math.round(pctMes)}%</td>
-                        `;
-                        tbody.appendChild(tr);
                     }
+
+                    // Promedios Mensuales por Persona
+                    let aB = hcMes > 0 ? mB/hcMes : 0;
+                    let aP = hcMes > 0 ? mP/hcMes : 0;
+                    let aC = hcMes > 0 ? mC/hcMes : 0;
+                    let aTC = hcMes > 0 ? mTC/hcMes : 0;
+                    let aV = hcMes > 0 ? mV/hcMes : 0;
+                    let aD = hcMes > 0 ? mD/hcMes : 0;
+                    let aVAC = hcMes > 0 ? mVAC/hcMes : 0;
+                    let aM = hcMes > 0 ? mM/hcMes : 0;
+                    let aE = hcMes > 0 ? mE/hcMes : 0;
+                    let aA = hcMes > 0 ? mA/hcMes : 0;
+                    let aPE = hcMes > 0 ? mPE/hcMes : 0;
+
+                    // % Utilización del mes: Utilizados = Base + Pozo + Viaje + Entrenamiento + TC + Comisionado
+                    const utilMes = mB + mP + mC + mTC + mV + mE;
+                    const pctMes = totalMes > 0 ? (utilMes / totalMes) * 100 : 0;
+
+                    // Sumatoria ABSOLUTA para el promedio Anual de la Tabla 1
+                    yB += mB; yP += mP; yC += mC; yTC += mTC; yV += mV;
+                    yD += mD; yVAC += mVAC; yM += mM; yE += mE; yA += mA; yPE += mPE;
+
+                    // Guardar para gráfica si es mes a mes
+                    labelsMes.push(mesName);
+                    dsBase.push(mB); dsPozo.push(mP); dsCom.push(mC); dsCasa.push(mTC); dsViaje.push(mV);
+                    dsDesc.push(mD); dsVac.push(mVAC); dsMed.push(mM); dsEntre.push(mE); dsAus.push(mA); dsPerm.push(mPE);
+
+                    // Asignar al Trimestre correspondiente
+                    for (const [qKey, qData] of Object.entries(qMap)) {
+                        if (qData.meses.includes(mesName)) {
+                            qData.abs.B += mB; qData.abs.P += mP; qData.abs.C += mC; qData.abs.TC += mTC; qData.abs.V += mV;
+                            qData.abs.D += mD; qData.abs.VAC += mVAC; qData.abs.M += mM; qData.abs.E += mE; qData.abs.A += mA; qData.abs.PE += mPE;
+
+                            // El promedio del Quarter es la suma de los promedios de sus meses
+                            qData.avg.B += aB; qData.avg.P += aP; qData.avg.C += aC; qData.avg.TC += aTC; qData.avg.V += aV;
+                            qData.avg.D += aD; qData.avg.VAC += aVAC; qData.avg.M += aM; qData.avg.E += aE; qData.avg.A += aA; qData.avg.PE += aPE;
+                        }
+                    }
+
+                    // RENDER FILA MENSUAL
+                    const tr = document.createElement('tr');
+                    tr.classList.add('clickable-act');
+                    tr.title = 'Clic para ver detalle por empleado de este mes';
+                    tr.addEventListener('click', () => openActModal(mesOriginal));
+
+                    tr.innerHTML = `
+                        <td class="sticky-col text-left"><strong>${mesName}</strong></td>
+                        <!-- ABSOLUTOS -->
+                        <td class="text-center">${mB}</td><td class="text-center">${mP}</td><td class="text-center">${mC}</td>
+                        <td class="text-center">${mTC}</td><td class="text-center">${mV}</td><td class="text-center">${mD}</td>
+                        <td class="text-center">${mVAC}</td><td class="text-center">${mM}</td><td class="text-center">${mE}</td>
+                        <td class="text-center">${mA}</td><td class="text-center">${mPE}</td>
+                        <!-- PROMEDIOS -->
+                        <td class="text-center col-promedio">${aB.toFixed(1)}</td><td class="text-center col-promedio">${aP.toFixed(1)}</td><td class="text-center col-promedio">${aC.toFixed(1)}</td>
+                        <td class="text-center col-promedio">${aTC.toFixed(1)}</td><td class="text-center col-promedio">${aV.toFixed(1)}</td><td class="text-center col-promedio">${aD.toFixed(1)}</td>
+                        <td class="text-center col-promedio">${aVAC.toFixed(1)}</td><td class="text-center col-promedio">${aM.toFixed(1)}</td><td class="text-center col-promedio">${aE.toFixed(1)}</td>
+                        <td class="text-center col-promedio">${aA.toFixed(1)}</td><td class="text-center col-promedio">${aPE.toFixed(1)}</td>
+                        <!-- UTILIZACION -->
+                        <td class="text-center" style="font-weight:bold;">${Math.round(pctMes)}%</td>
+                    `;
+                    tbody.appendChild(tr);
                 });
 
-                if (activeMonthsCount === 0) {
-                    tbody.innerHTML = '<tr class="empty-row"><td colspan="24">No hay actividades para los filtros seleccionados.</td></tr>';
-                    tfoot.innerHTML = '';
-                    tbodyQ.innerHTML = '<tr class="empty-row"><td colspan="24">Sin datos.</td></tr>';
-                    tfootQ.innerHTML = '';
-                    if (actChart) actChart.destroy();
-                } else {
-                    const yrTotal = yB+yP+yC+yTC+yV+yD+yVAC+yM+yE+yA+yPE;
-                    const yrUtil = yB+yP+yC+yTC+yV+yE; // Sumatoria de Utilizados Anual
-                    const yrPct = yrTotal > 0 ? (yrUtil / yrTotal) * 100 : 0;
+                const yrTotal = yB+yP+yC+yTC+yV+yD+yVAC+yM+yE+yA+yPE;
+                const yrUtil = yB+yP+yC+yTC+yV+yE; // Sumatoria de Utilizados Anual
+                const yrPct = yrTotal > 0 ? (yrUtil / yrTotal) * 100 : 0;
 
-                    // Promedio de promedios para la sección de promedios
-                    let p_aB = 0, p_aP = 0, p_aC = 0, p_aTC = 0, p_aV = 0, p_aD = 0, p_aVAC = 0, p_aM = 0, p_aE = 0, p_aA = 0, p_aPE = 0;
-                    for (const [k, q] of Object.entries(qMap)) {
-                        if(q.hasData) {
-                            p_aB+=q.avg.B; p_aP+=q.avg.P; p_aC+=q.avg.C; p_aTC+=q.avg.TC; p_aV+=q.avg.V;
-                            p_aD+=q.avg.D; p_aVAC+=q.avg.VAC; p_aM+=q.avg.M; p_aE+=q.avg.E; p_aA+=q.avg.A; p_aPE+=q.avg.PE;
-                        }
-                    }
+                // Promedio de promedios para la sección de promedios
+                let p_aB = 0, p_aP = 0, p_aC = 0, p_aTC = 0, p_aV = 0, p_aD = 0, p_aVAC = 0, p_aM = 0, p_aE = 0, p_aA = 0, p_aPE = 0;
+                let activeQsCount = 0;
+                for (const [k, q] of Object.entries(qMap)) {
+                    p_aB+=q.avg.B; p_aP+=q.avg.P; p_aC+=q.avg.C; p_aTC+=q.avg.TC; p_aV+=q.avg.V;
+                    p_aD+=q.avg.D; p_aVAC+=q.avg.VAC; p_aM+=q.avg.M; p_aE+=q.avg.E; p_aA+=q.avg.A; p_aPE+=q.avg.PE;
+                }
+
+                if (activeMonthsCount > 0) {
                     p_aB/=activeMonthsCount; p_aP/=activeMonthsCount; p_aC/=activeMonthsCount; p_aTC/=activeMonthsCount; p_aV/=activeMonthsCount;
                     p_aD/=activeMonthsCount; p_aVAC/=activeMonthsCount; p_aM/=activeMonthsCount; p_aE/=activeMonthsCount; p_aA/=activeMonthsCount; p_aPE/=activeMonthsCount;
-
-                    // FOOTER TABLA 1: TOTAL DE DIAS y PROMEDIO
-                    tfoot.innerHTML = `
-                        <tr class="total-row">
-                            <td class="sticky-col text-right">TOTAL ANUAL / PROMEDIO</td>
-                            <!-- ABSOLUTOS: SUMADOS -->
-                            <td class="text-center">${yB}</td><td class="text-center">${yP}</td><td class="text-center">${yC}</td>
-                            <td class="text-center">${yTC}</td><td class="text-center">${yV}</td><td class="text-center">${yD}</td>
-                            <td class="text-center">${yVAC}</td><td class="text-center">${yM}</td><td class="text-center">${yE}</td>
-                            <td class="text-center">${yA}</td><td class="text-center">${yPE}</td>
-                            <!-- PROMEDIOS: PROMEDIADOS -->
-                            <td class="text-center col-promedio">${p_aB.toFixed(1)}</td><td class="text-center col-promedio">${p_aP.toFixed(1)}</td><td class="text-center col-promedio">${p_aC.toFixed(1)}</td>
-                            <td class="text-center col-promedio">${p_aTC.toFixed(1)}</td><td class="text-center col-promedio">${p_aV.toFixed(1)}</td><td class="text-center col-promedio">${p_aD.toFixed(1)}</td>
-                            <td class="text-center col-promedio">${p_aVAC.toFixed(1)}</td><td class="text-center col-promedio">${p_aM.toFixed(1)}</td><td class="text-center col-promedio">${p_aE.toFixed(1)}</td>
-                            <td class="text-center col-promedio">${p_aA.toFixed(1)}</td><td class="text-center col-promedio">${p_aPE.toFixed(1)}</td>
-                            <td class="text-center">${Math.round(yrPct)}%</td>
-                        </tr>
-                    `;
-
-                    // PINTAR LAS TARJETAS RESUMEN EN LA VISTA PRINCIPAL (DIAS ABSOLUTOS TOTALES)
-                    renderSummaryCards('act-main-summary', yB, yP, yC, yTC, yV, yD, yVAC, yM, yE, yA, yPE, yrTotal, yrUtil);
-
-                    // ==========================================
-                    // RENDER TABLA TRIMESTRAL (Q) Y CHART
-                    // ==========================================
-                    const labelsQ = [];
-                    const dsQAbs_B = [], dsQAbs_P = [], dsQAbs_C = [], dsQAbs_TC = [], dsQAbs_V = [];
-                    const dsQAbs_D = [], dsQAbs_VAC = [], dsQAbs_M = [], dsQAbs_E = [], dsQAbs_A = [], dsQAbs_PE = [];
-
-                    for (const [qKey, qData] of Object.entries(qMap)) {
-                        if (qData.hasData) {
-                            let totalAbs = qData.abs.B + qData.abs.P + qData.abs.C + qData.abs.TC + qData.abs.V + qData.abs.D + qData.abs.VAC + qData.abs.M + qData.abs.E + qData.abs.A + qData.abs.PE;
-                            let utilAbs = qData.abs.B + qData.abs.P + qData.abs.C + qData.abs.TC + qData.abs.V + qData.abs.E;
-                            let pctUtil = totalAbs > 0 ? (utilAbs / totalAbs) * 100 : 0;
-
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td class="sticky-col text-left"><strong>${qKey}</strong></td>
-                                <!-- ABSOLUTOS -->
-                                <td class="text-center">${qData.abs.B}</td><td class="text-center">${qData.abs.P}</td><td class="text-center">${qData.abs.C}</td>
-                                <td class="text-center">${qData.abs.TC}</td><td class="text-center">${qData.abs.V}</td><td class="text-center">${qData.abs.D}</td>
-                                <td class="text-center">${qData.abs.VAC}</td><td class="text-center">${qData.abs.M}</td><td class="text-center">${qData.abs.E}</td>
-                                <td class="text-center">${qData.abs.A}</td><td class="text-center">${qData.abs.PE}</td>
-                                <!-- PROMEDIOS TRIMESTRE -->
-                                <td class="text-center col-promedio">${Math.round(qData.avg.B)}</td><td class="text-center col-promedio">${Math.round(qData.avg.P)}</td><td class="text-center col-promedio">${Math.round(qData.avg.C)}</td>
-                                <td class="text-center col-promedio">${Math.round(qData.avg.TC)}</td><td class="text-center col-promedio">${Math.round(qData.avg.V)}</td><td class="text-center col-promedio">${Math.round(qData.avg.D)}</td>
-                                <td class="text-center col-promedio">${Math.round(qData.avg.VAC)}</td><td class="text-center col-promedio">${Math.round(qData.avg.M)}</td><td class="text-center col-promedio">${Math.round(qData.avg.E)}</td>
-                                <td class="text-center col-promedio">${Math.round(qData.avg.A)}</td><td class="text-center col-promedio">${Math.round(qData.avg.PE)}</td>
-                                <!-- UTILIZACION -->
-                                <td class="text-center" style="font-weight:bold;">${Math.round(pctUtil)}%</td>
-                            `;
-                            tbodyQ.appendChild(tr);
-
-                            // Guardar para gráfica si es que es anual (agrupado por Q)
-                            labelsQ.push(qKey);
-                            dsQAbs_B.push(qData.abs.B); dsQAbs_P.push(qData.abs.P); dsQAbs_C.push(qData.abs.C);
-                            dsQAbs_TC.push(qData.abs.TC); dsQAbs_V.push(qData.abs.V); dsQAbs_D.push(qData.abs.D);
-                            dsQAbs_VAC.push(qData.abs.VAC); dsQAbs_M.push(qData.abs.M); dsQAbs_E.push(qData.abs.E);
-                            dsQAbs_A.push(qData.abs.A); dsQAbs_PE.push(qData.abs.PE);
-                        }
-                    }
-
-                    // TFOOT Tabla 2
-                    tfootQ.innerHTML = `
-                        <tr class="total-row">
-                            <td class="sticky-col text-right">TOTAL / PROM. TRIMESTRAL</td>
-                            <!-- Sumas Absolutas -->
-                            <td class="text-center">${yB}</td><td class="text-center">${yP}</td><td class="text-center">${yC}</td>
-                            <td class="text-center">${yTC}</td><td class="text-center">${yV}</td><td class="text-center">${yD}</td>
-                            <td class="text-center">${yVAC}</td><td class="text-center">${yM}</td><td class="text-center">${yE}</td>
-                            <td class="text-center">${yA}</td><td class="text-center">${yPE}</td>
-                            <!-- Promedios -->
-                            <td class="text-center col-promedio">${Math.round(p_aB)}</td><td class="text-center col-promedio">${Math.round(p_aP)}</td><td class="text-center col-promedio">${Math.round(p_aC)}</td>
-                            <td class="text-center col-promedio">${Math.round(p_aTC)}</td><td class="text-center col-promedio">${Math.round(p_aV)}</td><td class="text-center col-promedio">${Math.round(p_aD)}</td>
-                            <td class="text-center col-promedio">${Math.round(p_aVAC)}</td><td class="text-center col-promedio">${Math.round(p_aM)}</td><td class="text-center col-promedio">${Math.round(p_aE)}</td>
-                            <td class="text-center col-promedio">${Math.round(p_aA)}</td><td class="text-center col-promedio">${Math.round(p_aPE)}</td>
-                            <td class="text-center">-</td>
-                        </tr>
-                    `;
-
-                    // ==========================================
-                    // LÓGICA DE GRÁFICA: Absolutos Anual vs Meses
-                    // ==========================================
-                    if (actChart) actChart.destroy();
-
-                    let chartCategories = [];
-                    let dsChart_B = [], dsChart_P = [], dsChart_C = [], dsChart_TC = [], dsChart_V = [];
-                    let dsChart_D = [], dsChart_VAC = [], dsChart_M = [], dsChart_E = [], dsChart_A = [], dsChart_PE = [];
-
-                    // Si están todos los meses seleccionados, mostramos Qs.
-                    if (mesesMostrar.length === 12) {
-                        chartCategories = labelsQ;
-                        dsChart_B = dsQAbs_B; dsChart_P = dsQAbs_P; dsChart_C = dsQAbs_C;
-                        dsChart_TC = dsQAbs_TC; dsChart_V = dsQAbs_V; dsChart_D = dsQAbs_D;
-                        dsChart_VAC = dsQAbs_VAC; dsChart_M = dsQAbs_M; dsChart_E = dsQAbs_E;
-                        dsChart_A = dsQAbs_A; dsChart_PE = dsQAbs_PE;
-                    } else {
-                        // Si hay solo un Q o selección parcial, mostramos Mes por Mes
-                        chartCategories = labelsMes;
-                        dsChart_B = dsBase; dsChart_P = dsPozo; dsChart_C = dsCom;
-                        dsChart_TC = dsCasa; dsChart_V = dsViaje; dsChart_D = dsDesc;
-                        dsChart_VAC = dsVac; dsChart_M = dsMed; dsChart_E = dsEntre;
-                        dsChart_A = dsAus; dsChart_PE = dsPerm;
-                    }
-
-                    const optionsAct = {
-                        series: [
-                            { name: 'BASE', data: dsChart_B },
-                            { name: 'POZO', data: dsChart_P },
-                            { name: 'COMISIÓN', data: dsChart_C },
-                            { name: 'CASA', data: dsChart_TC },
-                            { name: 'VIAJE', data: dsChart_V },
-                            { name: 'DESCANSO', data: dsChart_D },
-                            { name: 'VACACIONES', data: dsChart_VAC },
-                            { name: 'MÉDICO', data: dsChart_M },
-                            { name: 'ENTRENA.', data: dsChart_E },
-                            { name: 'AUSENCIA', data: dsChart_A },
-                            { name: 'PERMISO', data: dsChart_PE }
-                        ],
-                        chart: { type: 'bar', height: 400, toolbar: { show: true }, stacked: false },
-                        colors: ['#334c95', '#6475aa', '#249399', '#7293ff', '#a2b5ff', '#118b20', '#59983e', '#dd840f', '#a5a5a5', '#7d4e4e', '#49c0c9'],
-                        plotOptions: { bar: { horizontal: false, columnWidth: '85%' } },
-                        dataLabels: { enabled: false },
-                        stroke: { show: true, width: 2, colors: ['transparent'] },
-                        xaxis: { categories: chartCategories },
-                        yaxis: { title: { text: 'Días Totales (Absolutos)' } },
-                        fill: { opacity: 1 },
-                        tooltip: { y: { formatter: function (val) { return val + " días"; } } },
-                        legend: { position: 'bottom' }
-                    };
-                    actChart = new ApexCharts(document.querySelector("#actividadesChart"), optionsAct);
-                    actChart.render();
                 }
-            }
 
+                // FOOTER TABLA 1: TOTAL DE DIAS y PROMEDIO
+                tfoot.innerHTML = `
+                    <tr class="total-row">
+                        <td class="sticky-col text-right">TOTAL ANUAL / PROMEDIO</td>
+                        <!-- ABSOLUTOS: SUMADOS -->
+                        <td class="text-center">${yB}</td><td class="text-center">${yP}</td><td class="text-center">${yC}</td>
+                        <td class="text-center">${yTC}</td><td class="text-center">${yV}</td><td class="text-center">${yD}</td>
+                        <td class="text-center">${yVAC}</td><td class="text-center">${yM}</td><td class="text-center">${yE}</td>
+                        <td class="text-center">${yA}</td><td class="text-center">${yPE}</td>
+                        <!-- PROMEDIOS: PROMEDIADOS -->
+                        <td class="text-center col-promedio">${p_aB.toFixed(1)}</td><td class="text-center col-promedio">${p_aP.toFixed(1)}</td><td class="text-center col-promedio">${p_aC.toFixed(1)}</td>
+                        <td class="text-center col-promedio">${p_aTC.toFixed(1)}</td><td class="text-center col-promedio">${p_aV.toFixed(1)}</td><td class="text-center col-promedio">${p_aD.toFixed(1)}</td>
+                        <td class="text-center col-promedio">${p_aVAC.toFixed(1)}</td><td class="text-center col-promedio">${p_aM.toFixed(1)}</td><td class="text-center col-promedio">${p_aE.toFixed(1)}</td>
+                        <td class="text-center col-promedio">${p_aA.toFixed(1)}</td><td class="text-center col-promedio">${p_aPE.toFixed(1)}</td>
+                        <td class="text-center">${Math.round(yrPct)}%</td>
+                    </tr>
+                `;
+
+                // PINTAR LAS TARJETAS RESUMEN EN LA VISTA PRINCIPAL (DIAS ABSOLUTOS TOTALES)
+                renderSummaryCards('act-main-summary', yB, yP, yC, yTC, yV, yD, yVAC, yM, yE, yA, yPE, yrTotal, yrUtil);
+
+                // ==========================================
+                // RENDER TABLA TRIMESTRAL (Q) Y CHART
+                // ==========================================
+                const labelsQ = [];
+                const dsQAbs_B = [], dsQAbs_P = [], dsQAbs_C = [], dsQAbs_TC = [], dsQAbs_V = [];
+                const dsQAbs_D = [], dsQAbs_VAC = [], dsQAbs_M = [], dsQAbs_E = [], dsQAbs_A = [], dsQAbs_PE = [];
+
+                for (const [qKey, qData] of Object.entries(qMap)) {
+                    let totalAbs = qData.abs.B + qData.abs.P + qData.abs.C + qData.abs.TC + qData.abs.V + qData.abs.D + qData.abs.VAC + qData.abs.M + qData.abs.E + qData.abs.A + qData.abs.PE;
+                    let utilAbs = qData.abs.B + qData.abs.P + qData.abs.C + qData.abs.TC + qData.abs.V + qData.abs.E;
+                    let pctUtil = totalAbs > 0 ? Math.round((utilAbs / totalAbs) * 100) : 0;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="sticky-col text-left"><strong>${qKey}</strong></td>
+                        <!-- ABSOLUTOS -->
+                        <td class="text-center">${qData.abs.B}</td><td class="text-center">${qData.abs.P}</td><td class="text-center">${qData.abs.C}</td>
+                        <td class="text-center">${qData.abs.TC}</td><td class="text-center">${qData.abs.V}</td><td class="text-center">${qData.abs.D}</td>
+                        <td class="text-center">${qData.abs.VAC}</td><td class="text-center">${qData.abs.M}</td><td class="text-center">${qData.abs.E}</td>
+                        <td class="text-center">${qData.abs.A}</td><td class="text-center">${qData.abs.PE}</td>
+                        <!-- PROMEDIOS TRIMESTRE -->
+                        <td class="text-center col-promedio">${Math.round(qData.avg.B)}</td><td class="text-center col-promedio">${Math.round(qData.avg.P)}</td><td class="text-center col-promedio">${Math.round(qData.avg.C)}</td>
+                        <td class="text-center col-promedio">${Math.round(qData.avg.TC)}</td><td class="text-center col-promedio">${Math.round(qData.avg.V)}</td><td class="text-center col-promedio">${Math.round(qData.avg.D)}</td>
+                        <td class="text-center col-promedio">${Math.round(qData.avg.VAC)}</td><td class="text-center col-promedio">${Math.round(qData.avg.M)}</td><td class="text-center col-promedio">${Math.round(qData.avg.E)}</td>
+                        <td class="text-center col-promedio">${Math.round(qData.avg.A)}</td><td class="text-center col-promedio">${Math.round(qData.avg.PE)}</td>
+                        <!-- UTILIZACION -->
+                        <td class="text-center" style="font-weight:bold;">${Math.round(pctUtil)}%</td>
+                    `;
+                    tbodyQ.appendChild(tr);
+
+                    // Guardar para gráfica si es que es anual (agrupado por Q)
+                    labelsQ.push(qKey);
+                    dsQAbs_B.push(qData.abs.B); dsQAbs_P.push(qData.abs.P); dsQAbs_C.push(qData.abs.C);
+                    dsQAbs_TC.push(qData.abs.TC); dsQAbs_V.push(qData.abs.V); dsQAbs_D.push(qData.abs.D);
+                    dsQAbs_VAC.push(qData.abs.VAC); dsQAbs_M.push(qData.abs.M); dsQAbs_E.push(qData.abs.E);
+                    dsQAbs_A.push(qData.abs.A); dsQAbs_PE.push(qData.abs.PE);
+                }
+
+                // TFOOT Tabla 2
+                tfootQ.innerHTML = `
+                    <tr class="total-row">
+                        <td class="sticky-col text-right">TOTAL / PROM. TRIMESTRAL</td>
+                        <!-- Sumas Absolutas -->
+                        <td class="text-center">${yB}</td><td class="text-center">${yP}</td><td class="text-center">${yC}</td>
+                        <td class="text-center">${yTC}</td><td class="text-center">${yV}</td><td class="text-center">${yD}</td>
+                        <td class="text-center">${yVAC}</td><td class="text-center">${yM}</td><td class="text-center">${yE}</td>
+                        <td class="text-center">${yA}</td><td class="text-center">${yPE}</td>
+                        <!-- Promedios -->
+                        <td class="text-center col-promedio">${Math.round(p_aB)}</td><td class="text-center col-promedio">${Math.round(p_aP)}</td><td class="text-center col-promedio">${Math.round(p_aC)}</td>
+                        <td class="text-center col-promedio">${Math.round(p_aTC)}</td><td class="text-center col-promedio">${Math.round(p_aV)}</td><td class="text-center col-promedio">${Math.round(p_aD)}</td>
+                        <td class="text-center col-promedio">${Math.round(p_aVAC)}</td><td class="text-center col-promedio">${Math.round(p_aM)}</td><td class="text-center col-promedio">${Math.round(p_aE)}</td>
+                        <td class="text-center col-promedio">${Math.round(p_aA)}</td><td class="text-center col-promedio">${Math.round(p_aPE)}</td>
+                        <td class="text-center">-</td>
+                    </tr>
+                `;
+
+                // ==========================================
+                // LÓGICA DE GRÁFICA: Absolutos Anual vs Meses
+                // ==========================================
+                if (actChart) actChart.destroy();
+
+                let chartCategories = [];
+                let dsChart_B = [], dsChart_P = [], dsChart_C = [], dsChart_TC = [], dsChart_V = [];
+                let dsChart_D = [], dsChart_VAC = [], dsChart_M = [], dsChart_E = [], dsChart_A = [], dsChart_PE = [];
+
+                // Si están todos los meses seleccionados, mostramos Qs.
+                if (mesesMostrar.length === 12) {
+                    chartCategories = labelsQ;
+                    dsChart_B = dsQAbs_B; dsChart_P = dsQAbs_P; dsChart_C = dsQAbs_C;
+                    dsChart_TC = dsQAbs_TC; dsChart_V = dsQAbs_V; dsChart_D = dsQAbs_D;
+                    dsChart_VAC = dsQAbs_VAC; dsChart_M = dsQAbs_M; dsChart_E = dsQAbs_E;
+                    dsChart_A = dsQAbs_A; dsChart_PE = dsQAbs_PE;
+                } else {
+                    // Si hay solo un Q o selección parcial, mostramos Mes por Mes
+                    chartCategories = labelsMes;
+                    dsChart_B = dsBase; dsChart_P = dsPozo; dsChart_C = dsCom;
+                    dsChart_TC = dsCasa; dsChart_V = dsViaje; dsChart_D = dsDesc;
+                    dsChart_VAC = dsVac; dsChart_M = dsMed; dsChart_E = dsEntre;
+                    dsChart_A = dsAus; dsChart_PE = dsPerm;
+                }
+
+                const optionsAct = {
+                    series: [
+                        { name: 'BASE', data: dsChart_B },
+                        { name: 'POZO', data: dsChart_P },
+                        { name: 'COMISIÓN', data: dsChart_C },
+                        { name: 'CASA', data: dsChart_TC },
+                        { name: 'VIAJE', data: dsChart_V },
+                        { name: 'DESCANSO', data: dsChart_D },
+                        { name: 'VACACIONES', data: dsChart_VAC },
+                        { name: 'MÉDICO', data: dsChart_M },
+                        { name: 'ENTRENA.', data: dsChart_E },
+                        { name: 'AUSENCIA', data: dsChart_A },
+                        { name: 'PERMISO', data: dsChart_PE }
+                    ],
+                    chart: { type: 'bar', height: 400, toolbar: { show: true }, stacked: false },
+                    colors: ['#334c95', '#6475aa', '#249399', '#7293ff', '#a2b5ff', '#118b20', '#59983e', '#dd840f', '#a5a5a5', '#7d4e4e', '#49c0c9'],
+                    plotOptions: { bar: { horizontal: false, columnWidth: '85%' } },
+                    dataLabels: { enabled: false },
+                    stroke: { show: true, width: 2, colors: ['transparent'] },
+                    xaxis: { categories: chartCategories },
+                    yaxis: { title: { text: 'Días Totales (Absolutos)' } },
+                    fill: { opacity: 1 },
+                    tooltip: { y: { formatter: function (val) { return val + " días"; } } },
+                    legend: { position: 'bottom' }
+                };
+                actChart = new ApexCharts(document.querySelector("#actividadesChart"), optionsAct);
+                actChart.render();
+            }
 
             // ──────────────────────────────────────────────────────────────
             // ⭐ RENDER TAB 6 (UTILIZACIÓN DEL PERSONAL CATEGORIAS COMPLETAS)
             // ──────────────────────────────────────────────────────────────
 
-            function renderUtilizacion() {
-                const tbody = document.getElementById('utilizacion-tbody');
-                const tfoot = document.getElementById('utilizacion-tfoot');
-                tbody.innerHTML = '';
-                tfoot.innerHTML = '';
-
-                const mesesTotales = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            window.renderUtilizacionAreaAndCharts = function() {
+                const qFilter = document.getElementById('util-q-filter').value;
+                const areaFilter = document.getElementById('util-area-filter').value;
+                const tbodyArea = document.getElementById('utilizacion-area-tbody');
+                const tfootArea = document.getElementById('utilizacion-area-tfoot');
+                tbodyArea.innerHTML = '';
+                tfootArea.innerHTML = '';
 
                 let sumB = 0, sumP = 0, sumC = 0, sumTC = 0, sumV = 0, sumD = 0, sumVAC = 0, sumM = 0, sumE = 0, sumA = 0, sumPE = 0;
                 let sumTotal = 0, sumUtil = 0;
-                let activeMonthsCount = 0;
+
+                const areaMapFiltered = {};
+                const mesesTotales = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+                const monthToQ = {
+                    'Enero':'Q1', 'Febrero':'Q1', 'Marzo':'Q1',
+                    'Abril':'Q2', 'Mayo':'Q2', 'Junio':'Q2',
+                    'Julio':'Q3', 'Agosto':'Q3', 'Septiembre':'Q3',
+                    'Octubre':'Q4', 'Noviembre':'Q4', 'Diciembre':'Q4'
+                };
 
                 mesesTotales.forEach(mesName => {
+                    const currentQ = monthToQ[mesName];
+                    if (qFilter !== 'TODOS' && currentQ !== qFilter) return;
+
                     const mesOriginal = Object.keys(actividadesPorEmpleado).find(k => k.toUpperCase() === mesName.toUpperCase()) || mesName;
                     const empList = actividadesPorEmpleado[mesOriginal] || [];
 
-                    let mB = 0, mP = 0, mC = 0, mTC = 0, mV = 0, mD = 0, mVAC = 0, mM = 0, mE = 0, mA = 0, mPE = 0;
-                    let hcMes = 0;
-
                     empList.forEach(emp => {
-                        mB += emp.B; mP += emp.P; mC += emp.C; mTC += emp.TC; mV += emp.V;
-                        mD += emp.D; mVAC += emp.VAC; mM += emp.M; mE += emp.E; mA += emp.A; mPE += emp.PE;
-                        hcMes++;
+                        if (areaFilter !== 'TODAS' && emp.area !== areaFilter) return;
+
+                        if (!areaMapFiltered[emp.area]) {
+                            areaMapFiltered[emp.area] = { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0 };
+                        }
+
+                        areaMapFiltered[emp.area].B += emp.B;
+                        areaMapFiltered[emp.area].P += emp.P;
+                        areaMapFiltered[emp.area].C += emp.C;
+                        areaMapFiltered[emp.area].TC += emp.TC;
+                        areaMapFiltered[emp.area].V += emp.V;
+                        areaMapFiltered[emp.area].D += emp.D;
+                        areaMapFiltered[emp.area].VAC += emp.VAC;
+                        areaMapFiltered[emp.area].M += emp.M;
+                        areaMapFiltered[emp.area].E += emp.E;
+                        areaMapFiltered[emp.area].A += emp.A;
+                        areaMapFiltered[emp.area].PE += emp.PE;
+
+                        const empTotal = emp.B + emp.P + emp.C + emp.TC + emp.V + emp.D + emp.VAC + emp.M + emp.E + emp.A + emp.PE;
+                        const empUtil = emp.B + emp.P + emp.C + emp.TC + emp.V + emp.E;
+
+                        areaMapFiltered[emp.area].Total += empTotal;
+                        areaMapFiltered[emp.area].Util += empUtil;
+
+                        sumB += emp.B; sumP += emp.P; sumC += emp.C; sumTC += emp.TC; sumV += emp.V;
+                        sumD += emp.D; sumVAC += emp.VAC; sumM += emp.M; sumE += emp.E; sumA += emp.A; sumPE += emp.PE;
+                        sumTotal += empTotal; sumUtil += empUtil;
                     });
+                });
 
-                    const totalMes = mB + mP + mC + mTC + mV + mD + mVAC + mM + mE + mA + mPE;
-
-                    if (totalMes > 0 && hcMes > 0) {
-                        activeMonthsCount++;
-
-                        const utilMes = mB + mP + mC + mTC + mV + mE;
-                        const pctMes = (utilMes / totalMes) * 100;
-
-                        // Acumular para totales del año
-                        sumB += mB; sumP += mP; sumC += mC; sumTC += mTC; sumV += mV;
-                        sumD += mD; sumVAC += mVAC; sumM += mM; sumE += mE; sumA += mA; sumPE += mPE;
-                        sumTotal += totalMes; sumUtil += utilMes;
-
-                        let aB = mB/hcMes, aP = mP/hcMes, aC = mC/hcMes, aTC = mTC/hcMes, aV = mV/hcMes;
-                        let aD = mD/hcMes, aVAC = mVAC/hcMes, aM = mM/hcMes, aE = mE/hcMes, aA = mA/hcMes, aPE = mPE/hcMes;
-
+                let areaHasData = false;
+                Object.keys(areaMapFiltered).sort().forEach(area => {
+                    const d = areaMapFiltered[area];
+                    if (d.Total > 0) {
+                        areaHasData = true;
+                        const pct = Math.round((d.Util / d.Total) * 100);
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td class="sticky-col text-left"><strong>${mesName.toUpperCase()}</strong></td>
-                            <td class="text-center">${mB}</td><td class="text-center">${mP}</td><td class="text-center">${mC}</td><td class="text-center">${mTC}</td><td class="text-center">${mV}</td>
-                            <td class="text-center">${mD}</td><td class="text-center">${mVAC}</td><td class="text-center">${mM}</td><td class="text-center">${mE}</td><td class="text-center">${mA}</td><td class="text-center">${mPE}</td>
-                            <td class="text-center col-promedio">${aB.toFixed(1)}</td><td class="text-center col-promedio">${aP.toFixed(1)}</td><td class="text-center col-promedio">${aC.toFixed(1)}</td><td class="text-center col-promedio">${aTC.toFixed(1)}</td><td class="text-center col-promedio">${aV.toFixed(1)}</td>
-                            <td class="text-center col-promedio">${aD.toFixed(1)}</td><td class="text-center col-promedio">${aVAC.toFixed(1)}</td><td class="text-center col-promedio">${aM.toFixed(1)}</td><td class="text-center col-promedio">${aE.toFixed(1)}</td><td class="text-center col-promedio">${aA.toFixed(1)}</td><td class="text-center col-promedio">${aPE.toFixed(1)}</td>
-                            <td class="text-center" style="font-weight:bold;">${totalMes}</td>
-                            <td class="text-center">${utilMes}</td>
-                            <td class="text-center" style="font-weight:bold;">${Math.round(pctMes)}%</td>
+                            <td class="sticky-col text-left"><span class="badge-area">${area}</span></td>
+                            <td class="text-center">${d.B}</td><td class="text-center">${d.P}</td><td class="text-center">${d.C}</td><td class="text-center">${d.TC}</td><td class="text-center">${d.V}</td>
+                            <td class="text-center">${d.D}</td><td class="text-center">${d.VAC}</td><td class="text-center">${d.M}</td><td class="text-center">${d.E}</td><td class="text-center">${d.A}</td><td class="text-center">${d.PE}</td>
+                            <td class="text-center" style="font-weight:bold;">${d.Total}</td>
+                            <td class="text-center">${d.Util}</td>
+                            <td class="text-center" style="font-weight:bold; color:var(--primary-color);">${pct}%</td>
                         `;
-                        tbody.appendChild(tr);
+                        tbodyArea.appendChild(tr);
                     }
                 });
 
-                if (activeMonthsCount === 0) {
-                    tbody.innerHTML = '<tr class="empty-row"><td colspan="27">No hay datos registrados en el año para esta vista.</td></tr>';
-                    if(pieChartTotal) pieChartTotal.destroy();
-                    if(pieChartUtil) pieChartUtil.destroy();
+                if(!areaHasData) {
+                    tbodyArea.innerHTML = '<tr class="empty-row"><td colspan="15">Sin datos para los filtros seleccionados.</td></tr>';
                 } else {
-                    const avg_mB = sumB / activeMonthsCount; const avg_mP = sumP / activeMonthsCount; const avg_mC = sumC / activeMonthsCount;
-                    const avg_mTC = sumTC / activeMonthsCount; const avg_mV = sumV / activeMonthsCount; const avg_mD = sumD / activeMonthsCount;
-                    const avg_mVAC = sumVAC / activeMonthsCount; const avg_mM = sumM / activeMonthsCount; const avg_mE = sumE / activeMonthsCount;
-                    const avg_mA = sumA / activeMonthsCount; const avg_mPE = sumPE / activeMonthsCount;
-
-                    const pctYear = sumTotal > 0 ? (sumUtil / sumTotal) * 100 : 0;
-
-                    tfoot.innerHTML = `
+                    const pctTotal = sumTotal > 0 ? Math.round((sumUtil / sumTotal) * 100) : 0;
+                    tfootArea.innerHTML = `
                         <tr class="total-row">
-                            <td class="sticky-col text-right">TOTALES</td>
+                            <td class="sticky-col text-right">TOTAL FILTRADO</td>
                             <td class="text-center">${sumB}</td><td class="text-center">${sumP}</td><td class="text-center">${sumC}</td><td class="text-center">${sumTC}</td><td class="text-center">${sumV}</td>
                             <td class="text-center">${sumD}</td><td class="text-center">${sumVAC}</td><td class="text-center">${sumM}</td><td class="text-center">${sumE}</td><td class="text-center">${sumA}</td><td class="text-center">${sumPE}</td>
-                            <td class="text-center col-promedio">${Math.round(avg_mB)}</td><td class="text-center col-promedio">${Math.round(avg_mP)}</td><td class="text-center col-promedio">${Math.round(avg_mC)}</td><td class="text-center col-promedio">${Math.round(avg_mTC)}</td><td class="text-center col-promedio">${Math.round(avg_mV)}</td>
-                            <td class="text-center col-promedio">${Math.round(avg_mD)}</td><td class="text-center col-promedio">${Math.round(avg_mVAC)}</td><td class="text-center col-promedio">${Math.round(avg_mM)}</td><td class="text-center col-promedio">${Math.round(avg_mE)}</td><td class="text-center col-promedio">${Math.round(avg_mA)}</td><td class="text-center col-promedio">${Math.round(avg_mPE)}</td>
                             <td class="text-center" style="color:var(--text-dark);">${sumTotal}</td>
                             <td class="text-center" style="color:var(--text-dark);">${sumUtil}</td>
-                            <td class="text-center" style="color:var(--text-dark);">${Math.round(pctYear)}%</td>
+                            <td class="text-center" style="color:var(--text-dark);">${pctTotal}%</td>
                         </tr>
                     `;
+                }
 
-                    // RENDER PIE CHARTS
-                    if(pieChartTotal) pieChartTotal.destroy();
-                    if(pieChartUtil) pieChartUtil.destroy();
+                if(pieChartTotal) pieChartTotal.destroy();
+                if(pieChartUtil) pieChartUtil.destroy();
 
-                    // Respetando variables CSS de colores exactas de tu root
+                if (sumTotal > 0) {
                     const colorPalette = ['#334c95', '#6475aa', '#249399', '#7293ff', '#a2b5ff', '#118b20', '#59983e', '#dd840f', '#a5a5a5', '#7d4e4e', '#49c0c9'];
                     const chartLabels = ['BASE', 'POZO', 'COMISIÓN', 'CASA', 'VIAJE', 'DESCANSO', 'VACACIONES', 'MÉDICO', 'ENTRENA.', 'AUSENCIA', 'PERMISO'];
+                    const seriesData = [sumB, sumP, sumC, sumTC, sumV, sumD, sumVAC, sumM, sumE, sumA, sumPE];
+
+                    const qLabel = qFilter === 'TODOS' ? 'Anual' : qFilter;
+                    const areaLabel = areaFilter === 'TODAS' ? 'Todas las Áreas' : areaFilter;
 
                     const optionsPieTotal = {
-                        series: [sumB, sumP, sumC, sumTC, sumV, sumD, sumVAC, sumM, sumE, sumA, sumPE],
+                        series: seriesData,
                         labels: chartLabels,
                         chart: { type: 'pie', height: 400 },
                         colors: colorPalette,
-                        title: { text: 'Distribución de Actividades (Absolutos)', align: 'center' },
+                        title: { text: `Distribución Absoluta (${qLabel} / ${areaLabel})`, align: 'center' },
                         legend: { position: 'bottom' },
                         dataLabels: {
-                            formatter: function (val) {
-                                return Math.round(val) + "%";
-                            }
+                            formatter: function (val) { return Math.round(val) + "%"; }
                         }
                     };
                     pieChartTotal = new ApexCharts(document.querySelector("#pieChartTotal"), optionsPieTotal);
                     pieChartTotal.render();
 
                     const optionsPieUtil = {
-                        series: [sumB, sumP, sumC, sumTC, sumV, sumD, sumVAC, sumM, sumE, sumA, sumPE],
+                        series: seriesData,
                         labels: chartLabels,
                         chart: { type: 'donut', height: 400 },
                         colors: colorPalette,
-                        title: { text: 'Utilización de Personal 2026', align: 'center' },
+                        title: { text: `Utilización de Personal (${qLabel} / ${areaLabel})`, align: 'center' },
                         legend: { position: 'bottom' },
                         plotOptions: {
                             pie: {
@@ -3105,14 +3179,169 @@
                             }
                         },
                         dataLabels: {
-                            formatter: function (val) {
-                                return Math.round(val) + "%";
-                            }
+                            formatter: function (val) { return Math.round(val) + "%"; }
                         }
                     };
                     pieChartUtil = new ApexCharts(document.querySelector("#pieChartUtil"), optionsPieUtil);
                     pieChartUtil.render();
                 }
+            };
+
+            function renderUtilizacion() {
+                const tbody = document.getElementById('utilizacion-tbody');
+                const tfoot = document.getElementById('utilizacion-tfoot');
+                const tbodyQ = document.getElementById('utilizacion-q-tbody');
+
+                tbody.innerHTML = '';
+                tfoot.innerHTML = '';
+                tbodyQ.innerHTML = '';
+
+                // Siempre mostrar 12 meses
+                const mesesTotales = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+                let sumB = 0, sumP = 0, sumC = 0, sumTC = 0, sumV = 0, sumD = 0, sumVAC = 0, sumM = 0, sumE = 0, sumA = 0, sumPE = 0;
+                let sumTotal = 0, sumUtil = 0;
+                let activeMonthsCount = 0;
+
+                const qUtilMap = {
+                    'Q1': { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0, count:0 },
+                    'Q2': { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0, count:0 },
+                    'Q3': { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0, count:0 },
+                    'Q4': { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0, count:0 }
+                };
+                const monthToQ = {
+                    'Enero':'Q1', 'Febrero':'Q1', 'Marzo':'Q1',
+                    'Abril':'Q2', 'Mayo':'Q2', 'Junio':'Q2',
+                    'Julio':'Q3', 'Agosto':'Q3', 'Septiembre':'Q3',
+                    'Octubre':'Q4', 'Noviembre':'Q4', 'Diciembre':'Q4'
+                };
+
+                const uniqueAreas = new Set();
+
+                mesesTotales.forEach(mesName => {
+                    const mesOriginal = Object.keys(actividadesPorEmpleado).find(k => k.toUpperCase() === mesName.toUpperCase()) || mesName;
+                    const empList = actividadesPorEmpleado[mesOriginal] || [];
+
+                    let mB = 0, mP = 0, mC = 0, mTC = 0, mV = 0, mD = 0, mVAC = 0, mM = 0, mE = 0, mA = 0, mPE = 0;
+                    let hcMes = 0;
+
+                    empList.forEach(emp => {
+                        mB += emp.B; mP += emp.P; mC += emp.C; mTC += emp.TC; mV += emp.V;
+                        mD += emp.D; mVAC += emp.VAC; mM += emp.M; mE += emp.E; mA += emp.A; mPE += emp.PE;
+                        hcMes++;
+                        uniqueAreas.add(emp.area);
+                    });
+
+                    const totalMes = mB + mP + mC + mTC + mV + mD + mVAC + mM + mE + mA + mPE;
+
+                    // Para los promedios anuales en TFOOT solo tomamos meses activos
+                    if (totalMes > 0 || hcMes > 0) {
+                        activeMonthsCount++;
+                    }
+
+                    const utilMes = mB + mP + mC + mTC + mV + mE;
+                    const pctMes = totalMes > 0 ? (utilMes / totalMes) * 100 : 0;
+
+                    // Q AGGREGATION (SIEMPRE LO HACEMOS, AUNQUE SEAN 0)
+                    const qKey = monthToQ[mesName];
+                    if (qKey) {
+                        qUtilMap[qKey].B += mB; qUtilMap[qKey].P += mP; qUtilMap[qKey].C += mC;
+                        qUtilMap[qKey].TC += mTC; qUtilMap[qKey].V += mV; qUtilMap[qKey].D += mD;
+                        qUtilMap[qKey].VAC += mVAC; qUtilMap[qKey].M += mM; qUtilMap[qKey].E += mE;
+                        qUtilMap[qKey].A += mA; qUtilMap[qKey].PE += mPE;
+                        qUtilMap[qKey].Total += totalMes;
+                        qUtilMap[qKey].Util += utilMes;
+                        qUtilMap[qKey].count++;
+                    }
+
+                    // Acumular para totales del año
+                    sumB += mB; sumP += mP; sumC += mC; sumTC += mTC; sumV += mV;
+                    sumD += mD; sumVAC += mVAC; sumM += mM; sumE += mE; sumA += mA; sumPE += mPE;
+                    sumTotal += totalMes; sumUtil += utilMes;
+
+                    let aB = hcMes > 0 ? mB/hcMes : 0;
+                    let aP = hcMes > 0 ? mP/hcMes : 0;
+                    let aC = hcMes > 0 ? mC/hcMes : 0;
+                    let aTC = hcMes > 0 ? mTC/hcMes : 0;
+                    let aV = hcMes > 0 ? mV/hcMes : 0;
+                    let aD = hcMes > 0 ? mD/hcMes : 0;
+                    let aVAC = hcMes > 0 ? mVAC/hcMes : 0;
+                    let aM = hcMes > 0 ? mM/hcMes : 0;
+                    let aE = hcMes > 0 ? mE/hcMes : 0;
+                    let aA = hcMes > 0 ? mA/hcMes : 0;
+                    let aPE = hcMes > 0 ? mPE/hcMes : 0;
+
+                    // RENDER SIEMPRE LA FILA DEL MES, ASÍ ESTÉ EN 0
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="sticky-col text-left"><strong>${mesName.toUpperCase()}</strong></td>
+                        <td class="text-center">${mB}</td><td class="text-center">${mP}</td><td class="text-center">${mC}</td><td class="text-center">${mTC}</td><td class="text-center">${mV}</td>
+                        <td class="text-center">${mD}</td><td class="text-center">${mVAC}</td><td class="text-center">${mM}</td><td class="text-center">${mE}</td><td class="text-center">${mA}</td><td class="text-center">${mPE}</td>
+                        <td class="text-center col-promedio">${aB.toFixed(1)}</td><td class="text-center col-promedio">${aP.toFixed(1)}</td><td class="text-center col-promedio">${aC.toFixed(1)}</td><td class="text-center col-promedio">${aTC.toFixed(1)}</td><td class="text-center col-promedio">${aV.toFixed(1)}</td>
+                        <td class="text-center col-promedio">${aD.toFixed(1)}</td><td class="text-center col-promedio">${aVAC.toFixed(1)}</td><td class="text-center col-promedio">${aM.toFixed(1)}</td><td class="text-center col-promedio">${aE.toFixed(1)}</td><td class="text-center col-promedio">${aA.toFixed(1)}</td><td class="text-center col-promedio">${aPE.toFixed(1)}</td>
+                        <td class="text-center" style="font-weight:bold;">${totalMes}</td>
+                        <td class="text-center">${utilMes}</td>
+                        <td class="text-center" style="font-weight:bold;">${Math.round(pctMes)}%</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                const avg_mB = activeMonthsCount > 0 ? sumB / activeMonthsCount : 0;
+                const avg_mP = activeMonthsCount > 0 ? sumP / activeMonthsCount : 0;
+                const avg_mC = activeMonthsCount > 0 ? sumC / activeMonthsCount : 0;
+                const avg_mTC = activeMonthsCount > 0 ? sumTC / activeMonthsCount : 0;
+                const avg_mV = activeMonthsCount > 0 ? sumV / activeMonthsCount : 0;
+                const avg_mD = activeMonthsCount > 0 ? sumD / activeMonthsCount : 0;
+                const avg_mVAC = activeMonthsCount > 0 ? sumVAC / activeMonthsCount : 0;
+                const avg_mM = activeMonthsCount > 0 ? sumM / activeMonthsCount : 0;
+                const avg_mE = activeMonthsCount > 0 ? sumE / activeMonthsCount : 0;
+                const avg_mA = activeMonthsCount > 0 ? sumA / activeMonthsCount : 0;
+                const avg_mPE = activeMonthsCount > 0 ? sumPE / activeMonthsCount : 0;
+
+                const pctYear = sumTotal > 0 ? (sumUtil / sumTotal) * 100 : 0;
+
+                tfoot.innerHTML = `
+                    <tr class="total-row">
+                        <td class="sticky-col text-right">TOTALES</td>
+                        <td class="text-center">${sumB}</td><td class="text-center">${sumP}</td><td class="text-center">${sumC}</td><td class="text-center">${sumTC}</td><td class="text-center">${sumV}</td>
+                        <td class="text-center">${sumD}</td><td class="text-center">${sumVAC}</td><td class="text-center">${sumM}</td><td class="text-center">${sumE}</td><td class="text-center">${sumA}</td><td class="text-center">${sumPE}</td>
+                        <td class="text-center col-promedio">${Math.round(avg_mB)}</td><td class="text-center col-promedio">${Math.round(avg_mP)}</td><td class="text-center col-promedio">${Math.round(avg_mC)}</td><td class="text-center col-promedio">${Math.round(avg_mTC)}</td><td class="text-center col-promedio">${Math.round(avg_mV)}</td>
+                        <td class="text-center col-promedio">${Math.round(avg_mD)}</td><td class="text-center col-promedio">${Math.round(avg_mVAC)}</td><td class="text-center col-promedio">${Math.round(avg_mM)}</td><td class="text-center col-promedio">${Math.round(avg_mE)}</td><td class="text-center col-promedio">${Math.round(avg_mA)}</td><td class="text-center col-promedio">${Math.round(avg_mPE)}</td>
+                        <td class="text-center" style="color:var(--text-dark);">${sumTotal}</td>
+                        <td class="text-center" style="color:var(--text-dark);">${sumUtil}</td>
+                        <td class="text-center" style="color:var(--text-dark);">${Math.round(pctYear)}%</td>
+                    </tr>
+                `;
+
+                // Render Q Table (SIEMPRE TODAS LAS Qs AUNQUE ESTÉN EN 0)
+                Object.keys(qUtilMap).forEach(q => {
+                    const d = qUtilMap[q];
+                    const pct = d.Total > 0 ? Math.round((d.Util / d.Total) * 100) : 0;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="sticky-col text-left"><strong>${q}</strong></td>
+                        <td class="text-center">${d.B}</td><td class="text-center">${d.P}</td><td class="text-center">${d.C}</td><td class="text-center">${d.TC}</td><td class="text-center">${d.V}</td>
+                        <td class="text-center">${d.D}</td><td class="text-center">${d.VAC}</td><td class="text-center">${d.M}</td><td class="text-center">${d.E}</td><td class="text-center">${d.A}</td><td class="text-center">${d.PE}</td>
+                        <td class="text-center" style="font-weight:bold;">${d.Total}</td>
+                        <td class="text-center">${d.Util}</td>
+                        <td class="text-center" style="font-weight:bold; color:var(--primary-color);">${pct}%</td>
+                    `;
+                    tbodyQ.appendChild(tr);
+                });
+
+                // Poblar filtro de área de forma dinámica y mantener selección
+                const areaSelect = document.getElementById('util-area-filter');
+                const currentAreaVal = areaSelect.value;
+                areaSelect.innerHTML = '<option value="TODAS">Todas las Áreas</option>';
+                Array.from(uniqueAreas).sort().forEach(a => {
+                    areaSelect.innerHTML += `<option value="${a}">${a}</option>`;
+                });
+                if (uniqueAreas.has(currentAreaVal)) {
+                    areaSelect.value = currentAreaVal;
+                }
+
+                // Renderizar la tabla de Área y las gráficas invocando la nueva función
+                renderUtilizacionAreaAndCharts();
             }
 
 
