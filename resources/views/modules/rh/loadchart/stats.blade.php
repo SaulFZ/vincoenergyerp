@@ -7,7 +7,7 @@
         :root {
             --primary-color: #34495e;
             --secondary-color: #2c3e50;
-            --accent-color: #d67e29;
+            --accent-color: #d67e29; /* <-- no cambies esre color porfavor */
             --text-dark: #2d3748;
             --text-medium: #4a5568;
             --bg-light: #f8fafc;
@@ -681,16 +681,16 @@
         </div>
 
         <div class="data-tabs">
-            <button class="tab-btn" data-tab="bonos-empleados">1. Bonos por Empleado</button>
+            <button class="tab-btn active" data-tab="bonos-empleados">1. Bonos por Empleado</button>
             <button class="tab-btn" data-tab="resumen-areas">2. Resumen por Área</button>
             <button class="tab-btn" data-tab="control-pozos">3. Control de Pozos</button>
             <button class="tab-btn" data-tab="evolucion-estadisticas">4. Evolución y Estadísticas</button>
             <button class="tab-btn" data-tab="resumen-actividades">5. Resumen de Actividades</button>
-            <button class="tab-btn active" data-tab="utilizacion-personal">6. Utilización del Personal</button>
+            <button class="tab-btn" data-tab="utilizacion-personal">6. Utilización del Personal</button>
         </div>
 
         {{-- ─── TAB 1 ──────────────────────────────────────────────────── --}}
-        <section id="bonos-empleados" class="table-section">
+        <section id="bonos-empleados" class="table-section active">
             <div class="table-card">
                 <div class="table-header">
                     <h2 class="table-title">Reporte de Bonos por Empleado</h2>
@@ -1128,7 +1128,7 @@
         </section>
 
         {{-- ── TAB 6: UTILIZACIÓN DEL PERSONAL (NUEVA SECCIÓN) ──────────────────────────── --}}
-        <section id="utilizacion-personal" class="table-section active">
+        <section id="utilizacion-personal" class="table-section">
             <div class="table-card">
                 <div class="table-header">
                     <h2 class="table-title">Utilización del Personal</h2>
@@ -3138,16 +3138,27 @@
 
                     const qLabel = qFilter === 'TODOS' ? 'Anual' : qFilter;
                     const areaLabel = areaFilter === 'TODAS' ? 'Todas las Áreas' : areaFilter;
+                    const pctTotal = sumTotal > 0 ? Math.round((sumUtil / sumTotal) * 100) : 0;
 
                     const optionsPieTotal = {
                         series: seriesData,
                         labels: chartLabels,
-                        chart: { type: 'pie', height: 400 },
+                        chart: {
+                            type: 'pie', // <-- Regresamos a pastel (pie)
+                            height: 400
+                        },
                         colors: colorPalette,
-                        title: { text: `Distribución Absoluta (${qLabel} / ${areaLabel})`, align: 'center' },
+                        title: {
+                            text: `Distribución Absoluta (${qLabel} / ${areaLabel})`,
+                            align: 'center',
+                            style: { fontSize: '14px', color: 'var(--secondary-color)', fontWeight: 'bold' }
+                        },
                         legend: { position: 'bottom' },
+                        stroke: { show: true, colors: ['#ffffff'], width: 2 },
                         dataLabels: {
-                            formatter: function (val) { return Math.round(val) + "%"; }
+                            formatter: function (val) { return Math.round(val) + "%"; },
+                            style: { fontSize: '12px', fontWeight: 'bold', colors: ['#ffffff'] },
+                            dropShadow: { enabled: true, top: 1, left: 1, blur: 1, opacity: 0.5 }
                         }
                     };
                     pieChartTotal = new ApexCharts(document.querySelector("#pieChartTotal"), optionsPieTotal);
@@ -3156,22 +3167,33 @@
                     const optionsPieUtil = {
                         series: seriesData,
                         labels: chartLabels,
-                        chart: { type: 'donut', height: 400 },
+                        chart: {
+                            type: 'donut',
+                            height: 400,
+                            dropShadow: { enabled: true, color: '#000', top: 1, left: 1, blur: 2, opacity: 0.1 }
+                        },
                         colors: colorPalette,
-                        title: { text: `Utilización de Personal (${qLabel} / ${areaLabel})`, align: 'center' },
+                        title: {
+                            text: `Utilización de Personal (${qLabel} / ${areaLabel})`,
+                            align: 'center',
+                            style: { fontSize: '14px', color: 'var(--secondary-color)', fontWeight: 'bold' }
+                        },
                         legend: { position: 'bottom' },
+                        stroke: { show: true, colors: ['#ffffff'], width: 2 },
                         plotOptions: {
                             pie: {
                                 donut: {
+                                    size: '65%',
                                     labels: {
                                         show: true,
-                                        name: { show: true },
-                                        value: { show: true },
+                                        name: { show: true, fontSize: '13px', color: 'var(--text-medium)' },
+                                        value: { show: true, fontSize: '22px', fontWeight: 'bold', color: 'var(--primary-color)' },
                                         total: {
                                             show: true,
-                                            label: 'Total Días',
+                                            label: '% Utilización',
+                                            color: 'var(--accent-color)',
                                             formatter: function (w) {
-                                                return w.globals.seriesTotals.reduce((a, b) => { return a + b }, 0)
+                                                return pctTotal + "%";
                                             }
                                         }
                                     }
@@ -3179,7 +3201,8 @@
                             }
                         },
                         dataLabels: {
-                            formatter: function (val) { return Math.round(val) + "%"; }
+                            formatter: function (val) { return Math.round(val) + "%"; },
+                            dropShadow: { enabled: false }
                         }
                     };
                     pieChartUtil = new ApexCharts(document.querySelector("#pieChartUtil"), optionsPieUtil);

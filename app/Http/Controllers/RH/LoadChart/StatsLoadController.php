@@ -47,13 +47,13 @@ class StatsLoadController extends Controller
 
             $tcRates = $this->fetchMonthlyExchangeRates($year);
 
-            $empleadosMap           = [];
-            $areasMap               = [];
-            $quincenaMap            = [];
-            $pozosMap               = [];
-            $serviciosMap           = [];
-            $suministrosMap         = [];
-            $actividadesPorEmpleado = [];
+            $empleadosMap            = [];
+            $areasMap                = [];
+            $quincenaMap             = [];
+            $pozosMap                = [];
+            $serviciosMap            = [];
+            $suministrosMap          = [];
+            $actividadesPorEmpleado  = [];
 
             $actividadesMap = [];
             for ($i = 1; $i <= 12; $i++) {
