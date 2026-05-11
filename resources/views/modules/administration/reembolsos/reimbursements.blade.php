@@ -495,6 +495,7 @@
         document.getElementById('reimbursement-modal').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                // Buscar todos los elementos focusables marcados con la clase modal-focusable
                 const focusableElements = Array.from(this.querySelectorAll('.modal-focusable'));
                 const currentIndex = focusableElements.indexOf(document.activeElement);
 
@@ -521,7 +522,7 @@
             title: `<span style="font-family:'Poppins', sans-serif; font-size:14px;">${msg}</span>`
         });
 
-        /* ── DATOS MOCK (Actualizados con Cancelado) ── */
+        /* ── DATOS MOCK (Actualizados con lógica correcta) ── */
         let requests = [{
                 id: 1001,
                 folioP: 'VES-0001',
@@ -564,7 +565,7 @@
                 depto: 'Desarrollo',
                 amount: 430.00,
                 status: 'Rechazado',
-                pago: 'Cancelado' // <-- Estado aplicado
+                pago: 'Cancelado'
             },
         ];
         let currentId = 1005;
@@ -653,10 +654,10 @@
 
                 // Badge de Estado de Pago (NUEVOS COLORES)
                 let badgePago = '';
-                if (req.pago === 'Pagado') badgePago = `<span class="status-badge badge-paid"><i class="bx bx-money"></i> Pagado</span>`;
-                else if (req.pago === 'En proceso') badgePago = `<span class="status-badge badge-inprocess"><i class="bx bx-loader-alt bx-spin"></i> En proceso</span>`;
-                else if (req.pago === 'Cancelado') badgePago = `<span class="status-badge badge-canceled"><i class="bx bx-block"></i> Cancelado</span>`;
-                else badgePago = `<span class="status-badge badge-disabled"><i class="bx bx-minus"></i> ${req.pago || 'N/A'}</span>`;
+                if (req.pago === 'Pagado') badgePago = `<span class="status-badge badge-pay-ok"><i class="bx bx-money"></i> Pagado</span>`;
+                else if (req.pago === 'En proceso') badgePago = `<span class="status-badge badge-pay-wait"><i class="bx bx-loader-alt bx-spin"></i> En proceso</span>`;
+                else if (req.pago === 'Cancelado') badgePago = `<span class="status-badge badge-pay-fail"><i class="bx bx-block"></i> Cancelado</span>`;
+                else badgePago = `<span class="status-badge badge-pay-na"><i class="bx bx-minus"></i> N/A</span>`;
 
                 const evaluateBtn = req.status === 'Pendiente' ? `<button class="btn-icon btn-icon-evaluate" onclick="evaluarSolicitud(${req.id})" title="Evaluar Solicitud"><i class="bx bx-check-shield"></i></button>` : '';
 
@@ -821,16 +822,18 @@
             });
         }
 
-        /* ── ACTUALIZAR ESTADOS ── */
+        /* ── ACTUALIZAR ESTADOS (Lógica de Revisión -> Pago) ── */
         function updateStatus(id, status) {
             const i = requests.findIndex(r => r.id === id);
             if (i !== -1) {
                 requests[i].status = status;
 
-                // Lógica automática de pago dependiente de la revisión
+                // Si se rechaza, el pago automáticamente se cancela
                 if (status === 'Rechazado') {
                     requests[i].pago = 'Cancelado';
-                } else if (status === 'Aprobado') {
+                }
+                // Si se aprueba, el pago entra en proceso para Tesorería
+                else if (status === 'Aprobado') {
                     requests[i].pago = 'En proceso';
                 }
 
@@ -1064,7 +1067,6 @@
        --teal-medium: #14b8a6;
        --teal-light: #ccfbf1;
 
-       /* Estados Revisión Originales */
        --status-pending-bg: #fef9c3;
        --status-pending-text: #92400e;
        --status-pending-border: #fde68a;
@@ -1579,7 +1581,7 @@
        text-align: center;
    }
 
-   /* ── STATUS BADGES (REVISIÓN) ── */
+   /* ── STATUS BADGES REVISIÓN ── */
    .status-badge {
        display: inline-flex;
        align-items: center;
@@ -1615,29 +1617,29 @@
        border-color: #cbd5e1;
    }
 
-   .badge-disabled {
+   /* ── STATUS BADGES PAGO (Nuevos Colores) ── */
+   .badge-pay-ok {
+       background: #dcfce7; /* Verde muy suave */
+       color: #14532d;      /* Verde oscuro */
+       border-color: #86efac;
+   }
+
+   .badge-pay-wait {
+       background: #ffedd5; /* Naranja suave */
+       color: #c2410c;      /* Naranja oscuro */
+       border-color: #fdba74;
+   }
+
+   .badge-pay-fail {
+       background: #fee2e2; /* Rojo suave */
+       color: #b91c1c;      /* Rojo oscuro */
+       border-color: #fca5a5;
+   }
+
+   .badge-pay-na {
        background: #f8fafc;
        color: #94a3b8;
        border-color: #e2e8f0;
-   }
-
-   /* ── STATUS BADGES (NUEVOS: PAGOS) ── */
-   .badge-paid {
-       background: #dcfce7; /* Verde claro */
-       color: #14532d;      /* Verde oscuro */
-       border-color: #bbf7d0;
-   }
-
-   .badge-inprocess {
-       background: #ffedd5; /* Naranja muy suave */
-       color: #c2410c;      /* Naranja oscuro */
-       border-color: #fed7aa;
-   }
-
-   .badge-canceled {
-       background: #fee2e2; /* Rojo claro (igual que fail, pero clase separada para control) */
-       color: #b91c1c;      /* Rojo oscuro */
-       border-color: #fca5a5;
    }
 
    .actions-wrap {
