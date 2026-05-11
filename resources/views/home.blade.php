@@ -52,7 +52,7 @@
             @endphp
 
             {{-- Administración --}}
-            @if (isset($userPermissions['administracion']))
+            @if (isset($userPermissions['administration']))
                 <div class="nav-group">
                     <div class="nav-header active" data-name="Administración">
                         <div class="nav-header-title">
@@ -62,14 +62,14 @@
                         <i class="fas fa-chevron-right arrow-icon"></i>
                     </div>
                     <ul class="nav-list active">
-                        @if (in_array('reembolsos', $userPermissions['administracion']) || empty($userPermissions['administracion']))
-                            <li class="nav-item" data-route="/administracion/reembolsos" data-name="Reembolsos">
+                        @if (in_array('reembolsos', $userPermissions['administration']) || empty($userPermissions['administration']))
+                            <li class="nav-item" data-route="/administration/reembolsos" data-name="Reembolsos">
                                 <i class="fas fa-receipt nav-icon"></i>
                                 <span class="nav-text">Reembolsos</span>
                             </li>
                         @endif
-                        @if (in_array('facturacion', $userPermissions['administracion']) || empty($userPermissions['administracion']))
-                            <li class="nav-item" data-route="/administracion" data-name="Facturación">
+                        @if (in_array('facturacion', $userPermissions['administration']) || empty($userPermissions['administration']))
+                            <li class="nav-item" data-route="/administration" data-name="Facturación">
                                 <i class="fas fa-file-invoice nav-icon"></i>
                                 <span class="nav-text">Facturación</span>
                             </li>

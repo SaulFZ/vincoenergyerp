@@ -281,68 +281,83 @@ class StatsLoadController extends Controller
         }
     }
 
-    private function fetchMonthlyExchangeRates(int $year): array
+private function fetchMonthlyExchangeRates(int $year): array
     {
-        $token = '9aa4c5d4ea07cf4a3bd54f4f38908c77ad74092d0be9d915f8fb7b7eadc6a1a3';
-        $urlRange = "https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/{$year}-01-01/{$year}-12-31?token={$token}";
-        $urlOportuno = "https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/oportuno?token={$token}";
+        // API gratuita, confiable y sin necesidad de Token
+        $urlRange = "https://api.frankfurter.app/{$year}-01-01..{$year}-12-31?from=USD&to=MXN";
+        $urlLatest = "https://api.frankfurter.app/latest?from=USD&to=MXN";
 
         $rates = [];
-        $defaultTc = 20.10;
+        $lastKnownRate = null;
 
         try {
-            $response = Cache::remember("banxico_tc_{$year}", 86400, function() use ($urlRange) {
-                $resp = Http::timeout(5)->get($urlRange);
+            // 1. Obtener los datos históricos del año solicitado
+            $response = Cache::remember("frankfurter_tc_{$year}", 86400, function() use ($urlRange) {
+                $resp = Http::timeout(10)->get($urlRange);
                 return $resp->successful() ? $resp->json() : null;
             });
 
-            if ($response && isset($response['bmx']['series'][0]['datos'])) {
-                $datos = $response['bmx']['series'][0]['datos'];
-                $monthlySums = [];
-                $monthlyCounts = [];
+            if ($response && isset($response['rates'])) {
+                $datos = $response['rates'];
 
-                foreach ($datos as $dato) {
-                    $date = $dato['fecha'];
-                    $val = (float) $dato['dato'];
-                    $parts = explode('/', $date);
+                // Nos aseguramos de que las fechas vengan en orden cronológico (ej. 2026-01-01, 2026-01-02...)
+                ksort($datos);
 
-                    if (count($parts) === 3) {
-                        $m = (int) $parts[1];
-                        if (isset(self::MONTH_NAMES[$m])) {
-                            $mName = self::MONTH_NAMES[$m];
-                            $monthlySums[$mName] = ($monthlySums[$mName] ?? 0) + $val;
-                            $monthlyCounts[$mName] = ($monthlyCounts[$mName] ?? 0) + 1;
+                // Al iterar de enero a diciembre, el valor del mes se sobreescribirá
+                // con el del día siguiente, dejando guardado el del ÚLTIMO DÍA del mes.
+                foreach ($datos as $date => $rateData) {
+                    if (isset($rateData['MXN'])) {
+                        $val = (float) $rateData['MXN'];
+                        $parts = explode('-', $date); // El formato es YYYY-MM-DD
+
+                        if (count($parts) === 3) {
+                            $m = (int) $parts[1];
+                            if (isset(self::MONTH_NAMES[$m])) {
+                                $mName = self::MONTH_NAMES[$m];
+                                $rates[$mName] = $val;
+                                $lastKnownRate = $val;
+                            }
                         }
                     }
                 }
-
-                foreach ($monthlySums as $mName => $sum) {
-                    $rates[$mName] = round($sum / $monthlyCounts[$mName], 4);
-                }
             } else {
-                $oportuno = Cache::remember("banxico_tc_oportuno", 86400, function() use ($urlOportuno) {
-                    $resp = Http::timeout(5)->get($urlOportuno);
+                // 2. Si falla el historial por alguna razón, consultamos el día actual de emergencia
+                $latest = Cache::remember("frankfurter_tc_latest", 3600, function() use ($urlLatest) {
+                    $resp = Http::timeout(5)->get($urlLatest);
                     return $resp->successful() ? $resp->json() : null;
                 });
 
-                if ($oportuno && isset($oportuno['bmx']['series'][0]['datos'][0]['dato'])) {
-                    $defaultTc = (float) $oportuno['bmx']['series'][0]['datos'][0]['dato'];
+                if ($latest && isset($latest['rates']['MXN'])) {
+                    $lastKnownRate = (float) $latest['rates']['MXN'];
                 }
             }
         } catch (\Exception $e) {
-            Log::warning("Banxico API Error: " . $e->getMessage());
+            Log::warning("Frankfurter API Error: " . $e->getMessage());
         }
 
+        // 3. Fallback extremo por si se cae el internet del servidor
+        if (!$lastKnownRate) {
+            $lastKnownRate = 20.00;
+        }
+
+        $finalRates = [];
+        $currentRateFallback = reset($rates) ?: $lastKnownRate;
+
+        // 4. Construir el arreglo final de 12 meses
         for ($i = 1; $i <= 12; $i++) {
             $mName = self::MONTH_NAMES[$i];
-            if (!isset($rates[$mName])) {
-                $rates[$mName] = round($defaultTc, 4);
+
+            if (isset($rates[$mName])) {
+                $currentRateFallback = $rates[$mName];
+                $finalRates[$mName] = round($currentRateFallback, 4);
+            } else {
+                // Si el mes no tiene datos (ej. meses futuros), arrastramos el último conocido
+                $finalRates[$mName] = round($currentRateFallback, 4);
             }
         }
 
-        return $rates;
+        return $finalRates;
     }
-
     private function extractDailyBonuses(array $activity, string $date): array
     {
         $total   = 0.0;

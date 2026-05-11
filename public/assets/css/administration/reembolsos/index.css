@@ -4,16 +4,14 @@
 
 /* Nuevas Variables de Color */
 :root {
-    --surface: #ffffff;
-    --surface-alt: #f1f5f9;
-
-    --slate-light: #f8fafc;
-    --slate-medium: #64748b;
     --slate-dark: #0f172a;
-
-    --teal-light: #ccfbf1;
-    --teal-medium: #14b8a6;
-    --teal-dark: #0d9488;
+    --slate-mid: #1e293b;
+    --slate-light: #f1f5f9;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --teal-dark: #662222;
+    --teal-medium: #842A3B;
+    --teal-light: #A3485A;
 }
 
 * {

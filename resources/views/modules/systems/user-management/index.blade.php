@@ -265,12 +265,12 @@
                                         <span class="mod-name">Administración</span>
                                     </div>
                                     <label class="tog" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="module-toggle" data-module="administracion">
+                                        <input type="checkbox" class="module-toggle" data-module="administration">
                                         <span class="tog-track"><span class="tog-thumb"></span></span>
                                     </label>
                                 </div>
                                 <div class="mod-card-body" id="administracion-body">
-                                    <label class="perm-row"><input type="checkbox" name="permissions[administracion][reembolsos]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gestión de reembolsos</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[administration][reembolsos]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gestión de reembolsos</span></label>
                                 </div>
                             </div>
 

@@ -7,7 +7,8 @@
         :root {
             --primary-color: #34495e;
             --secondary-color: #2c3e50;
-            --accent-color: #d67e29; /* <-- no cambies esre color porfavor */
+            --accent-color: #d67e29;
+            /* <-- no cambies esre color porfavor */
             --text-dark: #2d3748;
             --text-medium: #4a5568;
             --bg-light: #f8fafc;
@@ -102,7 +103,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .data-tabs {
@@ -146,8 +149,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .table-card {
@@ -405,9 +415,17 @@
             background-color: #f8fafc;
         }
 
-        .text-center { text-align: center !important; }
-        .text-right { text-align: right !important; }
-        .text-left { text-align: left !important; }
+        .text-center {
+            text-align: center !important;
+        }
+
+        .text-right {
+            text-align: right !important;
+        }
+
+        .text-left {
+            text-align: left !important;
+        }
 
         .currency-mxn {
             font-family: 'Calibri', 'Segoe UI', sans-serif;
@@ -946,7 +964,8 @@
                 </div>
                 <div class="grid-full-width" style="margin-top: 20px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 class="table-subtitle" style="margin:0;">EVOLUCIÓN DE SERVICIOS Y VIAJES DE SUMINISTROS (MENSUAL)</h3>
+                        <h3 class="table-subtitle" style="margin:0;">EVOLUCIÓN DE SERVICIOS Y VIAJES DE SUMINISTROS
+                            (MENSUAL)</h3>
                     </div>
                     <div class="chart-container" style="height: 350px; margin-top:15px;">
                         <div id="serviciosSuministrosChart"></div>
@@ -1019,17 +1038,22 @@
                             </div>
                             <div class="multi-select-options" id="act-meses-dropdown">
                                 <label><input type="checkbox" value="Enero" class="act-mes-chk" checked> Enero</label>
-                                <label><input type="checkbox" value="Febrero" class="act-mes-chk" checked> Febrero</label>
+                                <label><input type="checkbox" value="Febrero" class="act-mes-chk" checked>
+                                    Febrero</label>
                                 <label><input type="checkbox" value="Marzo" class="act-mes-chk" checked> Marzo</label>
                                 <label><input type="checkbox" value="Abril" class="act-mes-chk" checked> Abril</label>
                                 <label><input type="checkbox" value="Mayo" class="act-mes-chk" checked> Mayo</label>
                                 <label><input type="checkbox" value="Junio" class="act-mes-chk" checked> Junio</label>
                                 <label><input type="checkbox" value="Julio" class="act-mes-chk" checked> Julio</label>
                                 <label><input type="checkbox" value="Agosto" class="act-mes-chk" checked> Agosto</label>
-                                <label><input type="checkbox" value="Septiembre" class="act-mes-chk" checked> Septiembre</label>
-                                <label><input type="checkbox" value="Octubre" class="act-mes-chk" checked> Octubre</label>
-                                <label><input type="checkbox" value="Noviembre" class="act-mes-chk" checked> Noviembre</label>
-                                <label><input type="checkbox" value="Diciembre" class="act-mes-chk" checked> Diciembre</label>
+                                <label><input type="checkbox" value="Septiembre" class="act-mes-chk" checked>
+                                    Septiembre</label>
+                                <label><input type="checkbox" value="Octubre" class="act-mes-chk" checked>
+                                    Octubre</label>
+                                <label><input type="checkbox" value="Noviembre" class="act-mes-chk" checked>
+                                    Noviembre</label>
+                                <label><input type="checkbox" value="Diciembre" class="act-mes-chk" checked>
+                                    Diciembre</label>
                             </div>
                         </div>
                     </div>
@@ -1044,8 +1068,12 @@
                         <thead>
                             <tr>
                                 <th rowspan="2" class="sticky-col text-left">MES</th>
-                                <th colspan="11" class="text-center" style="background-color: #e2e8f0 !important; color: var(--text-dark) !important;">DÍAS TOTALES (ABSOLUTOS)</th>
-                                <th colspan="11" class="text-center" style="background-color: #cbd5e1 !important; color: var(--text-dark) !important;">DÍAS PROMEDIO POR PERSONA</th>
+                                <th colspan="11" class="text-center"
+                                    style="background-color: #e2e8f0 !important; color: var(--text-dark) !important;">DÍAS
+                                    TOTALES (ABSOLUTOS)</th>
+                                <th colspan="11" class="text-center"
+                                    style="background-color: #cbd5e1 !important; color: var(--text-dark) !important;">DÍAS
+                                    PROMEDIO POR PERSONA</th>
                                 <th rowspan="2" class="text-center" title="Porcentaje de Utilización">% UTIL.</th>
                             </tr>
                             <tr class="sub-header-row">
@@ -1074,7 +1102,9 @@
                             </tr>
                         </thead>
                         <tbody id="actividades-tbody">
-                            <tr class="empty-row"><td colspan="24">Cargando datos...</td></tr>
+                            <tr class="empty-row">
+                                <td colspan="24">Cargando datos...</td>
+                            </tr>
                         </tbody>
                         <tfoot id="actividades-tfoot"></tfoot>
                     </table>
@@ -1087,7 +1117,8 @@
                     <div class="table-card">
                         <div class="table-header">
                             <h2 class="table-title">Resumen por Trimestre (Q)</h2>
-                            <button class="btn btn-primary" onclick="exportTable('actividades-q-table', 'Resumen_Trimestral')">
+                            <button class="btn btn-primary"
+                                onclick="exportTable('actividades-q-table', 'Resumen_Trimestral')">
                                 <i class="fas fa-download"></i> Exportar Qs
                             </button>
                         </div>
@@ -1096,15 +1127,37 @@
                                 <thead>
                                     <tr>
                                         <th rowspan="2" class="sticky-col text-left">TRIMESTRE</th>
-                                        <th colspan="11" class="text-center" style="background-color: #e2e8f0 !important; color: var(--text-dark) !important;">DÍAS TOTALES (ABSOLUTOS)</th>
-                                        <th colspan="11" class="text-center" style="background-color: #cbd5e1 !important; color: var(--text-dark) !important;">PROMEDIO ACUMULADO DEL TRIMESTRE</th>
+                                        <th colspan="11" class="text-center"
+                                            style="background-color: #e2e8f0 !important; color: var(--text-dark) !important;">
+                                            DÍAS TOTALES (ABSOLUTOS)</th>
+                                        <th colspan="11" class="text-center"
+                                            style="background-color: #cbd5e1 !important; color: var(--text-dark) !important;">
+                                            PROMEDIO ACUMULADO DEL TRIMESTRE</th>
                                         <th rowspan="2" class="text-center">% UTIL.</th>
                                     </tr>
                                     <tr class="sub-header-row">
-                                        <th class="text-center">B</th><th class="text-center">P</th><th class="text-center">C</th><th class="text-center">TC</th><th class="text-center">V</th>
-                                        <th class="text-center">D</th><th class="text-center">VAC</th><th class="text-center">M</th><th class="text-center">E</th><th class="text-center">A</th><th class="text-center">PE</th>
-                                        <th class="text-center col-promedio">B</th><th class="text-center col-promedio">P</th><th class="text-center col-promedio">C</th><th class="text-center col-promedio">TC</th><th class="text-center col-promedio">V</th>
-                                        <th class="text-center col-promedio">D</th><th class="text-center col-promedio">VAC</th><th class="text-center col-promedio">M</th><th class="text-center col-promedio">E</th><th class="text-center col-promedio">A</th><th class="text-center col-promedio">PE</th>
+                                        <th class="text-center">B</th>
+                                        <th class="text-center">P</th>
+                                        <th class="text-center">C</th>
+                                        <th class="text-center">TC</th>
+                                        <th class="text-center">V</th>
+                                        <th class="text-center">D</th>
+                                        <th class="text-center">VAC</th>
+                                        <th class="text-center">M</th>
+                                        <th class="text-center">E</th>
+                                        <th class="text-center">A</th>
+                                        <th class="text-center">PE</th>
+                                        <th class="text-center col-promedio">B</th>
+                                        <th class="text-center col-promedio">P</th>
+                                        <th class="text-center col-promedio">C</th>
+                                        <th class="text-center col-promedio">TC</th>
+                                        <th class="text-center col-promedio">V</th>
+                                        <th class="text-center col-promedio">D</th>
+                                        <th class="text-center col-promedio">VAC</th>
+                                        <th class="text-center col-promedio">M</th>
+                                        <th class="text-center col-promedio">E</th>
+                                        <th class="text-center col-promedio">A</th>
+                                        <th class="text-center col-promedio">PE</th>
                                     </tr>
                                 </thead>
                                 <tbody id="actividades-q-tbody"></tbody>
@@ -1142,21 +1195,45 @@
                         <thead>
                             <tr>
                                 <th rowspan="2" class="sticky-col text-left">MES</th>
-                                <th colspan="11" class="text-center" style="background-color: #e2e8f0 !important; color: var(--text-dark) !important;">DÍAS TOTALES (ABSOLUTOS)</th>
-                                <th colspan="11" class="text-center" style="background-color: #cbd5e1 !important; color: var(--text-dark) !important;">PROMEDIOS POR PERSONA</th>
+                                <th colspan="11" class="text-center"
+                                    style="background-color: #e2e8f0 !important; color: var(--text-dark) !important;">DÍAS
+                                    TOTALES (ABSOLUTOS)</th>
+                                <th colspan="11" class="text-center"
+                                    style="background-color: #cbd5e1 !important; color: var(--text-dark) !important;">
+                                    PROMEDIOS POR PERSONA</th>
                                 <th rowspan="2" class="text-center">TOTAL DÍAS</th>
                                 <th rowspan="2" class="text-center">DÍAS UTILIZADOS</th>
                                 <th rowspan="2" class="text-center">TOTAL %</th>
                             </tr>
                             <tr class="sub-header-row">
-                                <th class="text-center">BASE</th><th class="text-center">POZO</th><th class="text-center">COMISIÓN</th><th class="text-center">CASA</th><th class="text-center">VIAJE</th>
-                                <th class="text-center">DESCANSO</th><th class="text-center">VACACIONES</th><th class="text-center">MÉDICO</th><th class="text-center">ENTRENA.</th><th class="text-center">AUSENCIA</th><th class="text-center">PERMISO</th>
-                                <th class="text-center col-promedio">BASE PROM</th><th class="text-center col-promedio">POZO PROM</th><th class="text-center col-promedio">COMISIÓN PROM</th><th class="text-center col-promedio">CASA PROM</th><th class="text-center col-promedio">VIAJE PROM</th>
-                                <th class="text-center col-promedio">DESC. PROM</th><th class="text-center col-promedio">VAC PROM</th><th class="text-center col-promedio">MED PROM</th><th class="text-center col-promedio">ENTR. PROM</th><th class="text-center col-promedio">AUS PROM</th><th class="text-center col-promedio">PERM PROM</th>
+                                <th class="text-center">BASE</th>
+                                <th class="text-center">POZO</th>
+                                <th class="text-center">COMISIÓN</th>
+                                <th class="text-center">CASA</th>
+                                <th class="text-center">VIAJE</th>
+                                <th class="text-center">DESCANSO</th>
+                                <th class="text-center">VACACIONES</th>
+                                <th class="text-center">MÉDICO</th>
+                                <th class="text-center">ENTRENA.</th>
+                                <th class="text-center">AUSENCIA</th>
+                                <th class="text-center">PERMISO</th>
+                                <th class="text-center col-promedio">BASE PROM</th>
+                                <th class="text-center col-promedio">POZO PROM</th>
+                                <th class="text-center col-promedio">COMISIÓN PROM</th>
+                                <th class="text-center col-promedio">CASA PROM</th>
+                                <th class="text-center col-promedio">VIAJE PROM</th>
+                                <th class="text-center col-promedio">DESC. PROM</th>
+                                <th class="text-center col-promedio">VAC PROM</th>
+                                <th class="text-center col-promedio">MED PROM</th>
+                                <th class="text-center col-promedio">ENTR. PROM</th>
+                                <th class="text-center col-promedio">AUS PROM</th>
+                                <th class="text-center col-promedio">PERM PROM</th>
                             </tr>
                         </thead>
                         <tbody id="utilizacion-tbody">
-                            <tr class="empty-row"><td colspan="27">Cargando datos...</td></tr>
+                            <tr class="empty-row">
+                                <td colspan="27">Cargando datos...</td>
+                            </tr>
                         </tbody>
                         <tfoot id="utilizacion-tfoot"></tfoot>
                     </table>
@@ -1170,9 +1247,20 @@
                             <thead>
                                 <tr>
                                     <th class="sticky-col text-left">TRIMESTRE</th>
-                                    <th class="text-center">BASE</th><th class="text-center">POZO</th><th class="text-center">COMISIÓN</th><th class="text-center">CASA</th><th class="text-center">VIAJE</th>
-                                    <th class="text-center">DESCANSO</th><th class="text-center">VACACIONES</th><th class="text-center">MÉDICO</th><th class="text-center">ENTRENA.</th><th class="text-center">AUSENCIA</th><th class="text-center">PERMISO</th>
-                                    <th class="text-center">TOTAL DÍAS</th><th class="text-center">DÍAS UTILIZADOS</th><th class="text-center">TOTAL %</th>
+                                    <th class="text-center">BASE</th>
+                                    <th class="text-center">POZO</th>
+                                    <th class="text-center">COMISIÓN</th>
+                                    <th class="text-center">CASA</th>
+                                    <th class="text-center">VIAJE</th>
+                                    <th class="text-center">DESCANSO</th>
+                                    <th class="text-center">VACACIONES</th>
+                                    <th class="text-center">MÉDICO</th>
+                                    <th class="text-center">ENTRENA.</th>
+                                    <th class="text-center">AUSENCIA</th>
+                                    <th class="text-center">PERMISO</th>
+                                    <th class="text-center">TOTAL DÍAS</th>
+                                    <th class="text-center">DÍAS UTILIZADOS</th>
+                                    <th class="text-center">TOTAL %</th>
                                 </tr>
                             </thead>
                             <tbody id="utilizacion-q-tbody"></tbody>
@@ -1181,12 +1269,15 @@
                 </div>
 
                 <div style="margin-top: 30px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px; flex-wrap: wrap; gap:10px;">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px; flex-wrap: wrap; gap:10px;">
                         <h3 class="table-subtitle" style="margin-bottom:0;">RESUMEN POR ÁREA Y GRAFICACIÓN</h3>
-                        <div class="table-filters" style="margin-bottom: 0; padding: 10px; background: transparent; border: none; gap: 10px;">
+                        <div class="table-filters"
+                            style="margin-bottom: 0; padding: 10px; background: transparent; border: none; gap: 10px;">
                             <div class="filter-group" style="min-width: 150px;">
                                 <label class="filter-label">Trimestre</label>
-                                <select id="util-q-filter" class="select-field" onchange="renderUtilizacionAreaAndCharts()">
+                                <select id="util-q-filter" class="select-field"
+                                    onchange="renderUtilizacionAreaAndCharts()">
                                     <option value="TODOS">Todos (Anual)</option>
                                     <option value="Q1">Q1</option>
                                     <option value="Q2">Q2</option>
@@ -1196,7 +1287,8 @@
                             </div>
                             <div class="filter-group" style="min-width: 150px;">
                                 <label class="filter-label">Área</label>
-                                <select id="util-area-filter" class="select-field" onchange="renderUtilizacionAreaAndCharts()">
+                                <select id="util-area-filter" class="select-field"
+                                    onchange="renderUtilizacionAreaAndCharts()">
                                     <option value="TODAS">Todas las Áreas</option>
                                 </select>
                             </div>
@@ -1208,9 +1300,20 @@
                             <thead>
                                 <tr>
                                     <th class="sticky-col text-left">ÁREA</th>
-                                    <th class="text-center">BASE</th><th class="text-center">POZO</th><th class="text-center">COMISIÓN</th><th class="text-center">CASA</th><th class="text-center">VIAJE</th>
-                                    <th class="text-center">DESCANSO</th><th class="text-center">VACACIONES</th><th class="text-center">MÉDICO</th><th class="text-center">ENTRENA.</th><th class="text-center">AUSENCIA</th><th class="text-center">PERMISO</th>
-                                    <th class="text-center">TOTAL DÍAS</th><th class="text-center">DÍAS UTILIZADOS</th><th class="text-center">TOTAL %</th>
+                                    <th class="text-center">BASE</th>
+                                    <th class="text-center">POZO</th>
+                                    <th class="text-center">COMISIÓN</th>
+                                    <th class="text-center">CASA</th>
+                                    <th class="text-center">VIAJE</th>
+                                    <th class="text-center">DESCANSO</th>
+                                    <th class="text-center">VACACIONES</th>
+                                    <th class="text-center">MÉDICO</th>
+                                    <th class="text-center">ENTRENA.</th>
+                                    <th class="text-center">AUSENCIA</th>
+                                    <th class="text-center">PERMISO</th>
+                                    <th class="text-center">TOTAL DÍAS</th>
+                                    <th class="text-center">DÍAS UTILIZADOS</th>
+                                    <th class="text-center">TOTAL %</th>
                                 </tr>
                             </thead>
                             <tbody id="utilizacion-area-tbody"></tbody>
@@ -1302,8 +1405,11 @@
                                     <th class="text-center" title="Entrenamiento">E</th>
                                     <th class="text-center" title="Ausencia">A</th>
                                     <th class="text-center" title="Permiso">PE</th>
-                                    <th class="text-center" style="background-color: #1a252f; min-width: 80px; color: var(--white) !important;">TOTAL</th>
-                                    <th class="text-center" style="background-color: #1a252f; min-width: 80px; color: var(--white) !important;"
+                                    <th class="text-center"
+                                        style="background-color: #1a252f; min-width: 80px; color: var(--white) !important;">
+                                        TOTAL</th>
+                                    <th class="text-center"
+                                        style="background-color: #1a252f; min-width: 80px; color: var(--white) !important;"
                                         title="Porcentaje de Utilización">% UTIL.</th>
                                 </tr>
                             </thead>
@@ -1325,13 +1431,16 @@
         <div class="custom-modal-dialog" style="max-width: 400px; transform: translateY(0); margin: auto;">
             <div class="custom-modal-header" style="background: #fef2f2; border-bottom: 1px solid #fecaca;">
                 <h5 style="color: var(--danger);"><i class="fas fa-exclamation-circle"></i> Aviso</h5>
-                <button type="button" class="close-btn" onclick="document.getElementById('customAlertModal').classList.remove('show')">&times;</button>
+                <button type="button" class="close-btn"
+                    onclick="document.getElementById('customAlertModal').classList.remove('show')">&times;</button>
             </div>
             <div class="custom-modal-body text-center" style="padding: 30px 20px;">
-                <p id="customAlertMessage" style="font-size: 1rem; color: var(--text-dark); font-weight: 600; margin:0;"></p>
+                <p id="customAlertMessage" style="font-size: 1rem; color: var(--text-dark); font-weight: 600; margin:0;">
+                </p>
             </div>
             <div class="custom-modal-footer" style="justify-content: center;">
-                <button class="btn btn-primary" onclick="document.getElementById('customAlertModal').classList.remove('show')">Entendido</button>
+                <button class="btn btn-primary"
+                    onclick="document.getElementById('customAlertModal').classList.remove('show')">Entendido</button>
             </div>
         </div>
     </div>
@@ -1379,10 +1488,18 @@
             };
 
             const monthKeysMap = {
-                'Enero': ['ene1', 'ene2'], 'Febrero': ['feb1', 'feb2'], 'Marzo': ['mar1', 'mar2'],
-                'Abril': ['abr1', 'abr2'], 'Mayo': ['may1', 'may2'], 'Junio': ['jun1', 'jun2'],
-                'Julio': ['jul1', 'jul2'], 'Agosto': ['ago1', 'ago2'], 'Septiembre': ['sep1', 'sep2'],
-                'Octubre': ['oct1', 'oct2'], 'Noviembre': ['nov1', 'nov2'], 'Diciembre': ['dic1', 'dic2']
+                'Enero': ['ene1', 'ene2'],
+                'Febrero': ['feb1', 'feb2'],
+                'Marzo': ['mar1', 'mar2'],
+                'Abril': ['abr1', 'abr2'],
+                'Mayo': ['may1', 'may2'],
+                'Junio': ['jun1', 'jun2'],
+                'Julio': ['jul1', 'jul2'],
+                'Agosto': ['ago1', 'ago2'],
+                'Septiembre': ['sep1', 'sep2'],
+                'Octubre': ['oct1', 'oct2'],
+                'Noviembre': ['nov1', 'nov2'],
+                'Diciembre': ['dic1', 'dic2']
             };
 
             let empleadosData = [];
@@ -1454,8 +1571,10 @@
 
                     th.classList.add('sortable-header');
                     th.title = "Clic para ordenar";
-                    if (!th.innerHTML.includes('↕') && !th.innerHTML.includes('↓') && !th.innerHTML.includes('↑')) {
-                        th.innerHTML += ' <span style="font-size:1.2em; opacity:1; color:#d67e29; margin-left:4px;">↕</span>';
+                    if (!th.innerHTML.includes('↕') && !th.innerHTML.includes('↓') && !th.innerHTML
+                        .includes('↑')) {
+                        th.innerHTML +=
+                            ' <span style="font-size:1.2em; opacity:1; color:#d67e29; margin-left:4px;">↕</span>';
                     }
 
                     const newTh = th.cloneNode(true);
@@ -1471,12 +1590,17 @@
 
                         table.querySelectorAll('th.sortable-header').forEach(h => {
                             h.classList.remove('asc', 'desc');
-                            h.innerHTML = h.innerHTML.replace(/<span.*<\/span>/g, '<span style="font-size:1.2em; opacity:1; color:#d67e29; margin-left:4px;">↕</span>');
+                            h.innerHTML = h.innerHTML.replace(/<span.*<\/span>/g,
+                                '<span style="font-size:1.2em; opacity:1; color:#d67e29; margin-left:4px;">↕</span>'
+                                );
                         });
 
                         newTh.classList.toggle('asc', !isAscending);
                         newTh.classList.toggle('desc', isAscending);
-                        newTh.innerHTML = newTh.innerHTML.replace(/<span.*<\/span>/g, isAscending ? '<span style="font-size:1.2em; opacity:1; color:#d67e29; margin-left:4px;">↓</span>' : '<span style="font-size:1.2em; opacity:1; color:#d67e29; margin-left:4px;">↑</span>');
+                        newTh.innerHTML = newTh.innerHTML.replace(/<span.*<\/span>/g, isAscending ?
+                            '<span style="font-size:1.2em; opacity:1; color:#d67e29; margin-left:4px;">↓</span>' :
+                            '<span style="font-size:1.2em; opacity:1; color:#d67e29; margin-left:4px;">↑</span>'
+                            );
 
                         rows.sort((a, b) => {
                             let aCell = a.children[targetColIdx];
@@ -1490,7 +1614,8 @@
                             if (!isNaN(aVal) && !isNaN(bVal)) {
                                 return isAscending ? bVal - aVal : aVal - bVal;
                             }
-                            return isAscending ? bText.localeCompare(aText) : aText.localeCompare(bText);
+                            return isAscending ? bText.localeCompare(aText) : aText
+                                .localeCompare(bText);
                         });
 
                         tbody.append(...rows);
@@ -1535,7 +1660,7 @@
                     });
 
                     const footerTotalCell = table.querySelector('tfoot .footer-total-amount');
-                    if(footerTotalCell) footerTotalCell.textContent = formatMxn(tableTotal);
+                    if (footerTotalCell) footerTotalCell.textContent = formatMxn(tableTotal);
 
                     if (tables.length > 1) {
                         if (index === 0) totalNormal += tableTotal;
@@ -1559,8 +1684,8 @@
                         strongs[1].textContent = formatMxn(totalGral);
                     }
                 } else if (strongs.length === 2) {
-                     strongs[0].textContent = rowCount;
-                     strongs[1].textContent = formatMxn(totalGral);
+                    strongs[0].textContent = rowCount;
+                    strongs[1].textContent = formatMxn(totalGral);
                 } else if (strongs.length === 1) {
                     strongs[0].textContent = formatMxn(totalGral);
                 }
@@ -1571,7 +1696,17 @@
                 const tfoot = document.getElementById('act-modal-tfoot');
                 const rows = tbody.querySelectorAll('tr:not(.empty-row)');
 
-                let tB = 0, tP = 0, tC = 0, tTC = 0, tV = 0, tD = 0, tVAC = 0, tM = 0, tE = 0, tA = 0, tPE = 0;
+                let tB = 0,
+                    tP = 0,
+                    tC = 0,
+                    tTC = 0,
+                    tV = 0,
+                    tD = 0,
+                    tVAC = 0,
+                    tM = 0,
+                    tE = 0,
+                    tA = 0,
+                    tPE = 0;
 
                 rows.forEach(row => {
                     if (row.style.display !== 'none') {
@@ -1591,10 +1726,11 @@
                 });
 
                 const tTotal = tB + tP + tC + tTC + tV + tD + tVAC + tM + tE + tA + tPE;
-                const tUtil = tB + tP + tC + tTC + tV + tE; // Solo Base, Pozo, Viaje, Entrena, Trabajo Casa y Comision
+                const tUtil = tB + tP + tC + tTC + tV +
+                tE; // Solo Base, Pozo, Viaje, Entrena, Trabajo Casa y Comision
                 const tPct = tTotal > 0 ? Math.round((tUtil / tTotal) * 100) : 0;
 
-                if(tfoot.querySelector('.total-row')) {
+                if (tfoot.querySelector('.total-row')) {
                     const footCells = tfoot.querySelectorAll('.total-row td');
                     footCells[1].textContent = tB;
                     footCells[2].textContent = tP;
@@ -1635,18 +1771,61 @@
 
             function renderSummaryCards(containerId, B, P, C, TC, V, D, VAC, M, E, A, PE, Total, Util) {
                 const pct = Total > 0 ? Math.round((Util / Total) * 100) : 0;
-                const summaryColors = [
-                    { label: 'B', val: B, bg: 'var(--work-base)' },
-                    { label: 'P', val: P, bg: 'var(--work-well)' },
-                    { label: 'C', val: C, bg: 'var(--commissioned)' },
-                    { label: 'TC', val: TC, bg: 'var(--home-office)' },
-                    { label: 'V', val: V, bg: 'var(--traveling)' },
-                    { label: 'D', val: D, bg: 'var(--rest)' },
-                    { label: 'VAC', val: VAC, bg: 'var(--vacation)' },
-                    { label: 'M', val: M, bg: 'var(--medical)' },
-                    { label: 'E', val: E, bg: 'var(--training)' },
-                    { label: 'A', val: A, bg: 'var(--absence)' },
-                    { label: 'PE', val: PE, bg: 'var(--permission)' }
+                const summaryColors = [{
+                        label: 'B',
+                        val: B,
+                        bg: 'var(--work-base)'
+                    },
+                    {
+                        label: 'P',
+                        val: P,
+                        bg: 'var(--work-well)'
+                    },
+                    {
+                        label: 'C',
+                        val: C,
+                        bg: 'var(--commissioned)'
+                    },
+                    {
+                        label: 'TC',
+                        val: TC,
+                        bg: 'var(--home-office)'
+                    },
+                    {
+                        label: 'V',
+                        val: V,
+                        bg: 'var(--traveling)'
+                    },
+                    {
+                        label: 'D',
+                        val: D,
+                        bg: 'var(--rest)'
+                    },
+                    {
+                        label: 'VAC',
+                        val: VAC,
+                        bg: 'var(--vacation)'
+                    },
+                    {
+                        label: 'M',
+                        val: M,
+                        bg: 'var(--medical)'
+                    },
+                    {
+                        label: 'E',
+                        val: E,
+                        bg: 'var(--training)'
+                    },
+                    {
+                        label: 'A',
+                        val: A,
+                        bg: 'var(--absence)'
+                    },
+                    {
+                        label: 'PE',
+                        val: PE,
+                        bg: 'var(--permission)'
+                    }
                 ];
 
                 document.getElementById(containerId).innerHTML = summaryColors.map(s => `
@@ -1676,7 +1855,17 @@
                 const tfoot = document.getElementById('act-modal-tfoot');
                 tbody.innerHTML = '';
 
-                let tB = 0, tP = 0, tC = 0, tTC = 0, tV = 0, tD = 0, tVAC = 0, tM = 0, tE = 0, tA = 0, tPE = 0;
+                let tB = 0,
+                    tP = 0,
+                    tC = 0,
+                    tTC = 0,
+                    tV = 0,
+                    tD = 0,
+                    tVAC = 0,
+                    tM = 0,
+                    tE = 0,
+                    tA = 0,
+                    tPE = 0;
 
                 const empleadosOrdenados = empDataArray.sort((a, b) => {
                     const totA = a.B + a.P + a.C + a.TC + a.V + a.D + a.VAC + a.M + a.E + a.A + a.PE;
@@ -1685,12 +1874,22 @@
                 });
 
                 empleadosOrdenados.forEach(emp => {
-                    const total = emp.B + emp.P + emp.C + emp.TC + emp.V + emp.D + emp.VAC + emp.M + emp.E + emp.A + emp.PE;
+                    const total = emp.B + emp.P + emp.C + emp.TC + emp.V + emp.D + emp.VAC + emp.M + emp
+                        .E + emp.A + emp.PE;
                     const util = emp.B + emp.P + emp.C + emp.TC + emp.V + emp.E;
                     const pctEmp = total > 0 ? Math.round((util / total) * 100) : 0;
 
-                    tB += emp.B; tP += emp.P; tC += emp.C; tTC += emp.TC; tV += emp.V;
-                    tD += emp.D; tVAC += emp.VAC; tM += emp.M; tE += emp.E; tA += emp.A; tPE += emp.PE;
+                    tB += emp.B;
+                    tP += emp.P;
+                    tC += emp.C;
+                    tTC += emp.TC;
+                    tV += emp.V;
+                    tD += emp.D;
+                    tVAC += emp.VAC;
+                    tM += emp.M;
+                    tE += emp.E;
+                    tA += emp.A;
+                    tPE += emp.PE;
 
                     const pctColor = pctEmp >= 80 ? '#16a34a' : pctEmp >= 60 ? '#d97706' : '#dc2626';
 
@@ -1716,7 +1915,8 @@
                 });
 
                 if (!tbody.children.length) {
-                    tbody.innerHTML = '<tr class="empty-row"><td colspan="15">No hay detalle de empleados para este mes.</td></tr>';
+                    tbody.innerHTML =
+                        '<tr class="empty-row"><td colspan="15">No hay detalle de empleados para este mes.</td></tr>';
                     tfoot.innerHTML = '';
                     document.getElementById('act-modal-summary').innerHTML = '';
                 } else {
@@ -1742,7 +1942,8 @@
                             <td class="text-center" style="color:var(--text-dark);">${tPct}%</td>
                         </tr>
                     `;
-                    renderSummaryCards('act-modal-summary', tB, tP, tC, tTC, tV, tD, tVAC, tM, tE, tA, tPE, tTotal, tUtil);
+                    renderSummaryCards('act-modal-summary', tB, tP, tC, tTC, tV, tD, tVAC, tM, tE, tA, tPE,
+                        tTotal, tUtil);
                 }
 
                 document.getElementById('actividadesModal').classList.add('show');
@@ -1926,9 +2127,11 @@
                         let isCont = '';
                         if (d.tipo === 'Viaje') {
                             if (d.is_continuation) {
-                                isCont = `<span style="background:#fef08a; color:#9a3412; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;" title="Este viaje es continuación de uno anterior">Continuación</span>`;
+                                isCont =
+                                    `<span style="background:#fef08a; color:#9a3412; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;" title="Este viaje es continuación de uno anterior">Continuación</span>`;
                             } else {
-                                isCont = `<span style="background:#bbf7d0; color:#166534; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;" title="Día en que inicia el viaje">Inicio</span>`;
+                                isCont =
+                                    `<span style="background:#bbf7d0; color:#166534; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:5px;" title="Día en que inicia el viaje">Inicio</span>`;
                             }
                         }
 
@@ -1980,12 +2183,16 @@
                 }
 
                 if (type === 'area' || type === 'general') {
-                    tablesContainer.innerHTML += getTableHtml('Historial de Bonos Normales', normalDetails, false);
-                    tablesContainer.innerHTML += getTableHtml('Historial de Comisionados (Extras)', comisionDetails, true);
+                    tablesContainer.innerHTML += getTableHtml('Historial de Bonos Normales', normalDetails,
+                        false);
+                    tablesContainer.innerHTML += getTableHtml('Historial de Comisionados (Extras)',
+                        comisionDetails, true);
                 } else if (type === 'servicios') {
-                    tablesContainer.innerHTML += getTableHtml('Detalle de Servicios Realizados', normalDetails, false);
+                    tablesContainer.innerHTML += getTableHtml('Detalle de Servicios Realizados', normalDetails,
+                        false);
                 } else if (type === 'suministros') {
-                    tablesContainer.innerHTML += getTableHtml('Detalle de Viajes Suministros', normalDetails, false);
+                    tablesContainer.innerHTML += getTableHtml('Detalle de Viajes Suministros', normalDetails,
+                        false);
                 } else {
                     tablesContainer.innerHTML += getTableHtml('Historial de Bonos', normalDetails, false);
                 }
@@ -1994,7 +2201,7 @@
                 document.getElementById('historyModal').classList.add('show');
                 updateHistoryModalTotals();
 
-                for(let i = 1; i <= tableCounter; i++) {
+                for (let i = 1; i <= tableCounter; i++) {
                     makeTableSortable('modal-hist-table-' + i);
                 }
             };
@@ -2155,33 +2362,75 @@
                     });
                     updateDropdownText(prefix);
 
-                    if (prefix === 'emp') { renderEmpleados(); makeTableSortable('empleados-table'); }
-                    if (prefix === 'area') { renderAreas(); makeTableSortable('areas-table'); }
-                    if (prefix === 'pozo') { renderPozos(); makeTableSortable('pozos-table'); }
-                    if (prefix === 'act') { renderActividades(); makeTableSortable('actividades-table'); makeTableSortable('actividades-q-table'); renderUtilizacion(); makeTableSortable('utilizacion-table'); makeTableSortable('utilizacion-q-table'); makeTableSortable('utilizacion-area-table'); }
+                    if (prefix === 'emp') {
+                        renderEmpleados();
+                        makeTableSortable('empleados-table');
+                    }
+                    if (prefix === 'area') {
+                        renderAreas();
+                        makeTableSortable('areas-table');
+                    }
+                    if (prefix === 'pozo') {
+                        renderPozos();
+                        makeTableSortable('pozos-table');
+                    }
+                    if (prefix === 'act') {
+                        renderActividades();
+                        makeTableSortable('actividades-table');
+                        makeTableSortable('actividades-q-table');
+                        renderUtilizacion();
+                        makeTableSortable('utilizacion-table');
+                        makeTableSortable('utilizacion-q-table');
+                        makeTableSortable('utilizacion-area-table');
+                    }
                 }
             }
 
             function handleMesCheckboxChange(prefix) {
                 document.getElementById(`${prefix}-trimestre-filter`).value = 'Personalizado';
                 updateDropdownText(prefix);
-                if (prefix === 'emp') { renderEmpleados(); makeTableSortable('empleados-table'); }
-                if (prefix === 'area') { renderAreas(); makeTableSortable('areas-table'); }
-                if (prefix === 'pozo') { renderPozos(); makeTableSortable('pozos-table'); }
-                if (prefix === 'act') { renderActividades(); makeTableSortable('actividades-table'); makeTableSortable('actividades-q-table'); renderUtilizacion(); makeTableSortable('utilizacion-table'); makeTableSortable('utilizacion-q-table'); makeTableSortable('utilizacion-area-table'); }
+                if (prefix === 'emp') {
+                    renderEmpleados();
+                    makeTableSortable('empleados-table');
+                }
+                if (prefix === 'area') {
+                    renderAreas();
+                    makeTableSortable('areas-table');
+                }
+                if (prefix === 'pozo') {
+                    renderPozos();
+                    makeTableSortable('pozos-table');
+                }
+                if (prefix === 'act') {
+                    renderActividades();
+                    makeTableSortable('actividades-table');
+                    makeTableSortable('actividades-q-table');
+                    renderUtilizacion();
+                    makeTableSortable('utilizacion-table');
+                    makeTableSortable('utilizacion-q-table');
+                    makeTableSortable('utilizacion-area-table');
+                }
             }
 
-            document.getElementById('emp-trimestre-filter').addEventListener('change', () => handleTrimestreChange('emp'));
-            document.querySelectorAll('.emp-mes-chk').forEach(cb => cb.addEventListener('change', () => handleMesCheckboxChange('emp')));
+            document.getElementById('emp-trimestre-filter').addEventListener('change', () => handleTrimestreChange(
+                'emp'));
+            document.querySelectorAll('.emp-mes-chk').forEach(cb => cb.addEventListener('change', () =>
+                handleMesCheckboxChange('emp')));
 
-            document.getElementById('area-trimestre-filter').addEventListener('change', () => handleTrimestreChange('area'));
-            document.querySelectorAll('.area-mes-chk').forEach(cb => cb.addEventListener('change', () => handleMesCheckboxChange('area')));
+            document.getElementById('area-trimestre-filter').addEventListener('change', () => handleTrimestreChange(
+                'area'));
+            document.querySelectorAll('.area-mes-chk').forEach(cb => cb.addEventListener('change', () =>
+                handleMesCheckboxChange('area')));
 
-            document.getElementById('pozo-trimestre-filter').addEventListener('change', () => handleTrimestreChange('pozo'));
-            document.querySelectorAll('.pozo-mes-chk').forEach(cb => cb.addEventListener('change', () => handleMesCheckboxChange('pozo')));
+            document.getElementById('pozo-trimestre-filter').addEventListener('change', () => handleTrimestreChange(
+                'pozo'));
+            document.querySelectorAll('.pozo-mes-chk').forEach(cb => cb.addEventListener('change', () =>
+                handleMesCheckboxChange('pozo')));
 
-            document.getElementById('act-trimestre-filter').addEventListener('change', () => handleTrimestreChange('act'));
-            document.querySelectorAll('.act-mes-chk').forEach(cb => cb.addEventListener('change', () => handleMesCheckboxChange('act')));
+            document.getElementById('act-trimestre-filter').addEventListener('change', () => handleTrimestreChange(
+                'act'));
+            document.querySelectorAll('.act-mes-chk').forEach(cb => cb.addEventListener('change', () =>
+                handleMesCheckboxChange('act')));
 
 
             // ──────────────────────────────────────────────────────────────
@@ -2191,7 +2440,8 @@
             function renderEmpleados() {
                 const filterArea = document.getElementById('emp-area-filter').value;
                 const filterSearch = document.getElementById('emp-search-filter').value.toLowerCase();
-                const mesesMostrar = Array.from(document.querySelectorAll('.emp-mes-chk:checked')).map(cb => cb.value);
+                const mesesMostrar = Array.from(document.querySelectorAll('.emp-mes-chk:checked')).map(cb => cb
+                    .value);
 
                 const tableThead = document.querySelector('#empleados-table thead');
                 const tbody = document.getElementById('empleados-tbody');
@@ -2347,27 +2597,46 @@
                             const k1 = monthKeysMap[mes][0];
                             const k2 = monthKeysMap[mes][1];
 
-                            const q1_y1 = areaObj1[k1] || { normal: 0, comisionado: 0 };
-                            const q2_y1 = areaObj1[k2] || { normal: 0, comisionado: 0 };
-                            const valY1 = q1_y1.normal + q1_y1.comisionado + q2_y1.normal + q2_y1.comisionado;
+                            const q1_y1 = areaObj1[k1] || {
+                                normal: 0,
+                                comisionado: 0
+                            };
+                            const q2_y1 = areaObj1[k2] || {
+                                normal: 0,
+                                comisionado: 0
+                            };
+                            const valY1 = q1_y1.normal + q1_y1.comisionado + q2_y1.normal + q2_y1
+                                .comisionado;
 
-                            const q1_y2 = areaObj2[k1] || { normal: 0, comisionado: 0 };
-                            const q2_y2 = areaObj2[k2] || { normal: 0, comisionado: 0 };
-                            const valY2 = q1_y2.normal + q1_y2.comisionado + q2_y2.normal + q2_y2.comisionado;
+                            const q1_y2 = areaObj2[k1] || {
+                                normal: 0,
+                                comisionado: 0
+                            };
+                            const q2_y2 = areaObj2[k2] || {
+                                normal: 0,
+                                comisionado: 0
+                            };
+                            const valY2 = q1_y2.normal + q1_y2.comisionado + q2_y2.normal + q2_y2
+                                .comisionado;
 
                             const diff = valY1 - valY2;
                             const pct = valY2 > 0 ? (diff / valY2) * 100 : (valY1 > 0 ? 100 : 0);
-                            const pctClass = pct > 0 ? 'percentage-positive' : (pct < 0 ? 'percentage-negative' : '');
-                            const pctTxt = valY2 === 0 && valY1 === 0 ? '-' : (pct > 0 ? '+' : '') + Math.round(pct) + '%';
+                            const pctClass = pct > 0 ? 'percentage-positive' : (pct < 0 ?
+                                'percentage-negative' : '');
+                            const pctTxt = valY2 === 0 && valY1 === 0 ? '-' : (pct > 0 ? '+' : '') +
+                                Math.round(pct) + '%';
 
                             gt1 += valY1;
                             gt2 += valY2;
                             columnTotals[idx * 3] += valY1;
                             columnTotals[idx * 3 + 1] += valY2;
 
-                            rowHTML += `<td class="text-right currency-mxn">${valY1>0?formatMxn(valY1):'-'}</td>`;
-                            rowHTML += `<td class="text-right currency-mxn" style="background:#f8fafc;">${valY2>0?formatMxn(valY2):'-'}</td>`;
-                            rowHTML += `<td class="text-center ${pctClass}"><strong>${pctTxt}</strong></td>`;
+                            rowHTML +=
+                                `<td class="text-right currency-mxn">${valY1>0?formatMxn(valY1):'-'}</td>`;
+                            rowHTML +=
+                                `<td class="text-right currency-mxn" style="background:#f8fafc;">${valY2>0?formatMxn(valY2):'-'}</td>`;
+                            rowHTML +=
+                                `<td class="text-center ${pctClass}"><strong>${pctTxt}</strong></td>`;
                         });
 
                         columnTotals[columnTotals.length - 3] += gt1;
@@ -2375,12 +2644,17 @@
 
                         const gtDiff = gt1 - gt2;
                         const gtPct = gt2 > 0 ? (gtDiff / gt2) * 100 : (gt1 > 0 ? 100 : 0);
-                        const gtPctClass = gtPct > 0 ? 'percentage-positive' : (gtPct < 0 ? 'percentage-negative' : '');
-                        const gtPctTxt = gt2 === 0 && gt1 === 0 ? '-' : (gtPct > 0 ? '+' : '') + Math.round(gtPct) + '%';
+                        const gtPctClass = gtPct > 0 ? 'percentage-positive' : (gtPct < 0 ?
+                            'percentage-negative' : '');
+                        const gtPctTxt = gt2 === 0 && gt1 === 0 ? '-' : (gtPct > 0 ? '+' : '') + Math.round(
+                            gtPct) + '%';
 
-                        rowHTML += `<td class="text-right currency-mxn total-col">${gt1>0?formatMxn(gt1):'-'}</td>`;
-                        rowHTML += `<td class="text-right currency-mxn total-col" style="background:#e2e8f0;">${gt2>0?formatMxn(gt2):'-'}</td>`;
-                        rowHTML += `<td class="text-center total-col ${gtPctClass}"><strong>${gtPctTxt}</strong></td>`;
+                        rowHTML +=
+                            `<td class="text-right currency-mxn total-col">${gt1>0?formatMxn(gt1):'-'}</td>`;
+                        rowHTML +=
+                            `<td class="text-right currency-mxn total-col" style="background:#e2e8f0;">${gt2>0?formatMxn(gt2):'-'}</td>`;
+                        rowHTML +=
+                            `<td class="text-center total-col ${gtPctClass}"><strong>${gtPctTxt}</strong></td>`;
 
                         tr.innerHTML = rowHTML;
                         tbody.appendChild(tr);
@@ -2397,11 +2671,15 @@
                             const val2 = columnTotals[idx - 1];
                             const diff = val1 - val2;
                             const pct = val2 > 0 ? (diff / val2) * 100 : (val1 > 0 ? 100 : 0);
-                            const pctClass = pct > 0 ? 'percentage-positive' : (pct < 0 ? 'percentage-negative' : '');
-                            const pctTxt = val2 === 0 && val1 === 0 ? '-' : (pct > 0 ? '+' : '') + Math.round(pct) + '%';
-                            tfootHTML += `<td class="text-center ${pctClass}" style="font-size:1.1em;">${pctTxt}</td>`;
+                            const pctClass = pct > 0 ? 'percentage-positive' : (pct < 0 ?
+                                'percentage-negative' : '');
+                            const pctTxt = val2 === 0 && val1 === 0 ? '-' : (pct > 0 ? '+' : '') + Math
+                                .round(pct) + '%';
+                            tfootHTML +=
+                                `<td class="text-center ${pctClass}" style="font-size:1.1em;">${pctTxt}</td>`;
                         } else {
-                            tfootHTML += `<td class="text-right currency-mxn" style="color:var(--text-dark);">${formatMxn(tot)}</td>`;
+                            tfootHTML +=
+                                `<td class="text-right currency-mxn" style="color:var(--text-dark);">${formatMxn(tot)}</td>`;
                         }
                     });
                     tfoot.innerHTML = tfootHTML + `</tr>`;
@@ -2445,8 +2723,18 @@
                         mesesMostrar.forEach((mes, idx) => {
                             const k1 = monthKeysMap[mes][0];
                             const k2 = monthKeysMap[mes][1];
-                            const q1Data = areaObj[k1] || { normal: 0, comisionado: 0, normal_detalles: [], comisionados_detalles: [] };
-                            const q2Data = areaObj[k2] || { normal: 0, comisionado: 0, normal_detalles: [], comisionados_detalles: [] };
+                            const q1Data = areaObj[k1] || {
+                                normal: 0,
+                                comisionado: 0,
+                                normal_detalles: [],
+                                comisionados_detalles: []
+                            };
+                            const q2Data = areaObj[k2] || {
+                                normal: 0,
+                                comisionado: 0,
+                                normal_detalles: [],
+                                comisionados_detalles: []
+                            };
                             const val1 = q1Data.normal + q1Data.comisionado;
                             const val2 = q2Data.normal + q2Data.comisionado;
                             const totalM = val1 + val2;
@@ -2473,7 +2761,8 @@
                     let tfootHTML = `<tr class="total-row"><td class="text-right sticky-col">TOTALES</td>`;
                     columnTotals.forEach((tot, idx) => {
                         const style = 'color:var(--text-dark);';
-                        tfootHTML += `<td class="text-right currency-mxn" style="${style}">${formatMxn(tot)}</td>`;
+                        tfootHTML +=
+                            `<td class="text-right currency-mxn" style="${style}">${formatMxn(tot)}</td>`;
                     });
                     tfoot.innerHTML = tfootHTML + `</tr>`;
                 }
@@ -2499,7 +2788,8 @@
 
             function renderPozos() {
                 const filterPozo = document.getElementById('pozo-search-filter').value;
-                const mesesMostrar = Array.from(document.querySelectorAll('.pozo-mes-chk:checked')).map(cb => cb.value);
+                const mesesMostrar = Array.from(document.querySelectorAll('.pozo-mes-chk:checked')).map(cb => cb
+                    .value);
                 const thead = document.querySelector('#pozos-table thead');
                 const tbody = document.getElementById('pozos-tbody');
                 const tfoot = document.getElementById('pozos-tfoot');
@@ -2519,7 +2809,8 @@
                 let tHeadHTML2 = `<tr class="sub-header">`;
                 mesesMostrar.forEach(mes => {
                     tHeadHTML1 += `<th colspan="3">${mes.toUpperCase()}</th>`;
-                    tHeadHTML2 += `<th>1RA QUINCENA</th><th>2DA QUINCENA</th><th>TOTAL ${mes.substring(0,3).toUpperCase()}</th>`;
+                    tHeadHTML2 +=
+                        `<th>1RA QUINCENA</th><th>2DA QUINCENA</th><th>TOTAL ${mes.substring(0,3).toUpperCase()}</th>`;
                 });
                 tHeadHTML1 += `<th rowspan="2">GRAN TOTAL</th></tr>`;
                 tHeadHTML2 += `</tr>`;
@@ -2529,7 +2820,10 @@
                 pozosData.forEach(p => {
                     if (!pozosMap[p.pozo]) pozosMap[p.pozo] = {};
                     mesesMostrar.forEach(mes => {
-                        if (!pozosMap[p.pozo][mes]) pozosMap[p.pozo][mes] = { q1: 0, q2: 0 };
+                        if (!pozosMap[p.pozo][mes]) pozosMap[p.pozo][mes] = {
+                            q1: 0,
+                            q2: 0
+                        };
                     });
                     if (mesesMostrar.includes(p.mes)) {
                         if (p.quincena === '1RA QUINCENA') pozosMap[p.pozo][p.mes].q1 += p.costo;
@@ -2544,8 +2838,12 @@
                 let chartDataArr = [];
 
                 const pozosSorted = Object.keys(pozosMap).sort((a, b) => {
-                    const totA = mesesMostrar.reduce((s, m) => s + (pozosMap[a][m]?.q1 || 0) + (pozosMap[a][m]?.q2 || 0), 0);
-                    const totB = mesesMostrar.reduce((s, m) => s + (pozosMap[b][m]?.q1 || 0) + (pozosMap[b][m]?.q2 || 0), 0);
+                    const totA = mesesMostrar.reduce((s, m) => s + (pozosMap[a][m]?.q1 || 0) + (pozosMap[a][
+                        m
+                    ]?.q2 || 0), 0);
+                    const totB = mesesMostrar.reduce((s, m) => s + (pozosMap[b][m]?.q1 || 0) + (pozosMap[b][
+                        m
+                    ]?.q2 || 0), 0);
                     return totB - totA;
                 });
 
@@ -2553,7 +2851,8 @@
                 pozosSorted.forEach(pozoName => {
                     if (filterPozo !== 'TODOS' && pozoName !== filterPozo) return;
                     const tr = document.createElement('tr');
-                    let rowHTML = `
+                    let rowHTML =
+                        `
                         <td class="sticky-col text-center" style="left:0; z-index:15; font-weight:bold; color:var(--text-medium);">${rowIndex++}</td>
                         <td class="sticky-col text-left" style="left:40px; z-index:15;"><strong>${pozoName}</strong></td>`;
 
@@ -2579,26 +2878,34 @@
                         const attrT = totalM > 0 ?
                             `class="text-right currency-mxn total-col clickable-bonus" onclick="openHistoryModal('pozo','${safePozo}','${mes}','${safePozo}')" title="Clic para auditar"` :
                             `class="text-right currency-mxn total-col"`;
-                        rowHTML += `<td ${attr1}>${val1>0?formatMxn(val1):'-'}</td><td ${attr2}>${val2>0?formatMxn(val2):'-'}</td><td ${attrT}>${totalM>0?formatMxn(totalM):'-'}</td>`;
+                        rowHTML +=
+                            `<td ${attr1}>${val1>0?formatMxn(val1):'-'}</td><td ${attr2}>${val2>0?formatMxn(val2):'-'}</td><td ${attrT}>${totalM>0?formatMxn(totalM):'-'}</td>`;
                     });
 
                     if (hasData) {
                         columnTotals[columnTotals.length - 1] += granTotalPozo;
-                        rowHTML += `<td class="text-right currency-mxn" style="background-color:#e2e8f0;">${granTotalPozo>0?formatMxn(granTotalPozo):'-'}</td>`;
+                        rowHTML +=
+                            `<td class="text-right currency-mxn" style="background-color:#e2e8f0;">${granTotalPozo>0?formatMxn(granTotalPozo):'-'}</td>`;
                         tr.innerHTML = rowHTML;
                         tbody2.appendChild(tr);
 
-                        chartDataArr.push({ label: pozoName, value: granTotalPozo });
+                        chartDataArr.push({
+                            label: pozoName,
+                            value: granTotalPozo
+                        });
                     }
                 });
 
                 if (!tbody2.children.length) {
-                    tbody2.innerHTML = `<tr class="empty-row"><td colspan="${mesesMostrar.length*3+3}">Sin resultados.</td></tr>`;
+                    tbody2.innerHTML =
+                        `<tr class="empty-row"><td colspan="${mesesMostrar.length*3+3}">Sin resultados.</td></tr>`;
                 } else {
-                    let tfootHTML = `<tr class="total-row"><td colspan="2" class="text-right sticky-col" style="left:0; z-index:25;">TOTALES</td>`;
+                    let tfootHTML =
+                        `<tr class="total-row"><td colspan="2" class="text-right sticky-col" style="left:0; z-index:25;">TOTALES</td>`;
                     columnTotals.forEach((tot, idx) => {
                         const style = 'color:var(--text-dark);';
-                        tfootHTML += `<td class="text-right currency-mxn" style="${style}">${formatMxn(tot)}</td>`;
+                        tfootHTML +=
+                            `<td class="text-right currency-mxn" style="${style}">${formatMxn(tot)}</td>`;
                     });
                     document.getElementById('pozos-tfoot').innerHTML = tfootHTML + `</tr>`;
                 }
@@ -2627,17 +2934,57 @@
                 if (pozosChart) pozosChart.destroy();
 
                 const optionsPozos = {
-                    series: [{ name: 'Costo Total (MXN)', data: finalValues }],
-                    chart: { type: 'bar', height: 350, toolbar: { show: true } },
-                    colors: [function({ value, seriesIndex, dataPointIndex, w }) {
+                    series: [{
+                        name: 'Costo Total (MXN)',
+                        data: finalValues
+                    }],
+                    chart: {
+                        type: 'bar',
+                        height: 350,
+                        toolbar: {
+                            show: true
+                        }
+                    },
+                    colors: [function({
+                        value,
+                        seriesIndex,
+                        dataPointIndex,
+                        w
+                    }) {
                         return finalLabels[dataPointIndex] === 'OTROS' ? '#94a3b8' : '#2c3e50';
                     }],
-                    plotOptions: { bar: { borderRadius: 4, distributed: true, dataLabels: { position: 'top' } } },
-                    dataLabels: { enabled: false },
-                    legend: { show: false },
-                    xaxis: { categories: finalLabels },
-                    yaxis: { labels: { formatter: function (val) { return "$" + val.toLocaleString('es-MX'); } } },
-                    tooltip: { y: { formatter: function (val) { return "$" + val.toLocaleString('es-MX'); } } }
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            distributed: true,
+                            dataLabels: {
+                                position: 'top'
+                            }
+                        }
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    legend: {
+                        show: false
+                    },
+                    xaxis: {
+                        categories: finalLabels
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: function(val) {
+                                return "$" + val.toLocaleString('es-MX');
+                            }
+                        }
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: function(val) {
+                                return "$" + val.toLocaleString('es-MX');
+                            }
+                        }
+                    }
                 };
 
                 pozosChart = new ApexCharts(document.querySelector("#pozosChart"), optionsPozos);
@@ -2653,11 +3000,14 @@
                 const tfootQuincena = document.getElementById('stat-quincena-master-tfoot');
                 tbQuincena.innerHTML = '';
 
-                let totServ = 0, totSumin = 0, totMxn = 0;
+                let totServ = 0,
+                    totSumin = 0,
+                    totMxn = 0;
 
                 quincenasData.forEach((q, i) => {
                     const qKey = monthKeysMap[q.mes][q.quincena === '1RA' ? 0 : 1];
-                    const classDiff = q.pctDif === null ? '' : q.pctDif >= 0 ? 'percentage-positive' : 'percentage-negative';
+                    const classDiff = q.pctDif === null ? '' : q.pctDif >= 0 ? 'percentage-positive' :
+                        'percentage-negative';
                     const sign = (q.pctDif !== null && q.pctDif > 0) ? '+' : '';
                     const pctText = q.pctDif !== null ? `${sign}${q.pctDif}%` : '—';
 
@@ -2690,14 +3040,16 @@
                 const tfootMes = document.getElementById('stat-mes-consolidado-tfoot');
                 tbMes.innerHTML = '';
 
-                let totMesMxn = 0, totMesUsd = 0;
+                let totMesMxn = 0,
+                    totMesUsd = 0;
 
                 mesData.forEach(d => {
                     totMesMxn += d.bonosMxn;
                     totMesUsd += d.bonosUsd;
 
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `
+                    tr.innerHTML =
+                        `
                         <td class="text-left"><strong>${d.mes}</strong> <span style="font-size:10px; color:#94a3b8;">(TC: $${format1Dec(d.tc)})</span></td>
                         <td class="text-right currency-mxn clickable-cell" title="Ver detalle MXN" onclick="openHistoryModal('general', null, '${d.mes}', 'Concentrado General: ${d.mes}')"><strong>${d.bonosMxn>0 ? formatMxn(d.bonosMxn) : '-'}</strong></td>
                         <td class="text-right currency-usd clickable-cell" title="Ver detalle referencial USD" onclick="openHistoryModal('general', null, '${d.mes}', 'Concentrado General: ${d.mes}')"><strong>${d.bonosUsd>0 ? formatUsd(d.bonosUsd) : '-'}</strong></td>`;
@@ -2713,25 +3065,251 @@
                 `;
 
                 if (evChart) evChart.destroy();
+
                 const optionsEv = {
                     series: [{
-                        name: 'Bonos MXN',
-                        data: mesData.map(d => d.bonosMxn)
-                    }, {
-                        name: 'Bonos USD (Aprox)',
-                        data: mesData.map(d => d.bonosUsd)
-                    }],
-                    chart: { type: 'bar', height: 380, toolbar: { show: true } },
+                            name: 'Total MXN',
+                            type: 'column',
+                            data: mesData.map(d => d.bonosMxn)
+                        },
+                        {
+                            name: 'Equivalente USD',
+                            type: 'line',
+                            data: mesData.map(d => d.bonosUsd)
+                        }
+                    ],
+                    chart: {
+                        type: 'line',
+                        height: 380,
+                        toolbar: {
+                            show: true,
+                            tools: {
+                                download: true,
+                                selection: true,
+                                zoom: true,
+                                pan: false
+                            }
+                        },
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 900
+                        },
+                        dropShadow: {
+                            enabled: true,
+                            top: 4,
+                            left: 0,
+                            blur: 6,
+                            opacity: 0.08
+                        },
+                        fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                        background: 'transparent'
+                    },
                     colors: ['#34495e', '#27ae60'],
-                    plotOptions: { bar: { horizontal: false, columnWidth: '55%', endingShape: 'rounded' } },
-                    dataLabels: { enabled: false },
-                    stroke: { show: true, width: 2, colors: ['transparent'] },
-                    xaxis: { categories: mesData.map(d => d.mes) },
-                    yaxis: { labels: { formatter: function (val) { return "$" + val.toLocaleString('es-MX'); } } },
-                    fill: { opacity: 1 },
-                    tooltip: { y: { formatter: function (val) { return "$" + val.toLocaleString('es-MX'); } } },
-                    legend: { position: 'bottom' }
+                    stroke: {
+                        width: [0, 3],
+                        curve: 'smooth'
+                    },
+                    fill: {
+                        type: ['solid', 'gradient'],
+                        opacity: [0.92, 1],
+                        gradient: {
+                            shade: 'light',
+                            type: 'vertical',
+                            shadeIntensity: 0.3,
+                            gradientToColors: ['#2ecc71'],
+                            inverseColors: false,
+                            opacityFrom: 1,
+                            opacityTo: 0.85,
+                            stops: [0, 100]
+                        }
+                    },
+                    plotOptions: {
+                        bar: {
+                            columnWidth: '52%',
+                            borderRadius: 5,
+                            borderRadiusApplication: 'end',
+                            dataLabels: {
+                                position: 'top'
+                            }
+                        }
+                    },
+                    markers: {
+                        size: [0, 5],
+                        colors: ['#ffffff'],
+                        strokeColors: '#27ae60',
+                        strokeWidth: 2.5,
+                        shape: 'circle',
+                        hover: {
+                            size: 8,
+                            sizeOffset: 2
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        enabledOnSeries: [1],
+                        formatter: function(val) {
+                            if (!val || val === 0) return '';
+                            return "$" + (val / 1000).toFixed(1) + "k";
+                        },
+                        offsetY: -10,
+                        style: {
+                            fontSize: '10px',
+                            colors: ['#27ae60'],
+                            fontWeight: '700'
+                        },
+                        background: {
+                            enabled: true,
+                            foreColor: '#ffffff',
+                            padding: 3,
+                            borderRadius: 3,
+                            borderWidth: 1,
+                            borderColor: '#27ae60',
+                            opacity: 0.9
+                        }
+                    },
+                    xaxis: {
+                        categories: mesData.map(d => d.mes),
+                        axisBorder: {
+                            show: true,
+                            color: '#e2e8f0',
+                            height: 2
+                        },
+                        axisTicks: {
+                            show: false
+                        },
+                        labels: {
+                            style: {
+                                colors: '#4a5568',
+                                fontWeight: 600,
+                                fontSize: '12px'
+                            }
+                        },
+                        crosshairs: {
+                            fill: {
+                                type: 'gradient',
+                                gradient: {
+                                    colorFrom: '#34495e',
+                                    colorTo: '#2c3e50',
+                                    stops: [0, 100],
+                                    opacityFrom: 0.08,
+                                    opacityTo: 0.02
+                                }
+                            }
+                        }
+                    },
+                    yaxis: [{
+                            seriesName: 'Total MXN',
+                            title: {
+                                text: 'Bonos (MXN)',
+                                style: {
+                                    color: '#34495e',
+                                    fontWeight: 700,
+                                    fontSize: '12px'
+                                }
+                            },
+                            labels: {
+                                style: {
+                                    colors: '#34495e',
+                                    fontWeight: 600
+                                },
+                                formatter: function(val) {
+                                    if (val >= 1000000) return "$" + (val / 1000000).toFixed(1) + "M";
+                                    if (val >= 1000) return "$" + (val / 1000).toFixed(0) + "k";
+                                    return "$" + val;
+                                }
+                            }
+                        },
+                        {
+                            seriesName: 'Equivalente USD',
+                            opposite: true,
+                            title: {
+                                text: 'Equivalente (USD)',
+                                style: {
+                                    color: '#27ae60',
+                                    fontWeight: 700,
+                                    fontSize: '12px'
+                                }
+                            },
+                            labels: {
+                                style: {
+                                    colors: '#27ae60',
+                                    fontWeight: 600
+                                },
+                                formatter: function(val) {
+                                    if (val >= 1000000) return "$" + (val / 1000000).toFixed(1) + "M";
+                                    if (val >= 1000) return "$" + (val / 1000).toFixed(0) + "k";
+                                    return "$" + val;
+                                }
+                            }
+                        }
+                    ],
+                    tooltip: {
+                        shared: true,
+                        intersect: false,
+                        theme: 'light',
+                        style: {
+                            fontSize: '13px'
+                        },
+                        y: {
+                            formatter: function(val, {
+                                seriesIndex,
+                                dataPointIndex
+                            }) {
+                                if (typeof val === 'undefined' || val === null) return '-';
+                                const tc = mesData[dataPointIndex]?.tc ?? 0;
+                                if (seriesIndex === 0) {
+                                    return "MXN $" + val.toLocaleString('es-MX', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                } else {
+                                    return "USD $" + val.toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        }) +
+                                        ' <span style="font-size:10px; color:#94a3b8; margin-left:6px;">(TC: $' +
+                                        parseFloat(tc).toFixed(4) + ')</span>';
+                                }
+                            }
+                        }
+                    },
+                    grid: {
+                        borderColor: '#f1f5f9',
+                        strokeDashArray: 4,
+                        xaxis: {
+                            lines: {
+                                show: false
+                            }
+                        },
+                        yaxis: {
+                            lines: {
+                                show: true
+                            }
+                        },
+                        padding: {
+                            top: 10,
+                            right: 20,
+                            bottom: 0,
+                            left: 10
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                        horizontalAlign: 'center', // <--- Cambiado de 'right' a 'center'
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        markers: {
+                            radius: 4,
+                            width: 12,
+                            height: 12
+                        },
+                        itemMargin: {
+                            horizontal: 12
+                        }
+                    }
                 };
+
                 evChart = new ApexCharts(document.querySelector("#evolucionChart"), optionsEv);
                 evChart.render();
 
@@ -2744,14 +3322,41 @@
                         name: 'Viajes Suministros',
                         data: mesData.map(d => d.suministrosCount)
                     }],
-                    chart: { type: 'area', height: 350, toolbar: { show: true } },
+                    chart: {
+                        type: 'area',
+                        height: 350,
+                        toolbar: {
+                            show: true
+                        }
+                    },
                     colors: ['#3b82f6', '#f59e0b'],
-                    dataLabels: { enabled: false },
-                    stroke: { curve: 'smooth', width: 2 },
-                    xaxis: { categories: mesData.map(d => d.mes) },
-                    yaxis: { labels: { formatter: function (val) { return Math.round(val); } } },
-                    tooltip: { y: { formatter: function (val) { return val + " registros"; } } },
-                    legend: { position: 'bottom' }
+                    dataLabels: {
+                        enabled: false
+                    },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 2
+                    },
+                    xaxis: {
+                        categories: mesData.map(d => d.mes)
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: function(val) {
+                                return Math.round(val);
+                            }
+                        }
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: function(val) {
+                                return val + " registros";
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
                 };
                 servSuminChart = new ApexCharts(document.querySelector("#serviciosSuministrosChart"), optionsServ);
                 servSuminChart.render();
@@ -2762,7 +3367,8 @@
             // ──────────────────────────────────────────────────────────────
 
             function renderActividades() {
-                const mesesMostrar = Array.from(document.querySelectorAll('.act-mes-chk:checked')).map(cb => cb.value.toUpperCase());
+                const mesesMostrar = Array.from(document.querySelectorAll('.act-mes-chk:checked')).map(cb => cb
+                    .value.toUpperCase());
 
                 const tbody = document.getElementById('actividades-tbody');
                 const tfoot = document.getElementById('actividades-tfoot');
@@ -2774,7 +3380,8 @@
                 tbodyQ.innerHTML = '';
 
                 if (mesesMostrar.length === 0) {
-                    tbody.innerHTML = '<tr class="empty-row"><td colspan="24">Selecciona al menos un mes en los filtros.</td></tr>';
+                    tbody.innerHTML =
+                        '<tr class="empty-row"><td colspan="24">Selecciona al menos un mes en los filtros.</td></tr>';
                     tfoot.innerHTML = '';
                     tbodyQ.innerHTML = '<tr class="empty-row"><td colspan="24">Sin datos.</td></tr>';
                     tfootQ.innerHTML = '';
@@ -2783,33 +3390,184 @@
                 }
 
                 // Variables Acumuladoras Anuales para el Total (Suma de Días Absolutos)
-                let yB = 0, yP = 0, yC = 0, yTC = 0, yV = 0, yD = 0, yVAC = 0, yM = 0, yE = 0, yA = 0, yPE = 0;
+                let yB = 0,
+                    yP = 0,
+                    yC = 0,
+                    yTC = 0,
+                    yV = 0,
+                    yD = 0,
+                    yVAC = 0,
+                    yM = 0,
+                    yE = 0,
+                    yA = 0,
+                    yPE = 0;
                 let activeMonthsCount = 0;
 
                 // Variables para la tabla Trimestral (Q) - SIEMPRE RENDERIZARÁ LOS 4 AUNQUE ESTÉN VACÍOS
                 const qMap = {
-                    'Q1': { meses: ['ENERO','FEBRERO','MARZO'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0} },
-                    'Q2': { meses: ['ABRIL','MAYO','JUNIO'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0} },
-                    'Q3': { meses: ['JULIO','AGOSTO','SEPTIEMBRE'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0} },
-                    'Q4': { meses: ['OCTUBRE','NOVIEMBRE','DICIEMBRE'], abs: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0}, avg: {B:0,P:0,C:0,TC:0,V:0,D:0,VAC:0,M:0,E:0,A:0,PE:0} }
+                    'Q1': {
+                        meses: ['ENERO', 'FEBRERO', 'MARZO'],
+                        abs: {
+                            B: 0,
+                            P: 0,
+                            C: 0,
+                            TC: 0,
+                            V: 0,
+                            D: 0,
+                            VAC: 0,
+                            M: 0,
+                            E: 0,
+                            A: 0,
+                            PE: 0
+                        },
+                        avg: {
+                            B: 0,
+                            P: 0,
+                            C: 0,
+                            TC: 0,
+                            V: 0,
+                            D: 0,
+                            VAC: 0,
+                            M: 0,
+                            E: 0,
+                            A: 0,
+                            PE: 0
+                        }
+                    },
+                    'Q2': {
+                        meses: ['ABRIL', 'MAYO', 'JUNIO'],
+                        abs: {
+                            B: 0,
+                            P: 0,
+                            C: 0,
+                            TC: 0,
+                            V: 0,
+                            D: 0,
+                            VAC: 0,
+                            M: 0,
+                            E: 0,
+                            A: 0,
+                            PE: 0
+                        },
+                        avg: {
+                            B: 0,
+                            P: 0,
+                            C: 0,
+                            TC: 0,
+                            V: 0,
+                            D: 0,
+                            VAC: 0,
+                            M: 0,
+                            E: 0,
+                            A: 0,
+                            PE: 0
+                        }
+                    },
+                    'Q3': {
+                        meses: ['JULIO', 'AGOSTO', 'SEPTIEMBRE'],
+                        abs: {
+                            B: 0,
+                            P: 0,
+                            C: 0,
+                            TC: 0,
+                            V: 0,
+                            D: 0,
+                            VAC: 0,
+                            M: 0,
+                            E: 0,
+                            A: 0,
+                            PE: 0
+                        },
+                        avg: {
+                            B: 0,
+                            P: 0,
+                            C: 0,
+                            TC: 0,
+                            V: 0,
+                            D: 0,
+                            VAC: 0,
+                            M: 0,
+                            E: 0,
+                            A: 0,
+                            PE: 0
+                        }
+                    },
+                    'Q4': {
+                        meses: ['OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'],
+                        abs: {
+                            B: 0,
+                            P: 0,
+                            C: 0,
+                            TC: 0,
+                            V: 0,
+                            D: 0,
+                            VAC: 0,
+                            M: 0,
+                            E: 0,
+                            A: 0,
+                            PE: 0
+                        },
+                        avg: {
+                            B: 0,
+                            P: 0,
+                            C: 0,
+                            TC: 0,
+                            V: 0,
+                            D: 0,
+                            VAC: 0,
+                            M: 0,
+                            E: 0,
+                            A: 0,
+                            PE: 0
+                        }
+                    }
                 };
 
                 // Variables para graficar los meses individuales
                 const labelsMes = [];
-                const dsBase = [], dsPozo = [], dsCom = [], dsCasa = [], dsViaje = [];
-                const dsDesc = [], dsVac = [], dsMed = [], dsEntre = [], dsAus = [], dsPerm = [];
+                const dsBase = [],
+                    dsPozo = [],
+                    dsCom = [],
+                    dsCasa = [],
+                    dsViaje = [];
+                const dsDesc = [],
+                    dsVac = [],
+                    dsMed = [],
+                    dsEntre = [],
+                    dsAus = [],
+                    dsPerm = [];
 
                 mesesMostrar.forEach(mesName => {
-                    const mesOriginal = Object.keys(actividadesPorEmpleado).find(k => k.toUpperCase() === mesName) || mesName;
+                    const mesOriginal = Object.keys(actividadesPorEmpleado).find(k => k.toUpperCase() ===
+                        mesName) || mesName;
                     const empList = actividadesPorEmpleado[mesOriginal] || [];
 
-                    let mB = 0, mP = 0, mC = 0, mTC = 0, mV = 0, mD = 0, mVAC = 0, mM = 0, mE = 0, mA = 0, mPE = 0;
+                    let mB = 0,
+                        mP = 0,
+                        mC = 0,
+                        mTC = 0,
+                        mV = 0,
+                        mD = 0,
+                        mVAC = 0,
+                        mM = 0,
+                        mE = 0,
+                        mA = 0,
+                        mPE = 0;
                     let hcMes = 0;
 
                     // Acumulamos TODOS los empleados sin filtros adicionales para Tab 5
                     empList.forEach(emp => {
-                        mB += emp.B; mP += emp.P; mC += emp.C; mTC += emp.TC; mV += emp.V;
-                        mD += emp.D; mVAC += emp.VAC; mM += emp.M; mE += emp.E; mA += emp.A; mPE += emp.PE;
+                        mB += emp.B;
+                        mP += emp.P;
+                        mC += emp.C;
+                        mTC += emp.TC;
+                        mV += emp.V;
+                        mD += emp.D;
+                        mVAC += emp.VAC;
+                        mM += emp.M;
+                        mE += emp.E;
+                        mA += emp.A;
+                        mPE += emp.PE;
                         hcMes++;
                     });
 
@@ -2821,40 +3579,76 @@
                     }
 
                     // Promedios Mensuales por Persona
-                    let aB = hcMes > 0 ? mB/hcMes : 0;
-                    let aP = hcMes > 0 ? mP/hcMes : 0;
-                    let aC = hcMes > 0 ? mC/hcMes : 0;
-                    let aTC = hcMes > 0 ? mTC/hcMes : 0;
-                    let aV = hcMes > 0 ? mV/hcMes : 0;
-                    let aD = hcMes > 0 ? mD/hcMes : 0;
-                    let aVAC = hcMes > 0 ? mVAC/hcMes : 0;
-                    let aM = hcMes > 0 ? mM/hcMes : 0;
-                    let aE = hcMes > 0 ? mE/hcMes : 0;
-                    let aA = hcMes > 0 ? mA/hcMes : 0;
-                    let aPE = hcMes > 0 ? mPE/hcMes : 0;
+                    let aB = hcMes > 0 ? mB / hcMes : 0;
+                    let aP = hcMes > 0 ? mP / hcMes : 0;
+                    let aC = hcMes > 0 ? mC / hcMes : 0;
+                    let aTC = hcMes > 0 ? mTC / hcMes : 0;
+                    let aV = hcMes > 0 ? mV / hcMes : 0;
+                    let aD = hcMes > 0 ? mD / hcMes : 0;
+                    let aVAC = hcMes > 0 ? mVAC / hcMes : 0;
+                    let aM = hcMes > 0 ? mM / hcMes : 0;
+                    let aE = hcMes > 0 ? mE / hcMes : 0;
+                    let aA = hcMes > 0 ? mA / hcMes : 0;
+                    let aPE = hcMes > 0 ? mPE / hcMes : 0;
 
                     // % Utilización del mes: Utilizados = Base + Pozo + Viaje + Entrenamiento + TC + Comisionado
                     const utilMes = mB + mP + mC + mTC + mV + mE;
                     const pctMes = totalMes > 0 ? (utilMes / totalMes) * 100 : 0;
 
                     // Sumatoria ABSOLUTA para el promedio Anual de la Tabla 1
-                    yB += mB; yP += mP; yC += mC; yTC += mTC; yV += mV;
-                    yD += mD; yVAC += mVAC; yM += mM; yE += mE; yA += mA; yPE += mPE;
+                    yB += mB;
+                    yP += mP;
+                    yC += mC;
+                    yTC += mTC;
+                    yV += mV;
+                    yD += mD;
+                    yVAC += mVAC;
+                    yM += mM;
+                    yE += mE;
+                    yA += mA;
+                    yPE += mPE;
 
                     // Guardar para gráfica si es mes a mes
                     labelsMes.push(mesName);
-                    dsBase.push(mB); dsPozo.push(mP); dsCom.push(mC); dsCasa.push(mTC); dsViaje.push(mV);
-                    dsDesc.push(mD); dsVac.push(mVAC); dsMed.push(mM); dsEntre.push(mE); dsAus.push(mA); dsPerm.push(mPE);
+                    dsBase.push(mB);
+                    dsPozo.push(mP);
+                    dsCom.push(mC);
+                    dsCasa.push(mTC);
+                    dsViaje.push(mV);
+                    dsDesc.push(mD);
+                    dsVac.push(mVAC);
+                    dsMed.push(mM);
+                    dsEntre.push(mE);
+                    dsAus.push(mA);
+                    dsPerm.push(mPE);
 
                     // Asignar al Trimestre correspondiente
                     for (const [qKey, qData] of Object.entries(qMap)) {
                         if (qData.meses.includes(mesName)) {
-                            qData.abs.B += mB; qData.abs.P += mP; qData.abs.C += mC; qData.abs.TC += mTC; qData.abs.V += mV;
-                            qData.abs.D += mD; qData.abs.VAC += mVAC; qData.abs.M += mM; qData.abs.E += mE; qData.abs.A += mA; qData.abs.PE += mPE;
+                            qData.abs.B += mB;
+                            qData.abs.P += mP;
+                            qData.abs.C += mC;
+                            qData.abs.TC += mTC;
+                            qData.abs.V += mV;
+                            qData.abs.D += mD;
+                            qData.abs.VAC += mVAC;
+                            qData.abs.M += mM;
+                            qData.abs.E += mE;
+                            qData.abs.A += mA;
+                            qData.abs.PE += mPE;
 
                             // El promedio del Quarter es la suma de los promedios de sus meses
-                            qData.avg.B += aB; qData.avg.P += aP; qData.avg.C += aC; qData.avg.TC += aTC; qData.avg.V += aV;
-                            qData.avg.D += aD; qData.avg.VAC += aVAC; qData.avg.M += aM; qData.avg.E += aE; qData.avg.A += aA; qData.avg.PE += aPE;
+                            qData.avg.B += aB;
+                            qData.avg.P += aP;
+                            qData.avg.C += aC;
+                            qData.avg.TC += aTC;
+                            qData.avg.V += aV;
+                            qData.avg.D += aD;
+                            qData.avg.VAC += aVAC;
+                            qData.avg.M += aM;
+                            qData.avg.E += aE;
+                            qData.avg.A += aA;
+                            qData.avg.PE += aPE;
                         }
                     }
 
@@ -2882,21 +3676,49 @@
                     tbody.appendChild(tr);
                 });
 
-                const yrTotal = yB+yP+yC+yTC+yV+yD+yVAC+yM+yE+yA+yPE;
-                const yrUtil = yB+yP+yC+yTC+yV+yE; // Sumatoria de Utilizados Anual
+                const yrTotal = yB + yP + yC + yTC + yV + yD + yVAC + yM + yE + yA + yPE;
+                const yrUtil = yB + yP + yC + yTC + yV + yE; // Sumatoria de Utilizados Anual
                 const yrPct = yrTotal > 0 ? (yrUtil / yrTotal) * 100 : 0;
 
                 // Promedio de promedios para la sección de promedios
-                let p_aB = 0, p_aP = 0, p_aC = 0, p_aTC = 0, p_aV = 0, p_aD = 0, p_aVAC = 0, p_aM = 0, p_aE = 0, p_aA = 0, p_aPE = 0;
+                let p_aB = 0,
+                    p_aP = 0,
+                    p_aC = 0,
+                    p_aTC = 0,
+                    p_aV = 0,
+                    p_aD = 0,
+                    p_aVAC = 0,
+                    p_aM = 0,
+                    p_aE = 0,
+                    p_aA = 0,
+                    p_aPE = 0;
                 let activeQsCount = 0;
                 for (const [k, q] of Object.entries(qMap)) {
-                    p_aB+=q.avg.B; p_aP+=q.avg.P; p_aC+=q.avg.C; p_aTC+=q.avg.TC; p_aV+=q.avg.V;
-                    p_aD+=q.avg.D; p_aVAC+=q.avg.VAC; p_aM+=q.avg.M; p_aE+=q.avg.E; p_aA+=q.avg.A; p_aPE+=q.avg.PE;
+                    p_aB += q.avg.B;
+                    p_aP += q.avg.P;
+                    p_aC += q.avg.C;
+                    p_aTC += q.avg.TC;
+                    p_aV += q.avg.V;
+                    p_aD += q.avg.D;
+                    p_aVAC += q.avg.VAC;
+                    p_aM += q.avg.M;
+                    p_aE += q.avg.E;
+                    p_aA += q.avg.A;
+                    p_aPE += q.avg.PE;
                 }
 
                 if (activeMonthsCount > 0) {
-                    p_aB/=activeMonthsCount; p_aP/=activeMonthsCount; p_aC/=activeMonthsCount; p_aTC/=activeMonthsCount; p_aV/=activeMonthsCount;
-                    p_aD/=activeMonthsCount; p_aVAC/=activeMonthsCount; p_aM/=activeMonthsCount; p_aE/=activeMonthsCount; p_aA/=activeMonthsCount; p_aPE/=activeMonthsCount;
+                    p_aB /= activeMonthsCount;
+                    p_aP /= activeMonthsCount;
+                    p_aC /= activeMonthsCount;
+                    p_aTC /= activeMonthsCount;
+                    p_aV /= activeMonthsCount;
+                    p_aD /= activeMonthsCount;
+                    p_aVAC /= activeMonthsCount;
+                    p_aM /= activeMonthsCount;
+                    p_aE /= activeMonthsCount;
+                    p_aA /= activeMonthsCount;
+                    p_aPE /= activeMonthsCount;
                 }
 
                 // FOOTER TABLA 1: TOTAL DE DIAS y PROMEDIO
@@ -2918,18 +3740,30 @@
                 `;
 
                 // PINTAR LAS TARJETAS RESUMEN EN LA VISTA PRINCIPAL (DIAS ABSOLUTOS TOTALES)
-                renderSummaryCards('act-main-summary', yB, yP, yC, yTC, yV, yD, yVAC, yM, yE, yA, yPE, yrTotal, yrUtil);
+                renderSummaryCards('act-main-summary', yB, yP, yC, yTC, yV, yD, yVAC, yM, yE, yA, yPE, yrTotal,
+                    yrUtil);
 
                 // ==========================================
                 // RENDER TABLA TRIMESTRAL (Q) Y CHART
                 // ==========================================
                 const labelsQ = [];
-                const dsQAbs_B = [], dsQAbs_P = [], dsQAbs_C = [], dsQAbs_TC = [], dsQAbs_V = [];
-                const dsQAbs_D = [], dsQAbs_VAC = [], dsQAbs_M = [], dsQAbs_E = [], dsQAbs_A = [], dsQAbs_PE = [];
+                const dsQAbs_B = [],
+                    dsQAbs_P = [],
+                    dsQAbs_C = [],
+                    dsQAbs_TC = [],
+                    dsQAbs_V = [];
+                const dsQAbs_D = [],
+                    dsQAbs_VAC = [],
+                    dsQAbs_M = [],
+                    dsQAbs_E = [],
+                    dsQAbs_A = [],
+                    dsQAbs_PE = [];
 
                 for (const [qKey, qData] of Object.entries(qMap)) {
-                    let totalAbs = qData.abs.B + qData.abs.P + qData.abs.C + qData.abs.TC + qData.abs.V + qData.abs.D + qData.abs.VAC + qData.abs.M + qData.abs.E + qData.abs.A + qData.abs.PE;
-                    let utilAbs = qData.abs.B + qData.abs.P + qData.abs.C + qData.abs.TC + qData.abs.V + qData.abs.E;
+                    let totalAbs = qData.abs.B + qData.abs.P + qData.abs.C + qData.abs.TC + qData.abs.V + qData.abs
+                        .D + qData.abs.VAC + qData.abs.M + qData.abs.E + qData.abs.A + qData.abs.PE;
+                    let utilAbs = qData.abs.B + qData.abs.P + qData.abs.C + qData.abs.TC + qData.abs.V + qData.abs
+                    .E;
                     let pctUtil = totalAbs > 0 ? Math.round((utilAbs / totalAbs) * 100) : 0;
 
                     const tr = document.createElement('tr');
@@ -2952,10 +3786,17 @@
 
                     // Guardar para gráfica si es que es anual (agrupado por Q)
                     labelsQ.push(qKey);
-                    dsQAbs_B.push(qData.abs.B); dsQAbs_P.push(qData.abs.P); dsQAbs_C.push(qData.abs.C);
-                    dsQAbs_TC.push(qData.abs.TC); dsQAbs_V.push(qData.abs.V); dsQAbs_D.push(qData.abs.D);
-                    dsQAbs_VAC.push(qData.abs.VAC); dsQAbs_M.push(qData.abs.M); dsQAbs_E.push(qData.abs.E);
-                    dsQAbs_A.push(qData.abs.A); dsQAbs_PE.push(qData.abs.PE);
+                    dsQAbs_B.push(qData.abs.B);
+                    dsQAbs_P.push(qData.abs.P);
+                    dsQAbs_C.push(qData.abs.C);
+                    dsQAbs_TC.push(qData.abs.TC);
+                    dsQAbs_V.push(qData.abs.V);
+                    dsQAbs_D.push(qData.abs.D);
+                    dsQAbs_VAC.push(qData.abs.VAC);
+                    dsQAbs_M.push(qData.abs.M);
+                    dsQAbs_E.push(qData.abs.E);
+                    dsQAbs_A.push(qData.abs.A);
+                    dsQAbs_PE.push(qData.abs.PE);
                 }
 
                 // TFOOT Tabla 2
@@ -2982,49 +3823,140 @@
                 if (actChart) actChart.destroy();
 
                 let chartCategories = [];
-                let dsChart_B = [], dsChart_P = [], dsChart_C = [], dsChart_TC = [], dsChart_V = [];
-                let dsChart_D = [], dsChart_VAC = [], dsChart_M = [], dsChart_E = [], dsChart_A = [], dsChart_PE = [];
+                let dsChart_B = [],
+                    dsChart_P = [],
+                    dsChart_C = [],
+                    dsChart_TC = [],
+                    dsChart_V = [];
+                let dsChart_D = [],
+                    dsChart_VAC = [],
+                    dsChart_M = [],
+                    dsChart_E = [],
+                    dsChart_A = [],
+                    dsChart_PE = [];
 
                 // Si están todos los meses seleccionados, mostramos Qs.
                 if (mesesMostrar.length === 12) {
                     chartCategories = labelsQ;
-                    dsChart_B = dsQAbs_B; dsChart_P = dsQAbs_P; dsChart_C = dsQAbs_C;
-                    dsChart_TC = dsQAbs_TC; dsChart_V = dsQAbs_V; dsChart_D = dsQAbs_D;
-                    dsChart_VAC = dsQAbs_VAC; dsChart_M = dsQAbs_M; dsChart_E = dsQAbs_E;
-                    dsChart_A = dsQAbs_A; dsChart_PE = dsQAbs_PE;
+                    dsChart_B = dsQAbs_B;
+                    dsChart_P = dsQAbs_P;
+                    dsChart_C = dsQAbs_C;
+                    dsChart_TC = dsQAbs_TC;
+                    dsChart_V = dsQAbs_V;
+                    dsChart_D = dsQAbs_D;
+                    dsChart_VAC = dsQAbs_VAC;
+                    dsChart_M = dsQAbs_M;
+                    dsChart_E = dsQAbs_E;
+                    dsChart_A = dsQAbs_A;
+                    dsChart_PE = dsQAbs_PE;
                 } else {
                     // Si hay solo un Q o selección parcial, mostramos Mes por Mes
                     chartCategories = labelsMes;
-                    dsChart_B = dsBase; dsChart_P = dsPozo; dsChart_C = dsCom;
-                    dsChart_TC = dsCasa; dsChart_V = dsViaje; dsChart_D = dsDesc;
-                    dsChart_VAC = dsVac; dsChart_M = dsMed; dsChart_E = dsEntre;
-                    dsChart_A = dsAus; dsChart_PE = dsPerm;
+                    dsChart_B = dsBase;
+                    dsChart_P = dsPozo;
+                    dsChart_C = dsCom;
+                    dsChart_TC = dsCasa;
+                    dsChart_V = dsViaje;
+                    dsChart_D = dsDesc;
+                    dsChart_VAC = dsVac;
+                    dsChart_M = dsMed;
+                    dsChart_E = dsEntre;
+                    dsChart_A = dsAus;
+                    dsChart_PE = dsPerm;
                 }
 
                 const optionsAct = {
-                    series: [
-                        { name: 'BASE', data: dsChart_B },
-                        { name: 'POZO', data: dsChart_P },
-                        { name: 'COMISIÓN', data: dsChart_C },
-                        { name: 'CASA', data: dsChart_TC },
-                        { name: 'VIAJE', data: dsChart_V },
-                        { name: 'DESCANSO', data: dsChart_D },
-                        { name: 'VACACIONES', data: dsChart_VAC },
-                        { name: 'MÉDICO', data: dsChart_M },
-                        { name: 'ENTRENA.', data: dsChart_E },
-                        { name: 'AUSENCIA', data: dsChart_A },
-                        { name: 'PERMISO', data: dsChart_PE }
+                    series: [{
+                            name: 'BASE',
+                            data: dsChart_B
+                        },
+                        {
+                            name: 'POZO',
+                            data: dsChart_P
+                        },
+                        {
+                            name: 'COMISIÓN',
+                            data: dsChart_C
+                        },
+                        {
+                            name: 'CASA',
+                            data: dsChart_TC
+                        },
+                        {
+                            name: 'VIAJE',
+                            data: dsChart_V
+                        },
+                        {
+                            name: 'DESCANSO',
+                            data: dsChart_D
+                        },
+                        {
+                            name: 'VACACIONES',
+                            data: dsChart_VAC
+                        },
+                        {
+                            name: 'MÉDICO',
+                            data: dsChart_M
+                        },
+                        {
+                            name: 'ENTRENA.',
+                            data: dsChart_E
+                        },
+                        {
+                            name: 'AUSENCIA',
+                            data: dsChart_A
+                        },
+                        {
+                            name: 'PERMISO',
+                            data: dsChart_PE
+                        }
                     ],
-                    chart: { type: 'bar', height: 400, toolbar: { show: true }, stacked: false },
-                    colors: ['#334c95', '#6475aa', '#249399', '#7293ff', '#a2b5ff', '#118b20', '#59983e', '#dd840f', '#a5a5a5', '#7d4e4e', '#49c0c9'],
-                    plotOptions: { bar: { horizontal: false, columnWidth: '85%' } },
-                    dataLabels: { enabled: false },
-                    stroke: { show: true, width: 2, colors: ['transparent'] },
-                    xaxis: { categories: chartCategories },
-                    yaxis: { title: { text: 'Días Totales (Absolutos)' } },
-                    fill: { opacity: 1 },
-                    tooltip: { y: { formatter: function (val) { return val + " días"; } } },
-                    legend: { position: 'bottom' }
+                    chart: {
+                        type: 'bar',
+                        height: 400,
+                        toolbar: {
+                            show: true
+                        },
+                        stacked: false
+                    },
+                    colors: ['#334c95', '#6475aa', '#249399', '#7293ff', '#a2b5ff', '#118b20', '#59983e',
+                        '#dd840f', '#a5a5a5', '#7d4e4e', '#49c0c9'
+                    ],
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                            columnWidth: '85%'
+                        }
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    stroke: {
+                        show: true,
+                        width: 2,
+                        colors: ['transparent']
+                    },
+                    xaxis: {
+                        categories: chartCategories
+                    },
+                    yaxis: {
+                        title: {
+                            text: 'Días Totales (Absolutos)'
+                        }
+                    },
+                    fill: {
+                        opacity: 1
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: function(val) {
+                                return val + " días";
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
                 };
                 actChart = new ApexCharts(document.querySelector("#actividadesChart"), optionsAct);
                 actChart.render();
@@ -3042,31 +3974,67 @@
                 tbodyArea.innerHTML = '';
                 tfootArea.innerHTML = '';
 
-                let sumB = 0, sumP = 0, sumC = 0, sumTC = 0, sumV = 0, sumD = 0, sumVAC = 0, sumM = 0, sumE = 0, sumA = 0, sumPE = 0;
-                let sumTotal = 0, sumUtil = 0;
+                let sumB = 0,
+                    sumP = 0,
+                    sumC = 0,
+                    sumTC = 0,
+                    sumV = 0,
+                    sumD = 0,
+                    sumVAC = 0,
+                    sumM = 0,
+                    sumE = 0,
+                    sumA = 0,
+                    sumPE = 0;
+                let sumTotal = 0,
+                    sumUtil = 0;
 
                 const areaMapFiltered = {};
-                const mesesTotales = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const mesesTotales = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+                    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                ];
 
                 const monthToQ = {
-                    'Enero':'Q1', 'Febrero':'Q1', 'Marzo':'Q1',
-                    'Abril':'Q2', 'Mayo':'Q2', 'Junio':'Q2',
-                    'Julio':'Q3', 'Agosto':'Q3', 'Septiembre':'Q3',
-                    'Octubre':'Q4', 'Noviembre':'Q4', 'Diciembre':'Q4'
+                    'Enero': 'Q1',
+                    'Febrero': 'Q1',
+                    'Marzo': 'Q1',
+                    'Abril': 'Q2',
+                    'Mayo': 'Q2',
+                    'Junio': 'Q2',
+                    'Julio': 'Q3',
+                    'Agosto': 'Q3',
+                    'Septiembre': 'Q3',
+                    'Octubre': 'Q4',
+                    'Noviembre': 'Q4',
+                    'Diciembre': 'Q4'
                 };
 
                 mesesTotales.forEach(mesName => {
                     const currentQ = monthToQ[mesName];
                     if (qFilter !== 'TODOS' && currentQ !== qFilter) return;
 
-                    const mesOriginal = Object.keys(actividadesPorEmpleado).find(k => k.toUpperCase() === mesName.toUpperCase()) || mesName;
+                    const mesOriginal = Object.keys(actividadesPorEmpleado).find(k => k
+                    .toUpperCase() === mesName.toUpperCase()) || mesName;
                     const empList = actividadesPorEmpleado[mesOriginal] || [];
 
                     empList.forEach(emp => {
                         if (areaFilter !== 'TODAS' && emp.area !== areaFilter) return;
 
                         if (!areaMapFiltered[emp.area]) {
-                            areaMapFiltered[emp.area] = { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0 };
+                            areaMapFiltered[emp.area] = {
+                                B: 0,
+                                P: 0,
+                                C: 0,
+                                TC: 0,
+                                V: 0,
+                                D: 0,
+                                VAC: 0,
+                                M: 0,
+                                E: 0,
+                                A: 0,
+                                PE: 0,
+                                Total: 0,
+                                Util: 0
+                            };
                         }
 
                         areaMapFiltered[emp.area].B += emp.B;
@@ -3081,15 +4049,26 @@
                         areaMapFiltered[emp.area].A += emp.A;
                         areaMapFiltered[emp.area].PE += emp.PE;
 
-                        const empTotal = emp.B + emp.P + emp.C + emp.TC + emp.V + emp.D + emp.VAC + emp.M + emp.E + emp.A + emp.PE;
+                        const empTotal = emp.B + emp.P + emp.C + emp.TC + emp.V + emp.D + emp
+                            .VAC + emp.M + emp.E + emp.A + emp.PE;
                         const empUtil = emp.B + emp.P + emp.C + emp.TC + emp.V + emp.E;
 
                         areaMapFiltered[emp.area].Total += empTotal;
                         areaMapFiltered[emp.area].Util += empUtil;
 
-                        sumB += emp.B; sumP += emp.P; sumC += emp.C; sumTC += emp.TC; sumV += emp.V;
-                        sumD += emp.D; sumVAC += emp.VAC; sumM += emp.M; sumE += emp.E; sumA += emp.A; sumPE += emp.PE;
-                        sumTotal += empTotal; sumUtil += empUtil;
+                        sumB += emp.B;
+                        sumP += emp.P;
+                        sumC += emp.C;
+                        sumTC += emp.TC;
+                        sumV += emp.V;
+                        sumD += emp.D;
+                        sumVAC += emp.VAC;
+                        sumM += emp.M;
+                        sumE += emp.E;
+                        sumA += emp.A;
+                        sumPE += emp.PE;
+                        sumTotal += empTotal;
+                        sumUtil += empUtil;
                     });
                 });
 
@@ -3112,8 +4091,9 @@
                     }
                 });
 
-                if(!areaHasData) {
-                    tbodyArea.innerHTML = '<tr class="empty-row"><td colspan="15">Sin datos para los filtros seleccionados.</td></tr>';
+                if (!areaHasData) {
+                    tbodyArea.innerHTML =
+                        '<tr class="empty-row"><td colspan="15">Sin datos para los filtros seleccionados.</td></tr>';
                 } else {
                     const pctTotal = sumTotal > 0 ? Math.round((sumUtil / sumTotal) * 100) : 0;
                     tfootArea.innerHTML = `
@@ -3128,12 +4108,16 @@
                     `;
                 }
 
-                if(pieChartTotal) pieChartTotal.destroy();
-                if(pieChartUtil) pieChartUtil.destroy();
+                if (pieChartTotal) pieChartTotal.destroy();
+                if (pieChartUtil) pieChartUtil.destroy();
 
                 if (sumTotal > 0) {
-                    const colorPalette = ['#334c95', '#6475aa', '#249399', '#7293ff', '#a2b5ff', '#118b20', '#59983e', '#dd840f', '#a5a5a5', '#7d4e4e', '#49c0c9'];
-                    const chartLabels = ['BASE', 'POZO', 'COMISIÓN', 'CASA', 'VIAJE', 'DESCANSO', 'VACACIONES', 'MÉDICO', 'ENTRENA.', 'AUSENCIA', 'PERMISO'];
+                    const colorPalette = ['#334c95', '#6475aa', '#249399', '#7293ff', '#a2b5ff', '#118b20',
+                        '#59983e', '#dd840f', '#a5a5a5', '#7d4e4e', '#49c0c9'
+                    ];
+                    const chartLabels = ['BASE', 'POZO', 'COMISIÓN', 'CASA', 'VIAJE', 'DESCANSO', 'VACACIONES',
+                        'MÉDICO', 'ENTRENA.', 'AUSENCIA', 'PERMISO'
+                    ];
                     const seriesData = [sumB, sumP, sumC, sumTC, sumV, sumD, sumVAC, sumM, sumE, sumA, sumPE];
 
                     const qLabel = qFilter === 'TODOS' ? 'Anual' : qFilter;
@@ -3151,14 +4135,36 @@
                         title: {
                             text: `Distribución Absoluta (${qLabel} / ${areaLabel})`,
                             align: 'center',
-                            style: { fontSize: '14px', color: 'var(--secondary-color)', fontWeight: 'bold' }
+                            style: {
+                                fontSize: '14px',
+                                color: 'var(--secondary-color)',
+                                fontWeight: 'bold'
+                            }
                         },
-                        legend: { position: 'bottom' },
-                        stroke: { show: true, colors: ['#ffffff'], width: 2 },
+                        legend: {
+                            position: 'bottom'
+                        },
+                        stroke: {
+                            show: true,
+                            colors: ['#ffffff'],
+                            width: 2
+                        },
                         dataLabels: {
-                            formatter: function (val) { return Math.round(val) + "%"; },
-                            style: { fontSize: '12px', fontWeight: 'bold', colors: ['#ffffff'] },
-                            dropShadow: { enabled: true, top: 1, left: 1, blur: 1, opacity: 0.5 }
+                            formatter: function(val) {
+                                return Math.round(val) + "%";
+                            },
+                            style: {
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                colors: ['#ffffff']
+                            },
+                            dropShadow: {
+                                enabled: true,
+                                top: 1,
+                                left: 1,
+                                blur: 1,
+                                opacity: 0.5
+                            }
                         }
                     };
                     pieChartTotal = new ApexCharts(document.querySelector("#pieChartTotal"), optionsPieTotal);
@@ -3170,29 +4176,55 @@
                         chart: {
                             type: 'donut',
                             height: 400,
-                            dropShadow: { enabled: true, color: '#000', top: 1, left: 1, blur: 2, opacity: 0.1 }
+                            dropShadow: {
+                                enabled: true,
+                                color: '#000',
+                                top: 1,
+                                left: 1,
+                                blur: 2,
+                                opacity: 0.1
+                            }
                         },
                         colors: colorPalette,
                         title: {
                             text: `Utilización de Personal (${qLabel} / ${areaLabel})`,
                             align: 'center',
-                            style: { fontSize: '14px', color: 'var(--secondary-color)', fontWeight: 'bold' }
+                            style: {
+                                fontSize: '14px',
+                                color: 'var(--secondary-color)',
+                                fontWeight: 'bold'
+                            }
                         },
-                        legend: { position: 'bottom' },
-                        stroke: { show: true, colors: ['#ffffff'], width: 2 },
+                        legend: {
+                            position: 'bottom'
+                        },
+                        stroke: {
+                            show: true,
+                            colors: ['#ffffff'],
+                            width: 2
+                        },
                         plotOptions: {
                             pie: {
                                 donut: {
                                     size: '65%',
                                     labels: {
                                         show: true,
-                                        name: { show: true, fontSize: '13px', color: 'var(--text-medium)' },
-                                        value: { show: true, fontSize: '22px', fontWeight: 'bold', color: 'var(--primary-color)' },
+                                        name: {
+                                            show: true,
+                                            fontSize: '13px',
+                                            color: 'var(--text-medium)'
+                                        },
+                                        value: {
+                                            show: true,
+                                            fontSize: '22px',
+                                            fontWeight: 'bold',
+                                            color: 'var(--primary-color)'
+                                        },
                                         total: {
                                             show: true,
                                             label: '% Utilización',
                                             color: 'var(--accent-color)',
-                                            formatter: function (w) {
+                                            formatter: function(w) {
                                                 return pctTotal + "%";
                                             }
                                         }
@@ -3201,8 +4233,12 @@
                             }
                         },
                         dataLabels: {
-                            formatter: function (val) { return Math.round(val) + "%"; },
-                            dropShadow: { enabled: false }
+                            formatter: function(val) {
+                                return Math.round(val) + "%";
+                            },
+                            dropShadow: {
+                                enabled: false
+                            }
                         }
                     };
                     pieChartUtil = new ApexCharts(document.querySelector("#pieChartUtil"), optionsPieUtil);
@@ -3220,37 +4256,138 @@
                 tbodyQ.innerHTML = '';
 
                 // Siempre mostrar 12 meses
-                const mesesTotales = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const mesesTotales = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+                    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                ];
 
-                let sumB = 0, sumP = 0, sumC = 0, sumTC = 0, sumV = 0, sumD = 0, sumVAC = 0, sumM = 0, sumE = 0, sumA = 0, sumPE = 0;
-                let sumTotal = 0, sumUtil = 0;
+                let sumB = 0,
+                    sumP = 0,
+                    sumC = 0,
+                    sumTC = 0,
+                    sumV = 0,
+                    sumD = 0,
+                    sumVAC = 0,
+                    sumM = 0,
+                    sumE = 0,
+                    sumA = 0,
+                    sumPE = 0;
+                let sumTotal = 0,
+                    sumUtil = 0;
                 let activeMonthsCount = 0;
 
                 const qUtilMap = {
-                    'Q1': { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0, count:0 },
-                    'Q2': { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0, count:0 },
-                    'Q3': { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0, count:0 },
-                    'Q4': { B:0, P:0, C:0, TC:0, V:0, D:0, VAC:0, M:0, E:0, A:0, PE:0, Total:0, Util:0, count:0 }
+                    'Q1': {
+                        B: 0,
+                        P: 0,
+                        C: 0,
+                        TC: 0,
+                        V: 0,
+                        D: 0,
+                        VAC: 0,
+                        M: 0,
+                        E: 0,
+                        A: 0,
+                        PE: 0,
+                        Total: 0,
+                        Util: 0,
+                        count: 0
+                    },
+                    'Q2': {
+                        B: 0,
+                        P: 0,
+                        C: 0,
+                        TC: 0,
+                        V: 0,
+                        D: 0,
+                        VAC: 0,
+                        M: 0,
+                        E: 0,
+                        A: 0,
+                        PE: 0,
+                        Total: 0,
+                        Util: 0,
+                        count: 0
+                    },
+                    'Q3': {
+                        B: 0,
+                        P: 0,
+                        C: 0,
+                        TC: 0,
+                        V: 0,
+                        D: 0,
+                        VAC: 0,
+                        M: 0,
+                        E: 0,
+                        A: 0,
+                        PE: 0,
+                        Total: 0,
+                        Util: 0,
+                        count: 0
+                    },
+                    'Q4': {
+                        B: 0,
+                        P: 0,
+                        C: 0,
+                        TC: 0,
+                        V: 0,
+                        D: 0,
+                        VAC: 0,
+                        M: 0,
+                        E: 0,
+                        A: 0,
+                        PE: 0,
+                        Total: 0,
+                        Util: 0,
+                        count: 0
+                    }
                 };
                 const monthToQ = {
-                    'Enero':'Q1', 'Febrero':'Q1', 'Marzo':'Q1',
-                    'Abril':'Q2', 'Mayo':'Q2', 'Junio':'Q2',
-                    'Julio':'Q3', 'Agosto':'Q3', 'Septiembre':'Q3',
-                    'Octubre':'Q4', 'Noviembre':'Q4', 'Diciembre':'Q4'
+                    'Enero': 'Q1',
+                    'Febrero': 'Q1',
+                    'Marzo': 'Q1',
+                    'Abril': 'Q2',
+                    'Mayo': 'Q2',
+                    'Junio': 'Q2',
+                    'Julio': 'Q3',
+                    'Agosto': 'Q3',
+                    'Septiembre': 'Q3',
+                    'Octubre': 'Q4',
+                    'Noviembre': 'Q4',
+                    'Diciembre': 'Q4'
                 };
 
                 const uniqueAreas = new Set();
 
                 mesesTotales.forEach(mesName => {
-                    const mesOriginal = Object.keys(actividadesPorEmpleado).find(k => k.toUpperCase() === mesName.toUpperCase()) || mesName;
+                    const mesOriginal = Object.keys(actividadesPorEmpleado).find(k => k.toUpperCase() ===
+                        mesName.toUpperCase()) || mesName;
                     const empList = actividadesPorEmpleado[mesOriginal] || [];
 
-                    let mB = 0, mP = 0, mC = 0, mTC = 0, mV = 0, mD = 0, mVAC = 0, mM = 0, mE = 0, mA = 0, mPE = 0;
+                    let mB = 0,
+                        mP = 0,
+                        mC = 0,
+                        mTC = 0,
+                        mV = 0,
+                        mD = 0,
+                        mVAC = 0,
+                        mM = 0,
+                        mE = 0,
+                        mA = 0,
+                        mPE = 0;
                     let hcMes = 0;
 
                     empList.forEach(emp => {
-                        mB += emp.B; mP += emp.P; mC += emp.C; mTC += emp.TC; mV += emp.V;
-                        mD += emp.D; mVAC += emp.VAC; mM += emp.M; mE += emp.E; mA += emp.A; mPE += emp.PE;
+                        mB += emp.B;
+                        mP += emp.P;
+                        mC += emp.C;
+                        mTC += emp.TC;
+                        mV += emp.V;
+                        mD += emp.D;
+                        mVAC += emp.VAC;
+                        mM += emp.M;
+                        mE += emp.E;
+                        mA += emp.A;
+                        mPE += emp.PE;
                         hcMes++;
                         uniqueAreas.add(emp.area);
                     });
@@ -3268,31 +4405,48 @@
                     // Q AGGREGATION (SIEMPRE LO HACEMOS, AUNQUE SEAN 0)
                     const qKey = monthToQ[mesName];
                     if (qKey) {
-                        qUtilMap[qKey].B += mB; qUtilMap[qKey].P += mP; qUtilMap[qKey].C += mC;
-                        qUtilMap[qKey].TC += mTC; qUtilMap[qKey].V += mV; qUtilMap[qKey].D += mD;
-                        qUtilMap[qKey].VAC += mVAC; qUtilMap[qKey].M += mM; qUtilMap[qKey].E += mE;
-                        qUtilMap[qKey].A += mA; qUtilMap[qKey].PE += mPE;
+                        qUtilMap[qKey].B += mB;
+                        qUtilMap[qKey].P += mP;
+                        qUtilMap[qKey].C += mC;
+                        qUtilMap[qKey].TC += mTC;
+                        qUtilMap[qKey].V += mV;
+                        qUtilMap[qKey].D += mD;
+                        qUtilMap[qKey].VAC += mVAC;
+                        qUtilMap[qKey].M += mM;
+                        qUtilMap[qKey].E += mE;
+                        qUtilMap[qKey].A += mA;
+                        qUtilMap[qKey].PE += mPE;
                         qUtilMap[qKey].Total += totalMes;
                         qUtilMap[qKey].Util += utilMes;
                         qUtilMap[qKey].count++;
                     }
 
                     // Acumular para totales del año
-                    sumB += mB; sumP += mP; sumC += mC; sumTC += mTC; sumV += mV;
-                    sumD += mD; sumVAC += mVAC; sumM += mM; sumE += mE; sumA += mA; sumPE += mPE;
-                    sumTotal += totalMes; sumUtil += utilMes;
+                    sumB += mB;
+                    sumP += mP;
+                    sumC += mC;
+                    sumTC += mTC;
+                    sumV += mV;
+                    sumD += mD;
+                    sumVAC += mVAC;
+                    sumM += mM;
+                    sumE += mE;
+                    sumA += mA;
+                    sumPE += mPE;
+                    sumTotal += totalMes;
+                    sumUtil += utilMes;
 
-                    let aB = hcMes > 0 ? mB/hcMes : 0;
-                    let aP = hcMes > 0 ? mP/hcMes : 0;
-                    let aC = hcMes > 0 ? mC/hcMes : 0;
-                    let aTC = hcMes > 0 ? mTC/hcMes : 0;
-                    let aV = hcMes > 0 ? mV/hcMes : 0;
-                    let aD = hcMes > 0 ? mD/hcMes : 0;
-                    let aVAC = hcMes > 0 ? mVAC/hcMes : 0;
-                    let aM = hcMes > 0 ? mM/hcMes : 0;
-                    let aE = hcMes > 0 ? mE/hcMes : 0;
-                    let aA = hcMes > 0 ? mA/hcMes : 0;
-                    let aPE = hcMes > 0 ? mPE/hcMes : 0;
+                    let aB = hcMes > 0 ? mB / hcMes : 0;
+                    let aP = hcMes > 0 ? mP / hcMes : 0;
+                    let aC = hcMes > 0 ? mC / hcMes : 0;
+                    let aTC = hcMes > 0 ? mTC / hcMes : 0;
+                    let aV = hcMes > 0 ? mV / hcMes : 0;
+                    let aD = hcMes > 0 ? mD / hcMes : 0;
+                    let aVAC = hcMes > 0 ? mVAC / hcMes : 0;
+                    let aM = hcMes > 0 ? mM / hcMes : 0;
+                    let aE = hcMes > 0 ? mE / hcMes : 0;
+                    let aA = hcMes > 0 ? mA / hcMes : 0;
+                    let aPE = hcMes > 0 ? mPE / hcMes : 0;
 
                     // RENDER SIEMPRE LA FILA DEL MES, ASÍ ESTÉ EN 0
                     const tr = document.createElement('tr');
@@ -3400,8 +4554,8 @@
                 table.querySelectorAll('tbody tr:not(.empty-row), tfoot tr').forEach(row => {
                     const rowData = [];
                     row.querySelectorAll('td').forEach(cell => rowData.push(
-                            `"${cell.textContent.trim().replace(/[$,%]/g,'').replace(/\s+/g,' ')}"`
-                            ));
+                        `"${cell.textContent.trim().replace(/[$,%]/g,'').replace(/\s+/g,' ')}"`
+                    ));
                     csv.push(rowData.join(','));
                 });
                 const blob = new Blob(['\uFEFF' + csv.join('\n')], {

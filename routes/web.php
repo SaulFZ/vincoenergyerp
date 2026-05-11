@@ -1,8 +1,7 @@
 <?php
+/* CONTROLADORES DE RECURSOS administration */
+use App\Http\Controllers\Administration\Reembolsos\ReimbursementController;
 
-use App\Http\Controllers\Administracion\Reembolsos\ReimbursementController;
-
-/* CONTROLADORES DE RECURSOS Administracion */
 use App\Http\Controllers\Auth\LoginController;
 
 /* CONTROLADORES DE RECURSOS QHSE */
@@ -98,13 +97,13 @@ Route::middleware(['web', 'auth'])->group(function () {
 // ===================================================
     // MÓDULO: ADMINISTRACIÓN
     // ===================================================
-    Route::prefix('administracion')
-        ->middleware(['auth', 'check.permission:administracion']) // Seguridad global del módulo
+    Route::prefix('administration')
+        ->middleware(['auth', 'check.permission:administration']) // Seguridad global del módulo
         ->group(function () {
 
             // ===================================================
             // GRUPO GESTIÓN DE REEMBOLSOS (REIMBURSEMENTS)
-            // Prefijo URL: /administracion/reembolsos
+            // Prefijo URL: /administration/reembolsos
             // ===================================================
             Route::prefix('reembolsos')->group(function () {
 
@@ -112,8 +111,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::get('/', function () {
                     return redirect()->route('reembolsos.reimbursements');
                 })
-                    ->name('administracion.reembolsos')
-                    ->middleware('check.permission:administracion,reembolsos');
+                    ->name('administration.reembolsos')
+                    ->middleware('check.permission:administration,reembolsos');
                 // ---------------------------------------------------
                 // 2. VISTAS Y CARGA DE DATOS (Catálogos, Empleados)
                 // Controlador: ReimbursementController
