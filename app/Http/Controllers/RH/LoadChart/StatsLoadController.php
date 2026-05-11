@@ -337,7 +337,7 @@ private function fetchMonthlyExchangeRates(int $year): array
 
         // 3. Fallback extremo por si se cae el internet del servidor
         if (!$lastKnownRate) {
-            $lastKnownRate = 20.00;
+            $lastKnownRate = 20.40;
         }
 
         $finalRates = [];
