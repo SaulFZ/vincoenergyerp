@@ -121,7 +121,7 @@ class JourneyStoreController extends Controller
             'folio'                => $folio,
             'request_date'         => $data['fecha_solicitud'] ?? now()->format('Y-m-d'),
             'creator_name'         => $data['solicitante'] ?? Auth::user()->name,
-            'department'           => $data['departamento'] ?? '',
+            'area'           => $data['area'] ?? '',
             'approval_status'      => 'pending',
             'journey_status'       => 'not_started',
             'destination_region'   => $data['destino_predefinido'] ?? '',

@@ -174,7 +174,7 @@ function renderTablaViajes(viajes, container) {
                 <tr>
                     <th class="th-codigo">N°</th>
                     <th class="th-nombre">Solicitante</th>
-                    <th class="th-departamento">Departamento</th>
+                    <th class="th-area">Área</th> <!-- Cambio aquí -->
                     <th class="th-destino">Destino</th>
                     <th class="th-tipo" style="text-align: center;">Tipo</th>
                     <th class="th-fechas">Fechas de Viaje</th>
@@ -188,7 +188,6 @@ function renderTablaViajes(viajes, container) {
     `;
 
     viajes.forEach((viaje) => {
-        // Badge tipo de flota
         let badgeTipoViaje = "";
         if (viaje.tipo_viaje === "Convoy de Unidades") {
             badgeTipoViaje = `<span style="background: #fff4ed; color: #e85d04; border: 1px solid #fed7aa; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap;" title="Múltiples vehículos asignados">Convoy</span>`;
@@ -196,7 +195,6 @@ function renderTablaViajes(viajes, container) {
             badgeTipoViaje = `<span style="background: #f0f7ff; color: #0056b3; border: 1px solid #cce1ff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap;" title="Solo un vehículo asignado">Única</span>`;
         }
 
-        // Botón principal: Revisar (aprobador pendiente) o Ver (todos los demás)
         let claseBotonVer = "btn-view";
         let iconoBotonVer = "fa-eye";
         let tituloBotonVer = "Ver detalle del viaje";
@@ -207,7 +205,6 @@ function renderTablaViajes(viajes, container) {
             tituloBotonVer = "Revisar y Autorizar solicitud";
         }
 
-        // Construcción de botones de acción
         let botonesAccion = `
             <div style="display: flex; gap: 8px; justify-content: center;">
                 <button class="btn-action-small ${claseBotonVer}" onclick="abrirModalViaje(${viaje.id})" title="${tituloBotonVer}">
@@ -215,7 +212,6 @@ function renderTablaViajes(viajes, container) {
                 </button>
         `;
 
-        // ✅ BOTÓN RUTA: visible para creador O participante (conductor/pasajero)
         if (
             viaje.estado_gv.texto === "Aprobado" &&
             (viaje.estado_viaje.texto === "En Curso" ||
@@ -231,9 +227,7 @@ function renderTablaViajes(viajes, container) {
                     </button>
                 `;
             }
-        }
-        // Botón Historial para finalizados/cancelados
-        else if (
+        } else if (
             viaje.estado_viaje.texto === "Finalizado" ||
             viaje.estado_viaje.texto === "Cancelado"
         ) {
@@ -250,12 +244,11 @@ function renderTablaViajes(viajes, container) {
 
         botonesAccion += `</div>`;
 
-        // Fila de la tabla
-html += `
+        html += `
             <tr>
                 <td><strong>${viaje.folio}</strong></td>
                 <td class="td-nombre">${viaje.solicitante}</td>
-                <td>${viaje.departamento}</td>
+                <td>${viaje.area}</td> <!-- Cambio aquí de departamento a area -->
                 <td class="td-destino">${viaje.destino}</td> <td style="text-align: center;">${badgeTipoViaje}</td>
                 <td class="td-fechas">${viaje.fechas}</td>
                 <td><span class="badge-riesgo ${viaje.riesgo.clase}">${viaje.riesgo.texto}</span></td>
@@ -390,14 +383,9 @@ async function abrirModalViaje(idViaje) {
 }
 // ── CARGA Y BLOQUEO COMPLETO ──────────────────────────────────────────
 async function cargarModalEnModoLectura(viaje, authData) {
-    // <-- Recibe authData
-    // 1. PRIMERO limpiar el formulario (esto apaga el modo lectura por defecto)
     limpiarFormulario();
-
-    // 2. AHORA SÍ, activamos la bandera de modo lectura para bloquear las alertas
     modoLectura = true;
 
-    // 3. Abrir modal
     const modal = document.getElementById("modalFormulario");
     if (!modal) return;
     modal.classList.add("active");
@@ -414,14 +402,13 @@ async function cargarModalEnModoLectura(viaje, authData) {
     if (fechaHidden) fechaHidden.value = fechaFmt;
 
     const elSolicitante = document.getElementById("solicitante");
-    const elDepartamento = document.getElementById("departamento");
+    const elArea = document.getElementById("area"); // Cambio aquí
     if (elSolicitante) elSolicitante.value = viaje.creator_name || "";
-    if (elDepartamento) elDepartamento.value = viaje.department || "";
+    if (elArea) elArea.value = viaje.area || ""; // Cambio aquí
 
     const inputDestinoHidden = document.getElementById("inputDestinoHidden");
     const labelDestino = document.getElementById("labelDestinoSeleccionado");
-    if (inputDestinoHidden)
-        inputDestinoHidden.value = viaje.destination_region || "";
+    if (inputDestinoHidden) inputDestinoHidden.value = viaje.destination_region || "";
     if (labelDestino) {
         labelDestino.textContent = viaje.destination_region || "Sin destino";
         labelDestino.style.color = "#212529";
@@ -7162,7 +7149,6 @@ function enviarSolicitudAJAX() {
         },
     });
 
-    // Convertir las fechas al formato MySQL antes de enviar
     const fechaSolicitud = convertirFechaParaMySQL(
         document.getElementById("fechaSolicitudHidden")?.value || "",
     );
@@ -7173,17 +7159,10 @@ function enviarSolicitudAJAX() {
         document.getElementById("fechaFinViaje")?.value || "",
     );
 
-    console.log("Fechas convertidas:", {
-        solicitud: fechaSolicitud,
-        inicio: fechaInicio,
-        fin: fechaFin,
-    });
-
     const data = {
-        //folio: document.getElementById('codigoViaje')?.textContent || '',
         fecha_solicitud: fechaSolicitud,
         solicitante: document.getElementById("solicitante")?.value || "",
-        departamento: document.getElementById("departamento")?.value || "",
+        area: document.getElementById("area")?.value || "", // Cambio aquí
         destino_predefinido:
             document.getElementById("inputDestinoHidden")?.value || "",
         destino_especifico:
@@ -7195,14 +7174,10 @@ function enviarSolicitudAJAX() {
         hora_inicio: document.getElementById("horaInicioViaje")?.value || "",
         hora_fin: document.getElementById("horaFinViaje")?.value || "",
         tiene_paradas:
-            document.querySelector('input[name="tiene_paradas"]:checked')?.value ||
-            "no",
+            document.querySelector('input[name="tiene_paradas"]:checked')?.value || "no",
         autorizador_id:
-            document.querySelector('input[name="autorizador_id"]:checked')?.value ||
-            "",
+            document.querySelector('input[name="autorizador_id"]:checked')?.value || "",
         riesgo_puntaje: puntajeRiesgoTotal || 0,
-
-        // --- AQUÍ ESTÁ LA CORRECCIÓN EXACTA ---
         riesgo_nivel: document
             .getElementById("btnEvaluacionRiesgo")
             ?.textContent.includes("Bajo")

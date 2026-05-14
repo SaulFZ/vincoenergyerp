@@ -15,7 +15,7 @@ class Journey extends Model
         'folio',
         'request_date',
         'creator_name',
-        'department',
+        'area',
         'approval_status',
         'journey_status',
         'destination_region',

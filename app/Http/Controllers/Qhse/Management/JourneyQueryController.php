@@ -63,7 +63,7 @@ class JourneyQueryController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('folio', 'like', "%{$search}%")
                         ->orWhere('creator_name', 'like', "%{$search}%")
-                        ->orWhere('department', 'like', "%{$search}%")
+                        ->orWhere('area', 'like', "%{$search}%")
                         ->orWhere('destination_region', 'like', "%{$search}%")
                         ->orWhere('specific_destination', 'like', "%{$search}%");
                 });
@@ -154,7 +154,7 @@ class JourneyQueryController extends Controller
                         'id'                 => $journey->id,
                         'folio'              => $journey->folio,
                         'solicitante'        => $journey->creator_name,
-                        'departamento'       => $journey->department,
+                        'area'               => $journey->area,
                         'destino'            => $journey->destination_region,
                         'destino_especifico' => $journey->specific_destination,
                         'fechas'             => $this->formatDates($journey),
@@ -495,7 +495,7 @@ class JourneyQueryController extends Controller
             'cancelled'   => 'status-cancelado',
             'not_started' => 'status-poriniciar',
             'in_progress' => 'status-encurso',
-            'stopped'     => 'status-detenido', // 👈 NUEVO (Crea esta clase CSS en tu frontend con color rojo/naranja)
+            'stopped'     => 'status-detenido', // 👈 NUEVO
             'completed'   => 'status-finalizado',
             'no_procede'  => 'status-noprocede',
         ];

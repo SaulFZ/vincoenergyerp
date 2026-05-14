@@ -157,16 +157,19 @@ class CalendarController extends Controller
         }
 
         // Extraemos los nombres de Área y Departamento de forma segura usando la relación
-        $areaName = $employee->area ? strtolower(trim($employee->area->name)) : '';
+        // CORRECCIÓN: Quitamos strtolower para no afectar a stripos, solo limpiamos espacios.
+        $areaName = $employee->area ? trim($employee->area->name) : '';
 
         $departamentoObj = $employee->department()->first();
-        $deptName        = $departamentoObj ? strtolower(trim($departamentoObj->name)) : '';
+        $deptName        = $departamentoObj ? trim($departamentoObj->name) : '';
 
         $isSuministro    = false;
         $supplyContracts = collect();
         if ($employee) {
-            if (in_array($areaName, ['', 'suministros', 'suministro']) ||
-                in_array($deptName, ['', 'suministros', 'suministro'])) {
+            // CORRECCIÓN A PRUEBA DE BALAS: Usamos stripos para buscar "suministro" sin importar
+            // mayúsculas, minúsculas o si el nombre en la BD cambia a "Área de Suministros".
+            // No requerimos hardcodear la ID 6.
+            if (stripos($areaName, 'suministro') !== false || stripos($deptName, 'suministro') !== false) {
                 $isSuministro    = true;
                 $supplyContracts = SupplyContract::orderBy('number')->get();
             }
@@ -178,9 +181,11 @@ class CalendarController extends Controller
             'Auxiliar Mecanico', 'Auxiliar General', 'Mecánico General',
         ];
 
+        // Validamos operativamente también usando stripos para ser consistentes si es necesario
+        // pero con un match estricto para "operaciones" puede bastar. Usaremos el mismo método de stripos para estar seguros.
         $requiresBaseDescription = (
             $employee &&
-            ($areaName === 'operaciones' || $deptName === 'operaciones') &&
+            (stripos($areaName, 'operaciones') !== false || stripos($deptName, 'operaciones') !== false) &&
             in_array($employee->job_title, $operativosValidos)
         );
 
@@ -421,10 +426,10 @@ class CalendarController extends Controller
         return false;
     }
 
-/**
+    /**
      * Envía notificaciones cuando un empleado es comisionado a un área.
      */
-private function sendCommissionNotifications(Employee $employee, $date, $areaName, $commissionActivityType)
+    private function sendCommissionNotifications(Employee $employee, $date, $areaName, $commissionActivityType)
     {
         Log::info("=== INICIANDO NOTIFICACIÓN DE COMISIÓN ===");
         Log::info("Empleado: {$employee->full_name}, Área destino: {$areaName}");
@@ -779,7 +784,7 @@ private function sendCommissionNotifications(Employee $employee, $date, $areaNam
                         $request->commissioned_to,
                         $request->commissioned_activity_type
                     );
-                } catch (\Throwable $e) { // <--- CLAVE: Usar \Throwable aquí
+                } catch (\Throwable $e) {
                     // Solo registramos el error, no detenemos el proceso ya que la DB se actualizó bien
                     Log::error('Error al enviar correos de comisión: ' . $e->getMessage());
                 }

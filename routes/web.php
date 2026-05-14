@@ -1,6 +1,6 @@
 <?php
 /* CONTROLADORES DE RECURSOS administration */
-use App\Http\Controllers\Administration\Reembolsos\ReimbursementController;
+use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
 
 use App\Http\Controllers\Auth\LoginController;
 
@@ -103,23 +103,23 @@ Route::middleware(['web', 'auth'])->group(function () {
 
             // ===================================================
             // GRUPO GESTIÓN DE REEMBOLSOS (REIMBURSEMENTS)
-            // Prefijo URL: /administration/reembolsos
+            // Prefijo URL: /administration/expense-claims
             // ===================================================
-            Route::prefix('reembolsos')->group(function () {
+            Route::prefix('expense-claims')->group(function () {
 
                 // 1. Redirección automática
                 Route::get('/', function () {
-                    return redirect()->route('reembolsos.reimbursements');
+                    return redirect()->route('expense-claims.reimbursements');
                 })
-                    ->name('administration.reembolsos')
-                    ->middleware('check.permission:administration,reembolsos');
+                    ->name('administration.expense-claims')
+                    ->middleware('check.permission:administration,expense-claims');
                 // ---------------------------------------------------
                 // 2. VISTAS Y CARGA DE DATOS (Catálogos, Empleados)
                 // Controlador: ReimbursementController
                 // ---------------------------------------------------
                 Route::controller(ReimbursementController::class)->group(function () {
                     // Cambiamos 'inicio' por 'reimbursements' internamente
-                    Route::get('/reimbursements', 'index')->name('reembolsos.reimbursements');
+                    Route::get('/reimbursements', 'index')->name('expense-claims.reimbursements');
                     Route::get('/employees', 'getEmployees')->name('reimbursements.employees');
                     Route::get('/departments', 'getDepartments')->name('reimbursements.departments');
                     Route::get('/concepts', 'getConcepts')->name('reimbursements.concepts');

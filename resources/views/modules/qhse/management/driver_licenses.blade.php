@@ -23,9 +23,7 @@
             --radius: 12px;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         .lic-wrap {
             font-family: 'DM Sans', sans-serif;
@@ -49,731 +47,205 @@
             margin-bottom: 24px;
         }
 
-        .lic-header-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .lic-header-title { display: flex; align-items: center; gap: 12px; }
 
         .lic-header-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            background: var(--blue-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--blue-main);
-            font-size: 1.15rem;
+            width: 44px; height: 44px; border-radius: 10px;
+            background: var(--blue-light); display: flex;
+            align-items: center; justify-content: center;
+            color: var(--blue-main); font-size: 1.15rem;
         }
 
-        .lic-header-title h2 {
-            margin: 0;
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--gray-800);
-        }
+        .lic-header-title h2 { margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--gray-800); }
+        .lic-header-title p { margin: 2px 0 0; font-size: 0.78rem; color: var(--gray-400); }
 
-        .lic-header-title p {
-            margin: 2px 0 0;
-            font-size: 0.78rem;
-            color: var(--gray-400);
-        }
-
-        .lic-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .lic-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
         /* ── INPUTS DE CONTROL ── */
-        .ctrl-select,
-        .ctrl-search {
-            height: 40px;
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            background: var(--gray-50);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.875rem;
-            color: var(--gray-800);
-            padding: 0 14px;
-            outline: none;
+        .ctrl-select, .ctrl-search {
+            height: 40px; border: 1px solid var(--gray-200); border-radius: 8px;
+            background: var(--gray-50); font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem; color: var(--gray-800); padding: 0 14px; outline: none;
             transition: border-color .2s, box-shadow .2s, background .2s;
         }
 
-        .ctrl-select:focus,
-        .ctrl-search:focus {
-            border-color: var(--blue-main);
-            background: #fff;
+        .ctrl-select:focus, .ctrl-search:focus {
+            border-color: var(--blue-main); background: #fff;
             box-shadow: 0 0 0 3px rgba(29, 78, 216, .12);
         }
 
-        .ctrl-search-wrap {
-            position: relative;
-        }
-
+        .ctrl-search-wrap { position: relative; }
         .ctrl-search-wrap i {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray-400);
-            font-size: 0.85rem;
-            pointer-events: none;
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--gray-400); font-size: 0.85rem; pointer-events: none;
         }
-
-        .ctrl-search {
-            padding-left: 36px;
-            width: 240px;
-            transition: width .3s, border-color .2s, box-shadow .2s, background .2s;
-        }
-
-        .ctrl-search:focus {
-            width: 290px;
-        }
+        .ctrl-search { padding-left: 36px; width: 240px; transition: width .3s, border-color .2s, box-shadow .2s, background .2s; }
+        .ctrl-search:focus { width: 290px; }
 
         /* ── TABLA ── */
         .tbl-scroll {
-            overflow-x: auto;
-            overflow-y: auto;
-            max-height: 580px;
-            border-radius: 10px;
-            border: 1px solid var(--gray-200);
-            scrollbar-width: thin;
-            scrollbar-color: var(--blue-main) var(--gray-100);
+            overflow-x: auto; overflow-y: auto; max-height: 580px;
+            border-radius: 10px; border: 1px solid var(--gray-200);
+            scrollbar-width: thin; scrollbar-color: var(--blue-main) var(--gray-100);
         }
+        .tbl-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .tbl-scroll::-webkit-scrollbar-track { background: var(--gray-100); border-radius: 4px; }
+        .tbl-scroll::-webkit-scrollbar-thumb { background: var(--blue-main); border-radius: 4px; }
 
-        .tbl-scroll::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        .tbl-scroll::-webkit-scrollbar-track {
-            background: var(--gray-100);
-            border-radius: 4px;
-        }
-
-        .tbl-scroll::-webkit-scrollbar-thumb {
-            background: var(--blue-main);
-            border-radius: 4px;
-        }
-
-        .tbl-licencias {
-            width: 100%;
-            min-width: 1050px;
-            border-collapse: collapse;
-            background: #fff;
-        }
-
-        .tbl-licencias thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
+        .tbl-licencias { width: 100%; min-width: 1050px; border-collapse: collapse; background: #fff; }
+        .tbl-licencias thead { position: sticky; top: 0; z-index: 10; }
         .tbl-licencias th {
-            background: var(--gray-50);
-            color: var(--gray-400);
-            font-weight: 600;
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: .6px;
-            text-align: center;
-            padding: 14px 12px;
-            border-bottom: 1px solid var(--gray-200);
-            white-space: nowrap;
+            background: var(--gray-50); color: var(--gray-400); font-weight: 600;
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: .6px;
+            text-align: center; padding: 14px 12px; border-bottom: 1px solid var(--gray-200); white-space: nowrap;
         }
-
-        .tbl-licencias th:first-child {
-            text-align: left;
-            padding-left: 20px;
-        }
-
-        .tbl-licencias td {
-            padding: 14px 12px;
-            border-bottom: 1px solid var(--gray-100);
-            text-align: center;
-            vertical-align: middle;
-            font-size: 0.875rem;
-            color: var(--gray-800);
-        }
-
-        .tbl-licencias td:first-child {
-            padding-left: 20px;
-        }
-
-        .tbl-licencias tbody tr {
-            transition: background .15s;
-        }
-
-        .tbl-licencias tbody tr:hover {
-            background: var(--gray-50);
-        }
-
-        .tbl-licencias tbody tr:last-child td {
-            border-bottom: none;
-        }
+        .tbl-licencias th:first-child { text-align: left; padding-left: 20px; }
+        .tbl-licencias td { padding: 14px 12px; border-bottom: 1px solid var(--gray-100); text-align: center; vertical-align: middle; font-size: 0.875rem; color: var(--gray-800); }
+        .tbl-licencias td:first-child { padding-left: 20px; }
+        .tbl-licencias tbody tr { transition: background .15s; }
+        .tbl-licencias tbody tr:hover { background: var(--gray-50); }
+        .tbl-licencias tbody tr:last-child td { border-bottom: none; }
 
         /* ── EMPLEADO CELL ── */
-        .emp-cell {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
+        .emp-cell { display: flex; align-items: center; gap: 14px; }
         .emp-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: var(--gray-100);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--gray-400);
-            font-size: 1.1rem;
-            flex-shrink: 0;
-            overflow: hidden;
+            width: 40px; height: 40px; border-radius: 10px; background: var(--gray-100);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--gray-400); font-size: 1.1rem; flex-shrink: 0; overflow: hidden;
         }
-
-        .emp-name {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--gray-800);
-            margin: 0 0 2px;
-        }
-
-        .emp-dept {
-            font-size: 0.75rem;
-            color: var(--gray-400);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
+        .emp-name { font-size: 0.9rem; font-weight: 600; color: var(--gray-800); margin: 0 0 2px; }
+        .emp-dept { font-size: 0.75rem; color: var(--gray-400); display: flex; align-items: center; gap: 4px; }
 
         /* ── BADGES ── */
-        .bdg {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 5px 11px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+        .bdg { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        .bdg-ok { background: #dcfce7; color: #15803d; }
+        .bdg-warn { background: #fef9c3; color: #92400e; }
+        .bdg-orange { background: #ffedd5; color: #9a3412; }
+        .bdg-danger { background: #fee2e2; color: #b91c1c; }
+        .bdg-none { background: var(--gray-100); color: var(--gray-400); }
 
-        .bdg-ok {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .bdg-warn {
-            background: #fef9c3;
-            color: #92400e;
-        }
-
-        .bdg-orange {
-            background: #ffedd5;
-            color: #9a3412;
-        }
-
-        .bdg-danger {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .bdg-none {
-            background: var(--gray-100);
-            color: var(--gray-400);
-        }
-
-        /* Tooltip */
-        [data-tip] {
-            position: relative;
-            cursor: help;
-        }
-
+        [data-tip] { position: relative; cursor: help; }
         [data-tip]:before {
-            content: attr(data-tip);
-            position: absolute;
-            bottom: calc(100% + 6px);
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 4px 10px;
-            background: var(--gray-800);
-            color: #fff;
-            font-size: 0.68rem;
-            border-radius: 5px;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity .2s;
-            pointer-events: none;
-            z-index: 999;
+            content: attr(data-tip); position: absolute; bottom: calc(100% + 6px);
+            left: 50%; transform: translateX(-50%); padding: 4px 10px;
+            background: var(--gray-800); color: #fff; font-size: 0.68rem;
+            border-radius: 5px; white-space: nowrap; opacity: 0; visibility: hidden;
+            transition: opacity .2s; pointer-events: none; z-index: 999;
         }
-
-        [data-tip]:hover:before {
-            opacity: 1;
-            visibility: visible;
-        }
+        [data-tip]:hover:before { opacity: 1; visibility: visible; }
 
         /* ── BOTÓN ACTUALIZAR ── */
         .btn-upd {
-            background: var(--blue-light);
-            color: var(--blue-main);
-            border: 1px solid var(--blue-mid);
-            padding: 7px 14px;
-            border-radius: 7px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all .2s;
+            background: var(--blue-light); color: var(--blue-main); border: 1px solid var(--blue-mid);
+            padding: 7px 14px; border-radius: 7px; font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex;
+            align-items: center; gap: 6px; transition: all .2s;
         }
-
-        .btn-upd:hover {
-            background: var(--blue-main);
-            color: #fff;
-            border-color: var(--blue-main);
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(29, 78, 216, .25);
-        }
+        .btn-upd:hover { background: var(--blue-main); color: #fff; border-color: var(--blue-main); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(29, 78, 216, .25); }
 
         /* ── PAGINACIÓN ── */
-        .pag-wrap {
-            display: flex;
-            justify-content: center;
-            padding: 24px 0 4px;
-        }
-
-        .pag {
-            display: flex;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            gap: 6px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
+        .pag-wrap { display: flex; justify-content: center; padding: 24px 0 4px; }
+        .pag { display: flex; list-style: none; padding: 0; margin: 0; gap: 6px; flex-wrap: wrap; justify-content: center; }
         .pag .page-link {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 36px;
-            height: 36px;
-            padding: 0 10px;
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            color: var(--gray-600);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            background: #fff;
-            transition: all .2s;
+            display: flex; align-items: center; justify-content: center; min-width: 36px; height: 36px;
+            padding: 0 10px; border: 1px solid var(--gray-200); border-radius: 8px; color: var(--gray-600);
+            text-decoration: none; font-size: 0.85rem; font-weight: 500; background: #fff; transition: all .2s;
         }
-
-        .pag .page-item.active .page-link {
-            background: var(--blue-main);
-            color: #fff;
-            border-color: var(--blue-main);
-            pointer-events: none;
-        }
-
-        .pag .page-item:not(.active):not(.disabled) .page-link:hover {
-            background: var(--blue-light);
-            color: var(--blue-main);
-            border-color: var(--blue-mid);
-        }
-
-        .pag .page-item.disabled .page-link {
-            background: var(--gray-50);
-            color: var(--gray-200);
-            cursor: not-allowed;
-            pointer-events: none;
-        }
+        .pag .page-item.active .page-link { background: var(--blue-main); color: #fff; border-color: var(--blue-main); pointer-events: none; }
+        .pag .page-item:not(.active):not(.disabled) .page-link:hover { background: var(--blue-light); color: var(--blue-main); border-color: var(--blue-mid); }
+        .pag .page-item.disabled .page-link { background: var(--gray-50); color: var(--gray-200); cursor: not-allowed; pointer-events: none; }
 
         /* ── EMPTY / LOADER ── */
-        .empty-cell {
-            text-align: center;
-            padding: 50px 20px;
-            color: var(--gray-400);
-        }
-
-        .empty-cell i {
-            font-size: 2.5rem;
-            margin-bottom: 12px;
-            opacity: .4;
-        }
-
-        .empty-cell p {
-            margin: 8px 0 0;
-            font-size: 0.9rem;
-        }
-
-        .spinner-cell {
-            text-align: center;
-            padding: 50px 20px;
-        }
-
+        .empty-cell { text-align: center; padding: 50px 20px; color: var(--gray-400); }
+        .empty-cell i { font-size: 2.5rem; margin-bottom: 12px; opacity: .4; }
+        .empty-cell p { margin: 8px 0 0; font-size: 0.9rem; }
+        .spinner-cell { text-align: center; padding: 50px 20px; }
         .spin {
-            display: inline-block;
-            width: 36px;
-            height: 36px;
-            border: 3px solid var(--gray-200);
-            border-top-color: var(--blue-main);
-            border-radius: 50%;
-            animation: spinning 0.8s linear infinite;
-            margin-bottom: 12px;
+            display: inline-block; width: 36px; height: 36px; border: 3px solid var(--gray-200);
+            border-top-color: var(--blue-main); border-radius: 50%; animation: spinning 0.8s linear infinite; margin-bottom: 12px;
         }
-
-        @keyframes spinning {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spinning { to { transform: rotate(360deg); } }
 
         /* ── MODAL ── */
         .modal-lic {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, .55);
-            backdrop-filter: blur(5px);
-            z-index: 1050;
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, .55);
+            backdrop-filter: blur(5px); z-index: 1050; align-items: center; justify-content: center;
         }
-
-        .modal-lic.open {
-            display: flex;
-        }
-
+        .modal-lic.open { display: flex; }
         .modal-box {
-            background: #fff;
-            border-radius: 16px;
-            width: 95%;
-            max-width: 680px;
-            max-height: 92vh;
-            overflow-y: auto;
-            padding: 32px;
-            box-shadow: var(--shadow-lg);
-            animation: modalIn .25s cubic-bezier(.34, 1.56, .64, 1);
-            scrollbar-width: thin;
+            background: #fff; border-radius: 16px; width: 95%; max-width: 680px; max-height: 92vh;
+            overflow-y: auto; padding: 32px; box-shadow: var(--shadow-lg);
+            animation: modalIn .25s cubic-bezier(.34, 1.56, .64, 1); scrollbar-width: thin;
         }
-
         @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(.94) translateY(16px);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+            from { opacity: 0; transform: scale(.94) translateY(16px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
-
-        .modal-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-        }
-
-        .modal-head-info h3 {
-            margin: 0 0 4px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--gray-800);
-        }
-
-        .modal-head-info p {
-            margin: 0;
-            font-size: 0.8rem;
-            color: var(--gray-400);
-        }
-
+        .modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+        .modal-head-info h3 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 700; color: var(--gray-800); }
+        .modal-head-info p { margin: 0; font-size: 0.8rem; color: var(--gray-400); }
         .modal-close {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            border: none;
-            background: var(--gray-100);
-            color: var(--gray-600);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all .2s;
-            flex-shrink: 0;
+            width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--gray-100);
+            color: var(--gray-600); cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all .2s; flex-shrink: 0;
         }
-
-        .modal-close:hover {
-            background: #fee2e2;
-            color: var(--red);
-        }
-
-        .modal-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 600px) {
-            .modal-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .modal-card {
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--gray-200);
-        }
-
-        .modal-card.light-v {
-            background: var(--blue-light);
-            border-color: var(--blue-mid);
-        }
-
-        .modal-card.heavy-v {
-            background: #fff7ed;
-            border-color: #fed7aa;
-        }
-
-        .modal-card-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            margin: 0 0 18px;
-        }
-
-        .modal-card.light-v .modal-card-title {
-            color: var(--blue-main);
-        }
-
-        .modal-card.heavy-v .modal-card-title {
-            color: #c2410c;
-        }
-
-        .fg {
-            margin-bottom: 16px;
-        }
-
-        .fg:last-child {
-            margin-bottom: 0;
-        }
-
-        .fg label {
-            display: block;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--gray-600);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: .4px;
-        }
-
-        .fg-input-wrap {
-            position: relative;
-        }
-
-        .fg-input-wrap i {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray-400);
-            font-size: 0.85rem;
-            pointer-events: none;
-        }
-
+        .modal-close:hover { background: #fee2e2; color: var(--red); }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        @media (max-width: 600px) { .modal-grid { grid-template-columns: 1fr; } }
+        .modal-card { border-radius: 12px; padding: 20px; border: 1px solid var(--gray-200); }
+        .modal-card.light-v { background: var(--blue-light); border-color: var(--blue-mid); }
+        .modal-card.heavy-v { background: #fff7ed; border-color: #fed7aa; }
+        .modal-card-title { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 700; margin: 0 0 18px; }
+        .modal-card.light-v .modal-card-title { color: var(--blue-main); }
+        .modal-card.heavy-v .modal-card-title { color: #c2410c; }
+        .fg { margin-bottom: 16px; }
+        .fg:last-child { margin-bottom: 0; }
+        .fg label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+        .fg-input-wrap { position: relative; }
+        .fg-input-wrap i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 0.85rem; pointer-events: none; }
         .fg-input-wrap input {
-            width: 100%;
-            height: 40px;
-            padding: 0 36px 0 12px;
-            border: 1.5px solid var(--gray-200);
-            border-radius: 8px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.875rem;
-            color: var(--gray-800);
-            background: #fff;
-            transition: border-color .2s, box-shadow .2s;
-            outline: none;
+            width: 100%; height: 40px; padding: 0 36px 0 12px; border: 1.5px solid var(--gray-200);
+            border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; color: var(--gray-800);
+            background: #fff; transition: border-color .2s, box-shadow .2s; outline: none;
         }
-
-        .fg-input-wrap input:focus {
-            border-color: var(--blue-main);
-            box-shadow: 0 0 0 3px rgba(29, 78, 216, .12);
-        }
-
-        /* Campo modificado */
-        .fg-input-wrap input.changed {
-            border-color: #f59e0b;
-            background: #fffbeb;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, .12);
-        }
-
-        .change-tag {
-            display: none;
-            font-size: 0.68rem;
-            color: #b45309;
-            font-weight: 600;
-            margin-top: 4px;
-        }
-
-        .change-tag.visible {
-            display: block;
-        }
+        .fg-input-wrap input:focus { border-color: var(--blue-main); box-shadow: 0 0 0 3px rgba(29, 78, 216, .12); }
+        .fg-input-wrap input.changed { border-color: #f59e0b; background: #fffbeb; box-shadow: 0 0 0 3px rgba(245, 158, 11, .12); }
+        .change-tag { display: none; font-size: 0.68rem; color: #b45309; font-weight: 600; margin-top: 4px; }
+        .change-tag.visible { display: block; }
 
         /* ── RESUMEN DE CAMBIOS ── */
-        .changes-summary {
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-            display: none;
-        }
-
-        .changes-summary.visible {
-            display: block;
-        }
-
-        .changes-summary-title {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: #92400e;
-            margin: 0 0 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .change-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.78rem;
-            color: #78350f;
-            padding: 4px 0;
-            border-bottom: 1px dashed #fde68a;
-        }
-
-        .change-item:last-child {
-            border-bottom: none;
-        }
-
-        .change-item .old-val {
-            text-decoration: line-through;
-            color: var(--red);
-            opacity: .7;
-        }
-
-        .change-item .new-val {
-            color: var(--green);
-            font-weight: 600;
-        }
+        .changes-summary { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; display: none; }
+        .changes-summary.visible { display: block; }
+        .changes-summary-title { font-size: 0.78rem; font-weight: 700; color: #92400e; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
+        .change-item { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #78350f; padding: 4px 0; border-bottom: 1px dashed #fde68a; }
+        .change-item:last-child { border-bottom: none; }
+        .change-item .old-val { text-decoration: line-through; color: var(--red); opacity: .7; }
+        .change-item .new-val { color: var(--green); font-weight: 600; }
 
         /* ── FOOTER DEL MODAL ── */
-        .modal-foot {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            padding-top: 20px;
-            border-top: 1px solid var(--gray-100);
-        }
-
+        .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding-top: 20px; border-top: 1px solid var(--gray-100); }
         .btn-cancel {
-            height: 40px;
-            padding: 0 20px;
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            background: #fff;
-            color: var(--gray-600);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all .2s;
+            height: 40px; padding: 0 20px; border: 1px solid var(--gray-200); border-radius: 8px;
+            background: #fff; color: var(--gray-600); font-family: 'DM Sans', sans-serif;
+            font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all .2s;
         }
-
-        .btn-cancel:hover {
-            background: var(--gray-100);
-            color: var(--gray-800);
-        }
-
+        .btn-cancel:hover { background: var(--gray-100); color: var(--gray-800); }
         .btn-save {
-            height: 40px;
-            padding: 0 24px;
-            border: none;
-            border-radius: 8px;
-            background: var(--blue-main);
-            color: #fff;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all .2s;
+            height: 40px; padding: 0 24px; border: none; border-radius: 8px; background: var(--blue-main);
+            color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 700;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all .2s;
             box-shadow: 0 2px 8px rgba(29, 78, 216, .3);
         }
+        .btn-save:hover { background: #1e40af; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 78, 216, .4); }
+        .btn-save:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        .save-badge { background: #fbbf24; color: #78350f; border-radius: 99px; font-size: 0.65rem; padding: 1px 6px; font-weight: 700; }
 
-        .btn-save:hover {
-            background: #1e40af;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(29, 78, 216, .4);
-        }
-
-        .btn-save:disabled {
-            opacity: .6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Badge "cambios pendientes" en el botón guardar */
-        .save-badge {
-            background: #fbbf24;
-            color: #78350f;
-            border-radius: 99px;
-            font-size: 0.65rem;
-            padding: 1px 6px;
-            font-weight: 700;
-        }
-
-        /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
-            .lic-wrap {
-                padding: 16px;
-            }
-
-            .lic-controls {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .ctrl-search,
-            .ctrl-search:focus {
-                width: 100%;
-            }
-
-            .ctrl-search-wrap {
-                width: 100%;
-            }
-
-            .modal-box {
-                padding: 20px;
-            }
+            .lic-wrap { padding: 16px; }
+            .lic-controls { flex-direction: column; width: 100%; }
+            .ctrl-search, .ctrl-search:focus { width: 100%; }
+            .ctrl-search-wrap { width: 100%; }
+            .modal-box { padding: 20px; }
         }
     </style>
 @endpush
@@ -790,25 +262,13 @@
         $fmt = $date->format('d/m/Y');
 
         if ($diff < 0) {
-            return '<span class="bdg bdg-danger" data-tip="Vencido"><i class="fas fa-times-circle"></i> ' .
-                $fmt .
-                '</span>';
+            return '<span class="bdg bdg-danger" data-tip="Vencido"><i class="fas fa-times-circle"></i> ' . $fmt . '</span>';
         } elseif ($diff <= 30) {
-            return '<span class="bdg bdg-orange" data-tip="Vence en ' .
-                $diff .
-                ' días"><i class="fas fa-exclamation-circle"></i> ' .
-                $fmt .
-                '</span>';
+            return '<span class="bdg bdg-orange" data-tip="Vence en ' . $diff . ' días"><i class="fas fa-exclamation-circle"></i> ' . $fmt . '</span>';
         } elseif ($diff <= 60) {
-            return '<span class="bdg bdg-warn" data-tip="Vence en ' .
-                $diff .
-                ' días"><i class="fas fa-exclamation-triangle"></i> ' .
-                $fmt .
-                '</span>';
+            return '<span class="bdg bdg-warn" data-tip="Vence en ' . $diff . ' días"><i class="fas fa-exclamation-triangle"></i> ' . $fmt . '</span>';
         } else {
-            return '<span class="bdg bdg-ok" data-tip="Vigente"><i class="fas fa-check-circle"></i> ' .
-                $fmt .
-                '</span>';
+            return '<span class="bdg bdg-ok" data-tip="Vigente"><i class="fas fa-check-circle"></i> ' . $fmt . '</span>';
         }
     }
 @endphp
@@ -831,8 +291,7 @@
                     <span>Mostrar</span>
                     <select id="per_page" class="ctrl-select">
                         @foreach ([5, 10, 15, 20, 25, 30, 50, 100] as $n)
-                            <option value="{{ $n }}" {{ $perPage == $n ? 'selected' : '' }}>{{ $n }}
-                            </option>
+                            <option value="{{ $n }}" {{ $perPage == $n ? 'selected' : '' }}>{{ $n }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -863,17 +322,15 @@
                                 <div class="emp-cell">
                                     <div class="emp-avatar">
                                         @if ($emp->photo)
-                                            <img src="{{ asset($emp->photo) }}"
-                                                style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
+                                            <img src="{{ asset($emp->photo) }}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
                                         @else
                                             <i class="fas fa-user-tie"></i>
                                         @endif
                                     </div>
                                     <div>
-                                        <p class="emp-name">
-                                            {{ $emp->full_name ?? $emp->first_name . ' ' . $emp->first_surname }}</p>
+                                        <p class="emp-name">{{ $emp->full_name ?? $emp->first_name . ' ' . $emp->first_surname }}</p>
                                         <span class="emp-dept"><i class="fas fa-sitemap"></i>
-                                            {{ $emp->department ?? 'Sin departamento' }}</span>
+                                            {{ optional($emp->area)->name ?? 'Sin área' }}</span>
                                     </div>
                                 </div>
                             </td>
@@ -889,8 +346,7 @@
                             '{{ optional($emp->license)->driver_license_expires_at ? optional($emp->license)->driver_license_expires_at->format('Y-m-d') : '' }}',
                             '{{ optional($emp->license)->light_defensive_course_expires_at ? optional($emp->license)->light_defensive_course_expires_at->format('Y-m-d') : '' }}',
                             '{{ optional($emp->license)->federal_license_expires_at ? optional($emp->license)->federal_license_expires_at->format('Y-m-d') : '' }}',
-                            '{{ optional($emp->license)->heavy_defensive_course_expires_at ? optional($emp->license)->heavy_defensive_course_expires_at->format('Y-m-d') : '' }}'
-                        )">
+                            '{{ optional($emp->license)->heavy_defensive_course_expires_at ? optional($emp->license)->heavy_defensive_course_expires_at->format('Y-m-d') : '' }}')">
                                     <i class="fas fa-edit"></i> Actualizar
                                 </button>
                             </td>
@@ -932,8 +388,7 @@
 
             {{-- Resumen de cambios --}}
             <div class="changes-summary" id="changesSummary">
-                <p class="changes-summary-title"><i class="fas fa-exclamation-triangle"></i> Cambios pendientes de guardar
-                </p>
+                <p class="changes-summary-title"><i class="fas fa-exclamation-triangle"></i> Cambios pendientes de guardar</p>
                 <div id="changesDetail"></div>
             </div>
 
@@ -949,8 +404,7 @@
                         <div class="fg">
                             <label>Vigencia Lic. Conductor</label>
                             <div class="fg-input-wrap">
-                                <input type="text" id="f_lic" class="flatpickr-date"
-                                    placeholder="Seleccionar fecha...">
+                                <input type="text" id="f_lic" class="flatpickr-date" placeholder="Seleccionar fecha...">
                                 <i class="far fa-calendar-alt"></i>
                             </div>
                             <span class="change-tag" id="tag_f_lic">Campo modificado</span>
@@ -959,8 +413,7 @@
                         <div class="fg">
                             <label>Vigencia Curso Man. Defensivo</label>
                             <div class="fg-input-wrap">
-                                <input type="text" id="f_curso_lig" class="flatpickr-date"
-                                    placeholder="Seleccionar fecha...">
+                                <input type="text" id="f_curso_lig" class="flatpickr-date" placeholder="Seleccionar fecha...">
                                 <i class="far fa-calendar-alt"></i>
                             </div>
                             <span class="change-tag" id="tag_f_curso_lig">Campo modificado</span>
@@ -974,8 +427,7 @@
                         <div class="fg">
                             <label>Vigencia Lic. Federal</label>
                             <div class="fg-input-wrap">
-                                <input type="text" id="f_fed" class="flatpickr-date"
-                                    placeholder="Seleccionar fecha...">
+                                <input type="text" id="f_fed" class="flatpickr-date" placeholder="Seleccionar fecha...">
                                 <i class="far fa-calendar-alt"></i>
                             </div>
                             <span class="change-tag" id="tag_f_fed">Campo modificado</span>
@@ -984,8 +436,7 @@
                         <div class="fg">
                             <label>Vigencia Curso Man. Def. Pesada</label>
                             <div class="fg-input-wrap">
-                                <input type="text" id="f_curso_pes" class="flatpickr-date"
-                                    placeholder="Seleccionar fecha...">
+                                <input type="text" id="f_curso_pes" class="flatpickr-date" placeholder="Seleccionar fecha...">
                                 <i class="far fa-calendar-alt"></i>
                             </div>
                             <span class="change-tag" id="tag_f_curso_pes">Campo modificado</span>
@@ -996,8 +447,7 @@
                 <div class="modal-foot">
                     <button type="button" class="btn-cancel" id="btnCancel">Cancelar</button>
                     <button type="submit" class="btn-save" id="btnSave" disabled>
-                        <i class="fas fa-save"></i>
-                        Guardar
+                        <i class="fas fa-save"></i> Guardar
                         <span class="save-badge" id="saveBadge" style="display:none">0</span>
                     </button>
                 </div>
@@ -1019,10 +469,7 @@
 
         // Valores originales al abrir el modal
         let originals = {
-            f_lic: '',
-            f_curso_lig: '',
-            f_fed: '',
-            f_curso_pes: ''
+            f_lic: '', f_curso_lig: '', f_fed: '', f_curso_pes: ''
         };
 
         // Etiquetas legibles por campo
@@ -1036,17 +483,10 @@
         // ── FLATPICKR ──────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             flatpickr('.flatpickr-date', {
-                dateFormat: 'Y-m-d',
-                altInput: true,
-                altFormat: 'd/m/Y',
-                locale: 'es',
-                allowInput: true,
-                disableMobile: true,
-                onClose() {
-                    detectChanges();
-                }
+                dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y',
+                locale: 'es', allowInput: true, disableMobile: true,
+                onClose() { detectChanges(); }
             });
-
             renderPag(currentPage, lastPage);
             bindCloseModal();
         });
@@ -1105,12 +545,9 @@
             now.setHours(0, 0, 0, 0);
             const diff = Math.ceil((date - now) / 86400000);
             const fmt = `${String(day).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
-            if (diff < 0)
-            return `<span class="bdg bdg-danger" data-tip="Vencido"><i class="fas fa-times-circle"></i> ${fmt}</span>`;
-            if (diff <= 30)
-            return `<span class="bdg bdg-orange" data-tip="Vence en ${diff} días"><i class="fas fa-exclamation-circle"></i> ${fmt}</span>`;
-            if (diff <= 60)
-            return `<span class="bdg bdg-warn"   data-tip="Vence en ${diff} días"><i class="fas fa-exclamation-triangle"></i> ${fmt}</span>`;
+            if (diff < 0) return `<span class="bdg bdg-danger" data-tip="Vencido"><i class="fas fa-times-circle"></i> ${fmt}</span>`;
+            if (diff <= 30) return `<span class="bdg bdg-orange" data-tip="Vence en ${diff} días"><i class="fas fa-exclamation-circle"></i> ${fmt}</span>`;
+            if (diff <= 60) return `<span class="bdg bdg-warn"   data-tip="Vence en ${diff} días"><i class="fas fa-exclamation-triangle"></i> ${fmt}</span>`;
             return `<span class="bdg bdg-ok"     data-tip="Vigente"><i class="fas fa-check-circle"></i> ${fmt}</span>`;
         }
 
@@ -1142,7 +579,7 @@
                     <div class="emp-avatar">${avatar}</div>
                     <div>
                         <p class="emp-name">${e.name}</p>
-                        <span class="emp-dept"><i class="fas fa-sitemap"></i> ${e.department || 'Sin departamento'}</span>
+                        <span class="emp-dept"><i class="fas fa-sitemap"></i> ${e.area || 'Sin área'}</span>
                     </div>
                 </div>
             </td>
@@ -1166,15 +603,11 @@
         // ── PAGINACIÓN ────────────────────────────────────────────────
         function renderPag(cur, last) {
             const el = document.getElementById('pagLinks');
-            if (last <= 1) {
-                el.innerHTML = '';
-                return;
-            }
+            if (last <= 1) { el.innerHTML = ''; return; }
 
             let html = '';
             const prev = cur === 1 ? 'disabled' : '';
-            html +=
-                `<li class="page-item ${prev}"><a class="page-link" data-page="${cur-1}"><i class="fas fa-chevron-left"></i></a></li>`;
+            html += `<li class="page-item ${prev}"><a class="page-link" data-page="${cur-1}"><i class="fas fa-chevron-left"></i></a></li>`;
 
             let s = Math.max(1, cur - 2);
             let e = Math.min(last, cur + 2);
@@ -1196,8 +629,7 @@
             }
 
             const next = cur === last ? 'disabled' : '';
-            html +=
-                `<li class="page-item ${next}"><a class="page-link" data-page="${cur+1}"><i class="fas fa-chevron-right"></i></a></li>`;
+            html += `<li class="page-item ${next}"><a class="page-link" data-page="${cur+1}"><i class="fas fa-chevron-right"></i></a></li>`;
 
             el.innerHTML = html;
 
@@ -1207,10 +639,7 @@
                     const li = a.parentElement;
                     if (li.classList.contains('disabled') || li.classList.contains('active')) return;
                     fetchData(parseInt(a.dataset.page));
-                    document.getElementById('tblContainer').scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
+                    document.getElementById('tblContainer').scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
         }
@@ -1221,27 +650,16 @@
             document.getElementById('modalTitle').textContent = nombre;
             document.getElementById('modalSubtitle').textContent = 'Modifica las fechas de vigencia';
 
-            // Guardar originales
-            originals = {
-                f_lic: lic,
-                f_curso_lig: cursoLig,
-                f_fed: fed,
-                f_curso_pes: cursoPes
-            };
+            originals = { f_lic: lic, f_curso_lig: cursoLig, f_fed: fed, f_curso_pes: cursoPes };
 
-            // Establecer fechas en flatpickr
             const setFP = (id, val) => {
                 const fp = document.getElementById(id)?._flatpickr;
                 if (fp) fp.setDate(val || null, false);
             };
-            setFP('f_lic', lic);
-            setFP('f_curso_lig', cursoLig);
-            setFP('f_fed', fed);
-            setFP('f_curso_pes', cursoPes);
+            setFP('f_lic', lic); setFP('f_curso_lig', cursoLig);
+            setFP('f_fed', fed); setFP('f_curso_pes', cursoPes);
 
-            // Limpiar estado visual
             resetChangeUI();
-
             document.getElementById('modalLic').classList.add('open');
             document.body.style.overflow = 'hidden';
         }
@@ -1259,9 +677,7 @@
                         cancelButtonText: 'Seguir editando',
                         confirmButtonColor: '#dc2626',
                         cancelButtonColor: '#1d4ed8',
-                    }).then(r => {
-                        if (r.isConfirmed) forceClose();
-                    });
+                    }).then(r => { if (r.isConfirmed) forceClose(); });
                 } else {
                     forceClose();
                 }
@@ -1269,13 +685,9 @@
 
             document.getElementById('btnCloseModal').addEventListener('click', close);
             document.getElementById('btnCancel').addEventListener('click', close);
-
-            // Cerrar al hacer clic fuera
             document.getElementById('modalLic').addEventListener('click', e => {
                 if (e.target === document.getElementById('modalLic')) close();
             });
-
-            // ESC
             document.addEventListener('keydown', e => {
                 if (e.key === 'Escape' && document.getElementById('modalLic').classList.contains('open')) close();
             });
@@ -1289,11 +701,6 @@
         }
 
         // ── DETECCIÓN DE CAMBIOS ──────────────────────────────────────
-        function getFieldVal(id) {
-            return document.getElementById(id)?._flatpickr?.input?.value || '';
-        }
-
-        // Normalizar: flatpickr altInput muestra dd/mm/yyyy, pero el hidden value es yyyy-mm-dd
         function getRawVal(id) {
             const fp = document.getElementById(id)?._flatpickr;
             return fp ? (fp.selectedDates[0] ? fp.formatDate(fp.selectedDates[0], 'Y-m-d') : '') : '';
@@ -1317,7 +724,6 @@
             const btn = document.getElementById('btnSave');
             const badge = document.getElementById('saveBadge');
 
-            // Resaltar campos
             fields.forEach(k => {
                 const inp = document.getElementById(k);
                 const tag = document.getElementById('tag_' + k);
@@ -1333,7 +739,6 @@
                 return;
             }
 
-            // Mostrar resumen
             detail.innerHTML = changed.map(k => `
         <div class="change-item">
             <i class="fas fa-arrow-right" style="color:var(--gray-400);font-size:.7rem;"></i>
@@ -1361,21 +766,16 @@
             document.getElementById('saveBadge').style.display = 'none';
         }
 
-        // Detectar cambios en tiempo real al cambiar fecha en flatpickr
-        // Necesitamos re-inicializar flatpickr con onChange
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.flatpickr-date').forEach(el => {
                 const fp = el._flatpickr;
-                if (fp) {
-                    fp.config.onChange.push(() => detectChanges());
-                }
+                if (fp) fp.config.onChange.push(() => detectChanges());
             });
         });
 
         // ── GUARDAR ───────────────────────────────────────────────────
         async function saveAJAX(e) {
             e.preventDefault();
-
             if (!hasChanges()) return;
 
             const id = document.getElementById('emp_id').value;
@@ -1390,19 +790,14 @@
             };
 
             Swal.fire({
-                title: 'Guardando...',
-                allowOutsideClick: false,
+                title: 'Guardando...', allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
 
             try {
                 const res = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': token,
-                        'Accept': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
                     body: JSON.stringify(body),
                 });
 
@@ -1411,12 +806,9 @@
 
                 if (result.success) {
                     Swal.fire({
-                        icon: 'success',
-                        title: '¡Guardado!',
+                        icon: 'success', title: '¡Guardado!',
                         text: 'Las credenciales se actualizaron correctamente.',
-                        confirmButtonColor: '#1d4ed8',
-                        timer: 2800,
-                        timerProgressBar: true,
+                        confirmButtonColor: '#1d4ed8', timer: 2800, timerProgressBar: true,
                     }).then(() => {
                         forceClose();
                         fetchData(currentPage);
@@ -1425,12 +817,7 @@
                     throw new Error(result.message || 'Error al guardar.');
                 }
             } catch (err) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: err.message,
-                    confirmButtonColor: '#dc2626'
-                });
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message, confirmButtonColor: '#dc2626' });
             }
         }
     </script>

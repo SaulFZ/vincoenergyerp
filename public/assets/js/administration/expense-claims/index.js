@@ -29,7 +29,7 @@ function initApp() {
             e.preventDefault();
             const route = this.getAttribute('data-route');
             if (route) {
-                window.location.href = `/administration/reembolsos/${route}`;
+                window.location.href = `/administration/expense-claims/${route}`;
             }
         });
     });

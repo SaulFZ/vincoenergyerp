@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('folio')->unique();
             $table->date('request_date');
             $table->string('creator_name');
-            $table->string('department');
+            $table->string('area');
 
             // Estados
             $table->string('approval_status')->default('pending');

@@ -374,10 +374,10 @@
                         <div class="form-group">
                             <label>
                                 <i class="fas fa-building"></i>
-                                Departamento <span class="required">*</span>
+                                Área <span class="required">*</span>
                             </label>
-                            <input type="text" name="departamento" id="departamento"
-                                value="{{ $userData['departamento'] ?? '' }}" readonly required>
+                            <input type="text" name="area" id="area" value="{{ $userData['area'] ?? '' }}"
+                                readonly required>
                         </div>
 
                         <div class="form-group">
@@ -718,7 +718,7 @@
                         <div class="evaluacion-item">
                             <div class="evaluacion-titulo">8. Otras Cond. de la carretera</div>
                             <div class="evaluacion-opciones">
-                                 <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="0">
+                                <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="0">
                                     No aplica</label>
                                 <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="10"
                                         required> Zona con curvas y pendientes</label>

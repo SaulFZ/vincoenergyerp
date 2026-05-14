@@ -13,10 +13,11 @@ class JourneyController extends Controller
 {
     public function index()
     {
-        // 1. Usuario autenticado con empleado
-        $user = Auth::user()->load('employee');
-        // 2. Empleados activos con licencias y usuario activo
-        $employees = Employee::with(['license', 'user' => function ($q) {
+        // 1. Usuario autenticado con empleado y su respectiva área
+        $user = Auth::user()->load(['employee.area']);
+
+        // 2. Empleados activos con licencias, usuario activo y su área
+        $employees = Employee::with(['license', 'area', 'user' => function ($q) {
             $q->where('status', 'active');
         }])
             ->whereHas('user', function ($q) {
@@ -31,7 +32,7 @@ class JourneyController extends Controller
                 return [
                     'id' => $emp->id,
                     'nombre_completo' => $emp->full_name,
-                    'departamento' => $emp->department,
+                    'area' => $emp->area ? $emp->area->name : 'N/A', // Reemplazo de departamento por area
                     // Licencias del empleado
                     'licencia_conductor_vigencia' => $license
                         ? $license->driver_license_expires_at
@@ -53,10 +54,11 @@ class JourneyController extends Controller
                     'estado' => $user ? $user->status : null,
                 ];
             });
+
         // 3. Pasar datos del usuario logueado a la vista
         $userData = [
             'nombre' => $user->employee ? $user->employee->full_name : $user->name,
-            'departamento' => $user->employee ? $user->employee->department : 'N/A',
+            'area' => ($user->employee && $user->employee->area) ? $user->employee->area->name : 'N/A', // Cambio a area
             'email' => $user->email,
         ];
 
@@ -65,7 +67,6 @@ class JourneyController extends Controller
             compact('userData', 'employees')
         );
     }
-
     /**
      * Obtener usuarios autorizadores dependiendo del nivel de riesgo
      */
@@ -157,7 +158,8 @@ class JourneyController extends Controller
     public function getConductores()
     {
         try {
-            $conductores = Employee::with(['license', 'user' => function ($q) {
+            // Agregamos 'area' a la carga de relaciones (with)
+            $conductores = Employee::with(['license', 'area', 'user' => function ($q) {
                 $q->where('status', 'active');
             }])
                 ->whereHas('user', function ($q) {
@@ -169,9 +171,9 @@ class JourneyController extends Controller
                     $license = $emp->license;
 
                     return [
-                        'id' => $emp->id, // <--- SE AGREGA EL ID DEL EMPLEADO
+                        'id' => $emp->id,
                         'nombre_completo' => $emp->full_name,
-                        'departamento' => $emp->department,
+                        'area' => $emp->area ? $emp->area->name : 'N/A', // Cambio a area
                         // Datos de licencias
                         'licencia_conductor' => $license ? [
                             'vigencia' => $license->driver_license_expires_at
@@ -195,7 +197,6 @@ class JourneyController extends Controller
                     ];
                 });
 
-            // Formatear para el autocomplete (AHORA ENVIAMOS UN OBJETO CON ID Y NOMBRE)
             $listaConductoresAutocomplete = $conductores->map(function ($c) {
                 return [
                     'id' => $c['id'],
@@ -203,7 +204,6 @@ class JourneyController extends Controller
                 ];
             })->values()->toArray();
 
-            // Crear objeto con datos de cada conductor
             $datosConductores = [];
             foreach ($conductores as $conductor) {
                 $datosConductores[$conductor['nombre_completo']] = [
@@ -211,14 +211,14 @@ class JourneyController extends Controller
                     'manDefVigencia' => $conductor['curso_manejo_defensivo']['ligero'] ?? '',
                     'cursoPesadoVigencia' => $conductor['curso_manejo_defensivo']['pesado'] ?? '',
                     'federalVigencia' => $conductor['licencia_federal']['vigencia'] ?? '',
-                    'departamento' => $conductor['departamento'] ?? '',
+                    'area' => $conductor['area'] ?? '', // Guardamos area en JS
                     'permanente' => $conductor['licencia_conductor']['permanente'] ?? false,
                 ];
             }
 
             return response()->json([
                 'success' => true,
-                'conductores' => $listaConductoresAutocomplete, // Enviamos el array de objetos
+                'conductores' => $listaConductoresAutocomplete,
                 'datosConductores' => $datosConductores,
                 'total' => count($listaConductoresAutocomplete),
             ]);

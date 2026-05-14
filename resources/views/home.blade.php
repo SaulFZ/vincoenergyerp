@@ -62,8 +62,8 @@
                         <i class="fas fa-chevron-right arrow-icon"></i>
                     </div>
                     <ul class="nav-list active">
-                        @if (in_array('reembolsos', $userPermissions['administration']) || empty($userPermissions['administration']))
-                            <li class="nav-item" data-route="/administration/reembolsos" data-name="Reembolsos">
+                        @if (in_array('expense-claims', $userPermissions['administration']) || empty($userPermissions['administration']))
+                            <li class="nav-item" data-route="/administration/expense-claims" data-name="Reembolsos">
                                 <i class="fas fa-receipt nav-icon"></i>
                                 <span class="nav-text">Reembolsos</span>
                             </li>

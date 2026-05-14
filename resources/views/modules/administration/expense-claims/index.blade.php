@@ -11,8 +11,8 @@
     <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link href="{{ asset('assets/css/administration/reembolsos/index.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/css/administration/reembolsos/reimbursements.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/administration/expense-claims/index.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/administration/expense-claims/reimbursements.css') }}" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @stack('styles')
 </head>
@@ -51,8 +51,8 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{{ asset('assets/js/administration/reembolsos/index.js') }}"></script>
-    <script src="{{ asset('assets/js/administration/reembolsos/reimbursements.js') }}"></script>
+    <script src="{{ asset('assets/js/administration/expense-claims/index.js') }}"></script>
+    <script src="{{ asset('assets/js/administration/expense-claims/reimbursements.js') }}"></script>
     <script src="{{ asset('assets/js/sessionTimer.js') }}"></script>
     @stack('scripts')
 </body>

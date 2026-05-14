@@ -1,0 +1,1434 @@
+/* =========================================================================================
+     HOJA DE ESTILOS: MÓDULO DE REEMBOLSOS (reembolsos.css)
+     Estructura arquitectónica modularizada para Vinco One, incorporando
+     los ciclos y árboles de estado de pago (Pagado, Por pagar, Por autorizar, etc).
+   ========================================================================================= */
+
+/* ── 1. VARIABLES GLOBALES DE COLOR Y ARQUITECTURA SEMÁNTICA (ROOT) ── */
+:root {
+    /* Paleta Corporativa Vinco Base */
+    --slate-dark: #0f172a;
+    --slate-mid: #1e293b;
+    --slate-light: #f1f5f9;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --teal-dark: #0d9488;
+    --teal-medium: #14b8a6;
+    --teal-light: #ccfbf1;
+
+    /* Árbol Lógico 1: Indicadores de Fase de Revisión Administrativa */
+    --status-pending-bg: #fef9c3;
+    --status-pending-text: #92400e;
+    --status-pending-border: #fde68a;
+
+    --status-review-bg: #e0f2fe;     /* Azul Institucional para Validado */
+    --status-review-text: #075985;
+    --status-review-border: #bae6fd;
+
+    --status-approved-bg: #d1fae5;
+    --status-approved-text: #065f46;
+    --status-approved-border: #a7f3d0;
+
+    --status-rejected-bg: #fee2e2;
+    --status-rejected-text: #991b1b;
+    --status-rejected-border: #fecaca;
+
+    /* Árbol Lógico 2: Monitores del Motor de Pagos y Tesorería */
+    /* -> PAGADO (Verde Oscuro y Sólido) */
+    --payment-paid-bg: #bbf7d0;
+    --payment-paid-text: #14532d;
+    --payment-paid-border: #4ade80;
+
+    /* -> POR PAGAR (Naranja Vibrante - Dinero autorizado pendiente de transferencia) */
+    --payment-process-bg: #ffedd5;
+    --payment-process-text: #9a3412;
+    --payment-process-border: #fdba74;
+
+    /* -> POR AUTORIZAR (Púrpura/Violeta Elegante - Destaca falta de firma gerencial) */
+    --payment-auth-bg: #f3e8ff;
+    --payment-auth-text: #6b21a8;
+    --payment-auth-border: #d8b4fe;
+
+    /* -> EN ESPERA (Amarillo sutil - Haciendo fila en administración Fase 1) */
+    --payment-wait-bg: #fef9c3;
+    --payment-wait-text: #854d0e;
+    --payment-wait-border: #fde047;
+
+    /* -> NO PROCEDE (Gris Neutro - Rechazado o Cancelado) */
+    --payment-void-bg: #cbd5e1;
+    --payment-void-text: #1e293b;
+    --payment-void-border: #94a3b8;
+}
+
+/* ── 2. NORMAS BASE Y NORMALIZACIÓN DE DOCUMENTO ── */
+* {
+    font-family: 'Poppins', sans-serif;
+    box-sizing: border-box;
+}
+
+input,
+select,
+button {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+/* Forzando a las ventanas dinámicas al frente por encima de las capas modales nativas */
+.swal2-container {
+    z-index: 100000 !important;
+}
+
+/* ── 3. COMPONENTES PRINCIPALES (Headers, Cards, Grids) ── */
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.view-title {
+    font-size: 2rem;
+    font-weight: 400;
+    color: #1e293b;
+    margin: 0;
+}
+
+.view-title strong {
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.view-subtitle {
+    margin-top: .25rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.view-subtitle i {
+    color: var(--teal-dark);
+    font-size: 1.1rem;
+}
+
+/* Interfaz Botonera */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .7rem 1.5rem;
+    border-radius: .75rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: none;
+    transition: background-color .15s, transform .15s, box-shadow .15s;
+}
+
+.btn-primary {
+    background: var(--teal-dark);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, .25);
+}
+
+.btn-primary:hover {
+    background: var(--teal-medium);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(20, 184, 166, .3);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: #64748b;
+}
+
+.btn-ghost:hover {
+    background: var(--surface-alt);
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--slate-mid);
+    border: 1px solid #cbd5e1;
+}
+
+.btn-secondary:hover {
+    background: var(--slate-light);
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: .4rem;
+    border-radius: 50%;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    font-size: 1.35rem;
+    transition: background .15s, color .15s;
+}
+
+.btn-close:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.btn-ok-solid {
+    background: var(--teal-dark);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, .25);
+}
+
+.btn-ok-solid:hover {
+    background: var(--teal-medium);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(20, 184, 166, .3);
+}
+
+.btn-fail-solid {
+    background: #ef4444;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, .25);
+}
+
+.btn-fail-solid:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(220, 38, 38, .3);
+}
+
+/* ── 4. VISUALIZACIÓN ANALÍTICA: TARJETAS (KPIs) ── */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.metric-card {
+    background: var(--surface);
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+    position: relative;
+    overflow: hidden;
+    transition: transform .15s, box-shadow .15s;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .1);
+}
+
+.metric-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+}
+
+.metric-total::after { background: linear-gradient(to right, #0d9488, #14b8a6); }
+.metric-pending::after { background: linear-gradient(to right, #f59e0b, #fbbf24); }
+.metric-approved::after { background: linear-gradient(to right, #059669, #34d399); }
+.metric-rejected::after { background: linear-gradient(to right, #dc2626, #f87171); }
+
+.metric-icon-wrap {
+    width: 3rem;
+    height: 3rem;
+    border-radius: .75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.metric-total .metric-icon-wrap { background: #ccfbf1; color: #0d9488; }
+.metric-pending .metric-icon-wrap { background: #fef3c7; color: #d97706; }
+.metric-approved .metric-icon-wrap { background: #d1fae5; color: #059669; }
+.metric-rejected .metric-icon-wrap { background: #fee2e2; color: #dc2626; }
+
+.metric-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+}
+
+.metric-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: #94a3b8;
+}
+
+.metric-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.metric-pill {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748b;
+    background: var(--surface-alt);
+    border: 1px solid #e2e8f0;
+    padding: .2rem .65rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    align-self: flex-start;
+    margin-top: .2rem;
+}
+
+/* ── 5. ESTRUCTURA CENTRAL DE LA VISTA: CONTENEDORES DE TABLAS Y FILTROS ── */
+.card {
+    background: var(--surface);
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    padding: 1.1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface);
+    border-bottom: 1px solid #f1f5f9;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.card-title i {
+    color: #94a3b8;
+    font-size: 1.2rem;
+}
+
+/* Motor de búsqueda y navegación en sub-pestañas */
+.table-controls {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+}
+
+.search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: .7rem;
+    color: #94a3b8;
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+.search-input {
+    padding: .5rem .75rem .5rem 2.2rem;
+    background: var(--surface-alt);
+    border: 1px solid #e2e8f0;
+    border-radius: .6rem;
+    font-size: 0.8rem;
+    color: #1e293b;
+    font-family: 'Poppins', sans-serif;
+    outline: none;
+    width: 250px;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.search-input:focus {
+    border-color: var(--teal-dark);
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, .15);
+    background: #fff;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: .25rem;
+    background: var(--surface-alt);
+    border: 1px solid #e2e8f0;
+    border-radius: .6rem;
+    padding: .2rem;
+}
+
+.filter-tab {
+    padding: .32rem .8rem;
+    border: none;
+    border-radius: .4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+}
+
+.filter-tab:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.filter-tab.active {
+    background: var(--slate-dark);
+    color: #fff;
+}
+
+/* ── 6. LEY DE DATATABLES Y MATRICES ── */
+.table-scroll {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.data-table thead tr {
+    background: var(--slate-dark);
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.data-table thead th {
+    padding: .9rem 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--surface-alt);
+    transition: background .12s;
+}
+
+.data-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.data-table tbody td {
+    padding: .85rem 1rem;
+    vertical-align: middle;
+}
+
+.cell-actions {
+    text-align: right;
+}
+
+/* Modificadores gráficos para columnas clave en el Dashboard */
+.row-date {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.row-motive {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.row-name {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.8rem;
+}
+
+.row-folio {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--teal-dark);
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--teal-light);
+    padding: .2rem .5rem;
+    border-radius: .4rem;
+}
+
+.row-folio.user-folio {
+    color: #475569;
+    background: #e2e8f0;
+}
+
+.row-depto {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    background: var(--surface);
+    border: 1px solid #e2e8f0;
+    padding: .28rem .7rem;
+    border-radius: .4rem;
+    display: inline-block;
+}
+
+.row-amount-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: .08rem;
+}
+
+.row-amount {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.88rem;
+}
+
+.row-amount-label {
+    font-size: 0.62rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.row-index {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #000000;
+    text-align: center;
+}
+
+/* ── 7. COMPONENTES VISUALES: INSIGNIAS INTELIGENTES Y CONTROLADORES ── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .32rem .75rem;
+    border-radius: .4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+/* -> Componentes: Árbol Lógico 1 (Estado Documental y Administrativo) */
+.badge-wait {
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
+    border-color: var(--status-pending-border);
+}
+
+.badge-review {
+    background: var(--status-review-bg);
+    color: var(--status-review-text);
+    border-color: var(--status-review-border);
+}
+
+.badge-ok {
+    background: var(--status-approved-bg);
+    color: var(--status-approved-text);
+    border-color: var(--status-approved-border);
+}
+
+.badge-fail {
+    background: var(--status-rejected-bg);
+    color: var(--status-rejected-text);
+    border-color: var(--status-rejected-border);
+}
+
+.badge-draft {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+/* -> Componentes: Árbol Lógico 2 (Transaccional / Cuentas por Pagar) */
+.badge-payment-paid {
+    background: var(--payment-paid-bg);
+    color: var(--payment-paid-text);
+    border-color: var(--payment-paid-border);
+}
+
+.badge-payment-process {
+    background: var(--payment-process-bg);
+    color: var(--payment-process-text);
+    border-color: var(--payment-process-border);
+}
+
+/* NUEVO: Estado "Por autorizar" (Violeta/Púrpura Corporativo) */
+.badge-payment-auth {
+    background: var(--payment-auth-bg);
+    color: var(--payment-auth-text);
+    border-color: var(--payment-auth-border);
+}
+
+.badge-payment-wait {
+    background: var(--payment-wait-bg);
+    color: var(--payment-wait-text);
+    border-color: var(--payment-wait-border);
+}
+
+.badge-payment-void {
+    background: var(--payment-void-bg);
+    color: var(--payment-void-text);
+    border-color: var(--payment-void-border);
+}
+
+.badge-disabled {
+    background: #f8fafc;
+    color: #94a3b8;
+    border-color: #e2e8f0;
+}
+
+/* Estilo y disposición de botones interactivos de tabla */
+.actions-wrap {
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+}
+
+.btn-icon {
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .5rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 1.05rem;
+    transition: all .15s;
+}
+
+.btn-icon-view {
+    color: #64748b;
+    background: var(--surface-alt);
+    border-color: #cbd5e1;
+}
+
+.btn-icon-view:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.btn-icon-evaluate {
+    color: var(--teal-dark);
+    background: var(--teal-light);
+    border-color: #a7f3d0;
+}
+
+.btn-icon-evaluate:hover {
+    background: var(--teal-dark);
+    color: #fff;
+}
+
+/* Modificadores gráficos para el Estado Vacío */
+.empty-state {
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+}
+
+.empty-icon {
+    font-size: 3.5rem;
+    color: #cbd5e1;
+}
+
+.empty-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #64748b;
+    margin: 0;
+}
+
+.empty-desc {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin: 0;
+}
+
+.table-footer {
+    padding: .75rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+    background: var(--surface-alt);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.table-count-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+/* ── 8. ARQUITECTURA DEL MODAL DINÁMICO (Overlay y Formularios) ── */
+.modal-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 20px;
+    backdrop-filter: blur(3px);
+}
+
+.modal-box {
+    background: var(--surface);
+    border: 1px solid #334155;
+    border-radius: 1.25rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+    width: 100%;
+    max-width: 82rem;
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.modal-header {
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--surface-alt);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 10;
+    border-radius: 1.25rem 1.25rem 0 0;
+}
+
+.modal-title {
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin: 0;
+}
+
+.modal-title i {
+    color: var(--teal-dark);
+    font-size: 1.8rem;
+}
+
+.modal-title strong {
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.modal-body {
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+    background: rgba(248, 250, 252, .5);
+}
+
+.modal-footer {
+    padding: 1.25rem 2rem;
+    border-top: 1px solid #e2e8f0;
+    background: var(--slate-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    border-radius: 0 0 1.25rem 1.25rem;
+}
+
+.modal-footer-right {
+    display: flex;
+    gap: .75rem;
+}
+
+/* Componentes Integrados del Formulario de Creación (Enterprise Grade) */
+.form-header-card {
+    background: var(--surface);
+    border: 1px solid #e2e8f0;
+    border-radius: .75rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, .03);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Sección estática e inmutable */
+.fh-info-strip {
+    background: var(--surface-alt);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.fh-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.fh-info-item span {
+    font-size: 0.68rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.fh-info-item strong {
+    font-size: 0.95rem;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.fh-info-item.folio strong {
+    color: var(--teal-dark);
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+}
+
+/* Formularios Editables Interactivos */
+.fh-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.fh-row-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    align-items: flex-end;
+}
+
+.fh-grid-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr 1.5fr;
+    gap: 1.25rem;
+}
+
+/* Arquitectura de Texto Predictivo y Selectores */
+.input-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .4rem;
+}
+
+/* Interacción de Control de Selectores Únicos "Píldoras" */
+.radio-pill-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.radio-pill-label {
+    padding: 0.45rem 1rem;
+    border-radius: 99px;
+    background: var(--surface-alt);
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    user-select: none;
+}
+
+.radio-pill-label input[type="radio"] {
+    display: none;
+}
+
+.radio-pill-label:has(input:checked) {
+    background: var(--teal-dark);
+    border-color: var(--teal-dark);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25);
+}
+
+.radio-pill-label i {
+    font-size: 1.05rem;
+}
+
+/* Modificadores gráficos para Campos de Captura (Text, Number, Date) */
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-group i.field-icon {
+    position: absolute;
+    left: 0.85rem;
+    color: #94a3b8;
+    font-size: 1.15rem;
+    pointer-events: none;
+}
+
+.input-field {
+    width: 100%;
+    padding: .6rem .75rem;
+    background: var(--slate-light);
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    font-size: 0.85rem;
+    color: #1e293b;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.input-group .input-field {
+    padding-left: 2.5rem;
+}
+
+.input-field:focus {
+    border-color: var(--teal-dark);
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, .2);
+    background: #fff;
+}
+
+.input-field[readonly] {
+    cursor: default;
+    color: #64748b;
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+/* ── 9. MÓDULO ANIDADO: MATRIZ DINÁMICA DE GASTOS ── */
+.expense-card {
+    background: var(--surface);
+    border: 1px solid #e2e8f0;
+    border-radius: .75rem;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+}
+
+.expense-card-header {
+    padding: .85rem 1.25rem;
+    background: var(--slate-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.expense-card-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.expense-card-title i {
+    color: var(--teal-medium);
+    font-size: 1.2rem;
+}
+
+.expense-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 950px;
+}
+
+/* Encabezados Jerárquicos de Tabla Desglose */
+.expense-table thead tr.th-group {
+    background: var(--slate-dark);
+    color: #94a3b8;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+}
+
+.expense-table thead tr.th-group th {
+    padding: .6rem .6rem;
+    border-right: 1px solid #334155;
+    text-align: center;
+    font-weight: 600;
+}
+
+.expense-table thead tr.th-group th.th-importes {
+    color: var(--teal-medium);
+}
+
+.expense-table thead tr.th-cols {
+    background: #1e293b;
+    color: #cbd5e1;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.expense-table thead tr.th-cols th {
+    padding: .7rem .5rem;
+    border-right: 1px solid #334155;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Categorizadores Dinámicos y Componentes de Inserción */
+.expense-table tbody tr.cat-row td {
+    background: var(--teal-dark);
+    color: var(--teal-light);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    padding: .5rem .75rem;
+    border-bottom: 1px solid #0f766e;
+}
+
+.expense-table tbody tr.cat-row td span i {
+    font-size: 1.1rem;
+    vertical-align: text-bottom;
+    margin-right: 0.4rem;
+}
+
+.expense-table tbody tr.data-row {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background .1s;
+}
+
+.expense-table tbody tr.data-row:hover {
+    background: rgba(204, 251, 241, .15);
+}
+
+.expense-table tbody tr.data-row td {
+    padding: .35rem .4rem;
+    border-right: 1px solid #f1f5f9;
+}
+
+.expense-table tbody tr.data-row td:last-child {
+    border-right: none;
+}
+
+.cell-row-total {
+    text-align: right;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #0f172a;
+    background: var(--surface-alt);
+    white-space: nowrap;
+    padding: .3rem .6rem !important;
+}
+
+.cell-input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: .3rem;
+    padding: .4rem .4rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #374151;
+    outline: none;
+    transition: border-color .1s, background .1s;
+}
+
+.cell-input:focus {
+    border-color: var(--teal-dark);
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, .15);
+}
+
+.cell-input.num {
+    text-align: right;
+}
+
+.cell-input.date-in {
+    padding-left: 2.2rem;
+    cursor: pointer;
+    width: 140px;
+    font-weight: 700;
+    color: var(--teal-dark);
+    font-size: 0.8rem;
+}
+
+.date-wrap { position: relative; }
+
+.date-wrap i {
+    position: absolute;
+    left: .6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--teal-medium);
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+/* Controladores Unitarios de Fila */
+.btn-add-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    border: none;
+    border-radius: .3rem;
+    width: 1.8rem;
+    height: 1.8rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all .15s;
+    padding: 0;
+}
+
+.btn-add-row:hover {
+    background: #fff;
+    transform: scale(1.05);
+}
+
+.btn-remove-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    border-radius: .3rem;
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 1.2rem;
+    transition: all .15s;
+    padding: 0;
+}
+
+.btn-remove-row:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* ── 10. BLOQUE DE INTEGRACIÓN CONTABLE Y EVIDENCIA DOCUMENTAL ── */
+.bottom-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.evidence-panel {
+    flex: 1;
+    background: var(--surface);
+    border: 2px dashed #cbd5e1;
+    border-radius: .75rem;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition: background .2s, border-color .2s;
+    cursor: pointer;
+}
+
+.evidence-panel.dragover {
+    border-color: var(--teal-medium);
+    background: rgba(20, 184, 166, 0.08);
+}
+
+.evidence-panel:hover {
+    border-color: var(--teal-medium);
+    background: rgba(20, 184, 166, 0.03);
+}
+
+.evidence-icon {
+    font-size: 3rem;
+    color: #ef4444;
+    margin-bottom: .5rem;
+}
+
+.evidence-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: .25rem;
+}
+
+.evidence-desc {
+    font-size: .8rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+}
+
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: .75rem;
+    margin-top: 1.5rem;
+}
+
+.file-card {
+    background: var(--surface-alt);
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    padding: .6rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    text-align: left;
+    position: relative;
+    cursor: default;
+}
+
+.file-icon-lg {
+    font-size: 2rem;
+    color: #ef4444;
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.file-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-size {
+    font-size: 0.65rem;
+    color: #64748b;
+    margin-top: .15rem;
+}
+
+.btn-remove-file {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: .2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    font-size: 1.1rem;
+}
+
+.btn-remove-file:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* Matriz de Sumas Transversales (Contabilidad) */
+.summary-box {
+    width: 100%;
+    max-width: 26rem;
+    background: var(--slate-dark);
+    border: 1px solid #1e293b;
+    border-radius: .75rem;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .3);
+    position: relative;
+}
+
+.summary-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, var(--teal-medium), var(--teal-dark));
+}
+
+.summary-head {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.summary-head i {
+    color: var(--teal-medium);
+    font-size: 1.3rem;
+}
+
+.summary-head span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+}
+
+.summary-body {
+    padding: 1rem 1.25rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: .75rem;
+}
+
+.sum-lbl { color: #94a3b8; }
+.sum-val { color: #e2e8f0; font-weight: 500; }
+
+.sum-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: .85rem;
+    border-top: 1px solid #334155;
+    margin-top: .25rem;
+}
+
+.sum-total-lbl {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--teal-medium);
+}
+
+.sum-total-val {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -.02em;
+}
+
+/* Indicadores de Feedback Asíncrono */
+.spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid rgba(255, 255, 255, .25);
+    border-top-color: var(--teal-dark);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+/* ── 11. MEDIA QUERIES (COMPORTAMIENTO FLUIDO Y RESPONSIVE DE ALTA COMPATIBILIDAD) ── */
+@media (max-width: 900px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .fh-row-pills {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .fh-grid-4 {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .view-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bottom-section {
+        flex-direction: column-reverse;
+    }
+
+    .summary-box {
+        max-width: 100%;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .radio-pill-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .radio-pill-label {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 560px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .table-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .search-input {
+        width: 100%;
+    }
+}

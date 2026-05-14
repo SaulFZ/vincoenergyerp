@@ -17,9 +17,8 @@ class DriverLicenseController extends Controller
         $perPage = $request->input('per_page', 5);
         $search = $request->input('search');
 
-        // 1. Construir la consulta y filtrar SOLO LOS ACTIVOS
-        // OJO: Verifica si en tu base de datos se guarda como 'Activo', 'ACTIVO' o 1.
-        $query = Employee::with('license')
+        // 1. Construir la consulta, filtrar SOLO LOS ACTIVOS y cargar relación 'area'
+        $query = Employee::with(['license', 'area'])
                          ->where('employment_status', 'active');
 
         // 2. Aplicar búsqueda del lado del servidor si hay texto
@@ -28,7 +27,10 @@ class DriverLicenseController extends Controller
                 $q->where('first_name', 'like', "%{$search}%")
                   ->orWhere('first_surname', 'like', "%{$search}%")
                   ->orWhereRaw("CONCAT(first_name, ' ', first_surname) LIKE ?", ["%{$search}%"])
-                  ->orWhere('department', 'like', "%{$search}%");
+                  // Buscamos dentro de la relación area
+                  ->orWhereHas('area', function ($areaQuery) use ($search) {
+                      $areaQuery->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -45,7 +47,8 @@ class DriverLicenseController extends Controller
                 return [
                     'id' => $emp->id,
                     'name' => $emp->full_name ?? ($emp->first_name . ' ' . $emp->first_surname),
-                    'department' => $emp->department ?? 'Sin departamento',
+                    // Sacamos el nombre del área desde la relación
+                    'area' => optional($emp->area)->name ?? 'Sin área',
                     'photo' => $emp->photo ? asset($emp->photo) : null,
                     'driver_license' => optional($emp->license)->driver_license_expires_at ? optional($emp->license)->driver_license_expires_at->format('Y-m-d') : '',
                     'light_course' => optional($emp->license)->light_defensive_course_expires_at ? optional($emp->license)->light_defensive_course_expires_at->format('Y-m-d') : '',
@@ -67,6 +70,7 @@ class DriverLicenseController extends Controller
         // Carga inicial normal
         return view('modules.qhse.management.driver_licenses', compact('empleados', 'perPage'));
     }
+
     /**
      * Recibe la petición AJAX para actualizar las fechas de los cursos y licencias
      */
