@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{-- <!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -353,15 +353,234 @@
 
 </html>
 
+ --}}
 
 
 
+<!DOCTYPE html>
+<html lang="es">
 
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vinco Energy - Mantenimiento</title>
+    <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
 
+    <link href="{{ asset('assets/css/login/login.css') }}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
+    <style>
+        /* Ajuste de diseño corporativo y colores a NEGRO */
+        .migration-card {
+            text-align: center;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
+        .status-badge {
+            background: rgba(0, 0, 0, 0.05);
+            color: #000000;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
+        /* Punto parpadeante VERDE para indicar actividad */
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e; /* Verde */
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .migration-icon {
+            font-size: 3rem;
+            color: #000000;
+            margin-bottom: 15px;
+        }
+
+        h2.animate-text {
+            color: #000000 !important;
+            font-weight: 800;
+            margin-bottom: 5px;
+            letter-spacing: -0.5px;
+        }
+
+        .migration-text {
+            color: #000000;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin: 15px 0;
+            font-weight: 500;
+            max-width: 320px;
+        }
+
+        .highlight-text {
+            color: #000000;
+            font-weight: 800;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        /* Barra de progreso infinita elegante */
+        .loading-line-container {
+            width: 80%;
+            height: 2px;
+            background: rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+
+        .loading-line {
+            width: 40%;
+            height: 100%;
+            background: #000000;
+            position: absolute;
+            left: -40%;
+            animation: loadingBar 2s infinite ease-in-out;
+            border-radius: 2px;
+        }
+
+        @keyframes loadingBar {
+            0% { left: -40%; width: 30%; }
+            50% { width: 60%; }
+            100% { left: 100%; width: 30%; }
+        }
+
+        .support-info {
+            font-size: 12px;
+            color: #000000;
+            font-weight: 700;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-copyright {
+            color: #000000 !important;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="preloader">
+        <div class="loader-logo"></div>
+    </div>
+
+    <video autoplay muted loop playsinline id="video-bg">
+        <source src="/assets/vid/fondov1.mp4" type="video/mp4">
+    </video>
+
+    <div class="login-wrapper">
+
+        <div class="logo-container">
+            <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Vinco Energy" class="logo-img">
+        </div>
+
+        <div class="migration-card">
+            <div class="status-badge animate-text">
+                <div class="pulse-dot"></div> Mantenimiento Activo
+            </div>
+
+            <i class="fas fa-server migration-icon animate-text"></i>
+
+            <h2 class="animate-text">ACTUALIZACIÓN DE SERVIDOR</h2>
+
+            <div class="migration-text animate-text">
+                <p><strong>Vinco ERP</strong> se encuentra en un proceso de <span class="highlight-text">MIGRACIÓN DE INFRAESTRUCTURA</span>.</p>
+                <p style="font-size: 0.90rem; margin-top: 10px;">Esto <b>NO ES UN FALLO</b>. Estamos optimizando nuestros servicios para garantizar mayor estabilidad y velocidad.</p>
+            </div>
+
+            <div class="loading-line-container animate-text">
+                <div class="loading-line"></div>
+            </div>
+
+            <div class="animate-text" style="margin-top: 10px;">
+                <p class="support-info">EL ACCESO SE RESTABLECERÁ AUTOMÁTICAMENTE</p>
+            </div>
+        </div>
+
+        <div class="footer-copyright">
+            Vinco Energy &copy; <span id="yearSpan"></span> | Todos los derechos reservados
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener("load", () => {
+            const tl = gsap.timeline();
+
+            tl.to("#preloader", {
+                    duration: 0.6,
+                    opacity: 0,
+                    ease: "power2.inOut",
+                    onComplete: () => {
+                        document.querySelector("#preloader").style.display = "none";
+                    }
+                })
+                .to("#video-bg", {
+                    duration: 1.5,
+                    opacity: 1,
+                    visibility: "visible",
+                    ease: "power2.out"
+                }, "-=0.2")
+                .to(".login-wrapper", {
+                    duration: 1,
+                    opacity: 1,
+                    y: 0,
+                    visibility: "visible",
+                    ease: "power3.out"
+                }, "-=1")
+                .from(".logo-img", {
+                    duration: 0.8,
+                    scale: 0.8,
+                    opacity: 0,
+                    ease: "back.out(1.7)"
+                }, "-=0.6")
+                .from(".animate-text", {
+                    duration: 0.6,
+                    y: 20,
+                    opacity: 0,
+                    stagger: 0.15,
+                    ease: "power2.out"
+                }, "-=0.4")
+                .from(".footer-copyright", {
+                    duration: 0.6,
+                    opacity: 0,
+                    ease: "power2.out"
+                }, "-=0.2");
+        });
+
+        $(document).ready(function() {
+            $('#yearSpan').text(new Date().getFullYear());
+        });
+    </script>
+</body>
+
+</html>
 
 
 

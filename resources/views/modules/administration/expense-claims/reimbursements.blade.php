@@ -183,7 +183,7 @@
                     <div class="fh-info-strip">
                         <div class="fh-info-item">
                             <span>RFC Empresa Matriz</span>
-                            <strong id="res-rfc">VES1607057K7</strong>
+                            <strong id="res-rfc">VES0000000</strong>
                         </div>
                         <div class="fh-info-item folio">
                             <span>Folio Principal (Sistema)</span>

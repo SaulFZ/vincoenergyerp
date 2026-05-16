@@ -1,7 +1,8 @@
 <?php
-/* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
+use App\Http\Controllers\Administration\ExpenseClaims\SysCfgSController;
 
+/* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Auth\LoginController;
 
 /* CONTROLADORES DE RECURSOS QHSE */
@@ -95,39 +96,38 @@ Route::middleware(['web', 'auth'])->group(function () {
     })->name('home');
 
 // ===================================================
-    // MÓDULO: ADMINISTRACIÓN
-    // ===================================================
+// MÓDULO: ADMINISTRACIÓN
+// ===================================================
     Route::prefix('administration')
-        ->middleware(['auth', 'check.permission:administration']) // Seguridad global del módulo
+        ->middleware(['auth', 'check.permission:administration'])
         ->group(function () {
 
             // ===================================================
-            // GRUPO GESTIÓN DE REEMBOLSOS (REIMBURSEMENTS)
-            // Prefijo URL: /administration/expense-claims
+            // GRUPO GESTIÓN DE REEMBOLSOS (EXPENSE CLAIMS)
             // ===================================================
             Route::prefix('expense-claims')->group(function () {
 
                 // 1. Redirección automática
                 Route::get('/', function () {
                     return redirect()->route('expense-claims.reimbursements');
-                })
-                    ->name('administration.expense-claims')
+                })->name('administration.expense-claims')
                     ->middleware('check.permission:administration,expense-claims');
-                // ---------------------------------------------------
+
                 // 2. VISTAS Y CARGA DE DATOS (Catálogos, Empleados)
-                // Controlador: ReimbursementController
-                // ---------------------------------------------------
                 Route::controller(ReimbursementController::class)->group(function () {
-                    // Cambiamos 'inicio' por 'reimbursements' internamente
                     Route::get('/reimbursements', 'index')->name('expense-claims.reimbursements');
                     Route::get('/employees', 'getEmployees')->name('reimbursements.employees');
                     Route::get('/departments', 'getDepartments')->name('reimbursements.departments');
                     Route::get('/concepts', 'getConcepts')->name('reimbursements.concepts');
                 });
 
-            });
+                // 3. BÓVEDA SAT (Credenciales de e.firma)
+                Route::controller(SatCredentialController::class)->group(function () {
+                    Route::get('/sat-credentials', 'index')->name('expense-claims.sat.index');
+                    Route::post('/sat-credentials', 'store')->name('expense-claims.sat.store');
+                });
 
-            // Aquí puedes agregar futuros submódulos de administración (ej. /nomina, /facturacion)
+            });
         });
 
     // ===================================================

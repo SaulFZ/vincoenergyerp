@@ -21,7 +21,8 @@
     --status-pending-text: #92400e;
     --status-pending-border: #fde68a;
 
-    --status-review-bg: #e0f2fe;     /* Azul Institucional para Validado */
+    --status-review-bg: #e0f2fe;
+    /* Azul Institucional para Validado */
     --status-review-text: #075985;
     --status-review-border: #bae6fd;
 
@@ -45,9 +46,9 @@
     --payment-process-border: #fdba74;
 
     /* -> POR AUTORIZAR (Púrpura/Violeta Elegante - Destaca falta de firma gerencial) */
-    --payment-auth-bg: #f3e8ff;
-    --payment-auth-text: #6b21a8;
-    --payment-auth-border: #d8b4fe;
+    --payment-auth-bg: #e0f2fe;
+    --payment-auth-text: #0369a1;
+    --payment-auth-border: #7dd3fc;
 
     /* -> EN ESPERA (Amarillo sutil - Haciendo fila en administración Fase 1) */
     --payment-wait-bg: #fef9c3;
@@ -55,8 +56,8 @@
     --payment-wait-border: #fde047;
 
     /* -> NO PROCEDE (Gris Neutro - Rechazado o Cancelado) */
-    --payment-void-bg: #cbd5e1;
-    --payment-void-text: #1e293b;
+    --payment-void-bg: #e2e8f0;
+    --payment-void-text: #334155;
     --payment-void-border: #94a3b8;
 }
 
@@ -250,10 +251,21 @@ input[type="number"]::-webkit-outer-spin-button {
     height: 3px;
 }
 
-.metric-total::after { background: linear-gradient(to right, #0d9488, #14b8a6); }
-.metric-pending::after { background: linear-gradient(to right, #f59e0b, #fbbf24); }
-.metric-approved::after { background: linear-gradient(to right, #059669, #34d399); }
-.metric-rejected::after { background: linear-gradient(to right, #dc2626, #f87171); }
+.metric-total::after {
+    background: linear-gradient(to right, #0d9488, #14b8a6);
+}
+
+.metric-pending::after {
+    background: linear-gradient(to right, #f59e0b, #fbbf24);
+}
+
+.metric-approved::after {
+    background: linear-gradient(to right, #059669, #34d399);
+}
+
+.metric-rejected::after {
+    background: linear-gradient(to right, #dc2626, #f87171);
+}
 
 .metric-icon-wrap {
     width: 3rem;
@@ -266,10 +278,25 @@ input[type="number"]::-webkit-outer-spin-button {
     flex-shrink: 0;
 }
 
-.metric-total .metric-icon-wrap { background: #ccfbf1; color: #0d9488; }
-.metric-pending .metric-icon-wrap { background: #fef3c7; color: #d97706; }
-.metric-approved .metric-icon-wrap { background: #d1fae5; color: #059669; }
-.metric-rejected .metric-icon-wrap { background: #fee2e2; color: #dc2626; }
+.metric-total .metric-icon-wrap {
+    background: #ccfbf1;
+    color: #0d9488;
+}
+
+.metric-pending .metric-icon-wrap {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.metric-approved .metric-icon-wrap {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.metric-rejected .metric-icon-wrap {
+    background: #fee2e2;
+    color: #dc2626;
+}
 
 .metric-info {
     flex: 1;
@@ -1106,7 +1133,9 @@ input[type="number"]::-webkit-outer-spin-button {
     font-size: 0.8rem;
 }
 
-.date-wrap { position: relative; }
+.date-wrap {
+    position: relative;
+}
 
 .date-wrap i {
     position: absolute;
@@ -1330,8 +1359,14 @@ input[type="number"]::-webkit-outer-spin-button {
     margin-bottom: .75rem;
 }
 
-.sum-lbl { color: #94a3b8; }
-.sum-val { color: #e2e8f0; font-weight: 500; }
+.sum-lbl {
+    color: #94a3b8;
+}
+
+.sum-val {
+    color: #e2e8f0;
+    font-weight: 500;
+}
 
 .sum-total-row {
     display: flex;
@@ -1367,7 +1402,9 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 @keyframes spin {
-    100% { transform: rotate(360deg); }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* ── 11. MEDIA QUERIES (COMPORTAMIENTO FLUIDO Y RESPONSIVE DE ALTA COMPATIBILIDAD) ── */
