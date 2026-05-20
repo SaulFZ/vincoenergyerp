@@ -1,21 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Systems\UserManagement; // ✅ Cambiado de Sistemas a Systems
+namespace App\Http\Controllers\Systems\UserManagement;
 
 use App\Http\Controllers\Controller;
 use App\Models\Auth\Permission;
 use App\Models\Auth\Role;
 use App\Models\Auth\User;
 use App\Models\Employee;
-use App\Models\Systems\UserManagement\UserPermission; // ✅ RUTA NUEVAuse Illuminate\Http\Request;
-use Illuminate\Http\Request; // 🚨 ESTA ES LA LÍNEA QUE FALTABA Y CAUSABA EL ERROR
+use App\Models\Systems\UserManagement\UserPermission;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-// ✅ El nombre perfecto para este controlador
 class UserManagementController extends Controller
 {
     /**
@@ -46,9 +44,7 @@ class UserManagementController extends Controller
                         'role_id'            => $user->role_id,
                         'role_name'          => $user->role ? $user->role->name : null,
                         'permissions'        => $user->permissions,
-                        'direct_permissions' => $user->directPermissions->map(function (
-                            $perm
-                        ) {
+                        'direct_permissions' => $user->directPermissions->map(function ($perm) {
                             return [
                                 'id'           => $perm->id,
                                 'name'         => $perm->name,
@@ -74,7 +70,6 @@ class UserManagementController extends Controller
         ])->get();
         $roles = Role::getRolesForSelect();
 
-        // ✅ Apuntando a la nueva estructura de carpetas en inglés
         return view(
             'modules.systems.user-management.index',
             compact('users', 'roles')
@@ -107,7 +102,6 @@ class UserManagementController extends Controller
     {
         $roles = Role::getRolesForSelect();
 
-        // ✅ Apuntando a la nueva estructura
         return view(
             'modules.systems.user-management.index',
             compact('roles')
@@ -199,7 +193,6 @@ class UserManagementController extends Controller
         $permissions = UserPermission::getUserPermissions($id);
         $roles       = Role::getRolesForSelect();
 
-        // ✅ Apuntando a la nueva estructura
         return view(
             'modules.systems.user-management.index',
             compact('user', 'permissions', 'roles')
@@ -401,21 +394,15 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Método auxiliar para eliminar la foto
+     * Método auxiliar para eliminar la foto únicamente desde el disco public de Storage
      */
     private function deleteOldPhoto($photoPath)
     {
         if (!$photoPath) return;
 
-        if (str_starts_with($photoPath, 'assets/')) {
-            $oldPath = public_path($photoPath);
-            if (File::exists($oldPath)) {
-                File::delete($oldPath);
-            }
-        } else {
-            if (Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
+        // ✅ Se eliminaron los imports e ifs que apuntaban a File y public_path('assets/...')
+        if (Storage::disk('public')->exists($photoPath)) {
+            Storage::disk('public')->delete($photoPath);
         }
     }
 
