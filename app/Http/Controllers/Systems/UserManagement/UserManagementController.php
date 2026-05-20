@@ -354,7 +354,7 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Método para procesar la foto y guardarla en storage
+     * Método para procesar la foto y guardarla en storage interno
      */
     private function processPhoto($base64Photo, $employeeNumber, $currentPhoto = null)
     {
@@ -394,13 +394,12 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Método auxiliar para eliminar la foto únicamente desde el disco public de Storage
+     * Método auxiliar para eliminar la foto únicamente desde el disco
      */
     private function deleteOldPhoto($photoPath)
     {
         if (!$photoPath) return;
 
-        // ✅ Se eliminaron los imports e ifs que apuntaban a File y public_path('assets/...')
         if (Storage::disk('public')->exists($photoPath)) {
             Storage::disk('public')->delete($photoPath);
         }
@@ -416,5 +415,23 @@ class UserManagementController extends Controller
             'success' => true,
             'roles'   => $roles,
         ]);
+    }
+
+    /**
+     * =========================================================
+     * NUEVO MÉTODO PARA SERVIR FOTOS SIN STORAGE LINK
+     * =========================================================
+     */
+    public function getEmployeePhoto($path)
+    {
+        // Validar que el archivo exista en el disco interno
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404, 'Imagen no encontrada.');
+        }
+
+        // Obtener la ruta física absoluta y retornarla como archivo visible
+        $fullPath = Storage::disk('public')->path($path);
+
+        return response()->file($fullPath);
     }
 }

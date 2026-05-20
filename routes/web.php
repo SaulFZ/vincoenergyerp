@@ -1,9 +1,9 @@
 <?php
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
-use App\Http\Controllers\Administration\ExpenseClaims\SysCfgSController;
 
 /* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Core\MediaController;
 
 /* CONTROLADORES DE RECURSOS QHSE */
 use App\Http\Controllers\Qhse\Management\DriverLicenseController;
@@ -95,6 +95,10 @@ Route::middleware(['web', 'auth'])->group(function () {
         return view('home');
     })->name('home');
 
+    Route::get('/media/public/{path}', [MediaController::class, 'showPublicStorage'])
+        ->where('path', '.*')
+        ->name('media.file');
+
 // ===================================================
 // MÓDULO: ADMINISTRACIÓN
 // ===================================================
@@ -143,9 +147,7 @@ Route::middleware(['web', 'auth'])->group(function () {
             // ===================================================
             Route::prefix('user-management')->group(function () {
 
-                // 1. Redirección automática:
-                // Si el usuario entra a /systems/user-management,
-                // lo mandamos a la lista principal de usuarios.
+                // 1. Redirección automática
                 Route::get('/', function () {
                     return redirect()->route('systems.users.index');
                 })
@@ -153,7 +155,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                     ->middleware('check.permission:systems,user-management');
 
                 // --- RUTAS DE RECURSOS (CRUD) ---
-                // Cambiamos 'roles' por 'users' porque estás gestionando usuarios.
                 Route::resource('users', UserManagementController::class)
                     ->except(['show'])
                     ->names([
@@ -165,11 +166,14 @@ Route::middleware(['web', 'auth'])->group(function () {
                         'destroy' => 'systems.users.destroy',
                     ]);
 
-                // --- RUTAS AUXILIARES (UserManagementController) ---
+                // --- RUTAS AUXILIARES Y DE ARCHIVOS ---
                 Route::controller(UserManagementController::class)->group(function () {
                     Route::get('get-permissions', 'getPermissions')->name('systems.users.permissions');
                     Route::get('get-roles', 'getRoles')->name('systems.users.list');
                     Route::get('search-employees', 'searchEmployees')->name('systems.users.search');
+
+                    // NUEVA RUTA SEGURA PARA SERVIR IMÁGENES:
+                    Route::get('photo/{path}', 'getEmployeePhoto')->where('path', '.*')->name('systems.users.photo');
                 });
             });
 
@@ -188,7 +192,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // 1. VISTAS PRINCIPALES
                 Route::controller(TicketController::class)->group(function () {
                     Route::get('/management-tickets', 'index')->name('systems.tickets.index');
-                    Route::get('/stats', 'stats')->name('systems.tickets.stats'); // <--- NUEVA RUTA
+                    Route::get('/stats', 'stats')->name('systems.tickets.stats');
                 });
 
                 // 2. CONSULTAS DE DATOS (AJAX)
@@ -207,12 +211,13 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::put('/update-status/{id}', 'update')->name('systems.tickets.update');
                 });
 
-                // 5. CONSULTAS DE ESTADÍSTICAS (Tu nueva lógica)
+                // 5. CONSULTAS DE ESTADÍSTICAS
                 Route::controller(TicketStatsQueryController::class)->group(function () {
                     Route::get('/get-global-stats', 'getGlobalStats')->name('systems.tickets.stats.data');
                 });
             });
         });
+
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS QHSE
     // ===================================================

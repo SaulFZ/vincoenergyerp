@@ -72,10 +72,11 @@
         $emailIcon = 'fas fa-envelope';
     }
 
-    // ✅ FOTO: Consultando únicamente desde el disco de Storage
-    $photoUrl = null;
+    // ✅ FOTO: Consultando a través de la ruta segura del Controlador
+ $photoUrl = null;
     if ($employee && $employee->photo) {
-        $photoUrl = \Illuminate\Support\Facades\Storage::url($employee->photo);
+        // Asegúrate de usar 'media.file' si así llamaste a la ruta en web.php
+        $photoUrl = route('media.file', ['path' => $employee->photo]);
     }
 @endphp
 

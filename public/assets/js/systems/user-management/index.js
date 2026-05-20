@@ -10,13 +10,26 @@ let editingUserId = null;
 
 const DEFAULT_PHOTO_SRC = "/assets/img/fotouser.png";
 
-/* ── Ayudante de Rutas de Imágenes ── */
+/* ── Ayudante de Rutas de Imágenes (BLINDADO) ── */
 function getImageUrl(path) {
     if (!path) return DEFAULT_PHOTO_SRC;
-    if (path.startsWith('data:') || path.startsWith('http')) return path;
-    if (path.startsWith('assets/')) return `/${path}`;
-    if (path.startsWith('rh/')) return `/storage/${path}`;
-    return `/${path}`;
+
+    console.log("1. Ruta que viene de la BD:", path); // Para que lo veas en la consola
+
+    // Limpiamos la ruta por si se guardó con "storage/" en la base de datos
+    let cleanPath = path.replace('/storage/', '').replace('storage/', '');
+
+    if (cleanPath.startsWith('data:') || cleanPath.startsWith('http')) return cleanPath;
+    if (cleanPath.startsWith('assets/')) return `/${cleanPath}`;
+
+    // AQUÍ ESTÁ LA MAGIA: Intercepta las fotos y las manda al controlador seguro
+    if (cleanPath.startsWith('rh/')) {
+        let finalUrl = `/systems/user-management/photo/${cleanPath}`;
+        console.log("2. URL final enviada al navegador:", finalUrl);
+        return finalUrl;
+    }
+
+    return `/${cleanPath}`;
 }
 
 /* ── Shuffle ── */
@@ -256,7 +269,6 @@ function setupPhotoUpload() {
         const file = this.files[0];
         if (!file) return;
 
-        // Validación preventiva de peso máximo (ej: 2MB)
         if (file.size > 2 * 1024 * 1024) {
             Swal.fire('Foto muy pesada', 'La imagen es demasiado grande. Selecciona una menor a 2MB.', 'warning');
             this.value = '';
@@ -269,8 +281,6 @@ function setupPhotoUpload() {
             hidden.value   = e.target.result;
             remove.style.display = 'inline-flex';
             preview.classList.add('has-photo');
-
-            // INFALIBLE: Resetear el input para permitir reselección libre de la misma imagen
             input.value = '';
         };
         reader.readAsDataURL(file);
@@ -524,7 +534,6 @@ function editUser(userId) {
     document.getElementById('employee_id').value = user.employee_id || '';
     if (user.role_id) document.getElementById('user_role').value = user.role_id;
 
-    // Foto
     const pd = document.getElementById('photoDisplay');
     const ph = document.getElementById('photo');
     const rb = document.getElementById('removePhotoBtn');
@@ -543,7 +552,6 @@ function editUser(userId) {
         pp.classList.remove('has-photo');
     }
 
-    // Permisos directos
     if (user.direct_permissions?.length) {
         user.direct_permissions.forEach(p => {
             const cb = document.querySelector(`input[name="direct_permissions[]"][value="${p.id}"]`);
@@ -551,7 +559,6 @@ function editUser(userId) {
         });
     }
 
-    // Permisos modulares
     if (user.permissions?.permissions) {
         for (const [mod, perms] of Object.entries(user.permissions.permissions)) {
             const tog  = document.querySelector(`.module-toggle[data-module="${mod}"]`);
@@ -669,7 +676,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Live search
     const searchInput = document.querySelector('.search-input');
     if (searchInput) {
         searchInput.addEventListener('input', function () {
@@ -685,7 +691,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderUsers(filtered);
         });
 
-        // Typewriter placeholder
         const phrases = ['Buscar por nombre...','Buscar por email...','Buscar por módulo...','Buscar por estado...'];
         let pi = 0, ci = 0, del = false, pausing = false;
         function type() {
@@ -744,7 +749,6 @@ if (typeof $ !== 'undefined') {
                 $('#email').addClass('is-invalid'); hasErrors = true;
             }
 
-            // Alerta extra si se intenta enviar foto sin un employee_id ligado
             if ($('#photo').val() && !$('#employee_id').val() && !$('#photo').val().startsWith('rh/')) {
                 Swal.fire({
                     title: 'Advertencia',
@@ -809,7 +813,7 @@ if (typeof $ !== 'undefined') {
                     }
                 },
                 error: function (xhr) {
-                    console.error("AJAX Error:", xhr); // <-- Para ver si el servidor cortó la conexión por peso
+                    console.error("AJAX Error:", xhr);
                     btn.innerHTML = origTxt; btn.disabled = false;
                     if (xhr.status === 413) {
                         Swal.fire({ title:'Fallo del servidor', text:'La imagen es demasiado grande y el servidor rechazó la solicitud.', icon:'error', confirmButtonColor:'#DC143C' });

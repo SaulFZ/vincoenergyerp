@@ -440,6 +440,5 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.js"></script>
-<script src="{{ asset('assets/js/systems/user-management/index.js') }}"></script>
-</body>
+<script src="{{ asset('assets/js/systems/user-management/index.js') }}?v=1.1"></script></body>
 </html>
