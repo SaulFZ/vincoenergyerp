@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{-- <!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -353,10 +353,8 @@
 
 </html>
 
+ --}}
 
-
-
-{{--
 <!DOCTYPE html>
 <html lang="es">
 
@@ -587,7 +585,3 @@
 
 
 
-
-
-
- --}}
