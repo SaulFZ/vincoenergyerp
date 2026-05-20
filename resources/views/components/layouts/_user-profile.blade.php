@@ -72,12 +72,10 @@
         $emailIcon = 'fas fa-envelope';
     }
 
-    // Foto
+    // ✅ FOTO: Consultando únicamente desde el disco de Storage
     $photoUrl = null;
     if ($employee && $employee->photo) {
-        $photoUrl = str_starts_with($employee->photo, 'assets/')
-            ? asset($employee->photo)
-            : asset('storage/' . $employee->photo);
+        $photoUrl = \Illuminate\Support\Facades\Storage::url($employee->photo);
     }
 @endphp
 
