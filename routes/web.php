@@ -237,9 +237,9 @@ Route::middleware(['web', 'auth'])->group(function () {
                     ->middleware('check.permission:qhse,management');
 
                 // ---------------------------------------------------
-                // 2. VISTAS Y CARGA DE DATOS (Dropdowns, catálogos)
-                // Controlador: JourneyController
-                // ---------------------------------------------------
+// 2. VISTAS Y CARGA DE DATOS (Dropdowns, catálogos)
+// Controlador: JourneyController
+// ---------------------------------------------------
                 Route::controller(JourneyController::class)->group(function () {
                     Route::get('/journey', 'index')->name('management.journey');
                     Route::get('/employees', 'getEmployees')->name('management.empleados');
@@ -247,6 +247,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/conductores', 'getConductores')->name('management.conductores');
                     Route::get('/vehicles', 'getVehicles')->name('management.vehicles');
                     Route::get('/autorizadores/{nivel}', 'getAutorizadores')->name('management.autorizadores');
+
                 });
 
                 // ---------------------------------------------------
@@ -269,6 +270,10 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/journeys/last-inspection/{economic_number}', 'getLastInspectionDate')->name('management.last-inspection');
                     Route::get('/destinations', 'getDestinations')->name('management.destinations');
                     Route::get('/journeys/{id}', 'show')->name('management.show');
+                    // 👇 NUEVA RUTA AQUÍ
+                    Route::get('/evidencia/{path}', 'showEvidence')
+                        ->where('path', '.*') // Permite capturar toda la ruta con sus diagonales
+                        ->name('management.evidencia');
                 });
 
                 // ---------------------------------------------------

@@ -23,6 +23,7 @@ class JourneyController extends Controller
             ->whereHas('user', function ($q) {
                 $q->where('status', 'active');
             })
+
             ->whereNull('deleted_at')
             ->get()
             ->map(function ($emp) {

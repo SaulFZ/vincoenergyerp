@@ -1,10 +1,9 @@
 <?php
-
 namespace App\Http\Controllers\Qhse\Management;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Employee;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class DriverLicenseController extends Controller
@@ -12,58 +11,58 @@ class DriverLicenseController extends Controller
     /**
      * Muestra la vista inicial o responde con JSON si es por AJAX (Paginación/Búsqueda)
      */
-   public function index(Request $request)
+    public function index(Request $request)
     {
         $perPage = $request->input('per_page', 5);
-        $search = $request->input('search');
+        $search  = $request->input('search');
 
         // 1. Construir la consulta, filtrar SOLO LOS ACTIVOS y cargar relación 'area'
         $query = Employee::with(['license', 'area'])
-                         ->where('employment_status', 'active');
+            ->where('employment_status', 'active');
 
         // 2. Aplicar búsqueda del lado del servidor si hay texto
-        if (!empty($search)) {
-            $query->where(function($q) use ($search) {
+        if (! empty($search)) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('first_surname', 'like', "%{$search}%")
-                  ->orWhereRaw("CONCAT(first_name, ' ', first_surname) LIKE ?", ["%{$search}%"])
-                  // Buscamos dentro de la relación area
-                  ->orWhereHas('area', function ($areaQuery) use ($search) {
-                      $areaQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('first_surname', 'like', "%{$search}%")
+                    ->orWhereRaw("CONCAT(first_name, ' ', first_surname) LIKE ?", ["%{$search}%"])
+                // Buscamos dentro de la relación area
+                    ->orWhereHas('area', function ($areaQuery) use ($search) {
+                        $areaQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
         // 3. Orden alfabético
         $query->orderBy('first_name', 'asc')
-              ->orderBy('first_surname', 'asc');
+            ->orderBy('first_surname', 'asc');
 
         // 4. Paginación
         $empleados = $query->paginate($perPage);
 
         // Si la petición es AJAX (Búsqueda o Paginador)
         if ($request->ajax()) {
-            $items = $empleados->getCollection()->map(function($emp) {
+            $items = $empleados->getCollection()->map(function ($emp) {
                 return [
-                    'id' => $emp->id,
-                    'name' => $emp->full_name ?? ($emp->first_name . ' ' . $emp->first_surname),
+                    'id'              => $emp->id,
+                    'name'            => $emp->full_name ?? ($emp->first_name . ' ' . $emp->first_surname),
                     // Sacamos el nombre del área desde la relación
-                    'area' => optional($emp->area)->name ?? 'Sin área',
-                    'photo' => $emp->photo ? asset($emp->photo) : null,
-                    'driver_license' => optional($emp->license)->driver_license_expires_at ? optional($emp->license)->driver_license_expires_at->format('Y-m-d') : '',
-                    'light_course' => optional($emp->license)->light_defensive_course_expires_at ? optional($emp->license)->light_defensive_course_expires_at->format('Y-m-d') : '',
+                    'area'            => optional($emp->area)->name ?? 'Sin área',
+                    'photo'           => $emp->photo ? asset($emp->photo) : null,
+                    'driver_license'  => optional($emp->license)->driver_license_expires_at ? optional($emp->license)->driver_license_expires_at->format('Y-m-d') : '',
+                    'light_course'    => optional($emp->license)->light_defensive_course_expires_at ? optional($emp->license)->light_defensive_course_expires_at->format('Y-m-d') : '',
                     'federal_license' => optional($emp->license)->federal_license_expires_at ? optional($emp->license)->federal_license_expires_at->format('Y-m-d') : '',
-                    'heavy_course' => optional($emp->license)->heavy_defensive_course_expires_at ? optional($emp->license)->heavy_defensive_course_expires_at->format('Y-m-d') : '',
+                    'heavy_course'    => optional($emp->license)->heavy_defensive_course_expires_at ? optional($emp->license)->heavy_defensive_course_expires_at->format('Y-m-d') : '',
                 ];
             });
 
             return response()->json([
-                'data' => $items,
+                'data'       => $items,
                 'pagination' => [
                     'current_page' => $empleados->currentPage(),
-                    'last_page' => $empleados->lastPage(),
-                    'total' => $empleados->total()
-                ]
+                    'last_page'    => $empleados->lastPage(),
+                    'total'        => $empleados->total(),
+                ],
             ]);
         }
 
@@ -83,16 +82,16 @@ class DriverLicenseController extends Controller
             $empleado->license()->updateOrCreate(
                 ['employee_id' => $id],
                 [
-                    'driver_license_expires_at' => $request->driver_license_expires_at,
+                    'driver_license_expires_at'         => $request->driver_license_expires_at,
                     'light_defensive_course_expires_at' => $request->light_defensive_course_expires_at,
-                    'federal_license_expires_at' => $request->federal_license_expires_at,
+                    'federal_license_expires_at'        => $request->federal_license_expires_at,
                     'heavy_defensive_course_expires_at' => $request->heavy_defensive_course_expires_at,
                 ]
             );
 
             return response()->json([
                 'success' => true,
-                'message' => 'Credenciales actualizadas correctamente'
+                'message' => 'Credenciales actualizadas correctamente',
             ]);
 
         } catch (\Exception $e) {
@@ -100,7 +99,7 @@ class DriverLicenseController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error al intentar actualizar los datos.'
+                'message' => 'Ocurrió un error al intentar actualizar los datos.',
             ], 500);
         }
     }

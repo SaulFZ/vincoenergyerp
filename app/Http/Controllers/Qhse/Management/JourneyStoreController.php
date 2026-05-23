@@ -478,37 +478,31 @@ class JourneyStoreController extends Controller
 /**
  * Guardar imagen en base64 con nombre corto y carpeta de Folio
  */
-    private function saveBase64Image($base64String, $typeSuffix, $folio)
-    {
-        try {
-            // 1. Limpiar el prefijo data:image/... si existe
-            if (preg_match('/^data:image\/(\w+);base64,/', $base64String, $matches)) {
-                $base64String = substr($base64String, strpos($base64String, ',') + 1);
-                $extension    = strtolower($matches[1]);
-            } else {
-                $extension = 'jpg'; // default
-            }
+private function saveBase64Image($base64String, $typeSuffix, $folio)
+{
+    try {
+        $base64String = preg_replace('/^data:image\/(\w+);base64,/', '', $base64String);
+        $extension = 'jpg'; // O dinámica si extraes el mime
 
-            $imageData = base64_decode(str_replace(' ', '+', $base64String));
+        $imageData = base64_decode($base64String);
 
-            if ($imageData === false) {
-                return null;
-            }
+        $fileName = 'anomalia_' . str_replace(['.', ' '], '_', microtime(true)) . '.' . $extension;
+        $folderPath = "qhse/management/anomalias{$typeSuffix}/{$folio}";
+        $fullPath = "{$folderPath}/{$fileName}";
 
-            // 2. Construir la ruta: qhse/management/anomaliasL/GV-00001/anomalia_17000000.jpg
-            $fileName   = 'anomalia_' . microtime(true) * 100 . '.' . $extension;
-            $folderPath = "qhse/management/anomalias{$typeSuffix}/{$folio}";
-            $fullPath   = "{$folderPath}/{$fileName}";
-
-            // 3. Guardar en disco public
-            Storage::disk('public')->put($fullPath, $imageData);
-
-            return $fullPath;
-        } catch (\Exception $e) {
-            Log::error('Error guardando imagen base64: ' . $e->getMessage());
-            return null;
+        // --- ESTO EVITA EL ERROR 500 POR CARPETA NO EXISTENTE ---
+        if (!Storage::disk('public')->exists($folderPath)) {
+            Storage::disk('public')->makeDirectory($folderPath, 0755, true);
         }
+
+        Storage::disk('public')->put($fullPath, $imageData);
+
+        return $fullPath;
+    } catch (\Exception $e) {
+        Log::error('Error guardando imagen: ' . $e->getMessage());
+        return null;
     }
+}
 
 /**
  * Generar folio único seguro

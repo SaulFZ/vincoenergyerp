@@ -3,6 +3,7 @@ namespace App\Http\Controllers\RH\LoadChart;
 
 use App\Http\Controllers\Controller;
 use App\Mail\RH\LoadChart\CommissionNotificationMail;
+use App\Models\Auth\User;
 use App\Models\Employee;
 use App\Models\Operations\Well;
 use App\Models\RH\LoadChart\EmployeeMonthlyWorkLog;
@@ -14,7 +15,6 @@ use App\Models\RH\LoadChart\Meal;
 use App\Models\RH\LoadChart\Services;
 use App\Models\RH\OrgManagement\Area;
 use App\Models\Supply\Procurement\SupplyContract;
-use App\Models\Auth\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -79,7 +79,8 @@ class CalendarController extends Controller
             if (str_starts_with($employee->photo, 'assets/')) {
                 $photo = asset($employee->photo);
             } else {
-                $photo = asset('storage/' . $employee->photo);
+                // SOLUCIÓN: Usamos la ruta global y segura que ya creamos en Core
+                $photo = route('media.file', ['path' => $employee->photo]);
             }
         }
 
@@ -438,9 +439,9 @@ class CalendarController extends Controller
 
         $addEmailFromUserOrEmployee = function ($user, $empRecord, $motivo) use (&$emailsToSend) {
             $email = null;
-            if ($user && !empty(trim($user->email))) {
+            if ($user && ! empty(trim($user->email))) {
                 $email = trim($user->email);
-            } elseif ($empRecord && !empty(trim($empRecord->personal_email))) {
+            } elseif ($empRecord && ! empty(trim($empRecord->personal_email))) {
                 $email = trim($empRecord->personal_email);
             }
 
@@ -470,7 +471,7 @@ class CalendarController extends Controller
         }
 
         // 2. Jerarquía de Áreas
-        $area = Area::with('parentArea')->where('name', $areaName)->first();
+        $area        = Area::with('parentArea')->where('name', $areaName)->first();
         $currentArea = $area;
 
         while ($currentArea) {
@@ -505,7 +506,7 @@ class CalendarController extends Controller
         $uniqueEmails = $emailsToSend->unique()->values()->toArray();
         Log::info("📧 Total de correos únicos a enviar: ", $uniqueEmails);
 
-        if (!empty($uniqueEmails)) {
+        if (! empty($uniqueEmails)) {
             Mail::to($uniqueEmails)->send(
                 new CommissionNotificationMail($employee, $area, $date, $commissionActivityType)
             );
@@ -771,7 +772,7 @@ class CalendarController extends Controller
 
             $activityData['day_status'] = $this->recalculateDayStatus($activityData);
 
-    $monthlyLog->addDailyActivity($request->date, $activityData);
+            $monthlyLog->addDailyActivity($request->date, $activityData);
             $monthlyLog->save();
             DB::commit();
 

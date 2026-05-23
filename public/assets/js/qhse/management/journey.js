@@ -5381,15 +5381,21 @@ function verArchivo(tipo, id) {
     const foto = fotosSubidas[tipo].find((f) => f.id === id);
     if (!foto) return;
 
-    if (
-        foto.type === "application/pdf" ||
-        foto.name.toLowerCase().endsWith(".pdf")
-    ) {
+    // --- AGREGA ESTO PARA DEPURAR ---
+    console.log("Tipo:", tipo, "ID:", id);
+    console.log("URL generada:", foto.url);
+    // --------------------------------
+
+    if (foto.type === "application/pdf" || foto.name.toLowerCase().endsWith(".pdf")) {
         window.open(foto.url, "_blank");
     } else {
         Swal.fire({
             imageUrl: foto.url,
             imageAlt: foto.name,
+            // --- AGREGA ESTO POR SI EL TAMAÑO ES EL PROBLEMA ---
+            imageWidth: 'auto',
+            imageHeight: 'auto',
+            // ---------------------------------------------------
             showConfirmButton: false,
             showCloseButton: true,
             width: "80%",

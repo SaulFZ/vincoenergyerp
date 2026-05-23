@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Qhse\Management\Journey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 class JourneyQueryController extends Controller
 {
@@ -273,6 +275,24 @@ class JourneyQueryController extends Controller
         }
     }
 
+    public function showEvidence($path)
+    {
+        $decodedPath = base64_decode(str_replace(['-', '_'], ['+', '/'], $path));
+        $decodedPath = trim($decodedPath);
+
+        if (!Storage::disk('public')->exists($decodedPath)) {
+            abort(404, 'La evidencia no fue encontrada.');
+        }
+
+        $file = Storage::disk('public')->path($decodedPath);
+        $mimeType = Storage::disk('public')->mimeType($decodedPath);
+
+        return response()->file($file, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline',
+        ]);
+    }
+
     public function show($id)
     {
         try {
@@ -289,6 +309,7 @@ class JourneyQueryController extends Controller
 
             // Formatear fotos de inspecciones
             $journey->units->transform(function ($unit) {
+                // INSPECCIÓN LIGERA
                 if ($unit->lightInspection && ! empty($unit->lightInspection->photo_evidence)) {
                     $photos = is_string($unit->lightInspection->photo_evidence)
                         ? json_decode($unit->lightInspection->photo_evidence, true)
@@ -299,7 +320,10 @@ class JourneyQueryController extends Controller
                             return [
                                 'id'   => uniqid('photo_'),
                                 'name' => basename($path),
-                                'url'  => asset('storage/' . $path),
+                                // AQUÍ ESTÁ EL CAMBIO PRINCIPAL 👇
+                                'url'  => route('management.evidencia', [
+                                    'path' => str_replace(['+', '/'], ['-', '_'], base64_encode($path)),
+                                ]),
                                 'type' => str_ends_with(strtolower($path), '.pdf')
                                     ? 'application/pdf'
                                     : 'image/jpeg',
@@ -307,6 +331,7 @@ class JourneyQueryController extends Controller
                         })->toArray();
                 }
 
+                // INSPECCIÓN PESADA
                 if ($unit->heavyInspection && ! empty($unit->heavyInspection->photo_evidence)) {
                     $photos = is_string($unit->heavyInspection->photo_evidence)
                         ? json_decode($unit->heavyInspection->photo_evidence, true)
@@ -317,8 +342,10 @@ class JourneyQueryController extends Controller
                             return [
                                 'id'   => uniqid('photo_'),
                                 'name' => basename($path),
-                                'url'  => asset('storage/' . $path),
-                                'type' => str_ends_with(strtolower($path), '.pdf')
+                                // AQUÍ ESTÁ EL CAMBIO PRINCIPAL 👇
+                                'url'  => route('management.evidencia', [
+                                    'path' => str_replace(['+', '/'], ['-', '_'], base64_encode($path)),
+                                ]), 'type' => str_ends_with(strtolower($path), '.pdf')
                                     ? 'application/pdf'
                                     : 'image/jpeg',
                             ];
