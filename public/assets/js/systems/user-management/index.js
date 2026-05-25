@@ -755,7 +755,9 @@ if (typeof $ !== 'undefined') {
                 $('#email').addClass('is-invalid'); hasErrors = true;
             }
 
-            if ($('#photo').val() && !$('#employee_id').val() && !$('#photo').val().startsWith('rh/')) {
+            // Validar que haya seleccionado un empleado si quiere subir foto
+            const photoInput = document.getElementById('photoInput');
+            if (photoInput.files.length > 0 && !$('#employee_id').val()) {
                 Swal.fire({
                     title: 'Advertencia',
                     text: 'Estás subiendo una foto pero el usuario no está correctamente vinculado a un registro de empleado. Búscalo en la lista desplegable.',
@@ -769,42 +771,60 @@ if (typeof $ !== 'undefined') {
                 return;
             }
 
-            const formData = {
-                name:               $('#name').val(),
-                username:           $('#username').val(),
-                email:              $('#email').val(),
-                status:             $('#status').val(),
-                employee_id:        $('#employee_id').val(),
-                role_id:            $('#user_role').val(),
-                photo:              $('#photo').val(),
-                permissions:        {},
-                direct_permissions: $('input[name="direct_permissions[]"]:checked').map(function(){ return $(this).val(); }).get(),
-            };
+            // 1. INICIALIZAR FORMDATA (Esto evita el JSON gigante)
+            const formData = new FormData();
+            formData.append('name', $('#name').val());
+            formData.append('username', $('#username').val());
+            formData.append('email', $('#email').val());
+            formData.append('status', $('#status').val());
+            formData.append('employee_id', $('#employee_id').val() || '');
+            formData.append('role_id', $('#user_role').val());
 
             const pwd = $('#password').val();
-            if (pwd.trim()) formData.password = pwd;
+            if (pwd.trim()) formData.append('password', pwd);
 
+            // 2. AGREGAR LA FOTO COMO ARCHIVO BINARIO
+            if (photoInput.files.length > 0) {
+                formData.append('photo', photoInput.files[0]);
+            }
+
+            // Si el input oculto está vacío, significa que el usuario eliminó la foto
+            formData.append('remove_photo', $('#photo').val() === '' ? '1' : '0');
+
+            // 3. CONSTRUIR ARRAYS DE PERMISOS PARA LARAVEL
             $('.module-toggle:checked').each(function () {
                 const mod = $(this).data('module');
-                formData.permissions[mod] = {};
                 $(`input[name^="permissions[${mod}]"]:checked`).each(function () {
                     const match = $(this).attr('name').match(/permissions\[.*?\]\[(.*?)\]/);
-                    if (match) formData.permissions[mod][match[1]] = true;
+                    if (match) {
+                        formData.append(`permissions[${mod}][${match[1]}]`, true);
+                    }
                 });
             });
+
+            $('input[name="direct_permissions[]"]:checked').each(function() {
+                formData.append('direct_permissions[]', $(this).val());
+            });
+
+            // 4. TRUCO PARA LARAVEL: Enviar PUT a través de POST
+            if (editingUserId) {
+                formData.append('_method', 'PUT');
+            }
 
             const btn     = document.querySelector('.btn-save');
             const origTxt = btn.innerHTML;
             btn.innerHTML = '<div class="spin-ring" style="width:14px;height:14px;border-width:2px;border-top-color:#fff;"></div>&nbsp;Guardando...';
             btn.disabled  = true;
 
-            const url    = editingUserId ? `/systems/user-management/users/${editingUserId}` : '/systems/user-management/users';
-            const method = editingUserId ? 'PUT' : 'POST';
+            const url = editingUserId ? `/systems/user-management/users/${editingUserId}` : '/systems/user-management/users';
 
+            // 5. ENVIAR AJAX (Configuración especial para FormData)
             $.ajax({
-                url, type: method,
-                data: JSON.stringify(formData),
-                contentType: 'application/json',
+                url: url,
+                type: 'POST', // Siempre POST, Laravel lee el '_method'
+                data: formData,
+                processData: false, // CRÍTICO: No convertir a string
+                contentType: false, // CRÍTICO: Dejar que el navegador asigne el multipart/form-data
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 success: function (res) {
                     btn.innerHTML = origTxt; btn.disabled = false;
@@ -822,7 +842,7 @@ if (typeof $ !== 'undefined') {
                     console.error("AJAX Error:", xhr);
                     btn.innerHTML = origTxt; btn.disabled = false;
                     if (xhr.status === 413) {
-                        Swal.fire({ title:'Fallo del servidor', text:'La imagen es demasiado grande y el servidor rechazó la solicitud. Intenta con una imagen más ligera.', icon:'error', confirmButtonColor:'#DC143C' });
+                        Swal.fire({ title:'Fallo del servidor', text:'La imagen es demasiado grande. Intenta con una más ligera.', icon:'error', confirmButtonColor:'#DC143C' });
                     } else if (xhr.responseJSON?.errors) {
                         const errs = xhr.responseJSON.errors;
                         let list = '<ul style="text-align:left;margin:.5rem 0 0;">';

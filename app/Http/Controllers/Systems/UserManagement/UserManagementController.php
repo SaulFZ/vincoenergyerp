@@ -111,9 +111,9 @@ class UserManagementController extends Controller
     /**
      * Almacena un nuevo usuario con sus permisos
      */
-    public function store(Request $request)
+   public function store(Request $request)
     {
-        $data = $request->json()->all();
+        $data = $request->all();
 
         $validated = validator($data, [
             'name'                 => 'required|string|max:255',
@@ -123,10 +123,10 @@ class UserManagementController extends Controller
             'status'               => 'required|in:active,inactive',
             'employee_id'          => 'nullable|exists:employees,id',
             'role_id'              => 'required|exists:roles,id',
-            'permissions'          => 'required|array',
+            'permissions'          => 'nullable|array',
             'direct_permissions'   => 'sometimes|array',
             'direct_permissions.*' => 'exists:permissions,id',
-            'photo'                => 'nullable|string',
+            'photo'                => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072', // Valida que sea imagen max 3MB
         ])->validate();
 
         DB::beginTransaction();
@@ -142,20 +142,24 @@ class UserManagementController extends Controller
             ]);
 
             $employee = null;
-            if ($user->employee_id && isset($validated['photo'])) {
+            if ($user->employee_id) {
                 $employee = Employee::find($user->employee_id);
-                if ($employee) {
-                    $photoPath = $this->processPhoto($validated['photo'], $employee->employee_number, $employee->photo);
-                    if ($photoPath) {
-                        $employee->photo = $photoPath;
-                        $employee->save();
-                    }
+
+                // Procesar la subida del archivo físico
+                if ($employee && $request->hasFile('photo')) {
+                    $file = $request->file('photo');
+                    $this->deleteOldPhoto($employee->photo);
+
+                    $extension = $file->getClientOriginalExtension();
+                    $fileName  = Str::slug($employee->employee_number) . '_' . time() . '.' . $extension;
+                    $photoPath = $file->storeAs('rh/employees/photos', $fileName, 'public');
+
+                    $employee->photo = $photoPath;
+                    $employee->save();
                 }
             }
 
-            $formattedPermissions = $this->formatPermissionsForStorage(
-                $validated['permissions']
-            );
+            $formattedPermissions = $this->formatPermissionsForStorage($validated['permissions'] ?? []);
             UserPermission::updatePermissions($user->id, $formattedPermissions);
 
             if (! empty($validated['direct_permissions'])) {
@@ -174,13 +178,10 @@ class UserManagementController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Error al guardar permisos: ' . $e->getMessage(),
-                ],
-                500
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar permisos: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -204,7 +205,7 @@ class UserManagementController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $data = $request->isJson() ? $request->json()->all() : $request->all();
+        $data = $request->all();
 
         $validatedData = validator($data, [
             'name'                 => 'required|string|max:255',
@@ -214,10 +215,10 @@ class UserManagementController extends Controller
             'status'               => 'required|in:active,inactive',
             'employee_id'          => 'nullable|exists:employees,id',
             'role_id'              => 'required|exists:roles,id',
-            'permissions'          => 'required|array',
+            'permissions'          => 'nullable|array',
             'direct_permissions'   => 'sometimes|array',
             'direct_permissions.*' => 'exists:permissions,id',
-            'photo'                => 'nullable|string',
+            'photo'                => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
         ])->validate();
 
         try {
@@ -240,19 +241,30 @@ class UserManagementController extends Controller
             $employee = null;
             if ($user->employee_id) {
                 $employee = Employee::find($user->employee_id);
-                if ($employee && isset($validatedData['photo'])) {
-                    $photoPath = $this->processPhoto($validatedData['photo'], $employee->employee_number, $employee->photo);
 
-                    if (is_null($photoPath) && $validatedData['photo'] === '') {
-                         $employee->photo = null;
-                    } elseif ($photoPath) {
+                if ($employee) {
+                    // Si hay un archivo nuevo
+                    if ($request->hasFile('photo')) {
+                        $file = $request->file('photo');
+                        $this->deleteOldPhoto($employee->photo);
+
+                        $extension = $file->getClientOriginalExtension();
+                        $fileName  = Str::slug($employee->employee_number) . '_' . time() . '.' . $extension;
+                        $photoPath = $file->storeAs('rh/employees/photos', $fileName, 'public');
+
                         $employee->photo = $photoPath;
+                        $employee->save();
                     }
-                    $employee->save();
+                    // Si el usuario presionó el botón de "Eliminar Foto"
+                    elseif ($request->input('remove_photo') === '1') {
+                        $this->deleteOldPhoto($employee->photo);
+                        $employee->photo = null;
+                        $employee->save();
+                    }
                 }
             }
 
-            $formattedPermissions = $this->formatPermissionsForStorage($validatedData['permissions']);
+            $formattedPermissions = $this->formatPermissionsForStorage($validatedData['permissions'] ?? []);
             UserPermission::updatePermissions($id, $formattedPermissions);
 
             if (isset($validatedData['direct_permissions'])) {
