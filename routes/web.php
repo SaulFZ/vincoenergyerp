@@ -270,9 +270,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/destinations', 'getDestinations')->name('management.destinations');
                     Route::get('/journeys/{id}', 'show')->name('management.show');
                     // 👇 NUEVA RUTA AQUÍ
-                    Route::get('/evidencia/{path}', 'showEvidence')
-                        ->where('path', '.*') // Permite capturar toda la ruta con sus diagonales
-                        ->name('management.evidencia');
+                   Route::get('/evidencia/{path}', 'showEvidence')->where('path', '.*')->name('management.evidencia');
                 });
 
                 // ---------------------------------------------------
@@ -489,8 +487,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: OPERACIONES
     // ===================================================
     Route::get('/operaciones', function () {
-        return view('modules.operaciones.operacioneshome');
-    })
+        return view('modules.operaciones.operacioneshome');})
         ->middleware('check.permission:operaciones')
         ->name('modulo.operaciones');
 
@@ -498,8 +495,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: ALMACÉN
     // ===================================================
     Route::get('/almacen', function () {
-        return view('modules.almacen.index');
-    })
+        return view('modules.almacen.index');})
         ->middleware('check.permission:almacen')
         ->name('modulo.almacen');
 
