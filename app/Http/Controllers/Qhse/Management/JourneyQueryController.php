@@ -275,23 +275,29 @@ class JourneyQueryController extends Controller
         }
     }
 
-    public function showEvidence($path)
-    {
-        $decodedPath = base64_decode(str_replace(['-', '_'], ['+', '/'], $path));
-        $decodedPath = trim($decodedPath);
+public function showEvidence($path)
+{
+    // 1. Decodificar la ruta de forma segura
+    $decodedPath = base64_decode(str_replace(['-', '_'], ['+', '/'], $path));
 
-        if (!Storage::disk('public')->exists($decodedPath)) {
-            abort(404, 'La evidencia no fue encontrada.');
-        }
+    // 2. IMPORTANTE: Si la ruta empieza con 'public/', hay que quitarlo
+    // porque el Storage ya apunta a esa carpeta base.
+    $decodedPath = str_replace('public/', '', $decodedPath);
 
-        $file = Storage::disk('public')->path($decodedPath);
-        $mimeType = Storage::disk('public')->mimeType($decodedPath);
-
-        return response()->file($file, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline',
-        ]);
+    // 3. Verificar si el archivo existe en el disco public
+    if (!Storage::disk('public')->exists($decodedPath)) {
+        Log::error("Archivo no encontrado: " . $decodedPath);
+        abort(404, 'La evidencia no fue encontrada.');
     }
+
+    $file = Storage::disk('public')->path($decodedPath);
+    $mimeType = Storage::disk('public')->mimeType($decodedPath);
+
+    return response()->file($file, [
+        'Content-Type' => $mimeType,
+        'Content-Disposition' => 'inline',
+    ]);
+}
 
     public function show($id)
     {
