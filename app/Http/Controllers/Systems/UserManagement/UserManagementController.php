@@ -336,8 +336,14 @@ class UserManagementController extends Controller
         ]);
     }
 
-    public function getEmployeePhoto($path)
+ public function getEmployeePhoto($path)
     {
+        // 🚨 ESTA ES LA LÍNEA MÁGICA QUE LIBERA EL CUELLO DE BOTELLA 🚨
+        // Cierra la sesión inmediatamente para que el botón de "Guardar" no se quede en espera (Stalled)
+        if (request()->hasSession()) {
+            request()->session()->save();
+        }
+
         if (! Storage::disk('public')->exists($path)) {
             abort(404, 'Imagen no encontrada.');
         }
