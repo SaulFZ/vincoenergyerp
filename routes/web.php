@@ -156,7 +156,6 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 // --- RUTAS DE RECURSOS (CRUD) ---
                 Route::resource('users', UserManagementController::class)
-                    ->except(['show'])
                     ->names([
                         'index'   => 'systems.users.index',
                         'create'  => 'systems.users.create',
