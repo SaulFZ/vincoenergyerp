@@ -250,11 +250,14 @@ function setupPhotoUpload() {
         const file = this.files[0];
         if (!file) return;
 
-        const maxSize = 3 * 1024 * 1024;
+        // CAMBIA ESTO: De 3MB a 10MB para que coincida con tu Controlador
+        // 10 MB = 10 * 1024 * 1024 bytes
+        const maxSize = 10 * 1024 * 1024;
+
         if (file.size > maxSize) {
             Swal.fire({
                 title: 'Foto muy pesada',
-                html: 'El archivo supera el límite de <b>3 MB</b>. Por favor, recorta tu foto.',
+                html: 'El archivo supera el límite de <b>10 MB</b>. Por favor, selecciona una más ligera.',
                 icon: 'warning',
                 confirmButtonColor: '#0f172a'
             });
