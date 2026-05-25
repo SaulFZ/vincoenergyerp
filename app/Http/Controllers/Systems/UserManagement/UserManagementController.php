@@ -167,9 +167,9 @@ class UserManagementController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Usuario y permisos guardados correctamente',
-                'user'    => $user,
+                'success'        => true,
+                'message'        => 'Usuario y permisos guardados correctamente',
+                'user'           => $user,
                 'employee_photo' => $employee->photo ?? null,
             ]);
         } catch (\Exception $e) {
