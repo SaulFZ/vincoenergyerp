@@ -267,26 +267,27 @@ function setupPhotoUpload() {
         const file = this.files[0];
         if (!file) return;
 
-        // Limite a 2 MB explícito con alerta
-        const maxSize = 2 * 1024 * 1024; // 2 MB
+        // Límite exacto a 3 MB (3 * 1024 * 1024 bytes)
+        const maxSize = 3 * 1024 * 1024;
+
         if (file.size > maxSize) {
             Swal.fire({
                 title: 'Foto muy pesada',
-                html: 'El archivo que intentas subir supera el límite máximo permitido de <b>2 MB</b>. Por favor, selecciona una imagen más ligera.',
+                html: 'El archivo que intentas subir supera el límite máximo permitido de <b>3 MB</b>. Por favor, recorta tu foto o selecciona una más ligera.',
                 icon: 'warning',
                 confirmButtonColor: '#0f172a'
             });
-            this.value = ''; // Resetea el input
+            this.value = ''; // Resetea el input para bloquear la subida
             return;
         }
 
         const reader = new FileReader();
         reader.onload = e => {
             display.src    = e.target.result;
-            hidden.value   = e.target.result;
+            hidden.value   = e.target.result; // Aquí se guarda el Base64
             remove.style.display = 'inline-flex';
             preview.classList.add('has-photo');
-            input.value = '';
+            input.value = ''; // Limpiamos el input file después de leerlo
         };
         reader.readAsDataURL(file);
     });
@@ -299,7 +300,6 @@ function setupPhotoUpload() {
         input.value = '';
     });
 }
-
 /* ── Render table ── */
 function renderUsers(filteredList) {
     const list  = filteredList ?? users;
