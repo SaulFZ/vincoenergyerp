@@ -108,7 +108,7 @@ class UserManagementController extends Controller
             'permissions'          => 'nullable|array',
             'direct_permissions'   => 'sometimes|array',
             'direct_permissions.*' => 'exists:permissions,id',
-            'photo'                => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
+            'photo'                => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
         ])->validate();
 
         DB::beginTransaction();
@@ -189,7 +189,7 @@ class UserManagementController extends Controller
             'permissions'          => 'nullable|array',
             'direct_permissions'   => 'sometimes|array',
             'direct_permissions.*' => 'exists:permissions,id',
-            'photo'                => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
+            'photo'                => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
         ])->validate();
 
         try {
