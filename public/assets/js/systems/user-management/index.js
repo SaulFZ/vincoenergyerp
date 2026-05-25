@@ -415,9 +415,10 @@ function viewUser(userId) {
     const sIcon   = user.status === 'active' ? 'fa-check' : 'fa-times';
     const created = user.created_at ? new Date(user.created_at).toLocaleDateString('es-MX', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
 
-    const avatarHtml = user.employee_photo
-        ? `<img src="${getImageUrl(user.employee_photo)}" alt="${user.name}">`
-        : `<i class="fas fa-user"></i>`;
+    // Busca esta parte en tu JS dentro de renderUsers
+const avatarHtml = user.employee_photo
+    ? `<img src="${getImageUrl(user.employee_photo)}" alt="${user.name}" loading="lazy">` // <--- Agrega loading="lazy"
+    : `<i class="fas fa-user"></i>`;
 
     Swal.fire({
         html: `

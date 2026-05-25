@@ -237,9 +237,9 @@ Route::middleware(['web', 'auth'])->group(function () {
                     ->middleware('check.permission:qhse,management');
 
                 // ---------------------------------------------------
-// 2. VISTAS Y CARGA DE DATOS (Dropdowns, catálogos)
-// Controlador: JourneyController
-// ---------------------------------------------------
+                // 2. VISTAS Y CARGA DE DATOS (Dropdowns, catálogos)
+                // Controlador: JourneyController
+                // ---------------------------------------------------
                 Route::controller(JourneyController::class)->group(function () {
                     Route::get('/journey', 'index')->name('management.journey');
                     Route::get('/employees', 'getEmployees')->name('management.empleados');
@@ -482,8 +482,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: SUMINISTRO
     // ===================================================
     Route::get('/suministro', function () {
-        return view('modules.suministros.suministroshome');
-    })
+        return view('modules.suministros.suministroshome');})
         ->middleware('check.permission:suministro')
         ->name('modulo.suministro');
 

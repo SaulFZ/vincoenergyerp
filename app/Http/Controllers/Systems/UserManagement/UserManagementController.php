@@ -422,18 +422,18 @@ class UserManagementController extends Controller
      * NUEVO MÉTODO PARA SERVIR FOTOS SIN STORAGE LINK
      * =========================================================
      */
-   public function getEmployeePhoto($path)
-    {
-        if (!Storage::disk('public')->exists($path)) {
-            abort(404, 'Imagen no encontrada.');
-        }
-
-        $fullPath = Storage::disk('public')->path($path);
-
-        // Retornar el archivo con cabeceras de caché de 30 días
-        // Esto evita que el navegador vuelva a golpear a PHP por la misma foto
-        return response()->file($fullPath, [
-            'Cache-Control' => 'public, max-age=2592000',
-        ]);
+public function getEmployeePhoto($path)
+{
+    if (!Storage::disk('public')->exists($path)) {
+        abort(404, 'Imagen no encontrada.');
     }
+
+    $fullPath = Storage::disk('public')->path($path);
+
+    // ESTO ES LO QUE TE FALTA:
+    // Le dice al navegador: "Guarda esta foto y no me la vuelvas a pedir por 30 días"
+    return response()->file($fullPath, [
+        'Cache-Control' => 'public, max-age=2592000',
+    ]);
+}
 }
