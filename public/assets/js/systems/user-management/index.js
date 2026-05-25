@@ -14,15 +14,13 @@ const DEFAULT_PHOTO_SRC = "/assets/img/fotouser.png";
 function getImageUrl(path) {
     if (!path) return DEFAULT_PHOTO_SRC;
 
-    console.log("1. Ruta que viene de la BD:", path); // Para que lo veas en la consola
+    console.log("1. Ruta que viene de la BD:", path);
 
-    // Limpiamos la ruta por si se guardó con "storage/" en la base de datos
     let cleanPath = path.replace('/storage/', '').replace('storage/', '');
 
     if (cleanPath.startsWith('data:') || cleanPath.startsWith('http')) return cleanPath;
     if (cleanPath.startsWith('assets/')) return `/${cleanPath}`;
 
-    // AQUÍ ESTÁ LA MAGIA: Intercepta las fotos y las manda al controlador seguro
     if (cleanPath.startsWith('rh/')) {
         let finalUrl = `/systems/user-management/photo/${cleanPath}`;
         console.log("2. URL final enviada al navegador:", finalUrl);
@@ -269,9 +267,16 @@ function setupPhotoUpload() {
         const file = this.files[0];
         if (!file) return;
 
-        if (file.size > 2 * 1024 * 1024) {
-            Swal.fire('Foto muy pesada', 'La imagen es demasiado grande. Selecciona una menor a 2MB.', 'warning');
-            this.value = '';
+        // Limite a 2 MB explícito con alerta
+        const maxSize = 2 * 1024 * 1024; // 2 MB
+        if (file.size > maxSize) {
+            Swal.fire({
+                title: 'Foto muy pesada',
+                html: 'El archivo que intentas subir supera el límite máximo permitido de <b>2 MB</b>. Por favor, selecciona una imagen más ligera.',
+                icon: 'warning',
+                confirmButtonColor: '#0f172a'
+            });
+            this.value = ''; // Resetea el input
             return;
         }
 
@@ -593,7 +598,7 @@ async function deleteUser(userId) {
         });
         const data = await res.json();
         if (data.success) {
-            await Swal.fire({ title:'¡Eliminado!', text: data.message || 'Usuario eliminado.', icon:'success', confirmButtonColor:'#DC143C' });
+            await Swal.fire({ title:'¡Eliminado!', text: data.message || 'Usuario eliminado.', icon:'success', confirmButtonColor:'#0f172a' });
             await loadUsers();
         } else { throw new Error(data.message || 'Error'); }
     } catch (err) {
@@ -806,7 +811,7 @@ if (typeof $ !== 'undefined') {
                         Swal.fire({
                             title:'¡Guardado!',
                             text: res.message || (editingUserId ? 'Usuario actualizado.' : 'Usuario creado.'),
-                            icon:'success', confirmButtonColor:'#DC143C',
+                            icon:'success', confirmButtonColor:'#0f172a',
                         }).then(r => { if (r.isConfirmed) { closeNewUserModal(); loadUsers(); } });
                     } else {
                         Swal.fire({ title:'Error', text: res.message || 'Error al guardar.', icon:'error', confirmButtonColor:'#DC143C' });
@@ -816,7 +821,7 @@ if (typeof $ !== 'undefined') {
                     console.error("AJAX Error:", xhr);
                     btn.innerHTML = origTxt; btn.disabled = false;
                     if (xhr.status === 413) {
-                        Swal.fire({ title:'Fallo del servidor', text:'La imagen es demasiado grande y el servidor rechazó la solicitud.', icon:'error', confirmButtonColor:'#DC143C' });
+                        Swal.fire({ title:'Fallo del servidor', text:'La imagen es demasiado grande y el servidor rechazó la solicitud. Intenta con una imagen más ligera.', icon:'error', confirmButtonColor:'#DC143C' });
                     } else if (xhr.responseJSON?.errors) {
                         const errs = xhr.responseJSON.errors;
                         let list = '<ul style="text-align:left;margin:.5rem 0 0;">';
