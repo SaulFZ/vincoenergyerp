@@ -16,9 +16,6 @@ use Illuminate\Support\Str;
 
 class UserManagementController extends Controller
 {
-    /**
-     * Muestra la vista principal de gestión de roles o devuelve datos JSON
-     */
     public function index(Request $request)
     {
         if ($request->expectsJson() || $request->ajax()) {
@@ -76,9 +73,6 @@ class UserManagementController extends Controller
         );
     }
 
-    /**
-     * Busca empleados por nombre completo
-     */
     public function searchEmployees(Request $request)
     {
         $query = $request->input('query');
@@ -95,27 +89,15 @@ class UserManagementController extends Controller
         return response()->json($employees);
     }
 
-    /**
-     * Muestra el formulario para crear un nuevo usuario con permisos
-     */
     public function create()
     {
         $roles = Role::getRolesForSelect();
-
-        return view(
-            'modules.systems.user-management.index',
-            compact('roles')
-        );
+        return view('modules.systems.user-management.index', compact('roles'));
     }
 
-    /**
-     * Almacena un nuevo usuario con sus permisos
-     */
-   public function store(Request $request)
+    public function store(Request $request)
     {
-        $data = $request->all();
-
-        $validated = validator($data, [
+        $validated = validator($request->all(), [
             'name'                 => 'required|string|max:255',
             'username'             => 'required|string|max:255|unique:users',
             'email'                => 'required|email|unique:users',
@@ -126,7 +108,7 @@ class UserManagementController extends Controller
             'permissions'          => 'nullable|array',
             'direct_permissions'   => 'sometimes|array',
             'direct_permissions.*' => 'exists:permissions,id',
-            'photo'                => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072', // Valida que sea imagen max 3MB
+            'photo'                => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
         ])->validate();
 
         DB::beginTransaction();
@@ -145,7 +127,7 @@ class UserManagementController extends Controller
             if ($user->employee_id) {
                 $employee = Employee::find($user->employee_id);
 
-                // Procesar la subida del archivo físico
+                // Guardado de la foto como archivo real (No Base64)
                 if ($employee && $request->hasFile('photo')) {
                     $file = $request->file('photo');
                     $this->deleteOldPhoto($employee->photo);
@@ -185,29 +167,18 @@ class UserManagementController extends Controller
         }
     }
 
-    /**
-     * Muestra el formulario para editar los permisos de un usuario
-     */
     public function edit($id)
     {
         $user        = User::with(['employee', 'role'])->findOrFail($id);
         $permissions = UserPermission::getUserPermissions($id);
         $roles       = Role::getRolesForSelect();
 
-        return view(
-            'modules.systems.user-management.index',
-            compact('user', 'permissions', 'roles')
-        );
+        return view('modules.systems.user-management.index', compact('user', 'permissions', 'roles'));
     }
 
-    /**
-     * Actualiza los permisos de un usuario
-     */
     public function update(Request $request, $id)
     {
-        $data = $request->all();
-
-        $validatedData = validator($data, [
+        $validatedData = validator($request->all(), [
             'name'                 => 'required|string|max:255',
             'username'             => 'required|string|max:255|unique:users,username,' . $id,
             'email'                => 'required|string|email|max:255|unique:users,email,' . $id,
@@ -243,7 +214,6 @@ class UserManagementController extends Controller
                 $employee = Employee::find($user->employee_id);
 
                 if ($employee) {
-                    // Si hay un archivo nuevo
                     if ($request->hasFile('photo')) {
                         $file = $request->file('photo');
                         $this->deleteOldPhoto($employee->photo);
@@ -254,9 +224,7 @@ class UserManagementController extends Controller
 
                         $employee->photo = $photoPath;
                         $employee->save();
-                    }
-                    // Si el usuario presionó el botón de "Eliminar Foto"
-                    elseif ($request->input('remove_photo') === '1') {
+                    } elseif ($request->input('remove_photo') === '1') {
                         $this->deleteOldPhoto($employee->photo);
                         $employee->photo = null;
                         $employee->save();
@@ -291,18 +259,13 @@ class UserManagementController extends Controller
         }
     }
 
-    /**
-     * Elimina un usuario y sus permisos
-     */
     public function destroy($id)
     {
         try {
             DB::beginTransaction();
-
             $user = User::findOrFail($id);
             UserPermission::where('user_id', $id)->delete();
             $user->delete();
-
             DB::commit();
 
             return response()->json([
@@ -311,27 +274,19 @@ class UserManagementController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Error al eliminar el usuario: ' . $e->getMessage(),
-                ],
-                500
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar el usuario: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
-    /**
-     * Formatea los permisos para almacenamiento JSON
-     */
     private function formatPermissionsForStorage(array $permissions)
     {
         $formattedPermissions = [];
-
         foreach ($permissions as $module => $modulePermissions) {
             if (! empty($modulePermissions) && is_array($modulePermissions)) {
                 $formattedPermissions[$module] = [];
-
                 foreach ($modulePermissions as $permission => $value) {
                     if ($value) {
                         $formattedPermissions[$module][] = $permission;
@@ -341,13 +296,9 @@ class UserManagementController extends Controller
                 $formattedPermissions[$module] = [];
             }
         }
-
         return $formattedPermissions;
     }
 
-    /**
-     * Obtiene los permisos disponibles
-     */
     public function getPermissions()
     {
         $permissions = Permission::all()->map(function ($permission) {
@@ -365,61 +316,17 @@ class UserManagementController extends Controller
         ]);
     }
 
-    /**
-     * Método para procesar la foto y guardarla en storage interno
-     */
-    private function processPhoto($base64Photo, $employeeNumber, $currentPhoto = null)
-    {
-        if (empty($base64Photo)) {
-            $this->deleteOldPhoto($currentPhoto);
-            return null;
-        }
-
-        if (strpos($base64Photo, 'base64') !== false) {
-            $this->deleteOldPhoto($currentPhoto);
-
-            try {
-                preg_match('/^data:image\/(\w+);base64,/', $base64Photo, $matches);
-                $extension = strtolower($matches[1] ?? 'png');
-
-                if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp'])) {
-                    $extension = 'png';
-                }
-
-                $imageContent = substr($base64Photo, strpos($base64Photo, ',') + 1);
-                $imageData = base64_decode($imageContent);
-
-                $safeEmployeeNumber = Str::slug($employeeNumber);
-                $fileName  = $safeEmployeeNumber . '_' . time() . '.' . $extension;
-                $path      = 'rh/employees/photos/' . $fileName;
-
-                Storage::disk('public')->put($path, $imageData);
-
-                return $path;
-            } catch (\Exception $e) {
-                \Log::error("Error al procesar foto en UserManagementController: " . $e->getMessage());
-                return $currentPhoto;
-            }
-        }
-
-        return $currentPhoto;
-    }
-
-    /**
-     * Método auxiliar para eliminar la foto únicamente desde el disco
-     */
     private function deleteOldPhoto($photoPath)
     {
-        if (!$photoPath) return;
+        if (! $photoPath) {
+            return;
+        }
 
         if (Storage::disk('public')->exists($photoPath)) {
             Storage::disk('public')->delete($photoPath);
         }
     }
 
-    /**
-     * Obtiene los roles para el select
-     */
     public function getRoles()
     {
         $roles = Role::getRolesForSelect();
@@ -429,23 +336,16 @@ class UserManagementController extends Controller
         ]);
     }
 
-    /**
-     * =========================================================
-     * NUEVO MÉTODO PARA SERVIR FOTOS SIN STORAGE LINK
-     * =========================================================
-     */
-public function getEmployeePhoto($path)
-{
-    if (!Storage::disk('public')->exists($path)) {
-        abort(404, 'Imagen no encontrada.');
+    public function getEmployeePhoto($path)
+    {
+        if (! Storage::disk('public')->exists($path)) {
+            abort(404, 'Imagen no encontrada.');
+        }
+
+        $fullPath = Storage::disk('public')->path($path);
+
+        return response()->file($fullPath, [
+            'Cache-Control' => 'public, max-age=2592000',
+        ]);
     }
-
-    $fullPath = Storage::disk('public')->path($path);
-
-    // ESTO ES LO QUE TE FALTA:
-    // Le dice al navegador: "Guarda esta foto y no me la vuelvas a pedir por 30 días"
-    return response()->file($fullPath, [
-        'Cache-Control' => 'public, max-age=2592000',
-    ]);
-}
 }

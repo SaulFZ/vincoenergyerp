@@ -2,35 +2,26 @@
    GESTIÓN DE USUARIOS — JS v3
    ══════════════════════════════════════════════ */
 
-let users        = [];
-let currentPage  = 1;
+let users = [];
+let currentPage = 1;
 let itemsPerPage = 10;
-let totalPages   = 1;
+let totalPages = 1;
 let editingUserId = null;
 
 const DEFAULT_PHOTO_SRC = "/assets/img/fotouser.png";
 
-/* ── Ayudante de Rutas de Imágenes (BLINDADO) ── */
 function getImageUrl(path) {
     if (!path) return DEFAULT_PHOTO_SRC;
-
-    console.log("1. Ruta que viene de la BD:", path);
-
     let cleanPath = path.replace('/storage/', '').replace('storage/', '');
-
     if (cleanPath.startsWith('data:') || cleanPath.startsWith('http')) return cleanPath;
     if (cleanPath.startsWith('assets/')) return `/${cleanPath}`;
 
     if (cleanPath.startsWith('rh/')) {
-        let finalUrl = `/systems/user-management/photo/${cleanPath}`;
-        console.log("2. URL final enviada al navegador:", finalUrl);
-        return finalUrl;
+        return `/systems/user-management/photo/${cleanPath}`;
     }
-
     return `/${cleanPath}`;
 }
 
-/* ── Shuffle ── */
 function shuffleArray(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -40,7 +31,6 @@ function shuffleArray(arr) {
     return a;
 }
 
-/* ── Module maps ── */
 const MODULE_NAMES = {
     administracion: 'Administración', qhse: 'QHSE', ventas: 'Ventas',
     rh: 'Recursos Humanos', suministro: 'Suministro',
@@ -97,10 +87,9 @@ function formatDetailedPermissions(permissions) {
     return shuffleArray(result);
 }
 
-/* ── Stats animados ── */
 function updateStats() {
-    const total    = users.length;
-    const active   = users.filter(u => u.status === 'active').length;
+    const total = users.length;
+    const active = users.filter(u => u.status === 'active').length;
     const inactive = total - active;
     animateNumber('statTotalNum', total);
     animateNumber('statActiveNum', active);
@@ -119,27 +108,25 @@ function animateNumber(id, target) {
     }, delay);
 }
 
-/* ── API: load users ── */
 async function loadUsers() {
     try {
-        const res  = await fetch('/systems/user-management/users', {
+        const res = await fetch('/systems/user-management/users', {
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
         });
         if (!res.ok) throw new Error();
         const data = await res.json();
-        users      = data.users || [];
+        users = data.users || [];
         totalPages = Math.ceil(users.length / itemsPerPage) || 1;
         renderUsers();
         updateStats();
     } catch {
-        Swal.fire({ title:'Error', text:'No se pudieron cargar los usuarios.', icon:'error', confirmButtonColor:'#DC143C' });
+        Swal.fire({ title: 'Error', text: 'No se pudieron cargar los usuarios.', icon: 'error', confirmButtonColor: '#DC143C' });
     }
 }
 
-/* ── API: load roles ── */
 async function loadRoles() {
     try {
-        const res  = await fetch('/systems/user-management/get-roles', {
+        const res = await fetch('/systems/user-management/get-roles', {
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
         });
         if (!res.ok) throw new Error();
@@ -153,10 +140,9 @@ async function loadRoles() {
     } catch { console.error('Error cargando roles'); }
 }
 
-/* ── API: load permissions ── */
 async function loadPermissions() {
     try {
-        const res  = await fetch('/systems/user-management/get-permissions', {
+        const res = await fetch('/systems/user-management/get-permissions', {
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
         });
         if (!res.ok) throw new Error();
@@ -177,10 +163,10 @@ function renderDirectPermissions(permissions) {
         return;
     }
     permissions.forEach(perm => {
-        const id  = `dp_${perm.id}`;
-        const el  = document.createElement('label');
+        const id = `dp_${perm.id}`;
+        const el = document.createElement('label');
         el.className = 'perm-checkbox-item';
-        el.htmlFor   = id;
+        el.htmlFor = id;
         el.innerHTML = `
             <input type="checkbox" id="${id}" name="direct_permissions[]" value="${perm.id}" data-name="${perm.name}">
             <span class="perm-chk-box"><i class="fas fa-check"></i></span>
@@ -193,7 +179,6 @@ function clearDirectPermissions() {
     document.querySelectorAll('input[name="direct_permissions[]"]').forEach(c => c.checked = false);
 }
 
-/* ── Search employees ── */
 async function searchEmployees(query) {
     try {
         const res = await fetch(`/systems/user-management/search-employees?query=${encodeURIComponent(query)}`, {
@@ -210,11 +195,11 @@ function showSuggestions(items) {
     if (!items.length) { dd.style.display = 'none'; return; }
     items.forEach(emp => {
         const div = document.createElement('div');
-        div.className   = 'suggestion-item';
+        div.className = 'suggestion-item';
         div.textContent = emp.full_name;
-        div.dataset.id  = emp.id;
+        div.dataset.id = emp.id;
         div.addEventListener('click', () => {
-            document.getElementById('name').value        = emp.full_name;
+            document.getElementById('name').value = emp.full_name;
             document.getElementById('employee_id').value = emp.id;
             dd.style.display = 'none';
         });
@@ -224,21 +209,21 @@ function showSuggestions(items) {
 }
 
 document.getElementById('name').addEventListener('input', async function () {
-    const q  = this.value.trim();
+    const q = this.value.trim();
     const dd = document.getElementById('employeeSuggestions');
     if (q.length < 2) { dd.style.display = 'none'; document.getElementById('employee_id').value = ''; return; }
     showSuggestions(await searchEmployees(q));
 });
 
 document.getElementById('name').addEventListener('keydown', function (e) {
-    const dd    = document.getElementById('employeeSuggestions');
+    const dd = document.getElementById('employeeSuggestions');
     if (dd.style.display === 'none') return;
     const items = dd.querySelectorAll('.suggestion-item');
     if (!items.length) return;
     let cur = -1;
     items.forEach((it, i) => { if (it.classList.contains('highlighted')) { cur = i; it.classList.remove('highlighted'); } });
-    if (e.key === 'ArrowDown')  { e.preventDefault(); const n=(cur+1)%items.length; items[n].classList.add('highlighted'); items[n].scrollIntoView({block:'nearest'}); }
-    else if (e.key === 'ArrowUp')   { e.preventDefault(); const p=(cur-1+items.length)%items.length; items[p].classList.add('highlighted'); items[p].scrollIntoView({block:'nearest'}); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); const n = (cur + 1) % items.length; items[n].classList.add('highlighted'); items[n].scrollIntoView({ block: 'nearest' }); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); const p = (cur - 1 + items.length) % items.length; items[p].classList.add('highlighted'); items[p].scrollIntoView({ block: 'nearest' }); }
     else if (e.key === 'Enter' && cur >= 0) { e.preventDefault(); items[cur].click(); }
 });
 
@@ -247,62 +232,57 @@ document.addEventListener('click', e => {
         document.getElementById('employeeSuggestions').style.display = 'none';
 });
 
-/* ── Password toggle ── */
 function togglePassword() {
     const input = document.getElementById('password');
-    const eye   = document.getElementById('pwdEye');
+    const eye = document.getElementById('pwdEye');
     if (input.type === 'password') { input.type = 'text'; eye.className = 'fas fa-eye-slash'; }
     else { input.type = 'password'; eye.className = 'fas fa-eye'; }
 }
 
-/* ── Photo upload ── */
 function setupPhotoUpload() {
-    const input   = document.getElementById('photoInput');
+    const input = document.getElementById('photoInput');
     const display = document.getElementById('photoDisplay');
     const preview = document.getElementById('photoPreview');
-    const remove  = document.getElementById('removePhotoBtn');
-    const hidden  = document.getElementById('photo');
+    const remove = document.getElementById('removePhotoBtn');
+    const hidden = document.getElementById('photo');
 
     input.addEventListener('change', function () {
         const file = this.files[0];
         if (!file) return;
 
-        // Límite exacto a 3 MB (3 * 1024 * 1024 bytes)
         const maxSize = 3 * 1024 * 1024;
-
         if (file.size > maxSize) {
             Swal.fire({
                 title: 'Foto muy pesada',
-                html: 'El archivo que intentas subir supera el límite máximo permitido de <b>3 MB</b>. Por favor, recorta tu foto o selecciona una más ligera.',
+                html: 'El archivo supera el límite de <b>3 MB</b>. Por favor, recorta tu foto.',
                 icon: 'warning',
                 confirmButtonColor: '#0f172a'
             });
-            this.value = ''; // Resetea el input para bloquear la subida
+            this.value = '';
             return;
         }
 
         const reader = new FileReader();
         reader.onload = e => {
-            display.src    = e.target.result;
-            hidden.value   = e.target.result; // Aquí se guarda el Base64
+            display.src = e.target.result;
+            hidden.value = 'updated';
             remove.style.display = 'inline-flex';
             preview.classList.add('has-photo');
-            input.value = ''; // Limpiamos el input file después de leerlo
         };
         reader.readAsDataURL(file);
     });
 
     remove.addEventListener('click', () => {
-        display.src        = DEFAULT_PHOTO_SRC;
-        hidden.value       = '';
+        display.src = DEFAULT_PHOTO_SRC;
+        hidden.value = '';
         remove.style.display = 'none';
         preview.classList.remove('has-photo');
         input.value = '';
     });
 }
-/* ── Render table ── */
+
 function renderUsers(filteredList) {
-    const list  = filteredList ?? users;
+    const list = filteredList ?? users;
     const tbody = document.getElementById('userTableBody');
     const empty = document.getElementById('emptyState');
     const start = (currentPage - 1) * itemsPerPage;
@@ -317,21 +297,21 @@ function renderUsers(filteredList) {
     if (empty) empty.style.display = 'none';
 
     tbody.innerHTML = slice.map(user => {
-        const mods    = getModulesFromPermissions(user.permissions?.permissions || {});
+        const mods = getModulesFromPermissions(user.permissions?.permissions || {});
         const visible = mods.slice(0, 4);
-        const hidden  = mods.length - visible.length;
-        const sClass  = user.status === 'active' ? 'active' : 'inactive';
-        const sText   = user.status === 'active' ? 'Activo'  : 'Inactivo';
+        const hidden = mods.length - visible.length;
+        const sClass = user.status === 'active' ? 'active' : 'inactive';
+        const sText = user.status === 'active' ? 'Activo' : 'Inactivo';
 
         const avatarHtml = user.employee_photo
-            ? `<img src="${getImageUrl(user.employee_photo)}" alt="${user.name}">`
+            ? `<img src="${getImageUrl(user.employee_photo)}" alt="${user.name}" loading="lazy">`
             : `<i class="fas fa-user"></i>`;
 
         const tags = visible.map(m =>
             `<span class="ptag ptag-${getModuleClass(m)}">${m}</span>`
         ).join('') +
-        (hidden ? `<span class="ptag ptag-more">+${hidden}</span>` : '') +
-        (!mods.length ? `<span class="ptag ptag-none">Sin permisos</span>` : '');
+            (hidden ? `<span class="ptag ptag-more">+${hidden}</span>` : '') +
+            (!mods.length ? `<span class="ptag ptag-none">Sin permisos</span>` : '');
 
         return `
         <tr data-id="${user.id}">
@@ -361,39 +341,38 @@ function renderUsers(filteredList) {
 }
 
 function updatePaginationInfo(list) {
-    const src    = list ?? users;
-    const total  = src.length;
-    const start  = total === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-    const end    = Math.min(currentPage * itemsPerPage, total);
+    const src = list ?? users;
+    const total = src.length;
+    const start = total === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+    const end = Math.min(currentPage * itemsPerPage, total);
     const tPages = Math.ceil(total / itemsPerPage) || 1;
 
-    document.getElementById('startItem').textContent      = start;
-    document.getElementById('endItem').textContent        = end;
-    document.getElementById('totalItems').textContent     = total;
+    document.getElementById('startItem').textContent = start;
+    document.getElementById('endItem').textContent = end;
+    document.getElementById('totalItems').textContent = total;
     document.getElementById('currentPageBtn').textContent = currentPage;
 
     document.getElementById('firstPage').disabled = currentPage === 1;
-    document.getElementById('prevPage').disabled  = currentPage === 1;
-    document.getElementById('nextPage').disabled  = currentPage >= tPages;
-    document.getElementById('lastPage').disabled  = currentPage >= tPages;
+    document.getElementById('prevPage').disabled = currentPage === 1;
+    document.getElementById('nextPage').disabled = currentPage >= tPages;
+    document.getElementById('lastPage').disabled = currentPage >= tPages;
 }
 
-/* ── VIEW USER ── */
 function viewUser(userId) {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
-    const perms   = formatDetailedPermissions(user.permissions?.permissions || {});
+    const perms = formatDetailedPermissions(user.permissions?.permissions || {});
     const grouped = {};
     perms.forEach(p => { grouped[p.module] = grouped[p.module] || []; grouped[p.module].push(p.permission); });
 
-    const totalPerms   = perms.length;
+    const totalPerms = perms.length;
     const totalModules = Object.keys(grouped).length;
 
     const modulesHtml = totalModules
         ? shuffleArray(Object.entries(grouped)).map(([mod, ps]) => {
-            const ico   = MODULE_ICONS[mod]        || 'fa-folder';
-            const icoCls= MODULE_ICON_CLASSES[mod] || 'mod--admin';
+            const ico = MODULE_ICONS[mod] || 'fa-folder';
+            const icoCls = MODULE_ICON_CLASSES[mod] || 'mod--admin';
             return `
             <div class="uvm-mod">
                 <div class="uvm-mod-head">
@@ -403,22 +382,21 @@ function viewUser(userId) {
                 </div>
                 <div class="uvm-mod-body">
                     ${shuffleArray(ps).map(p =>
-                        `<span class="uvm-perm-chip"><i class="fas fa-check-circle"></i>${p}</span>`
-                    ).join('')}
+                `<span class="uvm-perm-chip"><i class="fas fa-check-circle"></i>${p}</span>`
+            ).join('')}
                 </div>
             </div>`;
         }).join('')
         : `<div class="uvm-no-perms"><i class="fas fa-exclamation-circle" style="margin-right:.5rem;color:rgba(15,23,42,.3);"></i>Sin permisos asignados</div>`;
 
-    const sClass  = user.status === 'active' ? 'active'  : 'inactive';
-    const sText   = user.status === 'active' ? 'Activo'  : 'Inactivo';
-    const sIcon   = user.status === 'active' ? 'fa-check' : 'fa-times';
-    const created = user.created_at ? new Date(user.created_at).toLocaleDateString('es-MX', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
+    const sClass = user.status === 'active' ? 'active' : 'inactive';
+    const sText = user.status === 'active' ? 'Activo' : 'Inactivo';
+    const sIcon = user.status === 'active' ? 'fa-check' : 'fa-times';
+    const created = user.created_at ? new Date(user.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
 
-    // Busca esta parte en tu JS dentro de renderUsers
-const avatarHtml = user.employee_photo
-    ? `<img src="${getImageUrl(user.employee_photo)}" alt="${user.name}" loading="lazy">` // <--- Agrega loading="lazy"
-    : `<i class="fas fa-user"></i>`;
+    const avatarHtml = user.employee_photo
+        ? `<img src="${getImageUrl(user.employee_photo)}" alt="${user.name}" loading="lazy">`
+        : `<i class="fas fa-user"></i>`;
 
     Swal.fire({
         html: `
@@ -460,48 +438,9 @@ const avatarHtml = user.employee_photo
                     </div>
                 </div>
             </div>
-
             <div class="uvm-body">
-                <div class="uvm-info-grid">
-                    <div class="uvm-info-card">
-                        <div class="uvm-info-ico"><i class="fas fa-user"></i></div>
-                        <div>
-                            <span class="uvm-info-label">Usuario</span>
-                            <div class="uvm-info-val" style="font-family:var(--font-mono);font-size:.8rem;">${user.username}</div>
-                        </div>
-                    </div>
-                    <div class="uvm-info-card">
-                        <div class="uvm-info-ico"><i class="fas fa-envelope"></i></div>
-                        <div>
-                            <span class="uvm-info-label">Email</span>
-                            <div class="uvm-info-val" style="font-size:.8rem;">${user.email}</div>
-                        </div>
-                    </div>
-                    <div class="uvm-info-card">
-                        <div class="uvm-info-ico"><i class="fas fa-toggle-on"></i></div>
-                        <div>
-                            <span class="uvm-info-label">Estado</span>
-                            <div class="uvm-info-val">
-                                <span class="status-badge ${sClass}" style="display:inline-flex;">
-                                    <span class="dot"></span>${sText}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="uvm-info-card">
-                        <div class="uvm-info-ico"><i class="fas fa-calendar-alt"></i></div>
-                        <div>
-                            <span class="uvm-info-label">Creado</span>
-                            <div class="uvm-info-val">${created}</div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="uvm-perms-header">
-                    <div class="uvm-perms-title">
-                        <i class="fas fa-shield-alt"></i>
-                        Permisos por módulo
-                    </div>
+                    <div class="uvm-perms-title"><i class="fas fa-shield-alt"></i> Permisos por módulo</div>
                     <span class="uvm-cnt-pill">${totalPerms} permisos</span>
                 </div>
                 <div class="uvm-modules-list">${modulesHtml}</div>
@@ -509,16 +448,11 @@ const avatarHtml = user.employee_photo
         </div>`,
         showConfirmButton: true,
         confirmButtonText: '<i class="fas fa-times" style="margin-right:.4rem;"></i> Cerrar',
-        customClass: {
-            popup:         'swal-view-popup',
-            confirmButton: 'uvm-confirm-btn',
-            htmlContainer: 'swal2-html-no-pad',
-        },
+        customClass: { popup: 'swal-view-popup', confirmButton: 'uvm-confirm-btn', htmlContainer: 'swal2-html-no-pad' },
         width: 760,
     });
 }
 
-/* ── EDIT USER ── */
 function editUser(userId) {
     const user = users.find(u => u.id === userId);
     if (!user) return;
@@ -528,15 +462,15 @@ function editUser(userId) {
     resetModules();
 
     document.getElementById('modalIconHeader').className = 'fas fa-user-edit';
-    document.getElementById('modalTitle').textContent    = 'Editar Usuario';
+    document.getElementById('modalTitle').textContent = 'Editar Usuario';
 
-    document.getElementById('name').value        = user.name        || '';
-    document.getElementById('username').value    = user.username    || '';
-    document.getElementById('email').value       = user.email       || '';
-    document.getElementById('password').value    = '';
+    document.getElementById('name').value = user.name || '';
+    document.getElementById('username').value = user.username || '';
+    document.getElementById('email').value = user.email || '';
+    document.getElementById('password').value = '';
     document.getElementById('password').removeAttribute('required');
     document.getElementById('password').placeholder = 'Dejar vacío para mantener';
-    document.getElementById('status').value      = user.status      || 'inactive';
+    document.getElementById('status').value = user.status || 'inactive';
     document.getElementById('employee_id').value = user.employee_id || '';
     if (user.role_id) document.getElementById('user_role').value = user.role_id;
 
@@ -567,9 +501,9 @@ function editUser(userId) {
 
     if (user.permissions?.permissions) {
         for (const [mod, perms] of Object.entries(user.permissions.permissions)) {
-            const tog  = document.querySelector(`.module-toggle[data-module="${mod}"]`);
+            const tog = document.querySelector(`.module-toggle[data-module="${mod}"]`);
             const body = document.getElementById(`${mod}-body`);
-            if (tog)  tog.checked = true;
+            if (tog) tog.checked = true;
             if (body) body.classList.add('active');
             const keys = Array.isArray(perms) ? perms : (typeof perms === 'object' ? Object.keys(perms) : []);
             keys.forEach(p => {
@@ -582,36 +516,34 @@ function editUser(userId) {
     document.getElementById('newUserModal').classList.add('show');
 }
 
-/* ── DELETE USER ── */
 async function deleteUser(userId) {
     const confirm = await Swal.fire({
-        title:'¿Eliminar usuario?', text:'Esta acción no se puede deshacer.',
-        icon:'warning', showCancelButton:true,
-        confirmButtonColor:'#DC143C', cancelButtonColor:'rgba(15,23,42,.4)',
-        confirmButtonText:'Sí, eliminar', cancelButtonText:'Cancelar',
+        title: '¿Eliminar usuario?', text: 'Esta acción no se puede deshacer.',
+        icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#DC143C', cancelButtonColor: 'rgba(15,23,42,.4)',
+        confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
     });
     if (!confirm.isConfirmed) return;
 
     try {
-        const res  = await fetch(`/systems/user-management/users/${userId}`, {
+        const res = await fetch(`/systems/user-management/users/${userId}`, {
             method: 'DELETE',
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() },
         });
         const data = await res.json();
         if (data.success) {
-            await Swal.fire({ title:'¡Eliminado!', text: data.message || 'Usuario eliminado.', icon:'success', confirmButtonColor:'#0f172a' });
+            await Swal.fire({ title: '¡Eliminado!', text: data.message || 'Usuario eliminado.', icon: 'success', confirmButtonColor: '#0f172a' });
             await loadUsers();
         } else { throw new Error(data.message || 'Error'); }
     } catch (err) {
-        Swal.fire({ title:'Error', text: err.message || 'No se pudo eliminar.', icon:'error', confirmButtonColor:'#DC143C' });
+        Swal.fire({ title: 'Error', text: err.message || 'No se pudo eliminar.', icon: 'error', confirmButtonColor: '#DC143C' });
     }
 }
 
-/* ── MODAL open/close ── */
 function openNewUserModal() {
     editingUserId = null;
     document.getElementById('modalIconHeader').className = 'fas fa-user-plus';
-    document.getElementById('modalTitle').textContent    = 'Nuevo Usuario';
+    document.getElementById('modalTitle').textContent = 'Nuevo Usuario';
     document.getElementById('permissionsForm').reset();
     document.getElementById('password').placeholder = '••••••••';
     document.getElementById('password').setAttribute('required', 'required');
@@ -629,24 +561,23 @@ function closeNewUserModal() {
 }
 
 function resetPhoto() {
-    document.getElementById('photoDisplay').src          = DEFAULT_PHOTO_SRC;
-    document.getElementById('photo').value               = '';
+    document.getElementById('photoDisplay').src = DEFAULT_PHOTO_SRC;
+    document.getElementById('photo').value = '';
     document.getElementById('removePhotoBtn').style.display = 'none';
     document.getElementById('photoPreview').classList.remove('has-photo');
-    document.getElementById('photoInput').value          = '';
+    document.getElementById('photoInput').value = '';
 }
 
 function resetModules() {
-    document.querySelectorAll('.module-toggle').forEach(t  => t.checked = false);
+    document.querySelectorAll('.module-toggle').forEach(t => t.checked = false);
     document.querySelectorAll('input[name^="permissions"]').forEach(c => c.checked = false);
-    document.querySelectorAll('.mod-card-body').forEach(b  => b.classList.remove('active'));
+    document.querySelectorAll('.mod-card-body').forEach(b => b.classList.remove('active'));
 }
 
 function toggleModule(bodyId) {
     document.getElementById(bodyId)?.classList.toggle('active');
 }
 
-/* ── Tab switching ── */
 document.querySelectorAll('.perm-tab').forEach(btn => {
     btn.addEventListener('click', function () {
         document.querySelectorAll('.perm-tab, .perm-tab-content').forEach(el => el.classList.remove('active'));
@@ -655,10 +586,8 @@ document.querySelectorAll('.perm-tab').forEach(btn => {
     });
 });
 
-/* ── CSRF helper ── */
 function csrf() { return document.querySelector('meta[name="csrf-token"]').content; }
 
-/* ── DOMContentLoaded ── */
 document.addEventListener('DOMContentLoaded', () => {
     loadUsers();
     loadRoles();
@@ -667,17 +596,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('itemsPerPage').addEventListener('change', function () {
         itemsPerPage = parseInt(this.value);
-        totalPages   = Math.ceil(users.length / itemsPerPage) || 1;
-        currentPage  = 1;
+        totalPages = Math.ceil(users.length / itemsPerPage) || 1;
+        currentPage = 1;
         renderUsers();
     });
 
-    ['firstPage','prevPage','nextPage','lastPage'].forEach(id => {
+    ['firstPage', 'prevPage', 'nextPage', 'lastPage'].forEach(id => {
         document.getElementById(id).addEventListener('click', () => {
-            if      (id === 'firstPage') currentPage = 1;
-            else if (id === 'prevPage')  currentPage = Math.max(1, currentPage - 1);
-            else if (id === 'nextPage')  currentPage = Math.min(totalPages, currentPage + 1);
-            else if (id === 'lastPage')  currentPage = totalPages;
+            if (id === 'firstPage') currentPage = 1;
+            else if (id === 'prevPage') currentPage = Math.max(1, currentPage - 1);
+            else if (id === 'nextPage') currentPage = Math.min(totalPages, currentPage + 1);
+            else if (id === 'lastPage') currentPage = totalPages;
             renderUsers();
         });
     });
@@ -693,34 +622,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     .some(v => (v || '').toLowerCase().includes(q));
             });
             currentPage = 1;
-            totalPages  = Math.ceil(filtered.length / itemsPerPage) || 1;
+            totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
             renderUsers(filtered);
         });
-
-        const phrases = ['Buscar por nombre...','Buscar por email...','Buscar por módulo...','Buscar por estado...'];
-        let pi = 0, ci = 0, del = false, pausing = false;
-        function type() {
-            if (pausing) return;
-            const phrase = phrases[pi];
-            if (!del) {
-                searchInput.placeholder = phrase.slice(0, ci + 1); ci++;
-                if (ci === phrase.length) { pausing = true; setTimeout(() => { pausing = false; del = true; type(); }, 1600); return; }
-            } else {
-                searchInput.placeholder = phrase.slice(0, ci - 1); ci--;
-                if (ci === 0) { del = false; pi = (pi + 1) % phrases.length; }
-            }
-            setTimeout(type, del ? 40 : 90);
-        }
-        setTimeout(type, 800);
     }
 });
 
-/* ── jQuery: toggles + submit ── */
 if (typeof $ !== 'undefined') {
     $(document).ready(function () {
 
         $(document).on('change', '.module-toggle', function () {
-            const mod     = $(this).data('module');
+            const mod = $(this).data('module');
             const checked = $(this).prop('checked');
             if (checked) {
                 $(`#${mod}-body`).addClass('active');
@@ -738,11 +650,14 @@ if (typeof $ !== 'undefined') {
             }
         });
 
+        // ==========================================
+        // AQUÍ ESTÁ EL CÓDIGO CORREGIDO DE FORMDATA
+        // ==========================================
         $('#permissionsForm').on('submit', function (e) {
             e.preventDefault();
 
-            const required = ['name','username','email','status','user_role'];
-            let hasErrors  = false;
+            const required = ['name', 'username', 'email', 'status', 'user_role'];
+            let hasErrors = false;
             $('#permissionsForm .field-input').removeClass('is-invalid');
 
             required.forEach(f => { if (!$(`#${f}`).val()) { $(`#${f}`).addClass('is-invalid'); hasErrors = true; } });
@@ -755,23 +670,18 @@ if (typeof $ !== 'undefined') {
                 $('#email').addClass('is-invalid'); hasErrors = true;
             }
 
-            // Validar que haya seleccionado un empleado si quiere subir foto
             const photoInput = document.getElementById('photoInput');
             if (photoInput.files.length > 0 && !$('#employee_id').val()) {
-                Swal.fire({
-                    title: 'Advertencia',
-                    text: 'Estás subiendo una foto pero el usuario no está correctamente vinculado a un registro de empleado. Búscalo en la lista desplegable.',
-                    icon: 'warning'
-                });
+                Swal.fire({ title: 'Advertencia', text: 'Vincule a un empleado antes de subir foto.', icon: 'warning' });
                 return;
             }
 
             if (hasErrors) {
-                Swal.fire({ title:'Campos incompletos', text:'Completa todos los campos requeridos.', icon:'error', confirmButtonColor:'#DC143C' });
+                Swal.fire({ title: 'Campos incompletos', text: 'Completa todos los campos.', icon: 'error' });
                 return;
             }
 
-            // 1. INICIALIZAR FORMDATA (Esto evita el JSON gigante)
+            // CREAR EL OBJETO FORMDATA
             const formData = new FormData();
             formData.append('name', $('#name').val());
             formData.append('username', $('#username').val());
@@ -783,74 +693,66 @@ if (typeof $ !== 'undefined') {
             const pwd = $('#password').val();
             if (pwd.trim()) formData.append('password', pwd);
 
-            // 2. AGREGAR LA FOTO COMO ARCHIVO BINARIO
+            // AGREGAR LA FOTO (ARCHIVO REAL, NO JSON)
             if (photoInput.files.length > 0) {
                 formData.append('photo', photoInput.files[0]);
             }
-
-            // Si el input oculto está vacío, significa que el usuario eliminó la foto
             formData.append('remove_photo', $('#photo').val() === '' ? '1' : '0');
 
-            // 3. CONSTRUIR ARRAYS DE PERMISOS PARA LARAVEL
+            // AGREGAR LOS PERMISOS (Laravel los leerá como arrays)
             $('.module-toggle:checked').each(function () {
                 const mod = $(this).data('module');
                 $(`input[name^="permissions[${mod}]"]:checked`).each(function () {
                     const match = $(this).attr('name').match(/permissions\[.*?\]\[(.*?)\]/);
-                    if (match) {
-                        formData.append(`permissions[${mod}][${match[1]}]`, true);
-                    }
+                    if (match) formData.append(`permissions[${mod}][${match[1]}]`, 1);
                 });
             });
 
-            $('input[name="direct_permissions[]"]:checked').each(function() {
+            $('input[name="direct_permissions[]"]:checked').each(function () {
                 formData.append('direct_permissions[]', $(this).val());
             });
 
-            // 4. TRUCO PARA LARAVEL: Enviar PUT a través de POST
+            // MÉTODO FALSO PARA QUE LARAVEL HAGA EL UPDATE
             if (editingUserId) {
                 formData.append('_method', 'PUT');
             }
 
-            const btn     = document.querySelector('.btn-save');
+            const btn = document.querySelector('.btn-save');
             const origTxt = btn.innerHTML;
             btn.innerHTML = '<div class="spin-ring" style="width:14px;height:14px;border-width:2px;border-top-color:#fff;"></div>&nbsp;Guardando...';
-            btn.disabled  = true;
+            btn.disabled = true;
 
             const url = editingUserId ? `/systems/user-management/users/${editingUserId}` : '/systems/user-management/users';
 
-            // 5. ENVIAR AJAX (Configuración especial para FormData)
+            // ENVÍO AJAX
             $.ajax({
                 url: url,
-                type: 'POST', // Siempre POST, Laravel lee el '_method'
+                type: 'POST', // SIEMPRE POST CON FORMDATA
                 data: formData,
-                processData: false, // CRÍTICO: No convertir a string
-                contentType: false, // CRÍTICO: Dejar que el navegador asigne el multipart/form-data
+                processData: false, // CRÍTICO
+                contentType: false, // CRÍTICO
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 success: function (res) {
                     btn.innerHTML = origTxt; btn.disabled = false;
                     if (res.success) {
-                        Swal.fire({
-                            title:'¡Guardado!',
-                            text: res.message || (editingUserId ? 'Usuario actualizado.' : 'Usuario creado.'),
-                            icon:'success', confirmButtonColor:'#0f172a',
-                        }).then(r => { if (r.isConfirmed) { closeNewUserModal(); loadUsers(); } });
+                        Swal.fire({ title: '¡Guardado!', text: res.message || 'Usuario procesado', icon: 'success', confirmButtonColor: '#0f172a' })
+                        .then(r => { if (r.isConfirmed) { closeNewUserModal(); loadUsers(); } });
                     } else {
-                        Swal.fire({ title:'Error', text: res.message || 'Error al guardar.', icon:'error', confirmButtonColor:'#DC143C' });
+                        Swal.fire({ title: 'Error', text: res.message, icon: 'error', confirmButtonColor: '#DC143C' });
                     }
                 },
                 error: function (xhr) {
-                    console.error("AJAX Error:", xhr);
                     btn.innerHTML = origTxt; btn.disabled = false;
                     if (xhr.status === 413) {
-                        Swal.fire({ title:'Fallo del servidor', text:'La imagen es demasiado grande. Intenta con una más ligera.', icon:'error', confirmButtonColor:'#DC143C' });
+                        Swal.fire({ title: 'Fallo del servidor', text: 'La imagen es demasiado grande. Intenta con una más ligera.', icon: 'error' });
                     } else if (xhr.responseJSON?.errors) {
                         const errs = xhr.responseJSON.errors;
                         let list = '<ul style="text-align:left;margin:.5rem 0 0;">';
                         for (const f in errs) { $(`#${f}`).addClass('is-invalid'); list += `<li>${errs[f][0]}</li>`; }
                         list += '</ul>';
-                        Swal.fire({ title:'Error de validación', html:list, icon:'error', confirmButtonColor:'#DC143C' });
+                        Swal.fire({ title: 'Error de validación', html: list, icon: 'error' });
                     } else {
-                        Swal.fire({ title:'Error', text: xhr.responseJSON?.message || 'Error en la solicitud HTTP.', icon:'error', confirmButtonColor:'#DC143C' });
+                        Swal.fire({ title: 'Error', text: xhr.responseJSON?.message || 'Error HTTP', icon: 'error' });
                     }
                 },
             });
