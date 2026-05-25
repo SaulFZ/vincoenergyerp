@@ -336,10 +336,10 @@ class UserManagementController extends Controller
         ]);
     }
 
- public function getEmployeePhoto($path)
+public function getEmployeePhoto($path)
     {
-        // 🚨 ESTA ES LA LÍNEA MÁGICA QUE LIBERA EL CUELLO DE BOTELLA 🚨
-        // Cierra la sesión inmediatamente para que el botón de "Guardar" no se quede en espera (Stalled)
+        // 🚨 ESTA LÍNEA ES LA QUE QUITA EL "STALLED" 🚨
+        // Le dice a Laravel que libere la sesión para que el botón "Guardar" funcione en paralelo
         if (request()->hasSession()) {
             request()->session()->save();
         }
