@@ -1075,8 +1075,8 @@ function _reemplazarFooter(modal, viaje, authData) {
             authData.is_participant &&
             viaje.approval_status === "approved" &&
             (viaje.journey_status === "not_started" ||
-             viaje.journey_status === "in_progress" ||
-             viaje.journey_status === "stopped")
+                viaje.journey_status === "in_progress" ||
+                viaje.journey_status === "stopped")
         ) {
             botonesHTML += `
                 <button onclick="cerrarModalLectura(); setTimeout(() => abrirModalRuta(${viaje.id}, '${viaje.folio}'), 350);"
@@ -7236,23 +7236,34 @@ function enviarSolicitudAJAX() {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
-                ?.content,
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.content,
             Accept: "application/json",
         },
         body: JSON.stringify(data),
     })
-        .then((response) => {
-            if (!response.ok) {
-                return response.text().then((text) => {
-                    throw new Error(
-                        `Error ${response.status}: ${text.substring(0, 200)}`,
-                    );
-                });
+        .then(async (response) => {
+            // 1. Leemos LA RESPUESTA CRUDA COMO TEXTO
+            const text = await response.text();
+
+            // 2. Buscamos dónde empieza realmente el JSON ignorando la basura de PHP
+            const jsonStartIndex = text.indexOf('{');
+
+            if (jsonStartIndex === -1) {
+                throw new Error("El servidor no devolvió un JSON válido. Respuesta: " + text.substring(0, 100));
             }
-            return response.json();
+
+            // 3. Recortamos el texto para quedarnos solo con lo que importa
+            const jsonString = text.substring(jsonStartIndex);
+
+            try {
+                // 4. Convertimos a JSON seguro
+                return JSON.parse(jsonString);
+            } catch (e) {
+                throw new Error("Error al parsear el JSON limpio. Respuesta: " + jsonString.substring(0, 100));
+            }
         })
         .then((result) => {
+            // SI LLEGÓ AQUÍ, EL JSON ES VÁLIDO (AUNQUE PHP HAYA LLORADO)
             if (result.success) {
                 Swal.fire({
                     title: "¡Viaje Registrado!",
@@ -7260,32 +7271,25 @@ function enviarSolicitudAJAX() {
                     icon: "success",
                     confirmButtonColor: "#0056b3",
                 }).then(() => {
-                    document
-                        .getElementById("modalFormulario")
-                        ?.classList.remove("active");
+                    document.getElementById("modalFormulario")?.classList.remove("active");
                     document.body.style.overflow = "auto";
-
-                    // ESTO AHORA LIMPIARÁ TODO CORRECTAMENTE
-                    limpiarFormulario();
-
-                    if (typeof cargarViajes === "function") cargarViajes();
+                    limpiarFormulario(); // <-- ESTO CERRARÁ TU FORMULARIO
+                    if (typeof cargarViajes === "function") cargarViajes(currentPage);
                 });
             } else {
-                Swal.fire({
-                    title: "Error",
-                    text: result.message || "Error al guardar el viaje",
-                    icon: "error",
-                    confirmButtonColor: "#dc3545",
-                });
+                Swal.fire("Error", result.message || "Error al guardar el viaje", "error");
             }
         })
         .catch((error) => {
-            console.error("Error:", error);
+            console.error("Error de Red/Parseo:", error);
             Swal.fire({
-                title: "Error de conexión",
-                text: error.message || "No se pudo conectar con el servidor",
-                icon: "error",
+                title: "Error procesando solicitud",
+                text: "El viaje pudo haberse guardado, pero la respuesta del servidor falló. Recarga la página para verificar.",
+                icon: "warning",
                 confirmButtonColor: "#dc3545",
+            }).then(() => {
+                // Por seguridad, recargamos la tabla para que veas si se guardó
+                if (typeof cargarViajes === "function") cargarViajes(currentPage);
             });
         });
 }
