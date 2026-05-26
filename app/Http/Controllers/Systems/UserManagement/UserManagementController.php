@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Systems\UserManagement;
 
 use App\Http\Controllers\Controller;
@@ -336,7 +335,7 @@ class UserManagementController extends Controller
         ]);
     }
 
-public function getEmployeePhoto($path)
+    public function getEmployeePhoto($path)
     {
         // 🚨 ESTA LÍNEA ES LA QUE QUITA EL "STALLED" 🚨
         // Le dice a Laravel que libere la sesión para que el botón "Guardar" funcione en paralelo
