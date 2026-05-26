@@ -7232,62 +7232,70 @@ function enviarSolicitudAJAX() {
         data.reunion_pre_convoy = datosReunionConvoy;
     }
 
-    fetch("/qhse/management/journeys/store", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
-                ?.content,
-            Accept: "application/json",
-        },
-        body: JSON.stringify(data),
-    })
-        .then((response) => {
-            if (!response.ok) {
-                return response.text().then((text) => {
-                    throw new Error(
-                        `Error ${response.status}: ${text.substring(0, 200)}`,
-                    );
-                });
-            }
-            return response.json();
-        })
-        .then((result) => {
-            if (result.success) {
-                Swal.fire({
-                    title: "¡Viaje Registrado!",
-                    html: `${result.message}<br><br><span style="font-size: 1.2em;">Folio asignado: <strong>${result.folio}</strong></span>`,
-                    icon: "success",
-                    confirmButtonColor: "#0056b3",
-                }).then(() => {
-                    document
-                        .getElementById("modalFormulario")
-                        ?.classList.remove("active");
-                    document.body.style.overflow = "auto";
+// ... dentro de enviarSolicitudAJAX
+fetch("/qhse/management/journeys/store", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+        Accept: "application/json",
+    },
+    body: JSON.stringify(data),
+})
+.then(async (response) => {
+    // 1. Obtenemos el texto crudo (con la basura del Warning de PHP y el JSON)
+    const text = await response.text();
 
-                    // ESTO AHORA LIMPIARÁ TODO CORRECTAMENTE
-                    limpiarFormulario();
+    // 2. Buscamos el inicio del JSON (el primer '{')
+    const jsonStartIndex = text.indexOf('{');
 
-                    if (typeof cargarViajes === "function") cargarViajes();
-                });
-            } else {
-                Swal.fire({
-                    title: "Error",
-                    text: result.message || "Error al guardar el viaje",
-                    icon: "error",
-                    confirmButtonColor: "#dc3545",
-                });
-            }
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-            Swal.fire({
-                title: "Error de conexión",
-                text: error.message || "No se pudo conectar con el servidor",
-                icon: "error",
-                confirmButtonColor: "#dc3545",
-            });
+    // 3. Si no encontramos '{', algo salió realmente mal
+    if (jsonStartIndex === -1) {
+        throw new Error("Respuesta del servidor no válida (no se encontró JSON): " + text);
+    }
+
+    // 4. Cortamos el texto desde el '{' hasta el final para dejar solo el JSON
+    const jsonString = text.substring(jsonStartIndex);
+
+    try {
+        return JSON.parse(jsonString);
+    } catch (e) {
+        throw new Error("Respuesta del servidor no válida (JSON malformado): " + text);
+    }
+})
+.then((result) => {
+    // --- AQUÍ EMPIEZA TU LÓGICA ORIGINAL ---
+    if (result.success) {
+        Swal.fire({
+            title: "¡Viaje Registrado!",
+            html: `${result.message}<br><br><span style="font-size: 1.2em;">Folio asignado: <strong>${result.folio}</strong></span>`,
+            icon: "success",
+            confirmButtonColor: "#0056b3",
+        }).then(() => {
+            document.getElementById("modalFormulario")?.classList.remove("active");
+            document.body.style.overflow = "auto";
+            limpiarFormulario(); // <-- Aquí se cierra el formulario
+            if (typeof cargarViajes === "function") cargarViajes();
         });
+    } else {
+        Swal.fire({
+            title: "Error",
+            text: result.message || "Error al guardar el viaje",
+            icon: "error",
+            confirmButtonColor: "#dc3545",
+        });
+    }
+    // --- AQUÍ TERMINA TU LÓGICA ORIGINAL ---
+})
+.catch((error) => {
+    console.error("Error:", error);
+    Swal.fire({
+        title: "Error de conexión",
+        text: error.message || "No se pudo conectar con el servidor",
+        icon: "error",
+        confirmButtonColor: "#dc3545",
+    });
+});
 }
 
 // ====================================================================
