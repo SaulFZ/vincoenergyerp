@@ -257,21 +257,22 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::post('/journeys/store', [JourneyStoreController::class, 'store'])
                     ->name('management.store');
 
-                // ---------------------------------------------------
-                // 4. CONSULTAS Y ESTADÍSTICAS (Tablas y Dashboard)
-                // Controlador: JourneyQueryController
-                // ---------------------------------------------------
-                Route::controller(JourneyQueryController::class)->group(function () {
-                    Route::get('/journeys', 'index')->name('management.list');
-                    // 👇 AQUÍ ESTÁ EL CAMBIO: Le agregamos /journeys/ antes de stats
-                    Route::get('/journeys/stats', 'getStats')->name('management.journeys.stats');
-                    Route::get('/journeys/next-folio', 'getNextFolio')->name('management.next-folio');
-                    Route::get('/journeys/last-inspection/{economic_number}', 'getLastInspectionDate')->name('management.last-inspection');
-                    Route::get('/destinations', 'getDestinations')->name('management.destinations');
-                    Route::get('/journeys/{id}', 'show')->name('management.show');
-                    // 👇 NUEVA RUTA AQUÍ
-                   Route::get('/evidencia/{path}', 'showEvidence')->where('path', '.*')->name('management.evidencia');
-                });
+              Route::controller(JourneyQueryController::class)->group(function () {
+        Route::get('/journeys', 'index')->name('management.list');
+        Route::get('/journeys/stats', 'getStats')->name('management.journeys.stats');
+        Route::get('/journeys/next-folio', 'getNextFolio')->name('management.next-folio');
+        Route::get('/journeys/last-inspection/{economic_number}', 'getLastInspectionDate')->name('management.last-inspection');
+
+        // 👇 AQUÍ ESTÁ EL CAMBIO CLAVE:
+        // Restringimos {id} para que solo acepte números.
+        // Así, cualquier palabra como "store", "stats", etc., NO entrará aquí.
+        Route::get('/journeys/{id}', 'show')
+            ->where('id', '[0-9]+')
+            ->name('management.show');
+
+        Route::get('/destinations', 'getDestinations')->name('management.destinations');
+        Route::get('/evidencia/{path}', 'showEvidence')->where('path', '.*')->name('management.evidencia');
+    });
 
                 // ---------------------------------------------------
                 // 5. ACTUALIZACIÓN DE ESTADOS Y BITÁCORA EN RUTA
