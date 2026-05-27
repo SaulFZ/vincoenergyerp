@@ -399,7 +399,7 @@
 }
 
 .btn-viajes.btn-primary {
-    background-color: var(--primary-orargb(235, 37, 37)563eb);
+    background-color: var(--primary-blue, #2563eb);
     color: var(--white, #ffffff);
     border: none;
     border-radius: 8px;
