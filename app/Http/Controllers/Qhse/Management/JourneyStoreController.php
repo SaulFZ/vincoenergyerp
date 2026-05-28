@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Qhse\Management;
 
 use App\Http\Controllers\Controller;
+use App\Mail\Qhse\Management\AnomalyNotificationMail;
 use App\Mail\Qhse\Management\JourneyApprovalMail;
 use App\Models\Auth\User;
 use App\Models\Qhse\Management\HeavyInspection;
@@ -20,9 +21,6 @@ use Illuminate\Support\Facades\Storage;
 
 class JourneyStoreController extends Controller
 {
-    /**
-     * Guardar un viaje completo con todas sus relaciones
-     */
     /**
      * Guardar un viaje completo con todas sus relaciones
      */
@@ -49,9 +47,7 @@ class JourneyStoreController extends Controller
                 $this->createPreConvoyMeeting($journey, $data['reunion_pre_convoy']);
             }
 
-            // =========================================================
-            // 🚨 NUEVO: REGISTRAR EL LOG DE CREACIÓN EN LA BITÁCORA
-            // =========================================================
+            // 5. REGISTRAR EL LOG EN LA BITÁCORA
             JourneyLog::create([
                 'journey_id'  => $journey->id,
                 'user_id'     => Auth::id(),
@@ -64,7 +60,7 @@ class JourneyStoreController extends Controller
             DB::commit();
 
             // =========================================================
-            // ENVIAR CORREO AL AUTORIZADOR DESPUÉS DE GUARDAR
+            // 6. ENVIAR CORREO AL AUTORIZADOR
             // =========================================================
             try {
                 if ($journey->approver_id) {
@@ -74,10 +70,64 @@ class JourneyStoreController extends Controller
                     }
                 }
             } catch (\Exception $mailEx) {
-                // Registramos el error de correo pero NO cancelamos el viaje creado
                 Log::error('Error enviando correo de autorización (GV): ' . $mailEx->getMessage());
             }
 
+            // =========================================================
+            // 7. ENVIAR CORREO DE ANOMALÍAS A LOGÍSTICA / MANTENIMIENTO
+            // =========================================================
+            try {
+                $journey->load(['units.lightInspection', 'units.heavyInspection']);
+                $anomaliesList = [];
+
+                foreach ($journey->units as $unit) {
+                    $hasAnomaly  = false;
+                    $comments    = '';
+                    $failedItems = []; // Array para guardar lo que falló
+
+                    $inspection = $unit->lightInspection ?: $unit->heavyInspection;
+
+                    if ($inspection && $inspection->has_anomalies) {
+                        $hasAnomaly = true;
+                        $comments   = $inspection->anomaly_comments;
+
+                        // Obtenemos todos los datos de la inspección y buscamos los "no"
+                        foreach ($inspection->getAttributes() as $key => $value) {
+                            if ($value === 'no' && ! in_array($key, ['has_anomalies'])) {
+                                $failedItems[] = $this->translateInspectionField($key);
+                            }
+                        }
+                    }
+
+                    if ($hasAnomaly) {
+                        $anomaliesList[] = [
+                            'unidad'          => $unit->economic_number,
+                            'tipo'            => $unit->unit_type,
+                            'comentarios'     => $comments ?: 'Sin comentarios detallados.',
+                            'puntos_fallidos' => $failedItems, // Guardamos la lista de fallos
+                        ];
+                    }
+                }
+
+                if (count($anomaliesList) > 0) {
+                    $usersWithPermission = User::active()
+                        ->whereHas('directPermissions', function ($query) {
+                            $query->where('name', 'notificacion_anomalias');
+                        })
+                        ->pluck('email')
+                        ->filter()
+                        ->toArray();
+
+                    if (! empty($usersWithPermission)) {
+                        Mail::to($usersWithPermission)->send(new AnomalyNotificationMail($journey, $anomaliesList));
+                    }
+                }
+            } catch (\Exception $anomalyMailEx) {
+                Log::error('🚨 Error enviando alerta de anomalías: ' . $anomalyMailEx->getMessage());
+            }
+            // =========================================================
+            // 8. RESPONDER AL NAVEGADOR
+            // =========================================================
             return response()->json([
                 'success'    => true,
                 'message'    => 'Viaje guardado exitosamente',
@@ -98,7 +148,6 @@ class JourneyStoreController extends Controller
             ], 500);
         }
     }
-
     /**
      * Crear el viaje principal
      */
@@ -121,7 +170,7 @@ class JourneyStoreController extends Controller
             'folio'                => $folio,
             'request_date'         => $data['fecha_solicitud'] ?? now()->format('Y-m-d'),
             'creator_name'         => $data['solicitante'] ?? Auth::user()->name,
-            'area'           => $data['area'] ?? '',
+            'area'                 => $data['area'] ?? '',
             'approval_status'      => 'pending',
             'journey_status'       => 'not_started',
             'destination_region'   => $data['destino_predefinido'] ?? '',
@@ -262,58 +311,57 @@ class JourneyStoreController extends Controller
         return $passengers;
     }
 /**
-     * Crear inspección ligera
-     */
+ * Crear inspección ligera
+ */
     private function createLightInspection($journeyUnit, $inspectionData)
     {
         // Procesar fotos si existen
         $photoPaths = $this->processPhotos($inspectionData['fotos'] ?? [], 'L', $journeyUnit->journey->folio);
 
         LightInspection::create([
-            'journey_unit_id'           => $journeyUnit->id,
-            'fuel_level'                => $inspectionData['nivel_gasolina'] ?? '',
-            'mileage'                   => isset($inspectionData['kilometraje']) ? (int) str_replace(',', '', $inspectionData['kilometraje']) : 0,
+            'journey_unit_id'         => $journeyUnit->id,
+            'fuel_level'              => $inspectionData['nivel_gasolina'] ?? '',
+            'mileage'                 => isset($inspectionData['kilometraje']) ? (int) str_replace(',', '', $inspectionData['kilometraje']) : 0,
 
             // --- PASAMOS EL STRING DIRECTO, POR DEFECTO 'na' ---
-            'doc_registration_card'     => $inspectionData['doc_tarjeta'] ?? 'na',
-            'doc_insurance_policy'      => $inspectionData['doc_poliza'] ?? 'na',
-            'doc_emergency_phones'      => $inspectionData['doc_tel_emergencia'] ?? 'na',
-            'doc_driving_license'       => $inspectionData['doc_licencia'] ?? 'na',
-            'vis_first_aid_kit'         => $inspectionData['vis_botiquin'] ?? 'na',
-            'vis_safety_triangles'      => $inspectionData['vis_triangulo'] ?? 'na',
-            'vis_fire_extinguisher'     => $inspectionData['vis_extintor'] ?? 'na',
-            'vis_jack_wrench'           => $inspectionData['vis_gato'] ?? 'na',
-            'vis_jumper_cables'         => $inspectionData['vis_cables'] ?? 'na',
-            'vis_basic_tools'           => $inspectionData['vis_herramientas'] ?? 'na',
-            'vis_flashlight'            => $inspectionData['vis_linterna'] ?? 'na',
-            'vis_mirrors'               => $inspectionData['vis_espejos'] ?? 'na',
-            'vis_spare_tire'            => $inspectionData['vis_refaccion'] ?? 'na',
-            'vis_tires_condition'       => $inspectionData['vis_neumaticos'] ?? 'na',
-            'vis_paint_condition'       => $inspectionData['vis_pintura'] ?? 'na',
-            'vis_windshield_wipers'     => $inspectionData['vis_parabrisas'] ?? 'na',
-            'vis_bumpers'               => $inspectionData['vis_defensas'] ?? 'na',
-            'vis_main_lights'           => $inspectionData['vis_luces_gral'] ?? 'na',
-            'vis_stop_reverse_lights'   => $inspectionData['vis_luces_stop'] ?? 'na',
-            'vis_horn'                  => $inspectionData['vis_claxon'] ?? 'na',
-            'vis_company_logos'         => $inspectionData['vis_logos'] ?? 'na',
-            'vis_seats_condition'       => $inspectionData['vis_asientos'] ?? 'na',
-            'vis_dashboard_panel'       => $inspectionData['vis_panel'] ?? 'na',
-            'vis_seatbelts'             => $inspectionData['vis_cinturones'] ?? 'na',
-            'maint_last_check_verified' => $inspectionData['mant_fecha_km'] ?? 'na',
-            'maint_leaks_check'         => $inspectionData['mant_fugas'] ?? 'na',
-            'maint_fluid_levels'        => $inspectionData['mant_niveles'] ?? 'na',
-            'maint_belts_condition'     => $inspectionData['mant_bandas'] ?? 'na',
+            'doc_registration_card'   => $inspectionData['doc_tarjeta'] ?? 'na',
+            'doc_insurance_policy'    => $inspectionData['doc_poliza'] ?? 'na',
+            'doc_emergency_phones'    => $inspectionData['doc_tel_emergencia'] ?? 'na',
+            'doc_driving_license'     => $inspectionData['doc_licencia'] ?? 'na',
+            'vis_first_aid_kit'       => $inspectionData['vis_botiquin'] ?? 'na',
+            'vis_safety_triangles'    => $inspectionData['vis_triangulo'] ?? 'na',
+            'vis_fire_extinguisher'   => $inspectionData['vis_extintor'] ?? 'na',
+            'vis_jack_wrench'         => $inspectionData['vis_gato'] ?? 'na',
+            'vis_jumper_cables'       => $inspectionData['vis_cables'] ?? 'na',
+            'vis_basic_tools'         => $inspectionData['vis_herramientas'] ?? 'na',
+            'vis_flashlight'          => $inspectionData['vis_linterna'] ?? 'na',
+            'vis_mirrors'             => $inspectionData['vis_espejos'] ?? 'na',
+            'vis_spare_tire'          => $inspectionData['vis_refaccion'] ?? 'na',
+            'vis_tires_condition'     => $inspectionData['vis_neumaticos'] ?? 'na',
+            'vis_paint_condition'     => $inspectionData['vis_pintura'] ?? 'na',
+            'vis_windshield_wipers'   => $inspectionData['vis_parabrisas'] ?? 'na',
+            'vis_bumpers'             => $inspectionData['vis_defensas'] ?? 'na',
+            'vis_main_lights'         => $inspectionData['vis_luces_gral'] ?? 'na',
+            'vis_stop_reverse_lights' => $inspectionData['vis_luces_stop'] ?? 'na',
+            'vis_horn'                => $inspectionData['vis_claxon'] ?? 'na',
+            'vis_company_logos'       => $inspectionData['vis_logos'] ?? 'na',
+            'vis_seats_condition'     => $inspectionData['vis_asientos'] ?? 'na',
+            'vis_dashboard_panel'     => $inspectionData['vis_panel'] ?? 'na',
+            'vis_seatbelts'           => $inspectionData['vis_cinturones'] ?? 'na',
+            'maint_leaks_check'       => $inspectionData['mant_fugas'] ?? 'na',
+            'maint_fluid_levels'      => $inspectionData['mant_niveles'] ?? 'na',
+            'maint_belts_condition'   => $inspectionData['mant_bandas'] ?? 'na',
 
             // --- ESTA SE QUEDA IGUAL (es la única booleana en la BD) ---
-            'has_anomalies'             => ($inspectionData['anomalias_detectadas'] ?? 'no') === 'si',
-            'anomaly_comments'          => $inspectionData['comentarios'] ?? null,
-            'photo_evidence'            => $photoPaths,
+            'has_anomalies'           => ($inspectionData['anomalias_detectadas'] ?? 'no') === 'si',
+            'anomaly_comments'        => $inspectionData['comentarios'] ?? null,
+            'photo_evidence'          => $photoPaths,
         ]);
     }
 
 /**
-     * Crear inspección pesada
-     */
+ * Crear inspección pesada
+ */
     private function createHeavyInspection($journeyUnit, $inspectionData)
     {
         // Procesar fotos si existen
@@ -356,7 +404,6 @@ class JourneyStoreController extends Controller
             'vis_seats'               => $inspectionData['vis_asientos'] ?? 'na',
             'vis_seatbelts'           => $inspectionData['vis_cinturones'] ?? 'na',
             'vis_beacon_light'        => $inspectionData['vis_torreta'] ?? 'na',
-            'maint_date_km_check'     => $inspectionData['mant_fecha_km'] ?? 'na',
             'maint_engine_start'      => $inspectionData['mant_encendido'] ?? 'na',
             'maint_oil_pressure'      => $inspectionData['mant_presion_aceite'] ?? 'na',
             'maint_engine_temp'       => $inspectionData['mant_temp_motor'] ?? 'na',
@@ -478,31 +525,31 @@ class JourneyStoreController extends Controller
 /**
  * Guardar imagen en base64 con nombre corto y carpeta de Folio
  */
-private function saveBase64Image($base64String, $typeSuffix, $folio)
-{
-    try {
-        $base64String = preg_replace('/^data:image\/(\w+);base64,/', '', $base64String);
-        $extension = 'jpg'; // O dinámica si extraes el mime
+    private function saveBase64Image($base64String, $typeSuffix, $folio)
+    {
+        try {
+            $base64String = preg_replace('/^data:image\/(\w+);base64,/', '', $base64String);
+            $extension    = 'jpg'; // O dinámica si extraes el mime
 
-        $imageData = base64_decode($base64String);
+            $imageData = base64_decode($base64String);
 
-        $fileName = 'anomalia_' . str_replace(['.', ' '], '_', microtime(true)) . '.' . $extension;
-        $folderPath = "qhse/management/anomalias{$typeSuffix}/{$folio}";
-        $fullPath = "{$folderPath}/{$fileName}";
+            $fileName   = 'anomalia_' . str_replace(['.', ' '], '_', microtime(true)) . '.' . $extension;
+            $folderPath = "qhse/management/anomalias{$typeSuffix}/{$folio}";
+            $fullPath   = "{$folderPath}/{$fileName}";
 
-        // --- ESTO EVITA EL ERROR 500 POR CARPETA NO EXISTENTE ---
-        if (!Storage::disk('public')->exists($folderPath)) {
-            Storage::disk('public')->makeDirectory($folderPath, 0755, true);
+            // --- ESTO EVITA EL ERROR 500 POR CARPETA NO EXISTENTE ---
+            if (! Storage::disk('public')->exists($folderPath)) {
+                Storage::disk('public')->makeDirectory($folderPath, 0755, true);
+            }
+
+            Storage::disk('public')->put($fullPath, $imageData);
+
+            return $fullPath;
+        } catch (\Exception $e) {
+            Log::error('Error guardando imagen: ' . $e->getMessage());
+            return null;
         }
-
-        Storage::disk('public')->put($fullPath, $imageData);
-
-        return $fullPath;
-    } catch (\Exception $e) {
-        Log::error('Error guardando imagen: ' . $e->getMessage());
-        return null;
     }
-}
 
 /**
  * Generar folio único seguro
@@ -603,5 +650,89 @@ private function saveBase64Image($base64String, $typeSuffix, $folio)
                          // Aquí puedes implementar lógica para determinar si es ligera o pesada
                          // basado en el número económico
         return 'Ligera'; // Valor por defecto
+    }
+
+   /**
+     * Traduce las columnas de la BD al texto exacto que el usuario vio en la pantalla
+     */
+    private function translateInspectionField($field)
+    {
+        $labels = [
+            // ================= I. DOCUMENTACIÓN =================
+            'doc_registration_card' => 'Tarjeta de circulación',
+            'doc_insurance_policy'  => 'Póliza de seguro vigente',
+            'doc_emergency_phones'  => 'Teléfonos Emergencia / Aseguradora',
+            'doc_driving_license'   => 'Licencia de manejo vigente',
+            // Exclusivos Pesadas
+            'doc_cargo_permit'      => 'Permiso de transporte de carga',
+            'doc_emissions_cert'    => 'Certificado de bajos contaminantes',
+            'doc_mechanical_cert'   => 'Certificado físico mecánico',
+            'doc_waybill'           => 'Carta Porte',
+
+            // ================= II. INSPECCIÓN VISUAL =================
+            'vis_first_aid_kit'       => 'Kit de primeros auxilios',
+            'vis_fire_extinguisher'   => 'Extintor (Cargado/Vigente)',
+            'vis_jumper_cables'       => 'Cables pasa corrientes',
+            'vis_flashlight'          => 'Linterna de mano',
+            'vis_spare_tire'          => 'Llanta de refacción',
+            'vis_tires_condition'     => 'Neumáticos en buen estado',
+            'vis_horn'                => 'Claxon',
+            'vis_seatbelts'           => 'Cinturones de seguridad',
+
+            // Exclusivos Ligeras
+            'vis_safety_triangles'    => 'Triángulos de seguridad',
+            'vis_jack_wrench'         => 'Gato y Cruceta',
+            'vis_basic_tools'         => 'Kit de herramientas básicas',
+            'vis_mirrors'             => 'Espejos (Laterales/Retrovisor)',
+            'vis_paint_condition'     => 'Laminación y pintura',
+            'vis_windshield_wipers'   => 'Parabrisas y limpiadores',
+            'vis_bumpers'             => 'Defensas',
+            'vis_main_lights'         => 'Luces (Altas, Bajas, Direccionales)',
+            'vis_stop_reverse_lights' => 'Luces de Stop y Reversa',
+            'vis_company_logos'       => 'Logotipos (Compañía y No. Eco)',
+            'vis_seats_condition'     => 'Estado de Asientos',
+            'vis_dashboard_panel'     => 'Panel de control (Indicadores)',
+
+            // Exclusivos Pesadas
+            'vis_safety_cones'        => 'Conos reflejantes',
+            'vis_jack'                => 'Gato hidráulico',
+            'vis_tires_calibrated'    => 'Llantas calibradas',
+            'vis_doors_windows'       => 'Puertas, vidrios y ventanas',
+            'vis_body_dents'          => 'Golpes',
+            'vis_air_conditioning'    => 'Funcionamiento Aire Acondicionado',
+            'vis_springs_suspension'  => 'Resortes y muelles',
+            'vis_air_bags_suspension' => 'Bolsas de aire de suspensión',
+            'vis_general_lights'      => 'Luces en general',
+            'vis_reverse_alarm'       => 'Alarma de reversa',
+            'vis_logos'               => 'Logotipos (Compañía y Num. Económico)',
+            'vis_seats'               => 'Asientos',
+            'vis_beacon_light'        => 'Torreta',
+
+            // ================= III. MANTENIMIENTO =================
+            // Exclusivos Ligeras
+            'maint_leaks_check'         => 'Revisión de fugas',
+            'maint_fluid_levels'        => 'Niveles óptimos (Aceite, Líquido de Frenos, Agua)',
+            'maint_belts_condition'     => 'Revisión de estado de bandas',
+
+            // Exclusivos Pesadas
+            'maint_engine_start'        => 'Encendido de motor',
+            'maint_oil_pressure'        => 'Presión de aceite de motor',
+            'maint_engine_temp'         => 'Temperatura del motor',
+            'maint_air_pressure'        => 'Presión de Aire',
+            'maint_fan_clutch'          => 'Fan clutch',
+            'maint_batteries'           => 'Condiciones de baterías',
+            'maint_speedometer'         => 'Velocímetro',
+            'maint_rpm_indicator'       => 'Indicador de RPM',
+            'maint_oil_level'           => 'Nivel Aceite de motor',
+            'maint_coolant_level'       => 'Nivel Anticongelante',
+            'maint_hydraulic_level'     => 'Nivel de aceite hidráulico',
+            'maint_diesel_level'        => 'Nivel de diésel',
+            'maint_engine_brake'        => 'Freno de motor',
+            'maint_parking_brake'       => 'Freno de parqueo',
+            'maint_belts'               => 'Bandas',
+            'maint_air_tank_purge'      => 'Purgado de tanque de aire',
+        ];
+
+        return $labels[$field] ?? ucfirst(str_replace('_', ' ', $field));
     }
 }

@@ -270,7 +270,7 @@
                                     </label>
                                 </div>
                                 <div class="mod-card-body" id="administracion-body">
-                                    <label class="perm-row"><input type="checkbox" name="permissions[administration][reembolsos]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gestión de reembolsos</span></label>
+                                    <label class="perm-row"><input type="checkbox" name="permissions[administration][expense-claims]"><span class="perm-check-icon"><i class="fas fa-check"></i></span><span>Gestión de reembolsos</span></label>
                                 </div>
                             </div>
 

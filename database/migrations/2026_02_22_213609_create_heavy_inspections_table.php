@@ -52,7 +52,6 @@ return new class extends Migration {
             $table->string('vis_beacon_light', 15);      // vis_torreta
 
             // --- III. MANTENIMIENTO (Pesados) ---
-            $table->string('maint_date_km_check', 15);   // mant_fecha_km
             $table->string('maint_engine_start', 15);    // mant_encendido
             $table->string('maint_oil_pressure', 15);    // mant_presion_aceite
             $table->string('maint_engine_temp', 15);     // mant_temp_motor

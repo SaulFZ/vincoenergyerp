@@ -1405,19 +1405,6 @@
                 <div class="inspeccion-grid">
                     <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
-                            <i class="fas fa-calendar-check"></i> <span>Fecha/Km último mantenimiento</span>
-                        </div>
-                        <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="mant_fecha_km" value="si"
-                                    required> Sí</label>
-                            <label class="no"><input type="radio" name="mant_fecha_km" value="no">
-                                No</label>
-                            <label class="na"><input type="radio" name="mant_fecha_km" value="na">
-                                N/A</label>
-                        </div>
-                    </div>
-                    <div class="inspeccion-item">
-                        <div class="inspeccion-item-label">
                             <i class="fas fa-water"></i> <span>Revisión de fugas</span>
                         </div>
                         <div class="inspeccion-radio-group">
@@ -1430,7 +1417,7 @@
                     </div>
                     <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
-                            <i class="fas fa-oil-can"></i> <span>Niveles (Aceite, frenos, agua)</span>
+                            <i class="fas fa-oil-can"></i> <span>Niveles optimos (Aceite, Líquido de Frenos, Agua)</span>
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="mant_niveles" value="si" required>
@@ -1443,7 +1430,7 @@
                     </div>
                     <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
-                            <i class="fas fa-cogs"></i> <span>Estado de bandas</span>
+                            <i class="fas fa-cogs"></i> <span>Revision de estado de bandas</span>
                         </div>
                         <div class="inspeccion-radio-group">
                             <label class="si"><input type="radio" name="mant_bandas" value="si" required>
@@ -2084,20 +2071,6 @@
                     <i class="fas fa-wrench"></i> III. MANTENIMIENTO
                 </h3>
                 <div class="inspeccion-grid">
-                    <div class="inspeccion-item">
-                        <div class="inspeccion-item-label">
-                            <i class="fas fa-calendar-check"></i> <span>Fecha y kilometraje del último
-                                mantenimiento</span>
-                        </div>
-                        <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="mant_fecha_km" value="si"
-                                    required> Sí</label>
-                            <label class="no"><input type="radio" name="mant_fecha_km" value="no">
-                                No</label>
-                            <label class="na"><input type="radio" name="mant_fecha_km" value="na">
-                                N/A</label>
-                        </div>
-                    </div>
                     <div class="inspeccion-item">
                         <div class="inspeccion-item-label">
                             <i class="fas fa-key"></i> <span>Encendido de motor</span>

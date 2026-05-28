@@ -1335,7 +1335,6 @@ function _mapearInspeccionLigera(insp) {
         vis_cinturones: insp.vis_seatbelts || 'na',
 
         // III. Mantenimiento
-        mant_fecha_km: insp.maint_last_check_verified || 'na',
         mant_fugas: insp.maint_leaks_check || 'na',
         mant_niveles: insp.maint_fluid_levels || 'na',
         mant_bandas: insp.maint_belts_condition || 'na',
@@ -1392,7 +1391,6 @@ function _mapearInspeccionPesada(insp) {
         vis_torreta: insp.vis_beacon_light || 'na',
 
         // III. Mantenimiento
-        mant_fecha_km: insp.maint_date_km_check || 'na',
         mant_encendido: insp.maint_engine_start || 'na',
         mant_presion_aceite: insp.maint_oil_pressure || 'na',
         mant_temp_motor: insp.maint_engine_temp || 'na',
@@ -3481,7 +3479,7 @@ function agregarPasajero(unidadNumero) {
 
     div.innerHTML = `
         <div class="pasajero-nombre-container input-wrapper" style="flex-grow: 1;">
-            <i class="fa-solid fa-user field-icon pasajero"
+            <i class="fa-solid fa-people-arrows field-icon pasajero"
                 id="p-icon-${unidadNumero}-${index}"
                 title="Clic para asignar como Segundo Conductor"
                 onclick="gestionarRolPasajero(${unidadNumero}, ${index})"></i>
@@ -4153,8 +4151,9 @@ function actualizarIconoPasajero(fila, index, unidad) {
         fila.classList.add("es-relevo");
     } else {
         if (icon) {
-            icon.className = "fa-solid fa-user field-icon pasajero";
-            icon.title = "Pasajero (Clic para asignar como Relevo)";
+            // ¡AQUÍ ESTÁ EL CAMBIO! Se restaura con fa-people-arrows
+            icon.className = "fa-solid fa-people-arrows field-icon pasajero";
+            icon.title = "Clic para ascender a Segundo Conductor (Relevo)";
         }
         fila.classList.remove("es-relevo");
     }
@@ -4473,7 +4472,6 @@ function gestionarModalInspeccionLigera(
             "vis_asientos",
             "vis_panel",
             "vis_cinturones",
-            "mant_fecha_km",
             "mant_fugas",
             "mant_niveles",
             "mant_bandas",
@@ -4637,7 +4635,6 @@ async function procederGuardadoLigera(comentarios, anomaliasValor) {
         "vis_cinturones",
     ];
     const mantItems = [
-        "mant_fecha_km",
         "mant_fugas",
         "mant_niveles",
         "mant_bandas",
@@ -4863,7 +4860,6 @@ function gestionarModalInspeccionPesada(
             "vis_asientos",
             "vis_cinturones",
             "vis_torreta",
-            "mant_fecha_km",
             "mant_encendido",
             "mant_presion_aceite",
             "mant_temp_motor",
@@ -5044,7 +5040,6 @@ async function procederGuardadoPesada(comentarios, anomaliasValor) {
         "vis_torreta",
     ];
     const mantItems = [
-        "mant_fecha_km",
         "mant_encendido",
         "mant_presion_aceite",
         "mant_temp_motor",
@@ -6838,19 +6833,19 @@ function validarSolicitudCompleta() {
         return false;
     }
 
-    // =========================================================
+   // =========================================================
     // 3. VALIDACIÓN EXHAUSTIVA DE PARADAS INTERMEDIAS
     // =========================================================
-    const tieneParadas = document.querySelector(
-        'input[name="tiene_paradas"]:checked',
-    )?.value;
+    const tieneParadas = document.querySelector('input[name="tiene_paradas"]:checked')?.value;
+    let requiereCambioConductor = false; // Variable para rastrear si se seleccionó cambio de conductor
+    let selectCambioConductor = null;    // Para hacer focus si hay error
+
     if (tieneParadas === "si") {
         const listaParadas = document.getElementById("listaParadas");
         if (!listaParadas || listaParadas.children.length === 0) {
             mostrarError({
                 titulo: "Bloque de Paradas Vacío",
-                texto:
-                    "Usted indicó que realizará paradas, pero no ha registrado ninguna en el sistema.",
+                texto: "Usted indicó que realizará paradas, pero no ha registrado ninguna en el sistema.",
                 elementoScroll: document.querySelector(".radio-group-paradas"),
             });
             return false;
@@ -6865,19 +6860,24 @@ function validarSolicitudCompleta() {
             if (!select?.value) {
                 mostrarError({
                     titulo: `Motivo Faltante en Parada #${i + 1}`,
-                    texto:
-                        "Seleccione la razón o propósito por el cual se detendrá en esta ubicación.",
+                    texto: "Seleccione la razón o propósito por el cual se detendrá en esta ubicación.",
                     elementoFocus: select,
                     elementoScroll: parada,
                     claseAnimacion: "error-shake",
                 });
                 return false;
             }
+
+            // NUEVO: Detectar si el motivo es "Cambio de Conductor"
+            if (select.value === "Cambio de Conductor") {
+                requiereCambioConductor = true;
+                selectCambioConductor = select; // Guardamos el select para hacerle focus en caso de error
+            }
+
             if (!inputLugar?.value.trim()) {
                 mostrarError({
                     titulo: `Ubicación Faltante en Parada #${i + 1}`,
-                    texto:
-                        "Escriba el nombre del lugar, gasolinera o punto de control donde realizará esta parada.",
+                    texto: "Escriba el nombre del lugar, gasolinera o punto de control donde realizará esta parada.",
                     elementoFocus: inputLugar,
                     elementoScroll: parada,
                     claseAnimacion: "error-shake",
@@ -6887,6 +6887,26 @@ function validarSolicitudCompleta() {
         }
     }
 
+    // =========================================================
+    // 3.5. VALIDACIÓN DE CAMBIO DE CONDUCTOR VS RELEVOS
+    // =========================================================
+    if (requiereCambioConductor) {
+        // Contamos cuántos pasajeros tienen la clase 'es-relevo' en todo el formulario
+        const relevosAsignados = document.querySelectorAll('.pasajero-input-group.es-relevo').length;
+
+        if (relevosAsignados === 0) {
+            mostrarError({
+                titulo: "Falta Segundo Conductor",
+                texto: "Has programado una parada por <strong>Cambio de Conductor</strong>, pero no has asignado a ningún Segundo Conductor (Relevo) en las unidades.<br><br>Por favor, asigna un relevo dando clic en el icono de usuario <i class='fas fa-people-arrows' style='color:#334c95;'></i> de algún pasajero, o cambia el motivo de la parada.",
+                icono: "error",
+                color: "#dc3545", // Rojo para indicar error crítico
+                elementoFocus: selectCambioConductor,
+                elementoScroll: selectCambioConductor,
+                claseAnimacion: "error-shake"
+            });
+            return false;
+        }
+    }
     // =========================================================
     // 4. VALIDACIÓN ESTRUCTURAL DE UNIDADES VEHICULARES
     // =========================================================

@@ -12,10 +12,24 @@ class JourneyApprovalMail extends Mailable
     use Queueable, SerializesModels;
 
     public $journey;
+    public $hasAnomalies; // Nueva variable para la vista
 
     public function __construct(Journey $journey)
     {
         $this->journey = $journey;
+
+        // Cargamos las relaciones de las unidades y sus inspecciones para poder leerlas
+        $this->journey->loadMissing(['units.lightInspection', 'units.heavyInspection']);
+
+        // Lógica para detectar si alguna unidad reportó anomalías
+        $this->hasAnomalies = false;
+        foreach ($this->journey->units as $unit) {
+            if (($unit->lightInspection && $unit->lightInspection->has_anomalies) ||
+                ($unit->heavyInspection && $unit->heavyInspection->has_anomalies)) {
+                $this->hasAnomalies = true;
+                break; // Si encontramos al menos una anomalía, detenemos la búsqueda
+            }
+        }
     }
 
     public function build()

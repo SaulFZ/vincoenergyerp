@@ -45,7 +45,6 @@ return new class extends Migration {
             $table->string('vis_seatbelts', 15);         // vis_cinturones
 
             // --- III. MANTENIMIENTO ---
-            $table->string('maint_last_check_verified', 15); // mant_fecha_km
             $table->string('maint_leaks_check', 15);      // mant_fugas
             $table->string('maint_fluid_levels', 15);     // mant_niveles
             $table->string('maint_belts_condition', 15);  // mant_bandas

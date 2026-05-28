@@ -47,9 +47,9 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #64748b; font-weight: bold; font-family: Arial, Helvetica, sans-serif; vertical-align: top;">Departamento:</td>
+                                    <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #64748b; font-weight: bold; font-family: Arial, Helvetica, sans-serif; vertical-align: top;">Área:</td>
                                     <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #1e293b; font-family: Arial, Helvetica, sans-serif;">
-                                        {{ $journey->department }}
+                                        {{ $journey->area }}
                                     </td>
                                 </tr>
                                 <tr>
@@ -66,8 +66,8 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 15px; font-size: 14px; color: #64748b; font-weight: bold; font-family: Arial, Helvetica, sans-serif; vertical-align: top;">Nivel de Riesgo:</td>
-                                    <td style="padding: 15px; font-family: Arial, Helvetica, sans-serif;">
+                                    <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #64748b; font-weight: bold; font-family: Arial, Helvetica, sans-serif; vertical-align: top;">Nivel de Riesgo:</td>
+                                    <td style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-family: Arial, Helvetica, sans-serif;">
 
                                         @php
                                             $bg = '#c8e6c9';
@@ -86,7 +86,23 @@
                                         <span style="background-color: {{ $bg }}; color: {{ $txt }}; border: 1px solid {{ $border }}; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; display: inline-block; text-transform: uppercase;">
                                             {{ str_replace('_', ' ', strtoupper($journey->risk_level)) }}
                                         </span>
+                                    </td>
+                                </tr>
 
+                                <tr>
+                                    <td style="padding: 15px; font-size: 14px; color: #64748b; font-weight: bold; font-family: Arial, Helvetica, sans-serif; vertical-align: top;">Estado Inspección:</td>
+                                    <td style="padding: 15px; font-family: Arial, Helvetica, sans-serif;">
+                                        @if($hasAnomalies)
+                                            <div style="background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: bold;">
+                                                <span style="font-size: 16px; vertical-align: middle; margin-right: 5px;">⚠️</span>
+                                                <span style="vertical-align: middle;">Atención: Se reportaron anomalías en las unidades. Revise la evidencia en el sistema.</span>
+                                            </div>
+                                        @else
+                                            <div style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: bold;">
+                                                <span style="font-size: 16px; vertical-align: middle; margin-right: 5px;">✅</span>
+                                                <span style="vertical-align: middle;">Unidades en estado óptimo. Sin anomalías detectadas.</span>
+                                            </div>
+                                        @endif
                                     </td>
                                 </tr>
                             </table>
@@ -97,7 +113,7 @@
                                         <table role="presentation" border="0" cellspacing="0" cellpadding="0">
                                             <tr>
                                                 <td align="center" bgcolor="#1e3a8a" style="border-radius: 6px;">
-                                                    <a href="https://vincoerp.vincoenergy.com/login" target="_blank" style="font-size: 15px; font-family: Arial, Helvetica, sans-serif; color: #ffffff; text-decoration: none; border-radius: 6px; padding: 14px 28px; border: 1px solid #1e3a8a; display: inline-block; font-weight: bold;">
+                                                    <a href="https://vescore.com/login" target="_blank" style="font-size: 15px; font-family: Arial, Helvetica, sans-serif; color: #ffffff; text-decoration: none; border-radius: 6px; padding: 14px 28px; border: 1px solid #1e3a8a; display: inline-block; font-weight: bold;">
                                                         Revisar Solicitud
                                                     </a>
                                                 </td>

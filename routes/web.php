@@ -257,22 +257,22 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::post('/journeys/store', [JourneyStoreController::class, 'store'])
                     ->name('management.store');
 
-              Route::controller(JourneyQueryController::class)->group(function () {
-        Route::get('/journeys', 'index')->name('management.list');
-        Route::get('/journeys/stats', 'getStats')->name('management.journeys.stats');
-        Route::get('/journeys/next-folio', 'getNextFolio')->name('management.next-folio');
-        Route::get('/journeys/last-inspection/{economic_number}', 'getLastInspectionDate')->name('management.last-inspection');
+                Route::controller(JourneyQueryController::class)->group(function () {
+                    Route::get('/journeys', 'index')->name('management.list');
+                    Route::get('/journeys/stats', 'getStats')->name('management.journeys.stats');
+                    Route::get('/journeys/next-folio', 'getNextFolio')->name('management.next-folio');
+                    Route::get('/journeys/last-inspection/{economic_number}', 'getLastInspectionDate')->name('management.last-inspection');
 
-        // 👇 AQUÍ ESTÁ EL CAMBIO CLAVE:
-        // Restringimos {id} para que solo acepte números.
-        // Así, cualquier palabra como "store", "stats", etc., NO entrará aquí.
-        Route::get('/journeys/{id}', 'show')
-            ->where('id', '[0-9]+')
-            ->name('management.show');
+                    // 👇 AQUÍ ESTÁ EL CAMBIO CLAVE:
+                    // Restringimos {id} para que solo acepte números.
+                    // Así, cualquier palabra como "store", "stats", etc., NO entrará aquí.
+                    Route::get('/journeys/{id}', 'show')
+                        ->where('id', '[0-9]+')
+                        ->name('management.show');
 
-        Route::get('/destinations', 'getDestinations')->name('management.destinations');
-        Route::get('/evidencia/{path}', 'showEvidence')->where('path', '.*')->name('management.evidencia');
-    });
+                    Route::get('/destinations', 'getDestinations')->name('management.destinations');
+                    Route::get('/evidencia/{path}', 'showEvidence')->where('path', '.*')->name('management.evidencia');
+                });
 
                 // ---------------------------------------------------
                 // 5. ACTUALIZACIÓN DE ESTADOS Y BITÁCORA EN RUTA
@@ -480,7 +480,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: SUMINISTRO
     // ===================================================
     Route::get('/suministro', function () {
-        return view('modules.suministros.suministroshome');})
+        return view('modules.suministros.suministroshome');
+    })
         ->middleware('check.permission:suministro')
         ->name('modulo.suministro');
 
@@ -488,7 +489,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: OPERACIONES
     // ===================================================
     Route::get('/operaciones', function () {
-        return view('modules.operaciones.operacioneshome');})
+        return view('modules.operaciones.operacioneshome');
+    })
         ->middleware('check.permission:operaciones')
         ->name('modulo.operaciones');
 
@@ -496,7 +498,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: ALMACÉN
     // ===================================================
     Route::get('/almacen', function () {
-        return view('modules.almacen.index');})
+        return view('modules.almacen.index');
+    })
         ->middleware('check.permission:almacen')
         ->name('modulo.almacen');
 
