@@ -16,8 +16,7 @@ class TicketStoreController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validación Minimalista: Solo requerimos lo que el usuario realmente aporta.
-        // La prioridad y el estado han sido delegados completamente a la lógica de negocio.
+        // 1. Validación Minimalista
         $request->validate([
             'area_code'   => 'required|string|max:10',
             'subject'     => 'required|string|max:255',
@@ -30,24 +29,33 @@ class TicketStoreController extends Controller
 
                 $code = strtoupper(trim($request->area_code));
 
-                // 3. Generación Concurrente del Folio (Pessimistic Read avoidance approach)
-                // En sistemas de alto tráfico, calcular el max() es más seguro que count() si se borran registros,
-                // pero count() funciona bien si usamos SoftDeletes.
-                $count = Ticket::where('department_code', $code)->count();
-                $folio = $code . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+                // 3. Obtenemos el prefijo corto de Año y Mes (Ej: '2605' para Mayo 2026)
+                $yearMonth = now()->format('ym');
 
-                // 4. Inserción con Default Triage
+                // 4. Contamos los tickets del mes actual para esa área.
+                // Usamos withTrashed() para respetar el constraint unique() de la BD
+                // si es que se llegan a usar SoftDeletes en los tickets.
+                $count = Ticket::withTrashed()
+                    ->where('department_code', $code)
+                    ->whereYear('created_at', now()->year)
+                    ->whereMonth('created_at', now()->month)
+                    ->count();
+
+                // 5. Generación del Folio. Resultado: SIS2605-01
+                $folio = $code . $yearMonth . '-' . str_pad($count + 1, 2, '0', STR_PAD_LEFT);
+
+                // 6. Inserción con Default Triage
                 $ticket = Ticket::create([
                     'folio'           => $folio,
                     'department_code' => $code,
                     'user_id'         => auth()->id(),
                     'subject'         => $request->subject,
                     'description'     => $request->description,
-                    'priority'        => 'sin clasificar', // Asignación automática para evaluación de Sistemas
-                    'status'          => 'nuevo', // Estado inicial inmutable por el usuario
+                    'priority'        => 'sin clasificar',
+                    'status'          => 'nuevo',
                 ]);
 
-                // 5. Respuesta JSON Inmediata para el renderizado asíncrono
+                // 7. Respuesta JSON Inmediata
                 return response()->json([
                     'success' => true,
                     'message' => 'El ticket ha sido registrado en la cola de soporte.',
@@ -56,8 +64,8 @@ class TicketStoreController extends Controller
             });
 
         } catch (\Exception $e) {
-            // 6. Registro Silencioso de Errores Críticos (Log)
-            Log::critical('[Vinco One ERP] Error en creación de Ticket: ' . $e->getMessage(), [
+            // 8. Registro Silencioso de Errores Críticos (Log adaptado para Vinco ERP)
+            Log::critical('[Vinco ERP] Error en creación de Ticket: ' . $e->getMessage(), [
                 'user_id' => auth()->id(),
                 'payload' => $request->all()
             ]);
