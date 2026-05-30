@@ -110,7 +110,8 @@
             <div id="empty-state" class="empty-state hidden">
                 <i class="bx bx-file-blank empty-icon"></i>
                 <p class="empty-title">Sin resultados encontrados</p>
-                <p class="empty-desc">No hay solicitudes que coincidan con los criterios de búsqueda o filtro aplicados en este momento.</p>
+                <p class="empty-desc">No hay solicitudes que coincidan con los criterios de búsqueda o filtro aplicados en
+                    este momento.</p>
             </div>
 
             <div class="table-footer">
@@ -148,7 +149,9 @@
                 {{-- PANEL DE LECTURA DE UUID / XML DEL SAT --}}
                 <div id="uuid-panel" class="hidden"
                     style="background:#0f172a; border:1px solid #1e293b; border-radius:.75rem; padding:1.5rem; margin-bottom:1.5rem; position:relative; overflow:hidden;">
-                    <div style="position:absolute;top:0;left:0;width:100%;height:4px;background:linear-gradient(to right,#14b8a6,#0d9488);"></div>
+                    <div
+                        style="position:absolute;top:0;left:0;width:100%;height:4px;background:linear-gradient(to right,#14b8a6,#0d9488);">
+                    </div>
                     <label class="input-label" style="color:#cbd5e1; font-size:.85rem; margin-bottom:.75rem;">
                         Folio Fiscal (UUID) del comprobante SAT
                     </label>
@@ -164,14 +167,17 @@
                             <i class="bx bx-search"></i> Buscar
                         </button>
                     </div>
-                    <p id="search-message" class="hidden" style="font-size:.72rem;color:#ef4444;margin-bottom:.75rem;"></p>
+                    <p id="search-message" class="hidden" style="font-size:.72rem;color:#ef4444;margin-bottom:.75rem;">
+                    </p>
                     <div id="drop-zone-container" class="hidden" style="border-top:1px solid #334155; padding-top:1rem;">
                         <div id="drop-zone"
                             style="border:2px dashed rgba(20,184,166,.45);background:rgba(20,184,166,.08);border-radius:.75rem;padding:1.5rem;text-align:center;cursor:pointer;transition:background .15s;">
                             <i class="bx bx-cloud-upload" style="font-size:3rem;color:#14b8a6;"></i>
-                            <p style="margin-top:.5rem;font-size:.85rem;color:#cbd5e1;">Búsqueda local fallida o no vinculada.</p>
+                            <p style="margin-top:.5rem;font-size:.85rem;color:#cbd5e1;">Búsqueda local fallida o no
+                                vinculada.</p>
                             <small
-                                style="display:block;margin-top:.25rem;font-size:.75rem;font-weight:600;color:#14b8a6;text-transform:uppercase;">Arrastra tu archivo .XML aquí para extracción local</small>
+                                style="display:block;margin-top:.25rem;font-size:.75rem;font-weight:600;color:#14b8a6;text-transform:uppercase;">Arrastra
+                                tu archivo .XML aquí para extracción local</small>
                             <input type="file" id="xml-input" accept=".xml" style="display:none;">
                         </div>
                     </div>
@@ -198,8 +204,9 @@
                             <span>Lugar de Emisión</span>
                             <div class="input-group" style="margin-top: 3px;">
                                 <i class="bx bx-map field-icon" style="font-size: 1.05rem; left: 0.6rem;"></i>
-                                <input type="text" id="modal-lugar" value="VHSA, TAB." class="input-field modal-focusable"
-                                       style="padding: 0.4rem 0.5rem 0.4rem 2rem; width: 140px; font-weight: 600; color: #0f172a; background: #fff;">
+                                <input type="text" id="modal-lugar" value="VHSA, TAB."
+                                    class="input-field modal-focusable"
+                                    style="padding: 0.4rem 0.5rem 0.4rem 2rem; width: 140px; font-weight: 600; color: #0f172a; background: #fff;">
                             </div>
                         </div>
 
@@ -215,11 +222,13 @@
                                 <label class="input-label">Categoría del Gasto Asignado</label>
                                 <div class="radio-pill-group">
                                     <label class="radio-pill-label">
-                                        <input type="radio" name="tipo_gasto" value="viaje" class="modal-focusable" checked>
+                                        <input type="radio" name="tipo_gasto" value="viaje" class="modal-focusable"
+                                            checked>
                                         <i class="bx bxs-plane-alt"></i> Viáticos y Viaje
                                     </label>
                                     <label class="radio-pill-label">
-                                        <input type="radio" name="tipo_gasto" value="operacion" class="modal-focusable">
+                                        <input type="radio" name="tipo_gasto" value="operacion"
+                                            class="modal-focusable">
                                         <i class="bx bx-briefcase"></i> Operaciones y Campo
                                     </label>
                                     <label class="radio-pill-label">
@@ -235,14 +244,18 @@
                                 <label class="input-label">Nombre del Solicitante</label>
                                 <div class="input-group">
                                     <i class="bx bx-user field-icon"></i>
-                                    <input type="text" id="modal-nombre" value="{{ $userData['nombre'] ?? 'Saul Falcon Perez' }}" class="input-field" readonly>
+                                    <input type="text" id="modal-nombre"
+                                        value="{{ $userData['nombre'] ?? 'Saul Falcon Perez' }}" class="input-field"
+                                        readonly>
                                 </div>
                             </div>
                             <div>
                                 <label class="input-label">Área / Departamento</label>
                                 <div class="input-group">
                                     <i class="bx bx-buildings field-icon"></i>
-                                    <input type="text" id="modal-depto" value="{{ $userData['departamento'] ?? 'Desarrollo de Software' }}" class="input-field" readonly>
+                                    <input type="text" id="modal-depto"
+                                        value="{{ $userData['departamento'] ?? 'Desarrollo de Software' }}"
+                                        class="input-field" readonly>
                                 </div>
                             </div>
                             <div>
@@ -262,7 +275,8 @@
                                 <label class="input-label">Motivo de la Erogación</label>
                                 <div class="input-group">
                                     <i class="bx bx-text field-icon"></i>
-                                    <input type="text" id="modal-motivo" class="input-field modal-focusable" placeholder="Ej. Viáticos técnicos a pozo foráneo">
+                                    <input type="text" id="modal-motivo" class="input-field modal-focusable"
+                                        placeholder="Ej. Viáticos técnicos a pozo foráneo">
                                 </div>
                             </div>
                         </div>
@@ -283,7 +297,9 @@
                                     <th colspan="3" style="text-align:left;">Comprobante Identificador</th>
                                     <th colspan="3" class="th-importes">Importes Subtotales</th>
                                     <th colspan="2">Retenciones / Impuestos</th>
-                                    <th rowspan="2" style="background:#0f172a; color:#fff; text-align:right; padding:.6rem .75rem;">Monto Total</th>
+                                    <th rowspan="2"
+                                        style="background:#0f172a; color:#fff; text-align:right; padding:.6rem .75rem;">
+                                        Monto Total</th>
                                     <th rowspan="2" style="background:#0f172a; width:45px;"></th>
                                 </tr>
                                 <tr class="th-cols">
@@ -303,24 +319,37 @@
                                 <tr class="cat-row">
                                     <td colspan="10">
                                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                                            <span><i class="bx bxs-plane-alt"></i> I. Transportación, Vuelos y Peajes</span>
-                                            <button type="button" class="btn-add-row" onclick="addRow('cat-vuelos')" title="Agregar Fila de Gasto">
+                                            <span><i class="bx bxs-plane-alt"></i> I. Transportación, Vuelos y
+                                                Peajes</span>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-vuelos')"
+                                                title="Agregar Fila de Gasto">
                                                 <i class="bx bx-plus"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr class="data-row">
-                                    <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
+                                    <td>
+                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
+                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
+                                                data-fp></div>
+                                    </td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                                     <td class="cell-row-total">-</td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar este concepto"><i class="bx bx-trash"></i></button></td>
+                                    <td style="text-align:center;"><button type="button" class="btn-remove-row"
+                                            onclick="removeRow(this)" title="Eliminar este concepto"><i
+                                                class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
 
@@ -329,24 +358,37 @@
                                 <tr class="cat-row">
                                     <td colspan="10">
                                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                                            <span><i class="bx bx-restaurant"></i> II. Consumo de Alimentos y Restaurantes</span>
-                                            <button type="button" class="btn-add-row" onclick="addRow('cat-restaurantes')" title="Agregar Fila de Gasto">
+                                            <span><i class="bx bx-restaurant"></i> II. Consumo de Alimentos y
+                                                Restaurantes</span>
+                                            <button type="button" class="btn-add-row"
+                                                onclick="addRow('cat-restaurantes')" title="Agregar Fila de Gasto">
                                                 <i class="bx bx-plus"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr class="data-row">
-                                    <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
+                                    <td>
+                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
+                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
+                                                data-fp></div>
+                                    </td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                                     <td class="cell-row-total">-</td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar este concepto"><i class="bx bx-trash"></i></button></td>
+                                    <td style="text-align:center;"><button type="button" class="btn-remove-row"
+                                            onclick="removeRow(this)" title="Eliminar este concepto"><i
+                                                class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
 
@@ -356,23 +398,35 @@
                                     <td colspan="10">
                                         <div style="display:flex; justify-content:space-between; align-items:center;">
                                             <span><i class="bx bxs-gas-pump"></i> III. Abastecimiento de Combustible</span>
-                                            <button type="button" class="btn-add-row" onclick="addRow('cat-combustible')" title="Agregar Fila de Gasto">
+                                            <button type="button" class="btn-add-row"
+                                                onclick="addRow('cat-combustible')" title="Agregar Fila de Gasto">
                                                 <i class="bx bx-plus"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr class="data-row">
-                                    <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
+                                    <td>
+                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
+                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
+                                                data-fp></div>
+                                    </td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                                     <td class="cell-row-total">-</td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar este concepto"><i class="bx bx-trash"></i></button></td>
+                                    <td style="text-align:center;"><button type="button" class="btn-remove-row"
+                                            onclick="removeRow(this)" title="Eliminar este concepto"><i
+                                                class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
 
@@ -382,23 +436,35 @@
                                     <td colspan="10">
                                         <div style="display:flex; justify-content:space-between; align-items:center;">
                                             <span><i class="bx bx-package"></i> IV. Cargos Varios / Misceláneos</span>
-                                            <button type="button" class="btn-add-row" onclick="addRow('cat-otros')" title="Agregar Fila de Gasto">
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-otros')"
+                                                title="Agregar Fila de Gasto">
                                                 <i class="bx bx-plus"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr class="data-row">
-                                    <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
+                                    <td>
+                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
+                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
+                                                data-fp></div>
+                                    </td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()"
+                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                                     <td class="cell-row-total">-</td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar este concepto"><i class="bx bx-trash"></i></button></td>
+                                    <td style="text-align:center;"><button type="button" class="btn-remove-row"
+                                            onclick="removeRow(this)" title="Eliminar este concepto"><i
+                                                class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -412,7 +478,8 @@
                         onclick="document.getElementById('evidence-upload').click()">
                         <i class="bx bxs-file-pdf evidence-icon"></i>
                         <h4 class="evidence-title">Gestor Documental (PDF)</h4>
-                        <p class="evidence-desc">Arrastra y suelta tus facturas, tickets y documentación probatoria aquí.<br>Carga máxima de 10MB por archivo unitario.</p>
+                        <p class="evidence-desc">Arrastra y suelta tus facturas, tickets y documentación probatoria
+                            aquí.<br>Carga máxima de 10MB por archivo unitario.</p>
                         <button type="button" class="btn btn-secondary"
                             onclick="event.stopPropagation(); document.getElementById('evidence-upload').click()">
                             <i class="bx bx-folder-plus"></i> Examinar archivos locales
@@ -427,10 +494,10 @@
                             <span>Consolidado Financiero</span>
                         </div>
                         <div class="summary-body">
-                            <div class="summary-row"><span class="sum-lbl">Sub-Total Neto:</span><span
-                                    id="sum-subtotal" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Suma Erogada (Base):</span><span id="sum-gastos"
+                            <div class="summary-row"><span class="sum-lbl">Sub-Total Neto:</span><span id="sum-subtotal"
                                     class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Suma Erogada (Base):</span><span
+                                    id="sum-gastos" class="sum-val">$0.00</span></div>
                             <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva"
                                     class="sum-val">$0.00</span></div>
                             <div class="summary-row"><span class="sum-lbl">Impuestos Locales (I.S.H.):</span><span
@@ -480,12 +547,15 @@
                     </button>
 
                     {{-- Botón Validar (Fase 1: Administración) --}}
-                    <button type="button" class="btn btn-secondary" id="btn-eval-validate" style="color:var(--teal-dark); border-color:var(--teal-dark);" onclick="processEvaluation('Validado')">
+                    <button type="button" class="btn btn-secondary" id="btn-eval-validate"
+                        style="color:var(--teal-dark); border-color:var(--teal-dark);"
+                        onclick="processEvaluation('Validado')">
                         <i class="bx bx-list-check"></i> Validar
                     </button>
 
                     {{-- Botón Aprobar (Fase 2: Gerencia) --}}
-                    <button type="button" class="btn btn-ok-solid" id="btn-eval-approve" onclick="processEvaluation('Aprobado')">
+                    <button type="button" class="btn btn-ok-solid" id="btn-eval-approve"
+                        onclick="processEvaluation('Aprobado')">
                         <i class="bx bx-check-double"></i> Aprobar
                     </button>
                 </div>
@@ -592,8 +662,8 @@
                 motivo: 'Pago de suscripción servidores IONOS y Dominio web',
                 depto: 'Desarrollo de Software',
                 amount: 1450.00,
-                status: 'Aprobado',  // Aprobado por el Gerente, ya pasó la Fase 2
-                pago: 'Por pagar'    // Tesorería (Fase 3) ya está preparando el dinero (Reemplazo de "En proceso")
+                status: 'Aprobado', // Aprobado por el Gerente, ya pasó la Fase 2
+                pago: 'Por pagar' // Tesorería (Fase 3) ya está preparando el dinero (Reemplazo de "En proceso")
             }
         ];
 
@@ -639,7 +709,13 @@
             const tableCount = document.getElementById('table-count');
             list.innerHTML = '';
 
-            let totalAcc = 0, pendCount = 0, pendAmt = 0, appCount = 0, appAmt = 0, rejCount = 0, rejAmt = 0;
+            let totalAcc = 0,
+                pendCount = 0,
+                pendAmt = 0,
+                appCount = 0,
+                appAmt = 0,
+                rejCount = 0,
+                rejAmt = 0;
 
             // Computar métricas analíticas
             requests.forEach(req => {
@@ -673,10 +749,10 @@
             let filtered = requests.filter(req => {
                 const matchFilter = activeFilter === 'all' || req.status === activeFilter;
                 const matchSearch = !searchQuery ||
-                                    req.motivo.toLowerCase().includes(searchQuery) ||
-                                    req.folioP.toLowerCase().includes(searchQuery) ||
-                                    req.folioU.toLowerCase().includes(searchQuery) ||
-                                    req.nombre.toLowerCase().includes(searchQuery);
+                    req.motivo.toLowerCase().includes(searchQuery) ||
+                    req.folioP.toLowerCase().includes(searchQuery) ||
+                    req.folioU.toLowerCase().includes(searchQuery) ||
+                    req.nombre.toLowerCase().includes(searchQuery);
                 return matchFilter && matchSearch;
             });
 
@@ -694,24 +770,37 @@
 
                 // 1. ÁRBOL DE DECISIÓN: ESTADO DE REVISIÓN
                 let badge = '';
-                if (req.status === 'Aprobado') badge = `<span class="status-badge badge-ok"><i class="bx bx-check-circle"></i> Aprobado</span>`;
-                else if (req.status === 'Rechazado') badge = `<span class="status-badge badge-fail"><i class="bx bx-x-circle"></i> Rechazado</span>`;
-                else if (req.status === 'Validado') badge = `<span class="status-badge badge-review"><i class="bx bx-list-check"></i> Validado</span>`;
-                else if (req.status === 'Borrador') badge = `<span class="status-badge badge-draft"><i class="bx bx-edit-alt"></i> Borrador</span>`;
-                else badge = `<span class="status-badge badge-wait"><i class="bx bx-hourglass"></i> Pendiente</span>`;
+                if (req.status === 'Aprobado') badge =
+                    `<span class="status-badge badge-ok"><i class="bx bx-check-circle"></i> Aprobado</span>`;
+                else if (req.status === 'Rechazado') badge =
+                    `<span class="status-badge badge-fail"><i class="bx bx-x-circle"></i> Rechazado</span>`;
+                else if (req.status === 'Validado') badge =
+                    `<span class="status-badge badge-review"><i class="bx bx-list-check"></i> Validado</span>`;
+                else if (req.status === 'Borrador') badge =
+                    `<span class="status-badge badge-draft"><i class="bx bx-edit-alt"></i> Borrador</span>`;
+                else badge =
+                    `<span class="status-badge badge-wait"><i class="bx bx-hourglass"></i> Pendiente</span>`;
 
                 // 2. ÁRBOL DE DECISIÓN: ESTADO FINANCIERO / PAGO
                 let badgePago = '';
-                if (req.pago === 'Pagado') badgePago = `<span class="status-badge badge-payment-paid"><i class="bx bx-money"></i> Pagado</span>`;
-                else if (req.pago === 'Por pagar') badgePago = `<span class="status-badge badge-payment-process"><i class="bx bx-wallet"></i> Por pagar</span>`;
-                else if (req.pago === 'Por autorizar') badgePago = `<span class="status-badge badge-payment-auth"><i class="bx bx-user-voice"></i> Por autorizar</span>`;
-                else if (req.pago === 'En espera') badgePago = `<span class="status-badge badge-payment-wait"><i class="bx bx-time-five"></i> En espera</span>`;
-                else if (req.pago === 'No procede') badgePago = `<span class="status-badge badge-payment-void"><i class="bx bx-block"></i> No procede</span>`;
-                else badgePago = `<span class="status-badge badge-disabled"><i class="bx bx-minus"></i> ${req.pago || 'N/A'}</span>`;
+                if (req.pago === 'Pagado') badgePago =
+                    `<span class="status-badge badge-payment-paid"><i class="bx bx-money"></i> Pagado</span>`;
+                else if (req.pago === 'Por pagar') badgePago =
+                    `<span class="status-badge badge-payment-process"><i class="bx bx-wallet"></i> Por pagar</span>`;
+                else if (req.pago === 'Por autorizar') badgePago =
+                    `<span class="status-badge badge-payment-auth"><i class="bx bx-user-voice"></i> Por autorizar</span>`;
+                else if (req.pago === 'En espera') badgePago =
+                    `<span class="status-badge badge-payment-wait"><i class="bx bx-time-five"></i> En espera</span>`;
+                else if (req.pago === 'No procede') badgePago =
+                    `<span class="status-badge badge-payment-void"><i class="bx bx-block"></i> No procede</span>`;
+                else badgePago =
+                    `<span class="status-badge badge-disabled"><i class="bx bx-minus"></i> ${req.pago || 'N/A'}</span>`;
 
                 // 3. RENDERIZACIÓN CONDICIONAL DE CONTROLES Y ACCIONES
                 // El botón evaluar se muestra a roles directivos en 'Pendiente' o 'Validado'.
-                const evaluateBtn = (req.status === 'Pendiente' || req.status === 'Validado') ? `<button class="btn-icon btn-icon-evaluate" onclick="evaluarSolicitud(${req.id})" title="Gestionar Resolución"><i class="bx bx-check-shield"></i></button>` : '';
+                const evaluateBtn = (req.status === 'Pendiente' || req.status === 'Validado') ?
+                    `<button class="btn-icon btn-icon-evaluate" onclick="evaluarSolicitud(${req.id})" title="Gestionar Resolución"><i class="bx bx-check-shield"></i></button>` :
+                    '';
 
                 const actions = `
                     <div class="actions-wrap">
@@ -765,14 +854,19 @@
             tbody.insertAdjacentHTML('beforeend', getRowTemplate());
             const newRow = tbody.lastElementChild;
             // Instanciar Flatpickr para el nuevo input de fecha
-            flatpickr(newRow.querySelector('[data-fp]'), { locale: "es", dateFormat: "d/m/Y", allowInput: true, disableMobile: "true" });
+            flatpickr(newRow.querySelector('[data-fp]'), {
+                locale: "es",
+                dateFormat: "d/m/Y",
+                allowInput: true,
+                disableMobile: "true"
+            });
         }
 
         function removeRow(btn) {
             const row = btn.closest('tr');
             const tbody = row.closest('tbody');
             // Impedir que se quede un body completamente vacío para garantizar integridad en calcTotal
-            if(tbody.querySelectorAll('.data-row').length > 1) {
+            if (tbody.querySelectorAll('.data-row').length > 1) {
                 row.remove();
                 calcTotal();
             } else {
@@ -786,11 +880,14 @@
             ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
                 const tbody = document.getElementById(cat);
                 const rows = tbody.querySelectorAll('.data-row');
-                for(let i = 1; i < rows.length; i++) { rows[i].remove(); } // Limpia clónicas
+                for (let i = 1; i < rows.length; i++) {
+                    rows[i].remove();
+                } // Limpia clónicas
             });
 
             document.querySelectorAll('.cell-input').forEach(el => {
-                if (!el.hasAttribute('readonly') && (el.type === 'number' || (el.type === 'text' && !el.hasAttribute('data-fp')))) el.value = '';
+                if (!el.hasAttribute('readonly') && (el.type === 'number' || (el.type === 'text' && !el
+                        .hasAttribute('data-fp')))) el.value = '';
             });
             document.getElementById('modal-motivo').value = '';
             document.getElementById('modal-centro-costos').value = '';
@@ -803,12 +900,18 @@
             calcTotal();
 
             // Re-vincular Datepickers
-            flatpickr(".data-row [data-fp]", { locale: "es", dateFormat: "d/m/Y", allowInput: true, disableMobile: "true" });
+            flatpickr(".data-row [data-fp]", {
+                locale: "es",
+                dateFormat: "d/m/Y",
+                allowInput: true,
+                disableMobile: "true"
+            });
         }
 
         function openModalForCreate() {
             resetModalForm();
-            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
+            document.getElementById('main-modal-title').innerHTML =
+                '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
             document.getElementById('modal-folio-p').textContent = `VES-${String(currentId).padStart(4, '0')}`;
 
             // Datos del contexto personal de la aplicación, como solicitaste anteriormente
@@ -825,9 +928,10 @@
 
         function verDetalles(id) {
             const req = requests.find(r => r.id === id);
-            if(!req) return;
+            if (!req) return;
             resetModalForm();
-            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-search-alt"></i> Inspección del <strong>Folio: ' + req.folioP + '</strong>';
+            document.getElementById('main-modal-title').innerHTML =
+                '<i class="bx bx-search-alt"></i> Inspección del <strong>Folio: ' + req.folioP + '</strong>';
 
             // Rellenar información analizada
             document.getElementById('modal-folio-p').textContent = req.folioP;
@@ -845,9 +949,10 @@
 
         function evaluarSolicitud(id) {
             const req = requests.find(r => r.id === id);
-            if(!req) return;
+            if (!req) return;
             resetModalForm();
-            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-check-shield"></i> Ejecución de Dictamen Administrativo';
+            document.getElementById('main-modal-title').innerHTML =
+                '<i class="bx bx-check-shield"></i> Ejecución de Dictamen Administrativo';
             currentEvaluateId = id;
 
             // Inyección de Data Base Local
@@ -863,7 +968,7 @@
             const btnApprove = document.getElementById('btn-eval-approve');
 
             // Si está pendiente, Fase 1 (Validar) es el paso correcto. Si ya se validó, entra Fase 2 (Aprobar).
-            if(req.status === 'Pendiente') {
+            if (req.status === 'Pendiente') {
                 btnValidate.classList.remove('hidden');
                 btnApprove.classList.add('hidden');
             } else if (req.status === 'Validado') {
@@ -883,7 +988,7 @@
 
         /* ── MOTOR DE ORQUESTACIÓN Y FLUJOS CORPORATIVOS DE ESTADOS ── */
         function processEvaluation(status) {
-            if(!currentEvaluateId) return;
+            if (!currentEvaluateId) return;
 
             let actionText = '';
             let confirmColor = '';
@@ -937,7 +1042,8 @@
                 }
 
                 renderDashboard();
-                showToast(`El folio fue procesado como ${status.toUpperCase()} exitosamente en la plataforma.`, status === 'Rechazado' ? 'error' : 'success');
+                showToast(`El folio fue procesado como ${status.toUpperCase()} exitosamente en la plataforma.`, status ===
+                    'Rechazado' ? 'error' : 'success');
             }
         }
 
@@ -947,22 +1053,43 @@
         const evidenciaInput = document.getElementById('evidence-upload');
         const evidenciaPanel = document.getElementById('evidence-panel');
 
-        evidenciaInput.addEventListener('change', function(e) { procesarArchivosEvidencia(e.target.files); this.value = ''; });
-        evidenciaPanel.addEventListener('dragover', e => { e.preventDefault(); evidenciaPanel.classList.add('dragover'); });
-        evidenciaPanel.addEventListener('dragleave', e => { e.preventDefault(); evidenciaPanel.classList.remove('dragover'); });
-        evidenciaPanel.addEventListener('drop', e => { e.preventDefault(); evidenciaPanel.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivosEvidencia(e.dataTransfer.files); });
+        evidenciaInput.addEventListener('change', function(e) {
+            procesarArchivosEvidencia(e.target.files);
+            this.value = '';
+        });
+        evidenciaPanel.addEventListener('dragover', e => {
+            e.preventDefault();
+            evidenciaPanel.classList.add('dragover');
+        });
+        evidenciaPanel.addEventListener('dragleave', e => {
+            e.preventDefault();
+            evidenciaPanel.classList.remove('dragover');
+        });
+        evidenciaPanel.addEventListener('drop', e => {
+            e.preventDefault();
+            evidenciaPanel.classList.remove('dragover');
+            if (e.dataTransfer.files.length) procesarArchivosEvidencia(e.dataTransfer.files);
+        });
 
         function procesarArchivosEvidencia(files) {
-            let errorSize = false, errorType = false;
+            let errorSize = false,
+                errorType = false;
             Array.from(files).forEach(file => {
-                if (file.type !== 'application/pdf') { errorType = true; return; }
-                if (file.size > maxFileSize) { errorSize = true; return; }
+                if (file.type !== 'application/pdf') {
+                    errorType = true;
+                    return;
+                }
+                if (file.size > maxFileSize) {
+                    errorSize = true;
+                    return;
+                }
                 if (!evidenciasFiles.some(f => f.name === file.name)) evidenciasFiles.push(file);
             });
 
             // Emisión de Alertas de validación de extensión
             if (errorType) showToast('Exclusión de formato detectada: Restringido a documentos Adobe PDF.', 'warning');
-            if (errorSize) showToast('Restricción de volúmen: Uno o más ficheros superan la cota técnica (10 MB).', 'error');
+            if (errorSize) showToast('Restricción de volúmen: Uno o más ficheros superan la cota técnica (10 MB).',
+            'error');
 
             renderFileList();
             actualizarInputFiles();
@@ -983,7 +1110,8 @@
 
         function formatBytes(bytes, decimals = 2) {
             if (!+bytes) return '0 Bytes';
-            const k = 1024, dm = decimals < 0 ? 0 : decimals;
+            const k = 1024,
+                dm = decimals < 0 ? 0 : decimals;
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
@@ -1021,16 +1149,23 @@
             const uuid = document.getElementById('search-uuid').value.trim();
             const btnB = document.getElementById('btn-buscar');
             const dz = document.getElementById('drop-zone-container');
-            if (uuid.length < 10) { showToast('Esquema UUID Inválido. Ingrese una nomenclatura SAT compatible.', 'warning'); return; }
+            if (uuid.length < 10) {
+                showToast('Esquema UUID Inválido. Ingrese una nomenclatura SAT compatible.', 'warning');
+                return;
+            }
 
             // Feedback visual UX de red local
             btnB.innerHTML = '<span class="spinner"></span> Consultando BD Local...';
-            btnB.disabled = true; dz.classList.add('hidden');
+            btnB.disabled = true;
+            dz.classList.add('hidden');
 
             setTimeout(() => {
                 btnB.innerHTML = '<i class="bx bx-search"></i> Ejecutar Búsqueda';
-                btnB.disabled = false; dz.classList.remove('hidden');
-                showToast('Búsqueda SAT en vacio: Registros no encontrados en el cache del sistema. Utilice Parseo XML Manual.', 'error');
+                btnB.disabled = false;
+                dz.classList.remove('hidden');
+                showToast(
+                    'Búsqueda SAT en vacio: Registros no encontrados en el cache del sistema. Utilice Parseo XML Manual.',
+                    'error');
             }, 850);
         }
 
@@ -1038,17 +1173,31 @@
         const xmlInput = document.getElementById('xml-input');
         dropZoneUI.addEventListener('click', () => xmlInput.click());
         xmlInput.addEventListener('change', e => leerXML(e.target.files[0]));
-        dropZoneUI.addEventListener('dragover', e => { e.preventDefault(); dropZoneUI.style.background = 'rgba(20,184,166,.18)'; });
-        dropZoneUI.addEventListener('dragleave', e => { e.preventDefault(); dropZoneUI.style.background = ''; });
-        dropZoneUI.addEventListener('drop', e => { e.preventDefault(); dropZoneUI.style.background = ''; if (e.dataTransfer.files.length) leerXML(e.dataTransfer.files[0]); });
+        dropZoneUI.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZoneUI.style.background = 'rgba(20,184,166,.18)';
+        });
+        dropZoneUI.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dropZoneUI.style.background = '';
+        });
+        dropZoneUI.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZoneUI.style.background = '';
+            if (e.dataTransfer.files.length) leerXML(e.dataTransfer.files[0]);
+        });
 
         function leerXML(file) {
-            if (!file || file.type !== 'text/xml') { showToast('Incompatibilidad: Provea un archivo con extensión (.xml)', 'error'); return; }
+            if (!file || file.type !== 'text/xml') {
+                showToast('Incompatibilidad: Provea un archivo con extensión (.xml)', 'error');
+                return;
+            }
             const reader = new FileReader();
             reader.onload = e => {
                 const xml = new DOMParser().parseFromString(e.target.result, 'text/xml');
                 const attr = (tag, a) => {
-                    const n = xml.getElementsByTagNameNS('*', tag)[0] || xml.getElementsByTagName(tag)[0] || xml.getElementsByTagName('cfdi:' + tag)[0];
+                    const n = xml.getElementsByTagNameNS('*', tag)[0] || xml.getElementsByTagName(tag)[0] || xml
+                        .getElementsByTagName('cfdi:' + tag)[0];
                     return n ? n.getAttribute(a) : null;
                 };
                 // Análisis Estructural del CFDI 3.3/4.0
@@ -1057,13 +1206,17 @@
                     rfc: attr('Emisor', 'Rfc') || 'Sin RFC Asociado',
                     fecha: (attr('Comprobante', 'Fecha') || '').split('T')[0]
                 };
-                if (d.fecha) { const [y, m, dd] = d.fecha.split('-'); d.fechaFormateada = `${dd}/${m}/${y}`; }
+                if (d.fecha) {
+                    const [y, m, dd] = d.fecha.split('-');
+                    d.fechaFormateada = `${dd}/${m}/${y}`;
+                }
                 if (d.uuid) {
                     document.getElementById('res-rfc').textContent = d.rfc;
                     document.getElementById('search-uuid').value = d.uuid;
                     const firstDateInput = document.querySelector('[data-fp]');
                     if (firstDateInput && d.fechaFormateada) {
-                        if (firstDateInput._flatpickr) firstDateInput._flatpickr.setDate(d.fechaFormateada, true, "d/m/Y");
+                        if (firstDateInput._flatpickr) firstDateInput._flatpickr.setDate(d.fechaFormateada, true,
+                            "d/m/Y");
                         else firstDateInput.value = d.fechaFormateada;
                     }
                     document.getElementById('uuid-panel').classList.add('hidden');
@@ -1077,7 +1230,9 @@
 
         /* ── COMPUTADORA CONTABLE DE LA TABLA ── */
         function calcTotal() {
-            let gSub = 0, gIva = 0, gIsh = 0;
+            let gSub = 0,
+                gIva = 0,
+                gIsh = 0;
             document.querySelectorAll('.data-row').forEach(row => {
                 let rSub = 0;
                 const rIva = parseFloat(row.querySelector('.c-iva')?.value) || 0;
@@ -1086,7 +1241,9 @@
                 const rowTotal = row.querySelector('.cell-row-total');
 
                 if (rowTotal) rowTotal.textContent = (rSub + rIva + rIsh) > 0 ? fmt(rSub + rIva + rIsh) : '-';
-                gSub += rSub; gIva += rIva; gIsh += rIsh;
+                gSub += rSub;
+                gIva += rIva;
+                gIsh += rIsh;
             });
             const gTotal = gSub + gIva + gIsh;
 
@@ -1108,10 +1265,23 @@
             const centroCostos = document.getElementById('modal-centro-costos').value;
 
             // Restricciones del Negocio
-            if (total <= 0) { showToast('Restricción: Las sumas del desglose deben ser mayores a $0 para enviar a contabilidad.', 'error'); return; }
-            if (!centroCostos) { showToast('Restricción: Por favor, ingrese un Centro de Costos válido.', 'error'); return; }
-            if (!motivo) { showToast('Falta de Información: Ingrese la justificación del gasto incurrido.', 'error'); return; }
-            if (evidenciasFiles.length === 0) { showToast('Auditoría Contable: Es mandatorio proveer la evidencia digital (Archivo PDF).', 'warning'); return; }
+            if (total <= 0) {
+                showToast('Restricción: Las sumas del desglose deben ser mayores a $0 para enviar a contabilidad.',
+                'error');
+                return;
+            }
+            if (!centroCostos) {
+                showToast('Restricción: Por favor, ingrese un Centro de Costos válido.', 'error');
+                return;
+            }
+            if (!motivo) {
+                showToast('Falta de Información: Ingrese la justificación del gasto incurrido.', 'error');
+                return;
+            }
+            if (evidenciasFiles.length === 0) {
+                showToast('Auditoría Contable: Es mandatorio proveer la evidencia digital (Archivo PDF).', 'warning');
+                return;
+            }
 
             Swal.fire({
                 title: `<span style="font-family:'Poppins', sans-serif;">Consentimiento de Transacción</span>`,
@@ -1142,7 +1312,9 @@
             const motivo = document.getElementById('modal-motivo').value.trim();
 
             if (!motivo) {
-                showToast('Advertencia: El guardado referencial exige una descripción de motivo para ubicarlo en el futuro.', 'warning');
+                showToast(
+                    'Advertencia: El guardado referencial exige una descripción de motivo para ubicarlo en el futuro.',
+                    'warning');
                 return;
             }
 
@@ -1154,7 +1326,8 @@
         function procesarEnvio(estadoRevision, estadoPago) {
             const total = parseFloat(document.getElementById('sum-total').getAttribute('data-value'));
             const f = new Date();
-            const fechaStr = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
+            const fechaStr =
+                `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
 
             requests.unshift({
                 id: currentId++,

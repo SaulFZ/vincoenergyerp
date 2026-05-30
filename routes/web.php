@@ -1,4 +1,6 @@
 <?php
+/* CONTROLADORES DE RECURSOS Generañ */
+use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
 
 /* CONTROLADORES DE RECURSOS administration */
@@ -126,9 +128,10 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
 
                 // 3. BÓVEDA SAT (Credenciales de e.firma)
-                Route::controller(SatCredentialController::class)->group(function () {
-                    Route::get('/sat-credentials', 'index')->name('expense-claims.sat.index');
-                    Route::post('/sat-credentials', 'store')->name('expense-claims.sat.store');
+                Route::controller(FslNodeController::class)->group(function () {
+                    // La URL no dirá nada sobre "sat" o "credenciales"
+                    Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
+                    Route::post('/sys-config-node', 'store')->name('expense-claims.node.store');
                 });
 
             });

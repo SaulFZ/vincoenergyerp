@@ -8,9 +8,11 @@
     <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <link href="{{ asset('assets/css/administration/expense-claims/index.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/administration/expense-claims/reimbursements.css') }}" rel="stylesheet">
@@ -37,9 +39,9 @@
                 <i class="fas fa-chart-pie"></i> Estadísticas
             </a>
 
-            {{-- ── NUEVO ENLACE: BÓVEDA SAT ── --}}
-            <a href="#" class="nav-link" data-route="sat-credentials">
-                <i class="fas fa-shield-alt"></i> Bóveda SAT
+            {{-- ── NUEVO ENLACE: NODOS DE SEGURIDAD (BÓVEDA SAT CAMUFLADA) ── --}}
+            <a href="#" class="nav-link" data-route="sys-config-node">
+                <i class="fas fa-shield-alt"></i> Nodos de Seguridad
             </a>
         </nav>
 
