@@ -58,7 +58,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     actualizarBotonReunionConvoy();
     actualizarBotonEvaluacion();
 
-    // AGREGAR ESTA LÍNEA
+    configurarLimitesEvaluacion(); // <--- ¡NUEVA LÍNEA AQUÍ!
+
     mostrarFechaActual();
 });
 
@@ -1461,41 +1462,41 @@ function llenarModalEvaluacionLectura(assessment) {
 
     form.reset();
 
-    // Mapeo Inverso (Backend a Frontend)
-    const mapeoCampos = {
-        defensive_driving_score: "ev_manejo",
-        awake_hours_score: "ev_horas",
-        fleet_composition_score: "ev_vehiculos",
-        communication_score: "ev_comunicacion",
-        weather_score: "ev_clima",
-        lighting_score: "ev_iluminacion",
-        road_condition_score: "ev_carretera",
-        extra_road_hazards_score: "ev_otras",
-        wildlife_activity_score: "ev_animales",
-        route_security_score: "ev_seguridad",
-        hazardous_material_score: "ev_radiactivo",
+    // Ahora mapeamos el TEXTO GUARDADO, ya no el puntaje, para separar los concatenados ("Opcion 1 | Opcion 2")
+    const mapeoTextos = {
+        defensive_driving_option: "ev_manejo",
+        awake_hours_option: "ev_horas",
+        fleet_composition_option: "ev_vehiculos",
+        communication_option: "ev_comunicacion",
+        weather_option: "ev_clima",
+        lighting_option: "ev_iluminacion",
+        road_condition_option: "ev_carretera",
+        extra_road_hazards_option: "ev_otras",
+        wildlife_activity_option: "ev_animales",
+        route_security_option: "ev_seguridad",
+        hazardous_material_option: "ev_radiactivo",
     };
 
-    // Llenar Radios
-    for (const [dbName, frontName] of Object.entries(mapeoCampos)) {
-        if (assessment[dbName] !== undefined && assessment[dbName] !== null) {
-            const val = assessment[dbName];
-            const radio = form.querySelector(
-                `input[name="${frontName}"][value="${val}"]`,
-            );
-            if (radio) {
-                radio.checked = true;
-                // Pintar visualmente la opción seleccionada
-                const allRadios = form.querySelectorAll(`input[name="${frontName}"]`);
-                allRadios.forEach((r) => {
-                    if (r.parentElement)
-                        r.parentElement.style.opacity = r === radio ? "1" : "0.5";
-                });
-            }
+    for (const [dbOpt, frontName] of Object.entries(mapeoTextos)) {
+        if (assessment[dbOpt] !== undefined && assessment[dbOpt] !== null) {
+            // Dividimos por el separador que usamos al guardar
+            const opcionesSeleccionadas = assessment[dbOpt].split(" | ");
+            const inputs = form.querySelectorAll(`input[name="${frontName}"]`);
+
+            inputs.forEach(input => {
+                const labelTexto = input.parentElement.textContent.replace(/\s+/g, " ").trim();
+
+                if (opcionesSeleccionadas.includes(labelTexto)) {
+                    input.checked = true;
+                    if (input.parentElement) input.parentElement.style.opacity = "1";
+                } else {
+                    if (input.parentElement) input.parentElement.style.opacity = "0.5";
+                }
+            });
         }
     }
 
-    // Llenar Checkboxes Críticos
+    // Llenar Checkboxes Críticos (Esto se queda igual)
     const checks = {
         ev_horario_nocturno: assessment.is_night_shift,
         ev_horas_dormidas: assessment.has_low_sleep,
@@ -1519,7 +1520,6 @@ function llenarModalEvaluacionLectura(assessment) {
         }
     }
 }
-
 async function actualizarEstadisticas() {
     try {
         // 👇 AQUÍ ESTÁ EL CAMBIO: Actualizamos la URL a /journeys/stats
@@ -5805,44 +5805,88 @@ async function cargarAutorizadores(nivelRiesgo) {
     }
 }
 
+// ====================================================================
+// LÍMITES PARA CHECKBOXES DE EVALUACIÓN
+// ====================================================================
+function configurarLimitesEvaluacion() {
+    // Límite para pregunta 7 (ev_carretera) - Máximo 2
+    const carreteraChecks = document.querySelectorAll('input[name="ev_carretera"]');
+    carreteraChecks.forEach(check => {
+        check.addEventListener('change', function() {
+            const seleccionados = document.querySelectorAll('input[name="ev_carretera"]:checked');
+            if (seleccionados.length > 2) {
+                this.checked = false; // Desmarcamos el intento de sobrepasar el límite
+                Swal.fire({
+                    toast: true, position: 'top-end', icon: 'warning',
+                    title: 'Máximo 2 opciones permitidas', showConfirmButton: false, timer: 2000
+                });
+            }
+        });
+    });
+
+    // Límite para pregunta 8 (ev_otras) - Máximo 3 + Lógica "No aplica"
+    const otrasChecks = document.querySelectorAll('input[name="ev_otras"]');
+    otrasChecks.forEach(check => {
+        check.addEventListener('change', function() {
+            const esNoAplica = this.parentElement.textContent.includes('No aplica');
+
+            // Si marcó "No aplica", desmarcamos todas las demás
+            if (this.checked && esNoAplica) {
+                otrasChecks.forEach(c => { if(c !== this) c.checked = false; });
+            }
+            // Si marcó otra opción, quitamos la marca de "No aplica"
+            else if (this.checked) {
+                otrasChecks.forEach(c => {
+                    if(c.parentElement.textContent.includes('No aplica')) c.checked = false;
+                });
+            }
+
+            // Validar límite de 3
+            const nuevosSeleccionados = document.querySelectorAll('input[name="ev_otras"]:checked');
+            if (nuevosSeleccionados.length > 3) {
+                this.checked = false;
+                Swal.fire({
+                    toast: true, position: 'top-end', icon: 'warning',
+                    title: 'Máximo 3 opciones permitidas', showConfirmButton: false, timer: 2000
+                });
+            }
+        });
+    });
+}
+
 function guardarEvaluacion() {
     const form = document.getElementById("formEvaluacionRiesgo");
     if (!form) return;
 
     const categorias = [
-        "ev_manejo",
-        "ev_horas",
-        "ev_vehiculos",
-        "ev_comunicacion",
-        "ev_clima",
-        "ev_iluminacion",
-        "ev_carretera",
-        "ev_otras",
-        "ev_animales",
-        "ev_seguridad",
+        "ev_manejo", "ev_horas", "ev_vehiculos", "ev_comunicacion",
+        "ev_clima", "ev_iluminacion", "ev_carretera", "ev_otras",
+        "ev_animales", "ev_seguridad",
     ];
 
     let completo = true;
     let totalPuntos = 0;
 
     for (let cat of categorias) {
-        const seleccionado = form.querySelector(`input[name="${cat}"]:checked`);
-        if (!seleccionado) {
+        // AHORA USAMOS querySelectorAll PARA DETECTAR MÚLTIPLES CHECKBOXES
+        const seleccionados = form.querySelectorAll(`input[name="${cat}"]:checked`);
+        if (seleccionados.length === 0) {
             completo = false;
             break;
         }
-        totalPuntos += parseInt(seleccionado.value);
+        // SUMAMOS TODOS LOS PUNTOS DE LA CATEGORÍA
+        seleccionados.forEach(sel => {
+            totalPuntos += parseInt(sel.value) || 0;
+        });
     }
 
-    const radiactivoSeleccionado = form.querySelector(
-        'input[name="ev_radiactivo"]:checked',
-    );
+    const radiactivoSeleccionado = form.querySelector('input[name="ev_radiactivo"]:checked');
     if (!radiactivoSeleccionado) completo = false;
 
     if (!completo) {
         Swal.fire({
             title: "Evaluación Incompleta",
-            text: "Por favor seleccione una opción para cada categoría.",
+            text: "Por favor seleccione al menos una opción para cada categoría.",
             icon: "warning",
             confirmButtonColor: "#0056b3",
         });
@@ -5850,61 +5894,38 @@ function guardarEvaluacion() {
     }
 
     // Identificamos qué opción se seleccionó (0, 1, 2 o 3)
-    const radiosRadiactivos = Array.from(
-        form.querySelectorAll('input[name="ev_radiactivo"]'),
-    );
+    const radiosRadiactivos = Array.from(form.querySelectorAll('input[name="ev_radiactivo"]'));
     const indexRadiactivo = radiosRadiactivos.indexOf(radiactivoSeleccionado);
 
     const esEquipoPesado = indexRadiactivo === 1;
     const esMaterialPeligroso = indexRadiactivo === 2 || indexRadiactivo === 3;
 
-    const factorNocturno = form.querySelector(
-        'input[name="ev_horario_nocturno"]',
-    ).checked;
-    const factorPocoSueno = form.querySelector(
-        'input[name="ev_horas_dormidas"]',
-    ).checked;
-    const factorMedianoche = form.querySelector(
-        'input[name="ev_rebase_medianoche"]',
-    ).checked;
-    const factor16Horas = form.querySelector(
-        'input[name="ev_16hrs_despierto"]',
-    ).checked;
+    const factorNocturno = form.querySelector('input[name="ev_horario_nocturno"]').checked;
+    const factorPocoSueno = form.querySelector('input[name="ev_horas_dormidas"]').checked;
+    const factorMedianoche = form.querySelector('input[name="ev_rebase_medianoche"]').checked;
+    const factor16Horas = form.querySelector('input[name="ev_16hrs_despierto"]').checked;
 
-    // =========================================================
-    // PASO 1: EVALUAR RIESGO POR PUNTOS (BASE)
-    // Asignamos valores numéricos: 1=Bajo, 2=Medio, 3=Alto, 4=Muy Alto
-    // =========================================================
     let nivelPuntos = 1;
     if (totalPuntos <= 55) nivelPuntos = 1;
     else if (totalPuntos <= 105) nivelPuntos = 2;
     else if (totalPuntos <= 145) nivelPuntos = 3;
     else nivelPuntos = 4;
 
-    // =========================================================
-    // PASO 2: EVALUAR RIESGO POR FACTORES CRÍTICOS (PUNTO 11)
-    // =========================================================
     let nivelFactores = 1;
     let motivoFactor = "";
 
     if (factorMedianoche || factor16Horas) {
-        nivelFactores = 4; // MUY ALTO
+        nivelFactores = 4;
         motivoFactor = "Factores Críticos (Medianoche o >16h despierto)";
     } else if (esMaterialPeligroso || factorNocturno || factorPocoSueno) {
-        nivelFactores = 3; // ALTO
+        nivelFactores = 3;
         motivoFactor = "Material Peligroso, Horario Nocturno o Fatiga";
     } else if (esEquipoPesado) {
-        nivelFactores = 2; // MEDIO
+        nivelFactores = 2;
         motivoFactor = "Transporte de Equipo/Maquinaria";
     }
 
-    // =========================================================
-    // PASO 3: TOMAR EL RIESGO MÁS ALTO (PRIORIDAD ESTRICTA)
-    // Math.max() asegura que siempre gane el nivel más crítico
-    // =========================================================
     let nivelFinal = Math.max(nivelPuntos, nivelFactores);
-
-    // Saber si el riesgo subió por culpa de los factores para la alerta visual
     let esRiesgoForzado = nivelFactores > nivelPuntos;
 
     let nivelInterno = "";
@@ -5963,18 +5984,12 @@ function guardarEvaluacion() {
     puntajeRiesgoTotal = totalPuntos;
     evaluacionRiesgoGuardada = true;
 
-    // Carga los autorizadores en base al nivel más crítico resultante
     cargarAutorizadores(nivelInterno);
 
     const btn = document.getElementById("btnEvaluacionRiesgo");
     if (btn) {
         btn.innerHTML = `<i class="fas fa-check-circle"></i> Evaluación: ${nivelRiesgoTexto} <br><small>(Clic para editar)</small>`;
-        btn.classList.remove(
-            "btn-riesgo-bajo",
-            "btn-riesgo-medio",
-            "btn-riesgo-alto",
-            "btn-riesgo-muy-alto",
-        );
+        btn.classList.remove("btn-riesgo-bajo", "btn-riesgo-medio", "btn-riesgo-alto", "btn-riesgo-muy-alto");
         btn.classList.add("evaluacion-completada", cssClassBtn);
         btn.style = "";
     }
@@ -5987,10 +6002,7 @@ function guardarEvaluacion() {
         html: `
             <div style="display: flex; flex-direction: column; align-items: center;">
                 <div class="resultado-titulo">Nivel de Riesgo:</div>
-                <div class="riesgo-badge ${cssClassBtn.replace(
-            "btn-",
-            "status-",
-        )}">
+                <div class="riesgo-badge ${cssClassBtn.replace("btn-", "status-")}">
                     ${iconoBadge} ${nivelRiesgoTexto}
                 </div>
                 <div class="resultado-mensaje">${mensajeAdicional}</div>
@@ -7422,45 +7434,38 @@ function recolectarEvaluacionRiesgo() {
         ev_seguridad: "route_security",
         ev_radiactivo: "hazardous_material",
     };
-    for (const [campoFront, campoBD] of Object.entries(mapeoCampos)) {
-        const seleccionado = form.querySelector(
-            `input[name="${campoFront}"]:checked`,
-        );
-        if (seleccionado) {
-            const textoOpcion = seleccionado.parentElement.textContent
-                .replace(/\s+/g, " ")
-                .trim();
 
-            evaluacion[`${campoBD}_option`] = textoOpcion;
-            evaluacion[`${campoBD}_score`] = parseInt(seleccionado.value) || 0;
+    for (const [campoFront, campoBD] of Object.entries(mapeoCampos)) {
+        // OBTENEMOS TODOS LOS SELECCIONADOS
+        const seleccionados = form.querySelectorAll(`input[name="${campoFront}"]:checked`);
+        if (seleccionados.length > 0) {
+            let textos = [];
+            let score = 0;
+
+            seleccionados.forEach(sel => {
+                textos.push(sel.parentElement.textContent.replace(/\s+/g, " ").trim());
+                score += parseInt(sel.value) || 0;
+            });
+
+            // CONCATENAMOS CON " | " LOS TEXTOS, Y SUMAMOS EL SCORE
+            evaluacion[`${campoBD}_option`] = textos.join(" | ");
+            evaluacion[`${campoBD}_score`] = score;
         }
     }
 
-    evaluacion.is_night_shift =
-        form.querySelector('input[name="ev_horario_nocturno"]')?.checked || false;
-    evaluacion.has_low_sleep =
-        form.querySelector('input[name="ev_horas_dormidas"]')?.checked || false;
-    evaluacion.exceeds_midnight =
-        form.querySelector('input[name="ev_rebase_medianoche"]')?.checked || false;
-    evaluacion.extreme_fatigue =
-        form.querySelector('input[name="ev_16hrs_despierto"]')?.checked || false;
+    evaluacion.is_night_shift = form.querySelector('input[name="ev_horario_nocturno"]')?.checked || false;
+    evaluacion.has_low_sleep = form.querySelector('input[name="ev_horas_dormidas"]')?.checked || false;
+    evaluacion.exceeds_midnight = form.querySelector('input[name="ev_rebase_medianoche"]')?.checked || false;
+    evaluacion.extreme_fatigue = form.querySelector('input[name="ev_16hrs_despierto"]')?.checked || false;
     evaluacion.total_score = puntajeRiesgoTotal || 0;
 
-    // --- AQUÍ ESTÁ LA CORRECCIÓN EXACTA ---
-    evaluacion.risk_level = document
-        .getElementById("btnEvaluacionRiesgo")
-        ?.textContent.includes("Bajo")
+    evaluacion.risk_level = document.getElementById("btnEvaluacionRiesgo")?.textContent.includes("Bajo")
         ? "bajo"
-        : document
-            .getElementById("btnEvaluacionRiesgo")
-            ?.textContent.includes("Medio")
+        : document.getElementById("btnEvaluacionRiesgo")?.textContent.includes("Medio")
             ? "medio"
-            : document
-                .getElementById("btnEvaluacionRiesgo")
-                ?.textContent.includes("Muy Alto")
+            : document.getElementById("btnEvaluacionRiesgo")?.textContent.includes("Muy Alto")
                 ? "muy_alto"
                 : "alto";
-    // --------------------------------------
 
     return evaluacion;
 }

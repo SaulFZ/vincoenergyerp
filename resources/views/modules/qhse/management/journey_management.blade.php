@@ -704,29 +704,21 @@
                         </div>
 
                         <div class="evaluacion-item">
-                            <div class="evaluacion-titulo">7. Condiciones de la carretera</div>
+                            <div class="evaluacion-titulo">7. Condiciones de la carretera (Máx 2)</div>
                             <div class="evaluacion-opciones">
-                                <label class="evaluacion-radio"><input type="radio" name="ev_carretera" value="5"
-                                        required> En buen estado, condiciones normales</label>
-                                <label class="evaluacion-radio"><input type="radio" name="ev_carretera"
-                                        value="10"> Carretera con baches, huecos, mal estado</label>
-                                <label class="evaluacion-radio"><input type="radio" name="ev_carretera"
-                                        value="10"> Zonas de carretera con tráfico / reparaciones</label>
+                                <label class="evaluacion-radio"><input type="checkbox" name="ev_carretera" value="5"> En buen estado, condiciones normales</label>
+                                <label class="evaluacion-radio"><input type="checkbox" name="ev_carretera" value="10"> Carretera con baches, huecos, mal estado</label>
+                                <label class="evaluacion-radio"><input type="checkbox" name="ev_carretera" value="10"> Zonas de carretera con tráfico / reparaciones</label>
                             </div>
                         </div>
 
                         <div class="evaluacion-item">
-                            <div class="evaluacion-titulo">8. Otras Cond. de la carretera</div>
+                            <div class="evaluacion-titulo">8. Otras Cond. de la carretera (Máx 3)</div>
                             <div class="evaluacion-opciones">
-                                <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="0">
-                                    No aplica</label>
-                                <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="10"
-                                        required> Zona con curvas y pendientes</label>
-                                <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="15">
-                                    Carretera con superficies mojadas; vados</label>
-                                <label class="evaluacion-radio"><input type="radio" name="ev_otras" value="15">
-                                    Carretera solitaria (unidad no puede detenerse)</label>
-
+                                <label class="evaluacion-radio"><input type="checkbox" name="ev_otras" value="0"> No aplica</label>
+                                <label class="evaluacion-radio"><input type="checkbox" name="ev_otras" value="10"> Zona con curvas y pendientes</label>
+                                <label class="evaluacion-radio"><input type="checkbox" name="ev_otras" value="15"> Carretera con superficies mojadas; vados</label>
+                                <label class="evaluacion-radio"><input type="checkbox" name="ev_otras" value="15"> Carretera solitaria (unidad no puede detenerse)</label>
                             </div>
                         </div>
 
