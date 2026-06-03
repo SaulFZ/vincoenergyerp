@@ -5,17 +5,16 @@
 /* Nuevas Variables de Color */
 :root {
     --surface: #ffffff;
-    --surface-alt: #f1f5f9;
+    --surface-alt: #eef2ff;
 
     --slate-light: #f8fafc;
-    --slate-medium: #64748b;
-    --slate-dark: #0f172a;
+    --slate-medium: #6366f1;
+    --slate-dark: #1e1b4b;
 
-    --teal-light: #ccfbf1;
-    --teal-medium: #14b8a6;
-    --teal-dark: #0d9488;
+    --teal-light: #e0e7ff;
+    --teal-medium: #6366f1;
+    --teal-dark: #4338ca;
 }
-
 * {
     margin: 0;
     padding: 0;
@@ -24,8 +23,8 @@
 }
 
 body {
-    background-color: var(--slate-light);
-    color: var(--slate-dark);
+    background-color: var(--indigo-light);
+    color: var(--indigo-dark);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -42,7 +41,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--teal-medium);
+    background-color: var(--rose-medium);
     border-radius: 5px;
 }
 
@@ -64,7 +63,7 @@ body {
 /* 2. HEADER Y NAVEGACIÓN (NUEVO DISEÑO) */
 /* ======================================================= */
 .header-main {
-    background: var(--slate-dark);
+    background: var(--indigo-dark);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -130,7 +129,7 @@ body {
 
 .nav-link.active {
     background: var(--surface);
-    color: var(--slate-dark);
+    color: var(--indigo-dark);
     font-weight: 600;
     border: 1px solid var(--surface);
 }
@@ -140,12 +139,12 @@ body {
 /* ======================================================= */
 .footer-main {
     background-color: var(--surface);
-    color: var(--slate-medium);
+    color: var(--indigo-medium);
     text-align: center;
     padding: 12px 20px;
     font-size: 0.82rem;
     font-family: 'Poppins', sans-serif;
-    border-top: 1px solid var(--teal-dark);
+    border-top: 1px solid var(--rose-dark);
     margin-top: auto;
     display: flex;
     justify-content: center;
@@ -158,12 +157,12 @@ body {
     font-weight: 400;
     letter-spacing: 0.5px;
     opacity: 0.85;
-    color: var(--slate-medium);
+    color: var(--indigo-medium);
 }
 
 #current-year {
     font-weight: 600;
-    color: var(--slate-dark);
+    color: var(--indigo-dark);
 }
 
 /* ==========================================================================

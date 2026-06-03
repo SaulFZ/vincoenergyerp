@@ -321,8 +321,21 @@
                             <td>
                                 <div class="emp-cell">
                                     <div class="emp-avatar">
-                                        @if ($emp->photo)
-                                            <img src="{{ asset($emp->photo) }}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
+                                        @php
+                                            $photoUrlBlade = null;
+                                            if ($emp->photo) {
+                                                $pathBlade = str_replace('public/', '', $emp->photo);
+                                                if (str_starts_with($pathBlade, 'http')) {
+                                                    $photoUrlBlade = $pathBlade;
+                                                } else {
+                                                    $encodedPath = str_replace(['+', '/'], ['-', '_'], base64_encode($pathBlade));
+                                                    $photoUrlBlade = route('management.employee.photo', ['path' => $encodedPath]);
+                                                }
+                                            }
+                                        @endphp
+
+                                        @if ($photoUrlBlade)
+                                            <img src="{{ $photoUrlBlade }}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
                                         @else
                                             <i class="fas fa-user-tie"></i>
                                         @endif

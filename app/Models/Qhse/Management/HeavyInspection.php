@@ -19,7 +19,6 @@ class HeavyInspection extends Model
         'doc_mechanical_cert',
         'doc_waybill',
         'doc_emergency_phones',
-        'doc_driving_license',
         'vis_first_aid_kit',
         'vis_safety_cones',
         'vis_fire_extinguisher',

@@ -1310,7 +1310,7 @@ function _mapearInspeccionLigera(insp) {
         doc_tarjeta: insp.doc_registration_card || 'na',
         doc_poliza: insp.doc_insurance_policy || 'na',
         doc_tel_emergencia: insp.doc_emergency_phones || 'na',
-        doc_licencia: insp.doc_driving_license || 'na',
+
 
         // II. Inspección Visual
         vis_botiquin: insp.vis_first_aid_kit || 'na',
@@ -1363,7 +1363,7 @@ function _mapearInspeccionPesada(insp) {
         doc_fisico_mec: insp.doc_mechanical_cert || 'na',
         doc_carta_porte: insp.doc_waybill || 'na',
         doc_tel_emergencia: insp.doc_emergency_phones || 'na',
-        doc_licencia: insp.doc_driving_license || 'na',
+
 
         // II. Inspección Visual
         vis_botiquin: insp.vis_first_aid_kit || 'na',
@@ -4451,7 +4451,6 @@ function gestionarModalInspeccionLigera(
             "doc_tarjeta",
             "doc_poliza",
             "doc_tel_emergencia",
-            "doc_licencia",
             "vis_botiquin",
             "vis_triangulo",
             "vis_extintor",
@@ -4610,7 +4609,7 @@ async function procederGuardadoLigera(comentarios, anomaliasValor) {
         "doc_tarjeta",
         "doc_poliza",
         "doc_tel_emergencia",
-        "doc_licencia",
+
     ];
     const visualItems = [
         "vis_botiquin",
@@ -4836,7 +4835,6 @@ function gestionarModalInspeccionPesada(
             "doc_fisico_mec",
             "doc_carta_porte",
             "doc_tel_emergencia",
-            "doc_licencia",
             "vis_botiquin",
             "vis_conos",
             "vis_extintor",
@@ -5012,7 +5010,7 @@ async function procederGuardadoPesada(comentarios, anomaliasValor) {
         "doc_fisico_mec",
         "doc_carta_porte",
         "doc_tel_emergencia",
-        "doc_licencia",
+
     ];
     const visualItems = [
         "vis_botiquin",
@@ -7979,6 +7977,16 @@ function actualizarBotonPrincipalRuta() {
 function toggleEstadoViaje() {
     const esInicio = estadoViajeActual === "Por Iniciar";
 
+    // 🚨 NUEVA VALIDACIÓN: Evitar que finalicen el viaje si están detenidos
+    if (!esInicio && estadoViajeActual === "Detenido") {
+        return Swal.fire({
+            title: "Unidad Detenida",
+            text: "No puedes finalizar el viaje mientras exista una incidencia activa. Debes reanudar la marcha antes de poder finalizar la bitácora.",
+            icon: "warning",
+            confirmButtonColor: "#f08a1f"
+        });
+    }
+
     Swal.fire({
         title: esInicio ? "¿Quieres iniciar el viaje?" : "¿Finalizar Viaje?",
         text: esInicio
@@ -8047,6 +8055,7 @@ function toggleEstadoViaje() {
         }
     });
 }
+
 
 // ====== LÓGICA DE DETENCIÓN E INCIDENCIAS CON ALERTA ======
 function abrirFormularioDetencion() {
@@ -8226,12 +8235,22 @@ function renderizarParadasRuta(viaje, logs) {
 }
 
 function marcarParada(idCard, ubicacion, motivo, botonElemento) {
-    if (estadoViajeActual === "Por Iniciar")
+    if (estadoViajeActual === "Por Iniciar") {
         return Swal.fire(
             "Aviso",
             "Debes Iniciar el viaje para registrar paradas.",
-            "info",
+            "info"
         );
+    }
+
+    // 🚨 NUEVA VALIDACIÓN: Evitar paradas si están detenidos
+    if (estadoViajeActual === "Detenido") {
+        return Swal.fire(
+            "Viaje Detenido",
+            "No puedes registrar paradas programadas mientras la unidad tenga una incidencia activa. Reanuda la ruta primero.",
+            "warning"
+        );
+    }
 
     Swal.fire({
         title: "¿Confirmar Parada?",
@@ -8330,12 +8349,22 @@ function renderizarConductoresRuta(viaje, logs) {
 }
 
 function ejecutarRelevo() {
-    if (estadoViajeActual === "Por Iniciar")
+    if (estadoViajeActual === "Por Iniciar") {
         return Swal.fire(
             "Aviso",
             "Inicia el viaje para registrar el relevo.",
-            "info",
+            "info"
         );
+    }
+
+    // 🚨 NUEVA VALIDACIÓN: Evitar relevos si están detenidos
+    if (estadoViajeActual === "Detenido") {
+        return Swal.fire(
+            "Viaje Detenido",
+            "No puedes cambiar de conductor mientras la unidad esté detenida. Resuelve la incidencia y reanuda la ruta primero.",
+            "warning"
+        );
+    }
 
     const lblAlVolante = document.getElementById("lblConductorAlVolante");
     const lblDescansando = document.getElementById("lblConductorDescansando");

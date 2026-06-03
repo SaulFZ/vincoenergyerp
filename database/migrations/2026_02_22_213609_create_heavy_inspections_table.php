@@ -24,7 +24,6 @@ return new class extends Migration {
             $table->string('doc_mechanical_cert', 15);   // doc_fisico_mec
             $table->string('doc_waybill', 15);           // doc_carta_porte
             $table->string('doc_emergency_phones', 15);  // doc_tel_emergencia
-            $table->string('doc_driving_license', 15);   // doc_licencia
 
             // --- II. INSPECCIÓN VISUAL (Pesados) ---
             $table->string('vis_first_aid_kit', 15);     // vis_botiquin

@@ -1132,17 +1132,7 @@
                                 N/A</label>
                         </div>
                     </div>
-                    <div class="inspeccion-item">
-                        <div class="inspeccion-item-label">
-                            <i class="fas fa-id-badge"></i> <span>Licencia de manejo vigente</span>
-                        </div>
-                        <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="doc_licencia" value="si" required>
-                                Sí</label>
-                            <label class="no"><input type="radio" name="doc_licencia" value="no"> No</label>
-                            <label class="na"><input type="radio" name="doc_licencia" value="na"> N/A</label>
-                        </div>
-                    </div>
+
                 </div>
 
                 {{-- SECCIÓN 2: INSPECCIÓN VISUAL --}}
@@ -1753,19 +1743,7 @@
                                 N/A</label>
                         </div>
                     </div>
-                    <div class="inspeccion-item">
-                        <div class="inspeccion-item-label">
-                            <i class="fas fa-id-badge"></i> <span>Licencia de manejo vigente</span>
-                        </div>
-                        <div class="inspeccion-radio-group">
-                            <label class="si"><input type="radio" name="doc_licencia" value="si" required>
-                                Sí</label>
-                            <label class="no"><input type="radio" name="doc_licencia" value="no">
-                                No</label>
-                            <label class="na"><input type="radio" name="doc_licencia" value="na">
-                                N/A</label>
-                        </div>
-                    </div>
+
                 </div>
 
                 {{-- SECCIÓN 2: INSPECCIÓN VISUAL --}}

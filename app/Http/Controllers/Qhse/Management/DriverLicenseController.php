@@ -5,50 +5,57 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class DriverLicenseController extends Controller
 {
-    /**
-     * Muestra la vista inicial o responde con JSON si es por AJAX (Paginación/Búsqueda)
-     */
-    public function index(Request $request)
+public function index(Request $request)
     {
         $perPage = $request->input('per_page', 5);
         $search  = $request->input('search');
 
-        // 1. Construir la consulta, filtrar SOLO LOS ACTIVOS y cargar relación 'area'
         $query = Employee::with(['license', 'area'])
             ->where('employment_status', 'active');
 
-        // 2. Aplicar búsqueda del lado del servidor si hay texto
         if (! empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('first_surname', 'like', "%{$search}%")
                     ->orWhereRaw("CONCAT(first_name, ' ', first_surname) LIKE ?", ["%{$search}%"])
-                // Buscamos dentro de la relación area
                     ->orWhereHas('area', function ($areaQuery) use ($search) {
                         $areaQuery->where('name', 'like', "%{$search}%");
                     });
             });
         }
 
-        // 3. Orden alfabético
         $query->orderBy('first_name', 'asc')
             ->orderBy('first_surname', 'asc');
 
-        // 4. Paginación
         $empleados = $query->paginate($perPage);
 
-        // Si la petición es AJAX (Búsqueda o Paginador)
         if ($request->ajax()) {
             $items = $empleados->getCollection()->map(function ($emp) {
+
+                // =======================================================
+                // LÓGICA DE RUTAS PARA FOTOS PROTEGIDAS EN STORAGE
+                // =======================================================
+                $photoUrl = null;
+                if ($emp->photo) {
+                    $path = str_replace('public/', '', $emp->photo);
+                    if (str_starts_with($path, 'http')) {
+                        $photoUrl = $path; // Si ya es una URL web, la dejamos igual
+                    } else {
+                        // Encriptamos la ruta para mandarla por URL sin romper los slashes
+                        $encodedPath = str_replace(['+', '/'], ['-', '_'], base64_encode($path));
+                        $photoUrl = route('management.employee.photo', ['path' => $encodedPath]);
+                    }
+                }
+
                 return [
                     'id'              => $emp->id,
                     'name'            => $emp->full_name ?? ($emp->first_name . ' ' . $emp->first_surname),
-                    // Sacamos el nombre del área desde la relación
                     'area'            => optional($emp->area)->name ?? 'Sin área',
-                    'photo'           => $emp->photo ? asset($emp->photo) : null,
+                    'photo'           => $photoUrl,
                     'driver_license'  => optional($emp->license)->driver_license_expires_at ? optional($emp->license)->driver_license_expires_at->format('Y-m-d') : '',
                     'light_course'    => optional($emp->license)->light_defensive_course_expires_at ? optional($emp->license)->light_defensive_course_expires_at->format('Y-m-d') : '',
                     'federal_license' => optional($emp->license)->federal_license_expires_at ? optional($emp->license)->federal_license_expires_at->format('Y-m-d') : '',
@@ -66,10 +73,37 @@ class DriverLicenseController extends Controller
             ]);
         }
 
-        // Carga inicial normal
         return view('modules.qhse.management.driver_licenses', compact('empleados', 'perPage'));
     }
 
+    /**
+     * Función para servir las fotos de los empleados desde el Storage
+     */
+    public function showPhoto($path)
+    {
+        try {
+            // 1. Decodificar la ruta
+            $decodedPath = base64_decode(str_replace(['-', '_'], ['+', '/'], $path));
+            $decodedPath = str_replace('public/', '', $decodedPath);
+
+            // 2. Verificar si existe en el disco public
+            if (!Storage::disk('public')->exists($decodedPath)) {
+                abort(404, 'Foto no encontrada');
+            }
+
+            // 3. Servir el archivo directamente al navegador
+            $file = Storage::disk('public')->path($decodedPath);
+            $mimeType = Storage::disk('public')->mimeType($decodedPath);
+
+            return response()->file($file, [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => 'inline',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sirviendo foto de empleado: ' . $e->getMessage());
+            abort(404);
+        }
+    }
     /**
      * Recibe la petición AJAX para actualizar las fechas de los cursos y licencias
      */

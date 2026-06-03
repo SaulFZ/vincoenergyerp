@@ -290,16 +290,16 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 });
 
-                // ---------------------------------------------------
+               // ---------------------------------------------------
                 // 6. GESTIÓN DE LICENCIAS Y CREDENCIALES
                 // Controlador: DriverLicenseController
                 // ---------------------------------------------------
                 Route::controller(DriverLicenseController::class)->group(function () {
-                    // Ruta para ver la tabla (la que pusimos en el nav)
                     Route::get('/driver_licenses', 'index')->name('management.licenses');
-
-                    // Ruta POST para guardar los datos desde el modal (AJAX)
                     Route::post('/empleados/{id}/actualizar-licencias', 'updateLicenses')->name('management.update_licenses');
+
+                    // 👇 NUEVA RUTA PARA SERVIR LAS FOTOS 👇
+                    Route::get('/empleados/foto/{path}', 'showPhoto')->name('management.employee.photo');
                 });
 
                 // ---------------------------------------------------

@@ -20,7 +20,6 @@ return new class extends Migration {
             $table->string('doc_registration_card', 15); // doc_tarjeta
             $table->string('doc_insurance_policy', 15);  // doc_poliza
             $table->string('doc_emergency_phones', 15);  // doc_tel_emergencia
-            $table->string('doc_driving_license', 15);   // doc_licencia
 
             // --- II. INSPECCIÓN VISUAL ---
             $table->string('vis_first_aid_kit', 15);     // vis_botiquin

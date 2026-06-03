@@ -15,7 +15,6 @@ class LightInspection extends Model
         'doc_registration_card',
         'doc_insurance_policy',
         'doc_emergency_phones',
-        'doc_driving_license',
         'vis_first_aid_kit',
         'vis_safety_triangles',
         'vis_fire_extinguisher',

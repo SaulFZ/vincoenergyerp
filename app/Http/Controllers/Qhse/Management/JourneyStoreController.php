@@ -327,7 +327,6 @@ class JourneyStoreController extends Controller
             'doc_registration_card'   => $inspectionData['doc_tarjeta'] ?? 'na',
             'doc_insurance_policy'    => $inspectionData['doc_poliza'] ?? 'na',
             'doc_emergency_phones'    => $inspectionData['doc_tel_emergencia'] ?? 'na',
-            'doc_driving_license'     => $inspectionData['doc_licencia'] ?? 'na',
             'vis_first_aid_kit'       => $inspectionData['vis_botiquin'] ?? 'na',
             'vis_safety_triangles'    => $inspectionData['vis_triangulo'] ?? 'na',
             'vis_fire_extinguisher'   => $inspectionData['vis_extintor'] ?? 'na',
@@ -380,7 +379,6 @@ class JourneyStoreController extends Controller
             'doc_mechanical_cert'     => $inspectionData['doc_fisico_mec'] ?? 'na',
             'doc_waybill'             => $inspectionData['doc_carta_porte'] ?? 'na',
             'doc_emergency_phones'    => $inspectionData['doc_tel_emergencia'] ?? 'na',
-            'doc_driving_license'     => $inspectionData['doc_licencia'] ?? 'na',
             'vis_first_aid_kit'       => $inspectionData['vis_botiquin'] ?? 'na',
             'vis_safety_cones'        => $inspectionData['vis_conos'] ?? 'na',
             'vis_fire_extinguisher'   => $inspectionData['vis_extintor'] ?? 'na',
@@ -662,7 +660,6 @@ class JourneyStoreController extends Controller
             'doc_registration_card' => 'Tarjeta de circulación',
             'doc_insurance_policy'  => 'Póliza de seguro vigente',
             'doc_emergency_phones'  => 'Teléfonos Emergencia / Aseguradora',
-            'doc_driving_license'   => 'Licencia de manejo vigente',
             // Exclusivos Pesadas
             'doc_cargo_permit'      => 'Permiso de transporte de carga',
             'doc_emissions_cert'    => 'Certificado de bajos contaminantes',

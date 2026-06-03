@@ -14,7 +14,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-    <link href="{{ asset('assets/css/rh/altas/index.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/rh/orgmanagement/index.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/rh/orgmanagement/employees.css') }}" rel="stylesheet">
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @stack('styles')
