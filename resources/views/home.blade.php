@@ -119,7 +119,7 @@
                         @if (in_array('management', $userPermissions['qhse']) || empty($userPermissions['qhse']))
                             <li class="nav-item" data-route="/qhse/management" data-name="Gerenciamiento De Viajes">
                                 <i class="fas fa-road nav-icon"></i>
-                                <span class="nav-text">Gerenciamiento De Viajes</span>
+                                <span class="nav-text">VesDrive</span>
                             </li>
                         @endif
                         @if (in_array('incidencias', $userPermissions['qhse']) || empty($userPermissions['qhse']))
@@ -131,7 +131,7 @@
                         @if (in_array('vescap', $userPermissions['qhse']) || empty($userPermissions['qhse']))
                             <li class="nav-item" data-route="/qhse/vescap" data-name="VESCAP">
                                 <i class="fas fa-fire-extinguisher nav-icon"></i>
-                                <span class="nav-text">VESCAP</span>
+                                <span class="nav-text">VesCap</span>
                             </li>
                         @endif
                     </ul>
