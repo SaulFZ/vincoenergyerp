@@ -3441,6 +3441,15 @@
     color: var(--orange-dark);
 }
 
+
+
+.evaluacion-radio small {
+    display: block;
+    margin-top: 2px;
+    color: #666;
+    font-size: 0.85em;
+}
+
 /* Radio buttons personalizados */
 .evaluacion-radio input[type="radio"] {
     appearance: none;
