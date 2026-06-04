@@ -38,6 +38,7 @@ class JourneyQueryController extends Controller
             $fechaSolicitud = $request->get('fecha_solicitud', '');
 
             $query = Journey::with(['creator', 'approver', 'units'])
+                ->withCount('logs') // <--- NUEVO: Cuenta los eventos automáticamente
                 ->orderBy('created_at', 'desc');
 
             if (! $canSeeAll) {
@@ -181,6 +182,7 @@ class JourneyQueryController extends Controller
                         'can_approve'        => $journey->approver_id === $user->id,
                         'can_see_history'    => $canSeeAll,
                         'is_participant'     => $isParticipant, // ✅ Basado en employee_id
+                        'logs_count'         => $journey->logs_count ?? 0,
                     ];
                 }
             );
