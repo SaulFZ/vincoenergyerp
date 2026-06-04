@@ -2425,8 +2425,10 @@
 /* ======================================================= */
 
 .field-icon.pasajero {
-    color: var(--primary-blue, #334c95); /* Azul corporativo en reposo */
-    background-color: rgba(51, 76, 149, 0.08); /* Fondo azul muy tenue */
+    color: var(--primary-blue, #334c95);
+    /* Azul corporativo en reposo */
+    background-color: rgba(51, 76, 149, 0.08);
+    /* Fondo azul muy tenue */
     width: 28px;
     height: 28px;
     display: inline-flex;
@@ -2750,10 +2752,12 @@
         box-shadow: 0 0 0 0 rgba(240, 138, 31, 0.8);
         filter: brightness(1);
     }
+
     50% {
         box-shadow: 0 0 0 12px rgba(240, 138, 31, 0);
         filter: brightness(1.2);
     }
+
     100% {
         box-shadow: 0 0 0 0 rgba(240, 138, 31, 0);
         filter: brightness(1);
@@ -4135,6 +4139,73 @@
 .input-highlight:focus,
 .select-highlight:focus {
     box-shadow: 0 0 0 3px rgba(214, 126, 41, 0.15) !important;
+}
+
+/* ======================================================= */
+/* 💎 UI DE CARGA SECUNDARIA (GLASSMORPHISM) 💎 */
+/* ======================================================= */
+
+/* Efecto Cristal (Blur) para cuando la tabla se actualiza */
+.table-responsive-wrapper {
+    position: relative;
+    min-height: 200px; /* Evita que colapse al estar vacía */
+}
+
+.is-loading-table {
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Capa difuminada sobre la tabla */
+.is-loading-table::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, 0.418);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 5;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+/* Spinner Moderno Flotante */
+.modern-spinner-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.modern-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(37, 99, 235, 0.15);
+    border-top-color: var(--primary-blue, #2563eb);
+    border-radius: 50%;
+    animation: spin-modern 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.modern-spinner-text {
+    color: var(--primary-blue, #2563eb);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.9);
+    padding: 4px 12px;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    /* Animación de pulso eliminada, ahora es estático */
+}
+
+@keyframes spin-modern {
+    to { transform: rotate(360deg); }
 }
 
 /* ==========================================================================
