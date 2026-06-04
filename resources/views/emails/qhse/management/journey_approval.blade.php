@@ -113,7 +113,7 @@
                                         <table role="presentation" border="0" cellspacing="0" cellpadding="0">
                                             <tr>
                                                 <td align="center" bgcolor="#1e3a8a" style="border-radius: 6px;">
-                                                    <a href="https://vescore.com/login" target="_blank" style="font-size: 15px; font-family: Arial, Helvetica, sans-serif; color: #ffffff; text-decoration: none; border-radius: 6px; padding: 14px 28px; border: 1px solid #1e3a8a; display: inline-block; font-weight: bold;">
+                                                    <a href="https://vescore.tech/login" target="_blank" style="font-size: 15px; font-family: Arial, Helvetica, sans-serif; color: #ffffff; text-decoration: none; border-radius: 6px; padding: 14px 28px; border: 1px solid #1e3a8a; display: inline-block; font-weight: bold;">
                                                         Revisar Solicitud
                                                     </a>
                                                 </td>
