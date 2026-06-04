@@ -76,7 +76,7 @@ let currentDestination = "all";
 let currentFechaSolicitud = "";
 
 // ====================================================================
-// CARGA DINÁMICA DE LA TABLA DE VIAJES (CON RECARGA SILENCIOSA)
+// CARGA DINÁMICA DE LA TABLA DE VIAJES (CON RECARGA SILENCIOSA MODERNA)
 // ====================================================================
 async function cargarViajes(page = 1, isSilent = false) {
     const container = document.getElementById("tablaViajesContainer");
@@ -85,33 +85,30 @@ async function cargarViajes(page = 1, isSilent = false) {
 
     currentPage = page;
 
-    let spinner = document.getElementById("loadingSpinnerOverlay");
+    // 1. Instanciar el Spinner Moderno (Secundario) si no existe
+    let spinner = document.getElementById("modernSpinnerOverlay");
     if (!spinner) {
         spinner = document.createElement("div");
-        spinner.id = "loadingSpinnerOverlay";
-        spinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        spinner.style.position = "absolute";
-        spinner.style.top = "50%";
-        spinner.style.left = "50%";
-        spinner.style.transform = "translate(-50%, -50%)";
-        spinner.style.fontSize = "3rem";
-        spinner.style.color = "#2563eb";
-        spinner.style.zIndex = "10";
+        spinner.id = "modernSpinnerOverlay";
+        spinner.className = "modern-spinner-container";
+        spinner.innerHTML = `
+            <div class="modern-spinner"></div>
+            <div class="modern-spinner-text">Actualizando...</div>
+        `;
         spinner.style.display = "none";
-        wrapper.style.position = "relative";
         wrapper.appendChild(spinner);
     }
 
-    // Si NO es silenciosa, mostramos el efecto de carga
+    // 2. Control Visual (Blade vs JS)
     if (!isSilent) {
-        if (
-            container.innerHTML.trim() !== "" &&
-            !container.innerHTML.includes("custom-loader")
-        ) {
-            container.classList.add("is-loading-table");
-            spinner.style.display = "block";
-        } else if (container.innerHTML.trim() === "") {
+        // Si la tabla está vacía (Carga Principal), usamos tu loader original de Blade
+        if (container.innerHTML.trim() === "") {
             container.innerHTML = document.getElementById("loaderTemplate").innerHTML;
+        }
+        // Si ya hay datos (Carga Secundaria por filtros/páginas), aplicamos el efecto Cristal
+        else if (!container.innerHTML.includes("custom-loader")) {
+            wrapper.classList.add("is-loading-table");
+            spinner.style.display = "flex";
         }
     }
 
@@ -120,27 +117,23 @@ async function cargarViajes(page = 1, isSilent = false) {
 
         if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
         if (currentStatusGv !== "all") url += `&status_gv=${currentStatusGv}`;
-        if (currentStatusViaje !== "all")
-            url += `&status_viaje=${currentStatusViaje}`;
+        if (currentStatusViaje !== "all") url += `&status_viaje=${currentStatusViaje}`;
         if (currentRiskLevel !== "all") url += `&risk_level=${currentRiskLevel}`;
-        if (currentDestination !== "all")
-            url += `&destination=${currentDestination}`;
-        if (currentFechaSolicitud)
-            url += `&fecha_solicitud=${encodeURIComponent(currentFechaSolicitud)}`;
+        if (currentDestination !== "all") url += `&destination=${currentDestination}`;
+        if (currentFechaSolicitud) url += `&fecha_solicitud=${encodeURIComponent(currentFechaSolicitud)}`;
 
         const response = await fetch(url);
         const result = await response.json();
 
-        // Quitamos el efecto al terminar
+        // 3. Quitar efecto visual al terminar
         if (!isSilent) {
-            container.classList.remove("is-loading-table");
+            wrapper.classList.remove("is-loading-table");
             spinner.style.display = "none";
         }
 
         if (result.success) {
             if (result.data.length === 0) {
-                container.innerHTML =
-                    document.getElementById("emptyTemplate").innerHTML;
+                container.innerHTML = document.getElementById("emptyTemplate").innerHTML;
                 paginationContainer.innerHTML = "";
             } else {
                 renderTablaViajes(result.data, container);
@@ -150,12 +143,11 @@ async function cargarViajes(page = 1, isSilent = false) {
             }
             actualizarEstadisticas();
         } else {
-            if (!isSilent)
-                mostrarError(result.message || "Error al cargar los datos");
+            if (!isSilent) mostrarError(result.message || "Error al cargar los datos");
         }
     } catch (error) {
         if (!isSilent) {
-            container.classList.remove("is-loading-table");
+            wrapper.classList.remove("is-loading-table");
             if (spinner) spinner.style.display = "none";
             mostrarError("Error de conexión al servidor");
         }
@@ -176,7 +168,7 @@ function renderTablaViajes(viajes, container) {
                 <tr>
                     <th class="th-codigo">N°</th>
                     <th class="th-nombre">Solicitante</th>
-                    <th class="th-area">Área</th> <!-- Cambio aquí -->
+                    <th class="th-area">Área</th>
                     <th class="th-destino">Destino</th>
                     <th class="th-tipo" style="text-align: center;">Tipo</th>
                     <th class="th-fechas">Fechas de Viaje</th>
@@ -214,6 +206,7 @@ function renderTablaViajes(viajes, container) {
                 </button>
         `;
 
+        // --- BOTÓN RUTA (Para Conductores y Creadores) ---
         if (
             viaje.estado_gv.texto === "Aprobado" &&
             (viaje.estado_viaje.texto === "En Curso" ||
@@ -229,16 +222,42 @@ function renderTablaViajes(viajes, container) {
                     </button>
                 `;
             }
-        } else if (
+        }
+
+        // --- BOTÓN ACTIVIDAD / HISTORIAL (Para Aprobadores) ---
+        let badgeNotificacion = "";
+        if (viaje.logs_count > 0) {
+            // Por defecto, color Verde y estático (para Finalizado/Cancelado)
+            let bgBadge = "#28a745";
+            let animBadge = "none";
+
+            // Si el viaje sigue vivo, cambiamos a Rojo y parpadeante
+            if (viaje.estado_viaje.texto === "En Curso" || viaje.estado_viaje.texto === "Detenido") {
+                bgBadge = "#dc3545";
+                animBadge = "pulse-red 1.5s infinite";
+            }
+
+            badgeNotificacion = `
+                <span style="position: absolute; top: -6px; right: -6px; background: ${bgBadge}; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: ${animBadge};">
+                    ${viaje.logs_count}
+                </span>`;
+        }
+
+        // Mostrar desde que el viaje está "En Curso" hasta que finaliza o se cancela
+        if (
+            viaje.estado_viaje.texto === "En Curso" ||
+            viaje.estado_viaje.texto === "Detenido" ||
             viaje.estado_viaje.texto === "Finalizado" ||
             viaje.estado_viaje.texto === "Cancelado"
         ) {
             if (viaje.can_see_history) {
                 botonesAccion += `
                     <button class="btn-action-small btn-history"
+                            style="position: relative; overflow: visible;"
                             onclick="abrirModalHistorial(${viaje.id}, '${viaje.folio}')"
-                            title="Ver Historial">
-                        <i class="fas fa-list-alt"></i> Historial
+                            title="Ver Historial de Eventos">
+                        <i class="fas fa-bell"></i> Actividad
+                        ${badgeNotificacion}
                     </button>
                 `;
             }
@@ -250,7 +269,7 @@ function renderTablaViajes(viajes, container) {
             <tr>
                 <td><strong>${viaje.folio}</strong></td>
                 <td class="td-nombre">${viaje.solicitante}</td>
-                <td>${viaje.area}</td> <!-- Cambio aquí de departamento a area -->
+                <td>${viaje.area}</td>
                 <td class="td-destino">${viaje.destino}</td> <td style="text-align: center;">${badgeTipoViaje}</td>
                 <td class="td-fechas">${viaje.fechas}</td>
                 <td><span class="badge-riesgo ${viaje.riesgo.clase}">${viaje.riesgo.texto}</span></td>
@@ -404,14 +423,13 @@ async function cargarModalEnModoLectura(viaje, authData) {
     if (fechaHidden) fechaHidden.value = fechaFmt;
 
     const elSolicitante = document.getElementById("solicitante");
-    const elArea = document.getElementById("area"); // Cambio aquí
+    const elArea = document.getElementById("area");
     if (elSolicitante) elSolicitante.value = viaje.creator_name || "";
-    if (elArea) elArea.value = viaje.area || ""; // Cambio aquí
+    if (elArea) elArea.value = viaje.area || "";
 
     const inputDestinoHidden = document.getElementById("inputDestinoHidden");
     const labelDestino = document.getElementById("labelDestinoSeleccionado");
-    if (inputDestinoHidden)
-        inputDestinoHidden.value = viaje.destination_region || "";
+    if (inputDestinoHidden) inputDestinoHidden.value = viaje.destination_region || "";
     if (labelDestino) {
         labelDestino.textContent = viaje.destination_region || "Sin destino";
         labelDestino.style.color = "#212529";
@@ -430,26 +448,22 @@ async function cargarModalEnModoLectura(viaje, authData) {
     _setFlatpickrValor("horaInicioViaje", formatearHora(viaje.start_time));
     _setFlatpickrValor("horaFinViaje", formatearHora(viaje.end_time));
 
-    // ── PARADAS ───────────────────────────────────────────────────────
+    // ── PARADAS (CON CHECKS DE HISTORIAL) ─────────────────────────────
     const tieneParadas = !!viaje.has_stops;
-    const radioParadasSi = modal.querySelector(
-        'input[name="tiene_paradas"][value="si"]'
-    );
-    const radioParadasNo = modal.querySelector(
-        'input[name="tiene_paradas"][value="no"]'
-    );
+    const radioParadasSi = modal.querySelector('input[name="tiene_paradas"][value="si"]');
+    const radioParadasNo = modal.querySelector('input[name="tiene_paradas"][value="no"]');
     if (tieneParadas && radioParadasSi) radioParadasSi.checked = true;
     else if (radioParadasNo) radioParadasNo.checked = true;
 
-    if (
-        tieneParadas &&
-        Array.isArray(viaje.planned_stops) &&
-        viaje.planned_stops.length
-    ) {
+    if (tieneParadas && Array.isArray(viaje.planned_stops) && viaje.planned_stops.length) {
         toggleSeccionParadas(true);
         const listaParadas = document.getElementById("listaParadas");
         if (listaParadas) listaParadas.innerHTML = "";
         contadorParadas = 0;
+
+        // Extraemos los eventos de la base de datos para comparar
+        const logs = viaje.logs || [];
+
         viaje.planned_stops.forEach((p, i) => {
             agregarParada();
             const paradaEl = document.getElementById(`parada-${i + 1}`);
@@ -458,6 +472,23 @@ async function cargarModalEnModoLectura(viaje, authData) {
             const inp = paradaEl.querySelector('input[type="text"]');
             if (sel) sel.value = p.motivo || "";
             if (inp) inp.value = p.lugar || "";
+
+            // 🔥 LÓGICA: PINTAR CHECK SI YA SE REALIZÓ 🔥
+            const isCompleted = logs.some(l => l.event_type === "parada" && l.description.includes(p.lugar));
+            const headerParada = paradaEl.querySelector(".parada-header");
+
+            if (headerParada) {
+                const btnEliminar = headerParada.querySelector(".btn-remove-parada-compact");
+                if (btnEliminar) btnEliminar.remove(); // Quitamos la basurita en modo lectura
+
+                if (isCompleted) {
+                    headerParada.style.background = "#e8f5e9";
+                    headerParada.innerHTML += `<span style="color: #28a745; font-size: 11px; font-weight: bold; position: absolute; right: 10px;"><i class="fas fa-check-double"></i> Realizado</span>`;
+                } else {
+                    headerParada.style.background = "#f8f9fa";
+                    headerParada.innerHTML += `<span style="color: #6c757d; font-size: 11px; font-weight: bold; position: absolute; right: 10px;"><i class="fas fa-clock"></i> Pendiente</span>`;
+                }
+            }
         });
     }
 
@@ -473,9 +504,7 @@ async function cargarModalEnModoLectura(viaje, authData) {
         if (vHidden) vHidden.value = u.economic_number || "";
         if (vTrigger && u.economic_number) {
             const tipo = clasificacionVehiculos[u.economic_number] || "";
-            const icono = tipo.toLowerCase().includes("pesada")
-                ? "fa-truck"
-                : "fa-car";
+            const icono = tipo.toLowerCase().includes("pesada") ? "fa-truck" : "fa-car";
             vTrigger.innerHTML = `<i class="fas ${icono}"></i> ${u.economic_number}`;
             vTrigger.style.color = "#495057";
             vTrigger.style.fontWeight = "600";
@@ -498,47 +527,29 @@ async function cargarModalEnModoLectura(viaje, authData) {
         }
         _setVal(`medicamento-nombre-${num}`, u.medication_name || "");
 
-        const esPesada = (clasificacionVehiculos[u.economic_number] || "")
-            .toLowerCase()
-            .includes("pesada");
-        const labelLic = document
-            .querySelector(`#vigencia-lic-${num}`)
-            ?.closest(".hour-input-group")
-            ?.querySelector("label");
-        const labelMan = document
-            .querySelector(`#vigencia-man-${num}`)
-            ?.closest(".hour-input-group")
-            ?.querySelector("label");
+        const esPesada = (clasificacionVehiculos[u.economic_number] || "").toLowerCase().includes("pesada");
+        const labelLic = document.querySelector(`#vigencia-lic-${num}`)?.closest(".hour-input-group")?.querySelector("label");
+        const labelMan = document.querySelector(`#vigencia-man-${num}`)?.closest(".hour-input-group")?.querySelector("label");
 
         if (labelLic) {
-            labelLic.innerHTML = esPesada
-                ? `<i class="fas fa-id-card"></i> Vigencia Licencia Federal`
-                : `<i class="fas fa-id-card"></i> Vigencia Licencia`;
+            labelLic.innerHTML = esPesada ? `<i class="fas fa-id-card"></i> Vigencia Licencia Federal` : `<i class="fas fa-id-card"></i> Vigencia Licencia`;
             labelLic.style.color = esPesada ? "#f08a1f" : "";
         }
         if (labelMan) {
-            labelMan.innerHTML = esPesada
-                ? `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Pesada`
-                : `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Ligera`;
+            labelMan.innerHTML = esPesada ? `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Pesada` : `<i class="fas fa-calendar-alt"></i> Vigencia Man. Def. Ligera`;
             labelMan.style.color = "#0056b3";
         }
 
         const inputLic = document.getElementById(`vigencia-lic-${num}`);
         const inputMan = document.getElementById(`vigencia-man-${num}`);
         if (inputLic) {
-            inputLic.value =
-                u.state_license_validity ||
-                u.federal_license_validity ||
-                "No registrada";
+            inputLic.value = u.state_license_validity || u.federal_license_validity || "No registrada";
             inputLic.style.backgroundColor = "#e9ecef";
             inputLic.style.color = "#495057";
             inputLic.style.fontWeight = "bold";
         }
         if (inputMan) {
-            inputMan.value =
-                u.light_defensive_driving_validity ||
-                u.heavy_defensive_driving_validity ||
-                "No registrado";
+            inputMan.value = u.light_defensive_driving_validity || u.heavy_defensive_driving_validity || "No registrado";
             inputMan.style.backgroundColor = "#e9ecef";
             inputMan.style.color = "#495057";
             inputMan.style.fontWeight = "bold";
@@ -599,12 +610,8 @@ async function cargarModalEnModoLectura(viaje, authData) {
             }
 
             const tieneNos = _inspeccionTieneNos(mappedData);
-            btnInsp.className = tieneNos
-                ? "btn-inspeccion-realizada-warning"
-                : "btn-inspeccion-realizada-ok";
-            btnInsp.innerHTML = tieneNos
-                ? '<i class="fas fa-exclamation-circle"></i> Realizado'
-                : '<i class="fas fa-check-circle"></i> Realizado';
+            btnInsp.className = tieneNos ? "btn-inspeccion-realizada-warning" : "btn-inspeccion-realizada-ok";
+            btnInsp.innerHTML = tieneNos ? '<i class="fas fa-exclamation-circle"></i> Realizado' : '<i class="fas fa-check-circle"></i> Realizado';
             btnInsp.dataset.tieneNos = tieneNos ? "true" : "false";
             btnInsp.setAttribute("onclick", `abrirInspeccionLectura(${num})`);
             btnInsp.disabled = false;
@@ -616,35 +623,20 @@ async function cargarModalEnModoLectura(viaje, authData) {
     // ── EVALUACIÓN DE RIESGO ──────────────────────────────────────────
     if (viaje.risk_level || viaje.risk_assessment) {
         evaluacionRiesgoGuardada = true;
-        puntajeRiesgoTotal =
-            viaje.risk_score || viaje.risk_assessment?.total_score || 0;
-        const nivel =
-            viaje.risk_level || viaje.risk_assessment?.risk_level || "bajo";
-        const mapaClase = {
-            bajo: "btn-riesgo-bajo",
-            medio: "btn-riesgo-medio",
-            alto: "btn-riesgo-alto",
-            muy_alto: "btn-riesgo-muy-alto",
-        };
-        const mapaTexto = {
-            bajo: "Bajo",
-            medio: "Medio",
-            alto: "Alto",
-            muy_alto: "Muy Alto",
-        };
+        puntajeRiesgoTotal = viaje.risk_score || viaje.risk_assessment?.total_score || 0;
+        const nivel = viaje.risk_level || viaje.risk_assessment?.risk_level || "bajo";
+        const mapaClase = { bajo: "btn-riesgo-bajo", medio: "btn-riesgo-medio", alto: "btn-riesgo-alto", muy_alto: "btn-riesgo-muy-alto" };
+        const mapaTexto = { bajo: "Bajo", medio: "Medio", alto: "Alto", muy_alto: "Muy Alto" };
         const btnEval = document.getElementById("btnEvaluacionRiesgo");
         if (btnEval) {
-            btnEval.className = `btn-evaluacion evaluacion-completada ${mapaClase[nivel] || "btn-riesgo-bajo"
-                }`;
-            btnEval.innerHTML = `<i class="fas fa-shield-alt"></i> Evaluación: Riesgo ${mapaTexto[nivel] || "Bajo"
-                }`;
+            btnEval.className = `btn-evaluacion evaluacion-completada ${mapaClase[nivel] || "btn-riesgo-bajo"}`;
+            btnEval.innerHTML = `<i class="fas fa-shield-alt"></i> Evaluación: Riesgo ${mapaTexto[nivel] || "Bajo"}`;
             btnEval.disabled = false;
             btnEval.style.pointerEvents = "auto";
             btnEval.style.opacity = "1";
             btnEval.setAttribute("onclick", "abrirEvaluacionLectura()");
         }
-        if (viaje.risk_assessment)
-            llenarModalEvaluacionLectura(viaje.risk_assessment);
+        if (viaje.risk_assessment) llenarModalEvaluacionLectura(viaje.risk_assessment);
     }
 
     // ── REUNIÓN PRE-CONVOY ────────────────────────────────────────────
@@ -678,52 +670,41 @@ async function cargarModalEnModoLectura(viaje, authData) {
         if (seccion) {
             seccion.style.display = "block";
             const tituloH3 = seccion.querySelector(".form-section-title");
-            if (tituloH3)
-                tituloH3.innerHTML =
-                    '<i class="fas fa-user-check"></i> Autorizador Asignado';
+            if (tituloH3) tituloH3.innerHTML = '<i class="fas fa-user-check"></i> Autorizador Asignado';
             const subtituloP = seccion.querySelector(".destinatario-subtitle");
             if (subtituloP) subtituloP.style.display = "none";
         }
 
         if (grid) {
-            const nombre =
-                viaje.approver?.employee?.full_name ||
-                viaje.approver?.name ||
-                `Autorizador #${viaje.approver_id}`;
+            const nombre = viaje.approver?.employee?.full_name || viaje.approver?.name || `Autorizador #${viaje.approver_id}`;
             const puesto = viaje.approver?.employee?.position || "Aprobador";
 
             grid.innerHTML = `
-    <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; pointer-events: none; cursor: default; width: 100%; max-width: 420px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);">
-
-        <div style="width: 42px; height: 42px; background: #f0f4ff; color: #334c95; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 15px; flex-shrink: 0;">
-            <i class="fas fa-user-tie"></i>
-        </div>
-
-        <div style="flex-grow: 1; line-height: 1.4; overflow: hidden;">
-            <div style="font-weight: 600; font-size: 0.95rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                ${nombre}
-            </div>
-            <div style="font-size: 0.8rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                ${puesto}
-            </div>
-        </div>
-
-        <div style="flex-shrink: 0; margin-left: 15px;">
-            <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.5);">
-                <i class="fas fa-check-circle" style="font-size: 0.75rem;"></i> Asignado
-            </span>
-        </div>
-
-    </div>`;
-
+                <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; pointer-events: none; cursor: default; width: 100%; max-width: 420px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);">
+                    <div style="width: 42px; height: 42px; background: #f0f4ff; color: #334c95; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 15px; flex-shrink: 0;">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div style="flex-grow: 1; line-height: 1.4; overflow: hidden;">
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${nombre}
+                        </div>
+                        <div style="font-size: 0.8rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${puesto}
+                        </div>
+                    </div>
+                    <div style="flex-shrink: 0; margin-left: 15px;">
+                        <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.5);">
+                            <i class="fas fa-check-circle" style="font-size: 0.75rem;"></i> Asignado
+                        </span>
+                    </div>
+                </div>`;
             grid.style.display = "flex";
             grid.style.justifyContent = "flex-start";
         }
     }
 
-    // ── BLOQUEAR TODO Y CAMBIAR FOOTER (Pasando los datos dinámicos) ──
     _bloquearTodo(modal);
-    _reemplazarFooter(modal, viaje, authData); // ¡NUEVO: Le pasamos los datos de auth!
+    _reemplazarFooter(modal, viaje, authData);
 }
 function formatearHora(horaStr) {
     if (!horaStr) return "";
@@ -1013,78 +994,61 @@ function _reemplazarFooter(modal, viaje, authData) {
 
     let botonesHTML = "";
 
-    const viajeBloqueado = [
-        "in_progress",
+    // Solo bloqueamos botones de acción si el viaje ya es historia (Completado, Cancelado, No Procede)
+    const viajeFinalizado = [
         "completed",
         "cancelled",
         "no_procede",
     ].includes(viaje.journey_status);
 
-    if (!viajeBloqueado) {
+    const viajeEnProgreso = viaje.journey_status === "in_progress" || viaje.journey_status === "stopped";
+
+    if (!viajeFinalizado) {
+
         // ── BOTONES DEL APROBADOR ────────────────────────────────────
-        if (authData.can_approve) {
-            if (viaje.approval_status === "pending") {
-                botonesHTML += `
-                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'aprobado')"
-                        style="background: #28a745; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
-                        onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
-                        <i class="fas fa-check-circle"></i> Aprobar
-                    </button>
-                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'rechazado')"
-                        style="background: #dc3545; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
-                        onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
-                        <i class="fas fa-times-circle"></i> Rechazar
-                    </button>
-                `;
-            }
-
-            if (viaje.approval_status === "approved") {
-                botonesHTML += `
-                    <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')"
-                        style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
-                        onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
-                        <i class="fas fa-ban"></i> Cancelar Viaje
-                    </button>
-                `;
-            }
+        // Si está pendiente y NO ha iniciado, puede Aprobar o Rechazar
+        if (authData.can_approve && viaje.approval_status === "pending" && !viajeEnProgreso) {
+            botonesHTML += `
+                <button onclick="gestionarEstadoViaje(${viaje.id}, 'aprobado')"
+                    style="background: #28a745; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                    onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'">
+                    <i class="fas fa-check-circle"></i> Aprobar
+                </button>
+                <button onclick="gestionarEstadoViaje(${viaje.id}, 'rechazado')"
+                    style="background: #dc3545; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                    onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
+                    <i class="fas fa-times-circle"></i> Rechazar
+                </button>
+            `;
         }
 
-        // ── BOTONES DEL CREADOR ──────────────────────────────────────
-        if (authData.is_creator) {
-            if (
-                viaje.approval_status === "pending" ||
-                viaje.approval_status === "approved"
-            ) {
-                if (!botonesHTML.includes("Cancelar")) {
-                    botonesHTML += `
-                        <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')"
-                            style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
-                            onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
-                            <i class="fas fa-ban"></i> Cancelar Solicitud
-                        </button>
-                    `;
-                }
-            }
-
-            if (viaje.approval_status === "pending") {
-                botonesHTML += `
-                    <button onclick="abrirModalCambiarAprobador(${viaje.id}, '${viaje.risk_level || "bajo"
-                    }')"
-                        style="background: #0056b3; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
-                        onmouseover="this.style.background='#003d80'" onmouseout="this.style.background='#0056b3'">
-                        <i class="fas fa-user-edit"></i> Cambiar Aprobador
-                    </button>
-                `;
-            }
+        // ── BOTONES DEL CREADOR (Cambiar Aprobador) ──────────────────
+        if (authData.is_creator && !authData.can_approve && viaje.approval_status === "pending") {
+            botonesHTML += `
+                <button onclick="abrirModalCambiarAprobador(${viaje.id}, '${viaje.risk_level || "bajo"}')"
+                    style="background: #0056b3; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                    onmouseover="this.style.background='#003d80'" onmouseout="this.style.background='#0056b3'">
+                    <i class="fas fa-user-edit"></i> Cambiar Aprobador
+                </button>
+            `;
         }
 
-        // ✅ BOTÓN IR A RUTA para conductores y pasajeros (participantes)
+        // ── BOTÓN CANCELAR (GLOBAL PARA TODOS LOS INVOLUCRADOS) ──────
+        // Creador, Aprobador, Conductores y Pasajeros pueden abortar el viaje si surge una eventualidad.
+        if (authData.can_approve || authData.is_creator || authData.is_participant) {
+            botonesHTML += `
+                <button onclick="gestionarEstadoViaje(${viaje.id}, 'cancelado')"
+                    style="background: #fd7e14; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                    onmouseover="this.style.background='#e86e12'" onmouseout="this.style.background='#fd7e14'">
+                    <i class="fas fa-ban"></i> Cancelar Viaje
+                </button>
+            `;
+        }
+
+        // ── BOTÓN IR A RUTA (Participantes) ──────────────────────────
         if (
             authData.is_participant &&
-            viaje.approval_status === "approved" &&
-            (viaje.journey_status === "not_started" ||
-                viaje.journey_status === "in_progress" ||
-                viaje.journey_status === "stopped")
+            viaje.approval_status === "approved"
         ) {
             botonesHTML += `
                 <button onclick="cerrarModalLectura(); setTimeout(() => abrirModalRuta(${viaje.id}, '${viaje.folio}'), 350);"
@@ -1718,7 +1682,6 @@ function configurarEventosGlobales() {
         });
     }
 
-    // Reemplaza esto en tu configurarEventosGlobales():
     document.addEventListener("click", function (e) {
         // Cierra el menú del formulario si se clica afuera
         const wrapperDestino = document.getElementById("wrapperDestino");
@@ -1761,13 +1724,120 @@ function configurarEventosGlobales() {
         });
     });
 
-    // IMPORTANTE: El campo "Especifique Destino" ahora es siempre obligatorio.
+    // ====================================================================
+    // 🔥 NUEVO: SINCRONIZAR "ESPECIFIQUE DESTINO" CON "LLEGANDO A"
+    // ====================================================================
     const destinoEspecifico = document.getElementById("destinoEspecifico");
+    const llegadaInput = document.querySelector('input[name="llegada"]');
+
     if (destinoEspecifico) {
         destinoEspecifico.required = true;
         destinoEspecifico.style.display = "block";
+
+        // Cuando el usuario escribe en "Especifique Destino", se copia a "Llegando a"
+        if (llegadaInput) {
+            destinoEspecifico.addEventListener("input", function () {
+                llegadaInput.value = this.value;
+            });
+        }
     }
 }
+
+
+// ====================================================================
+// 🔥 AUTO-FORMATEO ESTRICTO (Mayúsculas, Minúsculas y Siglas Máx 3)
+// ====================================================================
+document.addEventListener("input", function (e) {
+
+    // 1. APLICAR A INPUTS CORTOS (Nombres, Lugares, Destinos)
+    if (e.target.matches('input[type="text"]:not([readonly])')) {
+        const id = e.target.id || "";
+        const name = e.target.name || "";
+
+        // Excluimos campos donde NO queremos aplicar el formato (fechas, horas, códigos, búsquedas)
+        const ignorar = ["fecha", "hora", "presion", "kilometraje", "search", "solicitud-date"];
+        if (ignorar.some(palabra => id.toLowerCase().includes(palabra) || name.toLowerCase().includes(palabra))) {
+            return;
+        }
+
+        // Guardamos la posición del cursor para UX
+        const cursorPosition = e.target.selectionStart;
+        const oldVal = e.target.value;
+
+        // Aplicamos formato
+        const newVal = formatearTituloInteligente(oldVal);
+
+        // Si el texto cambió, lo actualizamos y regresamos el cursor a donde estaba
+        if (oldVal !== newVal) {
+            e.target.value = newVal;
+            e.target.setSelectionRange(cursorPosition, cursorPosition);
+        }
+    }
+
+    // 2. APLICAR A ÁREAS DE TEXTO Y NOTAS (Comentarios, Incidencias)
+    if (e.target.matches('textarea') || e.target.id === 'notasDetencion') {
+        const cursorPosition = e.target.selectionStart;
+        const oldVal = e.target.value;
+        const newVal = formatearOracionInteligente(oldVal);
+
+        if (oldVal !== newVal) {
+            e.target.value = newVal;
+            e.target.setSelectionRange(cursorPosition, cursorPosition);
+        }
+    }
+});
+
+// ====================================================================
+// FORMATEO INTELIGENTE DE TEXTOS (Lógica de Siglas Máximo 3 letras)
+// ====================================================================
+function formatearTituloInteligente(texto) {
+    if (!texto) return "";
+    // Palabras que deben ir en minúscula siempre (salvo que sean la primera palabra)
+    const excepciones = ['y', 'e', 'o', 'u', 'de', 'del', 'la', 'las', 'el', 'los', 'en', 'por', 'para', 'con', 'a', 'sin'];
+
+    return texto.split(/\s+/).map((palabra, index) => {
+        if (palabra.length === 0) return "";
+
+        // Regla 1: Si la palabra contiene números (ej. UN2911, Pozo-45), la pasamos a Mayúscula cerrada
+        if (/\d/.test(palabra) && /[a-zA-Z]/.test(palabra)) {
+            return palabra.toUpperCase();
+        }
+
+        // Regla 2: Proteger SIGLAS de máximo 3 letras (Ej. CFE, SAT)
+        const soloLetras = palabra.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
+        if (soloLetras.length >= 2 && soloLetras.length <= 3 && palabra === palabra.toUpperCase()) {
+            // Evitamos dejar en mayúscula conectores si los escribieron gritando (ej. "LA", "DE")
+            if (!excepciones.includes(palabra.toLowerCase())) {
+                return palabra; // La respetamos en mayúsculas
+            }
+        }
+
+        // Regla 3: Si tiene 4 o más letras, o es minúscula, le aplicamos Title Case
+        palabra = palabra.toLowerCase();
+        if (index !== 0 && excepciones.includes(palabra)) {
+            return palabra;
+        }
+        return palabra.charAt(0).toUpperCase() + palabra.slice(1);
+    }).join(' ');
+}
+
+function formatearOracionInteligente(texto) {
+    if (!texto) return "";
+
+    // Convertimos a minúsculas, pero protegiendo las siglas de 2 o 3 letras
+    let palabrasFormateadas = texto.split(/\s+/).map(palabra => {
+        const soloLetras = palabra.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '');
+        // Si es una sigla de 2 o 3 letras en mayúsculas, la salvamos
+        if (soloLetras.length >= 2 && soloLetras.length <= 3 && palabra === palabra.toUpperCase()) {
+            return palabra;
+        }
+        return palabra.toLowerCase();
+    }).join(' ');
+
+    // Capitaliza la primera letra de toda la caja de texto y la letra después de cada punto.
+    return palabrasFormateadas.replace(/(^\s*\w|[\.\!\?]\s*\w)/g, c => c.toUpperCase());
+}
+
 
 function inicializarFlatpickr() {
     flatpickr.localize(flatpickr.l10ns.es);
@@ -8393,8 +8463,8 @@ function marcarParada(idCard, ubicacion, motivo, botonElemento) {
         );
 
     Swal.fire({
-        title: "¿Confirmar Parada?",
-        text: `¿Estás seguro de registrar la parada en ${ubicacion}?`,
+        title: "¿Confirmar Evento?",
+        text: `¿Estás seguro de registrar el evento en ${ubicacion}?`,
         icon: "question",
         showCancelButton: true,
         confirmButtonColor: "#1e3c72",
@@ -8406,7 +8476,7 @@ function marcarParada(idCard, ubicacion, motivo, botonElemento) {
             try {
                 return await guardarEventoBackend(
                     "parada",
-                    "Parada Alcanzada",
+                    "Evento Alcanzada",
                     `Ubicación: ${ubicacion} | Motivo: ${motivo}`
                 );
             } catch (error) {
@@ -8554,5 +8624,58 @@ function ejecutarRelevo() {
         }
     });
 }
+
+// ====================================================================
+// SMART POLLING: AUTO-RECARGA INTELIGENTE (Optimizado para el Servidor)
+// ====================================================================
+let pollingTimer = null;
+
+function iniciarPolling() {
+    if (!pollingTimer) {
+        // Aumentamos a 30 segundos para darle más respiro al servidor
+        pollingTimer = setInterval(() => {
+            // 1. Si la pestaña NO está visible, no hacemos nada
+            if (document.visibilityState !== 'visible') return;
+
+            // 2. Si el usuario está buscando algo, no interrumpimos
+            const searchInput = document.getElementById("searchViajes");
+            if (searchInput && document.activeElement === searchInput) return;
+
+            // 3. Si tiene abierto el modal de crear un viaje (y está editando), no recargamos
+            const modalForm = document.getElementById("modalFormulario");
+            if (modalForm && modalForm.classList.contains("active") && !modoLectura) return;
+
+            // Si pasa las pruebas, actualizamos silenciosamente
+            cargarViajes(currentPage, true);
+        }, 30000);
+    }
+}
+
+function detenerPolling() {
+    if (pollingTimer) {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+    }
+}
+
+// Escuchar cuando el usuario cambia de pestaña en su navegador
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'visible') {
+        // El usuario regresó a la pestaña de Vinco ERP: Recargamos de inmediato y retomamos el ciclo
+        cargarViajes(currentPage, true);
+        iniciarPolling();
+    } else {
+        // El usuario se fue a otra pestaña: Apagamos el motor para no gastar servidor
+        detenerPolling();
+    }
+});
+
+// Arrancamos el motor por primera vez
+iniciarPolling();
+
+
+
+
+
 
 
