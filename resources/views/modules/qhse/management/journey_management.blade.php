@@ -7,10 +7,10 @@
                 <div class="title-section">
                     <h1 class="travel-title">
                         <i class="fas fa-route"></i>
-                        Gerenciamiento de Viajes
+                        VesDrive
                     </h1>
                     <p class="travel-subtitle">
-                        Panel de control y registro completo de los viajes vehiculares de la compañía
+                        Sistema de Gestion de Viaje
                     </p>
                 </div>
 
@@ -199,7 +199,7 @@
                 <div class="form-header-info">
                     <div class="form-header-title">
                         <h2>Bitácora de Ruta <span id="lblRutaViaje" class="form-code-value">GV-000</span></h2>
-                        <p>Notificación de paradas, relevos e incidencias operativas</p>
+                        <p>Notificación de eventos, relevos e incidencias operativas</p>
                     </div>
                 </div>
                 <button type="button" class="btn-camara-close" onclick="cerrarModalRuta()"
@@ -274,7 +274,7 @@
                         <hr class="section-divider">
 
                         <div class="form-section-title" style="border-bottom: none; margin-bottom: 10px;">
-                            <h3 style="font-size: 14px;"><i class="fas fa-map-marked-alt"></i> Paradas Programadas</h3>
+                            <h3 style="font-size: 14px;"><i class="fas fa-map-marked-alt"></i> Eventos Programadas</h3>
                         </div>
                         <div class="paradas-list" id="contenedorParadasProgramadas"></div>
 
@@ -412,7 +412,7 @@
                         <div class="form-group">
                             <label style="font-size: 13px; color: var(--blue-dark);">
                                 <i class="fas fa-map-signs"></i>
-                                Paradas?
+                                Eventos?
                             </label>
                             <div class="radio-group-paradas">
                                 <label class="radio-option">
@@ -504,7 +504,7 @@
                         <div id="listaParadas">
                         </div>
                         <button type="button" class="btn-add-parada" id="btnAgregarParada" onclick="agregarParada()">
-                            <i class="fas fa-plus"></i> Agregar Otra Parada
+                            <i class="fas fa-plus"></i> Agregar Otro eventos
                         </button>
                     </div>
                 </div>

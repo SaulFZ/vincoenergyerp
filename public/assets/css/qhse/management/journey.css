@@ -4247,7 +4247,6 @@
 
     /* === TABLA HEADER === */
     .table-header {
-        flex-direction: column;
         align-items: flex-start;
         padding: 10px 14px;
         gap: 8px;
