@@ -139,7 +139,7 @@
 
         <div class="table-header">
             <h3>
-                <i class="fas fa-history"></i> Viajes Recientes
+                <i class="fas fa-history"></i>Recientes
             </h3>
             <div class="header-actions">
                 <button type="button" class="btn-viajes btn-primary" onclick="gestionarModalFormulario(true)">
