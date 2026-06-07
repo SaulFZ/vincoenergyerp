@@ -16,38 +16,72 @@ class TicketStatusController extends Controller
             'status'     => 'required|string',
             'priority'   => 'required|string',
             'comentario' => 'nullable|string',
-            'subject'    => 'required|string',
-            'description'=> 'required|string',
         ]);
+
+        // Bloqueo de seguridad: No se puede guardar si el estado es NUEVO
+        if ($request->status === 'nuevo') {
+            return response()->json([
+                'success' => false,
+                'message' => 'No puedes guardar un ticket manteniendo el estado "NUEVO". Por favor, asígnale un estado válido.'
+            ], 400);
+        }
 
         try {
             return DB::transaction(function () use ($request, $id) {
                 $ticket = Ticket::findOrFail($id);
-                $userId = auth()->id(); // El técnico de TI conectado
+                $userId = auth()->id();
 
-                // 1. Auto-Asignación del ticket
-                // Si alguien lo mueve y no tenía dueño, o si lo cierran, se queda con él
+                // Auto-Asignación del ticket
                 if (in_array($request->status, ['abierto', 'en-espera', 'por-concluir', 'realizado', 'cancelado'])) {
                     $ticket->assigned_to = $userId;
                 }
 
-                // 2. Actualizamos el Ticket
+                $oldStatus = $ticket->status;
+                $oldPriority = $ticket->priority;
+
+                // Actualizamos el Ticket
                 $ticket->status = $request->status;
                 $ticket->priority = $request->priority;
-                $ticket->subject = $request->subject;
-                $ticket->description = $request->description;
                 $ticket->save();
 
-                // 3. Guardamos la bitácora SOLO si hay un comentario o cambio importante
+                // 1. Formateo de textos: Mayúsculas y reemplazo de guiones por espacios
+                $fmtOldPriority = strtoupper(str_replace('-', ' ', $oldPriority));
+                $fmtNewPriority = strtoupper(str_replace('-', ' ', $request->priority));
+                $fmtOldStatus   = strtoupper(str_replace('-', ' ', $oldStatus));
+                $fmtNewStatus   = strtoupper(str_replace('-', ' ', $request->status));
+
+                // 2. Historial de Cambio de Prioridad
+                if ($oldPriority !== $request->priority) {
+                    $msgPrioridad = ($oldPriority === 'sin clasificar')
+                        ? "El ticket ha sido <strong>CLASIFICADO</strong> con prioridad <strong>{$fmtNewPriority}</strong>."
+                        : "El ticket ha sido <strong>RECLASIFICADO</strong> de prioridad <strong>{$fmtOldPriority}</strong> a <strong>{$fmtNewPriority}</strong>.";
+
+                    TicketTracking::create([
+                        'ticket_id'    => $ticket->id,
+                        'user_id'      => $userId,
+                        'message'      => $msgPrioridad,
+                        'status_after' => $request->status
+                    ]);
+                }
+
+                // 3. Historial de Cambio de Estado
+                if ($oldStatus !== $request->status) {
+                    TicketTracking::create([
+                        'ticket_id'    => $ticket->id,
+                        'user_id'      => $userId,
+                        'message'      => "El estado del ticket ha cambiado de <strong>{$fmtOldStatus}</strong> a <strong>{$fmtNewStatus}</strong>.",
+                        'status_after' => $request->status
+                    ]);
+                }
+
+                // 4. Historial del Comentario (Con protección XSS)
                 if ($request->filled('comentario')) {
                     TicketTracking::create([
                         'ticket_id'    => $ticket->id,
                         'user_id'      => $userId,
-                        'message'      => $request->comentario,
+                        'message'      => htmlspecialchars($request->comentario),
                         'status_after' => $request->status
                     ]);
-
-                    // Aquí iría el disparador del correo de SEGUIMIENTO (Job/Mailable)
                 }
 
                 return response()->json([

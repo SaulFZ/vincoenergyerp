@@ -317,7 +317,6 @@
                 opacity: 0;
                 transform: translateY(12px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -522,7 +521,6 @@
         }
 
         /* ─── COLORES DINÁMICOS DE ESTADO Y PRIORIDAD (FUERTES Y SÓLIDOS) ─── */
-        /* Agregamos opacity: 1 !important para evitar que el navegador los vuelva pálidos al estar disabled */
         .ctrl.bg-s-nuevo {
             background: var(--s-new-bg) !important;
             color: var(--s-new-text) !important;
@@ -613,7 +611,7 @@
             opacity: 1 !important;
         }
 
-        /* Comportamiento base para deshabilitados */
+        /* Comportamiento base para deshabilitados o de solo lectura */
         .ctrl[readonly],
         .ctrl:disabled:not([class*="bg-"]) {
             background: #f8fafc;
@@ -732,7 +730,6 @@
         }
 
         /* ─── INTELIGENCIA DEL MODAL DE TICKET (MODO VER VS MODO ATENDER) ─── */
-        /* Si el modal tiene la clase 'mode-view', ocultamos la botonera desde CSS instantáneamente */
         .modal-overlay.mode-view .modal-foot {
             display: none !important;
         }
@@ -742,8 +739,6 @@
             padding-bottom: 30px;
         }
 
-        /* En modo ver, estilizamos los inputs de texto normales para que parezcan datos de lectura */
-        /* EXCLUIMOS a los que tienen la clase bg- para no afectar los colores de Estado y Prioridad */
         .modal-overlay.mode-view .ts-left .ctrl:not([class*="bg-"]) {
             background: #f8fafc;
             border: 1px dashed #cbd5e1;
@@ -756,7 +751,6 @@
             color: #94a3b8;
         }
 
-        /* Mantenemos los colores dinámicos de los selectores, pero les quitamos la flecha nativa para que se vean fijos */
         .modal-overlay.mode-view .ts-left select.ctrl {
             appearance: none;
             -webkit-appearance: none;
@@ -1039,7 +1033,6 @@
                 opacity: 0;
                 transform: translateY(-10px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1171,9 +1164,7 @@
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         /* ─── PAGINACIÓN ──────────────────────────────────────────────────── */
@@ -1427,7 +1418,6 @@
     </div>
 
     {{-- ── MODAL FLOTANTE AMPLIO — VER/ATENDER TICKET ──────────────────────── --}}
-    <!-- El JS inyecta "mode-view" o "mode-edit" aquí antes de abrir para controlar la botonera al instante -->
     <div class="modal-overlay" id="modal-ticket">
         <div class="modal-box">
 
@@ -1475,7 +1465,6 @@
                                 <div class="form-group">
                                     <label><i class="fas fa-tasks"></i> Estado Actual</label>
                                     <div class="field-wrap">
-                                        <!-- Aplicamos la clase bg-icon para no opacar el ícono en modo vista -->
                                         <i class="field-icon bg-icon fas fa-circle" style="font-size:.6rem;"></i>
                                         <select id="p-estado" class="ctrl" disabled>
                                             <option value="nuevo">1. Nuevo</option>
@@ -1490,7 +1479,6 @@
                                 <div class="form-group">
                                     <label><i class="fas fa-flag"></i> Prioridad</label>
                                     <div class="field-wrap">
-                                        <!-- Aplicamos la clase bg-icon para no opacar el ícono en modo vista -->
                                         <i class="field-icon bg-icon fas fa-flag"></i>
                                         <select id="p-prioridad" class="ctrl" disabled
                                             onchange="setSelectColor(this,'p')">
@@ -1507,13 +1495,13 @@
                                 <label><i class="fas fa-heading"></i> Asunto Breve</label>
                                 <div class="field-wrap">
                                     <i class="field-icon fas fa-heading"></i>
-                                    <input type="text" id="p-asunto" class="ctrl" required>
+                                    <input type="text" id="p-asunto" class="ctrl" readonly>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label><i class="fas fa-align-left"></i> Descripción Detallada</label>
-                                <textarea id="p-desc" class="ctrl no-icon" rows="2" required></textarea>
+                                <textarea id="p-desc" class="ctrl no-icon" rows="2" readonly></textarea>
                             </div>
 
                             {{-- Bloque comentario obligatorio --}}
@@ -1534,7 +1522,6 @@
                     </div>
                 </div>
 
-                {{-- Footer Activo (Botones de Estado) - Se oculta AL INSTANTE si el modal tiene .mode-view --}}
                 <div class="modal-foot" id="p-footer">
                     <div class="status-actions">
                         <span class="status-bar-label"><i class="fas fa-random"></i> Modificar Estado:</span>
@@ -1825,12 +1812,9 @@
             const modal = document.getElementById('modal-ticket');
             const loader = document.getElementById('modal-ticket-loader');
 
-            // 1. INTELIGENCIA DE UI: Setear el modo ANTES de hacer el modal visible.
-            // Al agregar 'mode-view', el CSS se encarga de ocultar el footer al instante y estilizar el formulario.
             modal.classList.remove('mode-view', 'mode-edit');
             modal.classList.add(action === 'ver' ? 'mode-view' : 'mode-edit');
 
-            // 2. Preparar UI
             loader.style.display = 'flex';
             loader.style.opacity = '1';
             modal.classList.add('open');
@@ -1848,8 +1832,6 @@
 
                 let d = data.ticket;
 
-                // Si se da click en atender, pero el ticket ya está finalizado/cancelado
-                // Forzamos al instante el modo vista
                 if (action === 'atender' && ['realizado', 'cancelado'].includes(d.status)) {
                     action = 'ver';
                     modal.classList.replace('mode-edit', 'mode-view');
@@ -1863,8 +1845,6 @@
                         body: JSON.stringify({
                             status: 'abierto',
                             priority: d.priority,
-                            subject: d.subject,
-                            description: d.description,
                             comentario: 'El ticket ha sido tomado para su atención.'
                         })
                     });
@@ -1872,18 +1852,26 @@
                         d.status = 'abierto';
                         loadTickets();
                         if (!d.trackings) d.trackings = [];
+
                         d.trackings.push({
                             created_at: new Date().toISOString(),
-                            user: {
-                                name: '{{ auth()->user()->name ?? 'Sistema' }}'
-                            },
+                            user: { name: '{{ auth()->user()->name ?? 'Sistema' }}' },
+                            status_after: 'abierto',
+                            message: 'El estado del ticket ha cambiado de <strong>NUEVO</strong> a <strong>ABIERTO</strong>.'
+                        });
+                        d.trackings.push({
+                            created_at: new Date().toISOString(),
+                            user: { name: '{{ auth()->user()->name ?? 'Sistema' }}' },
                             status_after: 'abierto',
                             message: 'El ticket ha sido tomado para su atención.'
                         });
                     }
                 }
 
-                // Cargar datos en el form
+                // Guardamos el estado y prioridad para comparar cambios después
+                window.currentTicketOriginalStatus = d.status;
+                window.currentTicketOriginalPriority = d.priority;
+
                 document.getElementById('p-id').value = d.id;
                 document.getElementById('p-folio').innerText = d.folio;
                 document.getElementById('p-num').innerText = d.display_id;
@@ -1909,18 +1897,18 @@
                 renderTimeline(d.trackings);
                 forceResizeTextareas();
 
-                // Bloquear inputs para 'ver' (aunque el CSS mode-view ya disfraza los inputs visualmente)
+                // Bloqueos de Seguridad
                 document.querySelectorAll('#ticket-form .ctrl').forEach(el => {
                     if (action === 'ver') {
                         el.tagName === 'SELECT' ? (el.disabled = true) : (el.readOnly = true);
                     } else {
                         if (el.id === 'p-estado') el.disabled = true;
+                        else if (el.id === 'p-asunto' || el.id === 'p-desc') el.readOnly = true;
                         else if (el.tagName === 'SELECT') el.disabled = false;
                         else el.readOnly = false;
                     }
                 });
 
-                // Si es modo atender, pre-configurar los botones de estado
                 if (action === 'atender') {
                     const btns = document.querySelectorAll('.status-btn');
                     btns.forEach(b => {
@@ -1938,7 +1926,6 @@
                     if (cur) cur.classList.add('on');
                 }
 
-                // Ocultar loader suavemente al terminar
                 setTimeout(() => {
                     loader.style.opacity = '0';
                     setTimeout(() => loader.style.display = 'none', 300);
@@ -1953,7 +1940,6 @@
         function closeTicketModal() {
             const modal = document.getElementById('modal-ticket');
             modal.classList.remove('open');
-            // Quitamos los modos una vez termine la animación de cierre (0.3s)
             setTimeout(() => {
                 modal.classList.remove('mode-view', 'mode-edit');
                 document.getElementById('ticket-form').reset();
@@ -1982,15 +1968,19 @@
             const label = document.getElementById('p-comment-label');
             const field = document.getElementById('p-comment');
 
+            // Evaluamos si el usuario se está moviendo a este estado (true) o si ya estaba ahí (false)
+            const isChangingStatus = val !== window.currentTicketOriginalStatus;
+
             if (val === 'por-concluir') {
                 block.classList.add('show');
                 block.classList.remove('danger');
-                label.textContent = 'Justificación técnica de "Por Concluir" *';
+                // Si solo cambia la prioridad pero se queda en "por-concluir", es opcional
+                label.textContent = isChangingStatus ? 'Justificación técnica de "Por Concluir" *' : 'Agregar comentario (Opcional)';
                 field.placeholder = 'Detalle qué impide el cierre...';
                 forceResizeTextareas();
             } else if (val === 'cancelado') {
                 block.classList.add('show', 'danger');
-                label.textContent = 'Motivo de cancelación *';
+                label.textContent = isChangingStatus ? 'Motivo de cancelación *' : 'Agregar comentario (Opcional)';
                 field.placeholder = 'Explique el motivo de la cancelación...';
                 forceResizeTextareas();
             } else {
@@ -2008,6 +1998,17 @@
             const prioridad = document.getElementById('p-prioridad').value;
             const comentario = document.getElementById('p-comment').value;
 
+            // Validación estricta para estado "nuevo"
+            if (estado === 'nuevo') {
+                Swal.fire({
+                    title: 'Estado Requerido',
+                    text: 'Debes cambiar el estado del ticket (ej. Abierto, En Espera) para poder clasificarlo y guardarlo.',
+                    icon: 'warning',
+                    confirmButtonColor: '#1e293b'
+                });
+                return;
+            }
+
             if (prioridad === 'sin clasificar') {
                 Swal.fire({
                     title: 'Prioridad Requerida',
@@ -2017,10 +2018,26 @@
                 });
                 return;
             }
-            if (['por-concluir', 'cancelado'].includes(estado) && !comentario.trim()) {
+
+            const isStatusChanged = estado !== window.currentTicketOriginalStatus;
+            const isPriorityChanged = prioridad !== window.currentTicketOriginalPriority;
+
+            // Evitar envíos innecesarios si no movió absolutamente nada
+            if (!isStatusChanged && !isPriorityChanged && !comentario.trim()) {
+                Swal.fire({
+                    title: 'Sin cambios',
+                    text: 'No has realizado ninguna modificación en el estado, prioridad o comentario.',
+                    icon: 'info',
+                    confirmButtonColor: '#1e293b'
+                });
+                return;
+            }
+
+            // Exigir comentario SÓLO si se está transicionando a un estado crítico
+            if (['por-concluir', 'cancelado'].includes(estado) && isStatusChanged && !comentario.trim()) {
                 Swal.fire({
                     title: 'Justificación obligatoria',
-                    text: 'Debe agregar un comentario.',
+                    text: 'Debe agregar un comentario justificando el cambio a este estado.',
                     icon: 'warning',
                     confirmButtonColor: '#1e293b'
                 });
@@ -2030,8 +2047,6 @@
             const payload = {
                 status: estado,
                 priority: prioridad,
-                subject: document.getElementById('p-asunto').value,
-                description: document.getElementById('p-desc').value,
                 comentario: comentario,
             };
             const btn = document.getElementById('btn-save');

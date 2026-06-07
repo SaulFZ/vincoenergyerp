@@ -4,7 +4,6 @@
 @extends('modules.administration.expense-claims.index')
 
 @section('content')
-    {{-- ── LIBRERÍAS EXTERNAS ── --}}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -87,7 +86,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th style="width:42px;">#</th>
+                            <th class="th-w-42">#</th>
                             <th>Folio Principal</th>
                             <th>Folio Usuario</th>
                             <th>Fecha</th>
@@ -97,7 +96,7 @@
                             <th>Monto Total</th>
                             <th>Estado de Revisión</th>
                             <th>Estado de Pago</th>
-                            <th class="cell-actions">Acciones</th>
+                            <th class="text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="dashboard-list">
@@ -106,12 +105,11 @@
                 </table>
             </div>
 
-            {{-- ESTADO VACÍO (Manejo de errores/Búsqueda sin resultados) --}}
+            {{-- ESTADO VACÍO --}}
             <div id="empty-state" class="empty-state hidden">
                 <i class="bx bx-file-blank empty-icon"></i>
                 <p class="empty-title">Sin resultados encontrados</p>
-                <p class="empty-desc">No hay solicitudes que coincidan con los criterios de búsqueda o filtro aplicados en
-                    este momento.</p>
+                <p class="empty-desc">No hay solicitudes que coincidan con los criterios de búsqueda o filtro aplicados en este momento.</p>
             </div>
 
             <div class="table-footer">
@@ -133,9 +131,9 @@
                     <i class="bx bx-receipt"></i>
                     Formato de <strong>Reembolso</strong>
                 </h2>
-                <div style="display:flex; align-items:center; gap:.75rem;">
-                    <button type="button" class="btn btn-secondary" onclick="toggleUuidPanel()"
-                        title="Autocompletar datos de los importes desde factura del SAT">
+                <div class="modal-header-actions">
+                    <button type="button" class="btn btn-secondary" onclick="toggleSatPanel()"
+                        title="Extraer datos desde el SAT">
                         <i class="bx bx-barcode"></i> Cargar Factura SAT
                     </button>
                     <button class="btn-close" onclick="closeModal()" aria-label="Cerrar ventana">
@@ -146,71 +144,69 @@
 
             <div class="modal-body" id="modal-body-scroll">
 
-                {{-- PANEL DE LECTURA DE UUID / XML DEL SAT --}}
-                <div id="uuid-panel" class="hidden"
-                    style="background:#0f172a; border:1px solid #1e293b; border-radius:.75rem; padding:1.5rem; margin-bottom:1.5rem; position:relative; overflow:hidden;">
-                    <div
-                        style="position:absolute;top:0;left:0;width:100%;height:4px;background:linear-gradient(to right,#14b8a6,#0d9488);">
-                    </div>
-                    <label class="input-label" style="color:#cbd5e1; font-size:.85rem; margin-bottom:.75rem;">
-                        Folio Fiscal (UUID) del comprobante SAT
-                    </label>
-                    <div style="display:flex; gap:.75rem; margin-bottom:.75rem;">
-                        <div style="position:relative; flex:1;">
-                            <i class="bx bx-barcode"
-                                style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:1.4rem;pointer-events:none;"></i>
-                            <input type="text" id="search-uuid" class="modal-focusable"
-                                style="width:100%;padding:.75rem 1rem .75rem 3rem;background:#1e293b;border:1px solid #334155;border-radius:.5rem;color:#fff;font-family:monospace;text-transform:uppercase;outline:none;"
-                                placeholder="550E8400-E29B-41D4-A716-446655440000" autocomplete="off">
+                {{-- NUEVO PANEL SAT CON PESTAÑAS --}}
+                <div id="sat-panel" class="sat-panel hidden">
+                    <div class="sat-panel-header">
+                        <h4 class="sat-panel-title"><i class="bx bx-link-external"></i> Vinculación SAT</h4>
+                        <div class="sat-tabs">
+                            <button type="button" class="sat-tab active" data-target="sat-tab-uuid"><i class="bx bx-search-alt"></i> Buscar UUID</button>
+                            <button type="button" class="sat-tab" data-target="sat-tab-xml"><i class="bx bx-upload"></i> Cargar XML</button>
                         </div>
-                        <button type="button" id="btn-buscar" class="btn btn-primary" onclick="buscarFactura()">
-                            <i class="bx bx-search"></i> Buscar
-                        </button>
                     </div>
-                    <p id="search-message" class="hidden" style="font-size:.72rem;color:#ef4444;margin-bottom:.75rem;">
-                    </p>
-                    <div id="drop-zone-container" class="hidden" style="border-top:1px solid #334155; padding-top:1rem;">
-                        <div id="drop-zone"
-                            style="border:2px dashed rgba(20,184,166,.45);background:rgba(20,184,166,.08);border-radius:.75rem;padding:1.5rem;text-align:center;cursor:pointer;transition:background .15s;">
-                            <i class="bx bx-cloud-upload" style="font-size:3rem;color:#14b8a6;"></i>
-                            <p style="margin-top:.5rem;font-size:.85rem;color:#cbd5e1;">Búsqueda local fallida o no
-                                vinculada.</p>
-                            <small
-                                style="display:block;margin-top:.25rem;font-size:.75rem;font-weight:600;color:#14b8a6;text-transform:uppercase;">Arrastra
-                                tu archivo .XML aquí para extracción local</small>
-                            <input type="file" id="xml-input" accept=".xml" style="display:none;">
+
+                    <div class="sat-panel-body">
+                        {{-- Pestaña 1: Búsqueda Manual --}}
+                        <div id="sat-tab-uuid" class="sat-content active">
+                            <label class="sat-label">Folio Fiscal (UUID) del comprobante SAT</label>
+                            <div class="sat-search-group">
+                                <div class="sat-input-wrap">
+                                    <i class="bx bx-barcode"></i>
+                                    <input type="text" id="search-uuid" class="sat-input modal-focusable"
+                                        placeholder="550E8400-E29B-41D4-A716-446655440000" autocomplete="off">
+                                </div>
+                                <button type="button" id="btn-buscar" class="btn btn-primary" onclick="buscarFactura()">
+                                    <i class="bx bx-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Pestaña 2: Carga de Archivo --}}
+                        <div id="sat-tab-xml" class="sat-content hidden">
+                            <div id="drop-zone" class="sat-drop-zone">
+                                <i class="bx bx-cloud-upload"></i>
+                                <p>Arrastra tu archivo .XML aquí o haz clic para examinar</p>
+                                <small>El sistema extraerá automáticamente el UUID, RFC y Fecha.</small>
+                                <input type="file" id="xml-input" accept=".xml" class="hidden">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- CABECERA INFORMATIVA DEL REEMBOLSO (Datos inmutables y de categorización) --}}
+                {{-- CABECERA INFORMATIVA DEL REEMBOLSO --}}
                 <div class="form-header-card">
-
                     <div class="fh-info-strip">
                         <div class="fh-info-item">
-                            <span>RFC Empresa Matriz</span>
+                            <span>RFC Empresa Matriz / Emisor</span>
                             <strong id="res-rfc">VES0000000</strong>
                         </div>
                         <div class="fh-info-item folio">
                             <span>Folio Principal (Sistema)</span>
                             <strong id="modal-folio-p">VES-0000</strong>
                         </div>
-                        <div class="fh-info-item">
+                        <div class="fh-info-item user-folio">
                             <span>Folio Interno del Usuario</span>
-                            <strong id="modal-folio-u" style="color:#64748b;">SFP-000</strong>
+                            <strong id="modal-folio-u">SFP-000</strong>
                         </div>
 
                         <div class="fh-info-item">
                             <span>Lugar de Emisión</span>
-                            <div class="input-group" style="margin-top: 3px;">
-                                <i class="bx bx-map field-icon" style="font-size: 1.05rem; left: 0.6rem;"></i>
-                                <input type="text" id="modal-lugar" value="VHSA, TAB."
-                                    class="input-field modal-focusable"
-                                    style="padding: 0.4rem 0.5rem 0.4rem 2rem; width: 140px; font-weight: 600; color: #0f172a; background: #fff;">
+                            <div class="input-group location-group">
+                                <i class="bx bx-map field-icon"></i>
+                                <input type="text" id="modal-lugar" value="VHSA, TAB." class="input-field input-location modal-focusable">
                             </div>
                         </div>
 
-                        <div class="fh-info-item" style="text-align:right;">
+                        <div class="fh-info-item text-right">
                             <span>Fecha del Documento</span>
                             <strong id="modal-fecha-hoy"></strong>
                         </div>
@@ -222,13 +218,11 @@
                                 <label class="input-label">Categoría del Gasto Asignado</label>
                                 <div class="radio-pill-group">
                                     <label class="radio-pill-label">
-                                        <input type="radio" name="tipo_gasto" value="viaje" class="modal-focusable"
-                                            checked>
+                                        <input type="radio" name="tipo_gasto" value="viaje" class="modal-focusable" checked>
                                         <i class="bx bxs-plane-alt"></i> Viáticos y Viaje
                                     </label>
                                     <label class="radio-pill-label">
-                                        <input type="radio" name="tipo_gasto" value="operacion"
-                                            class="modal-focusable">
+                                        <input type="radio" name="tipo_gasto" value="operacion" class="modal-focusable">
                                         <i class="bx bx-briefcase"></i> Operaciones y Campo
                                     </label>
                                     <label class="radio-pill-label">
@@ -237,25 +231,41 @@
                                     </label>
                                 </div>
                             </div>
+
+                            {{-- NUEVO: TOGGLE DE CAPTURA DELEGADA --}}
+                            <div class="delegation-wrapper" id="delegation-container">
+                                <div class="delegation-toggle-wrap">
+                                    <label class="switch">
+                                        <input type="checkbox" id="toggle-delegation" onchange="handleDelegationToggle()">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="delegation-text">Delegar Captura (A nombre de otro)</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="fh-grid-4">
+                            {{-- NUEVO: BUSCADOR DE USUARIO INTEGRADO --}}
                             <div>
-                                <label class="input-label">Nombre del Solicitante</label>
+                                <label class="input-label">Nombre del Beneficiario</label>
                                 <div class="input-group">
-                                    <i class="bx bx-user field-icon"></i>
-                                    <input type="text" id="modal-nombre"
-                                        value="{{ $userData['nombre'] ?? 'Saul Falcon Perez' }}" class="input-field"
-                                        readonly>
+                                    <i class="bx bx-user field-icon" id="icon-solicitante"></i>
+                                    {{-- Campo Oculto para Base de Datos --}}
+                                    <input type="hidden" id="modal-beneficiary-id" value="1">
+
+                                    <input type="text" id="modal-nombre" value="{{ $userData['nombre'] ?? 'Saul Falcon Perez' }}" class="input-field" readonly autocomplete="off">
+
+                                    {{-- Dropdown Flotante para Autocompletado --}}
+                                    <div id="employee-dropdown" class="custom-dropdown hidden">
+                                        </div>
                                 </div>
                             </div>
+
                             <div>
-                                <label class="input-label">Área / Departamento</label>
+                                <label class="input-label">Área de Adscripción</label>
                                 <div class="input-group">
                                     <i class="bx bx-buildings field-icon"></i>
-                                    <input type="text" id="modal-depto"
-                                        value="{{ $userData['departamento'] ?? 'Desarrollo de Software' }}"
-                                        class="input-field" readonly>
+                                    <input type="text" id="modal-depto" value="{{ $userData['departamento'] ?? 'Desarrollo de Software' }}" class="input-field" readonly>
                                 </div>
                             </div>
                             <div>
@@ -266,8 +276,8 @@
                                         <option value="" disabled selected>Seleccione código...</option>
                                         <option value="VNC-OP-01">VNC-OP-01 | Dir. de Operaciones</option>
                                         <option value="VNC-TI-02">VNC-TI-02 | Tecnologías de Información</option>
-                                        <option value="VNC-AD-03">VNC-AD-03 | Administración y Finanzas</option>
-                                        <option value="VNC-CM-04">VNC-CM-04 | Dpto. Comercialización</option>
+                                        <option value="VNC-QH-03">VNC-QH-03 | Dir. de Calidad y QHSE</option>
+                                        <option value="VNC-AD-04">VNC-AD-04 | Administración y Finanzas</option>
                                     </select>
                                 </div>
                             </div>
@@ -275,15 +285,14 @@
                                 <label class="input-label">Motivo de la Erogación</label>
                                 <div class="input-group">
                                     <i class="bx bx-text field-icon"></i>
-                                    <input type="text" id="modal-motivo" class="input-field modal-focusable"
-                                        placeholder="Ej. Viáticos técnicos a pozo foráneo">
+                                    <input type="text" id="modal-motivo" class="input-field modal-focusable" placeholder="Ej. Viáticos técnicos a pozo foráneo">
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- MATRIZ DE DESGLOSE FINANCIERO (Facturas, importes e impuestos) --}}
+                {{-- MATRIZ DE DESGLOSE FINANCIERO --}}
                 <div class="expense-card">
                     <div class="expense-card-header">
                         <span class="expense-card-title">
@@ -294,23 +303,21 @@
                         <table class="expense-table">
                             <thead>
                                 <tr class="th-group">
-                                    <th colspan="3" style="text-align:left;">Comprobante Identificador</th>
+                                    <th colspan="3" class="text-left">Comprobante Identificador</th>
                                     <th colspan="3" class="th-importes">Importes Subtotales</th>
                                     <th colspan="2">Retenciones / Impuestos</th>
-                                    <th rowspan="2"
-                                        style="background:#0f172a; color:#fff; text-align:right; padding:.6rem .75rem;">
-                                        Monto Total</th>
-                                    <th rowspan="2" style="background:#0f172a; width:45px;"></th>
+                                    <th rowspan="2" class="th-total-header">Monto Total</th>
+                                    <th rowspan="2" class="th-total-empty"></th>
                                 </tr>
                                 <tr class="th-cols">
-                                    <th style="width:140px;">Fecha Factura</th>
-                                    <th style="width:100px;">Folio/Num. Fac.</th>
+                                    <th class="th-w-140">Fecha Factura</th>
+                                    <th class="th-w-100">Folio/Num. Fac.</th>
                                     <th>Descripción Comercial</th>
-                                    <th style="width:90px;">Comp. Fiscal<br>(PDF + XML)</th>
-                                    <th style="width:90px;">Comp. Simple<br>No Fiscal</th>
-                                    <th style="width:90px;">Sin Comp.<br>y Propinas</th>
-                                    <th style="width:80px;">I.S.H.<br>Otros Imp.</th>
-                                    <th style="width:75px;">I.V.A. (16%)</th>
+                                    <th class="th-w-90">Comp. Fiscal<br>(PDF + XML)</th>
+                                    <th class="th-w-90">Comp. Simple<br>No Fiscal</th>
+                                    <th class="th-w-90">Sin Comp.<br>y Propinas</th>
+                                    <th class="th-w-80">I.S.H.<br>Otros Imp.</th>
+                                    <th class="th-w-75">I.V.A. (16%)</th>
                                 </tr>
                             </thead>
 
@@ -318,77 +325,47 @@
                             <tbody id="cat-vuelos">
                                 <tr class="cat-row">
                                     <td colspan="10">
-                                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                                            <span><i class="bx bxs-plane-alt"></i> I. Transportación, Vuelos y
-                                                Peajes</span>
-                                            <button type="button" class="btn-add-row" onclick="addRow('cat-vuelos')"
-                                                title="Agregar Fila de Gasto">
-                                                <i class="bx bx-plus"></i>
-                                            </button>
+                                        <div class="cat-row-content">
+                                            <span><i class="bx bxs-plane-alt"></i> I. Transportación, Vuelos y Peajes</span>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-vuelos')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr class="data-row">
-                                    <td>
-                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
-                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
-                                                data-fp></div>
-                                    </td>
+                                    <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                                     <td class="cell-row-total">-</td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-row"
-                                            onclick="removeRow(this)" title="Eliminar este concepto"><i
-                                                class="bx bx-trash"></i></button></td>
+                                    <td class="text-center"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar"><i class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
 
-                            {{-- SECCIÓN: RESTAURANTES Y/O COMIDAS --}}
+                            {{-- SECCIÓN: RESTAURANTES --}}
                             <tbody id="cat-restaurantes">
                                 <tr class="cat-row">
                                     <td colspan="10">
-                                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                                            <span><i class="bx bx-restaurant"></i> II. Consumo de Alimentos y
-                                                Restaurantes</span>
-                                            <button type="button" class="btn-add-row"
-                                                onclick="addRow('cat-restaurantes')" title="Agregar Fila de Gasto">
-                                                <i class="bx bx-plus"></i>
-                                            </button>
+                                        <div class="cat-row-content">
+                                            <span><i class="bx bx-restaurant"></i> II. Consumo de Alimentos y Restaurantes</span>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-restaurantes')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr class="data-row">
-                                    <td>
-                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
-                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
-                                                data-fp></div>
-                                    </td>
+                                    <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                                     <td class="cell-row-total">-</td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-row"
-                                            onclick="removeRow(this)" title="Eliminar este concepto"><i
-                                                class="bx bx-trash"></i></button></td>
+                                    <td class="text-center"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar"><i class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
 
@@ -396,37 +373,23 @@
                             <tbody id="cat-combustible">
                                 <tr class="cat-row">
                                     <td colspan="10">
-                                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <div class="cat-row-content">
                                             <span><i class="bx bxs-gas-pump"></i> III. Abastecimiento de Combustible</span>
-                                            <button type="button" class="btn-add-row"
-                                                onclick="addRow('cat-combustible')" title="Agregar Fila de Gasto">
-                                                <i class="bx bx-plus"></i>
-                                            </button>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-combustible')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr class="data-row">
-                                    <td>
-                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
-                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
-                                                data-fp></div>
-                                    </td>
+                                    <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                                     <td class="cell-row-total">-</td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-row"
-                                            onclick="removeRow(this)" title="Eliminar este concepto"><i
-                                                class="bx bx-trash"></i></button></td>
+                                    <td class="text-center"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar"><i class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
 
@@ -434,37 +397,23 @@
                             <tbody id="cat-otros">
                                 <tr class="cat-row">
                                     <td colspan="10">
-                                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <div class="cat-row-content">
                                             <span><i class="bx bx-package"></i> IV. Cargos Varios / Misceláneos</span>
-                                            <button type="button" class="btn-add-row" onclick="addRow('cat-otros')"
-                                                title="Agregar Fila de Gasto">
-                                                <i class="bx bx-plus"></i>
-                                            </button>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-otros')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr class="data-row">
-                                    <td>
-                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
-                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
-                                                data-fp></div>
-                                    </td>
+                                    <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                                     <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
+                                    <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                                     <td class="cell-row-total">-</td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-row"
-                                            onclick="removeRow(this)" title="Eliminar este concepto"><i
-                                                class="bx bx-trash"></i></button></td>
+                                    <td class="text-center"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar"><i class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -474,14 +423,11 @@
                 {{-- PANEL INFERIOR: GESTOR DOCUMENTAL Y RESUMEN FINANCIERO --}}
                 <div class="bottom-section">
 
-                    <div class="evidence-panel" id="evidence-panel"
-                        onclick="document.getElementById('evidence-upload').click()">
+                    <div class="evidence-panel" id="evidence-panel" onclick="document.getElementById('evidence-upload').click()">
                         <i class="bx bxs-file-pdf evidence-icon"></i>
                         <h4 class="evidence-title">Gestor Documental (PDF)</h4>
-                        <p class="evidence-desc">Arrastra y suelta tus facturas, tickets y documentación probatoria
-                            aquí.<br>Carga máxima de 10MB por archivo unitario.</p>
-                        <button type="button" class="btn btn-secondary"
-                            onclick="event.stopPropagation(); document.getElementById('evidence-upload').click()">
+                        <p class="evidence-desc">Arrastra y suelta tus facturas, tickets y documentación probatoria aquí.<br>Carga máxima de 10MB por archivo unitario.</p>
+                        <button type="button" class="btn btn-secondary" onclick="event.stopPropagation(); document.getElementById('evidence-upload').click()">
                             <i class="bx bx-folder-plus"></i> Examinar archivos locales
                         </button>
                         <input type="file" id="evidence-upload" accept=".pdf" multiple class="hidden">
@@ -494,14 +440,10 @@
                             <span>Consolidado Financiero</span>
                         </div>
                         <div class="summary-body">
-                            <div class="summary-row"><span class="sum-lbl">Sub-Total Neto:</span><span id="sum-subtotal"
-                                    class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Suma Erogada (Base):</span><span
-                                    id="sum-gastos" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva"
-                                    class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Impuestos Locales (I.S.H.):</span><span
-                                    id="sum-ish" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Sub-Total Neto:</span><span id="sum-subtotal" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Suma Erogada (Base):</span><span id="sum-gastos" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Impuestos Locales (I.S.H.):</span><span id="sum-ish" class="sum-val">$0.00</span></div>
                             <div class="sum-total-row">
                                 <span class="sum-total-lbl">TOTAL A REEMBOLSAR</span>
                                 <span id="sum-total" class="sum-total-val" data-value="0">$0.00</span>
@@ -510,18 +452,16 @@
                     </div>
 
                 </div>
-
             </div>{{-- /modal-body --}}
 
             <div class="modal-footer">
                 <div>
-                    <span style="font-size:.75rem; color:#94a3b8; display:flex; align-items:center; gap:5px;">
-                        <i class="bx bx-info-circle" style="font-size:1.1rem;"></i>
-                        Para garantizar una autorización rápida, asegúrate de adjuntar el PDF de soporte.
+                    <span class="modal-footer-note">
+                        <i class="bx bx-info-circle"></i> Para garantizar una autorización rápida, asegúrate de adjuntar el PDF de soporte.
                     </span>
                 </div>
 
-                {{-- MODO DE CREACIÓN: INTERFAZ DEL SOLICITANTE --}}
+                {{-- MODO DE CREACIÓN --}}
                 <div class="modal-footer-right" id="footer-create">
                     <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancelar Operación</button>
                     <button type="button" id="btn-borrador" class="btn btn-secondary" onclick="saveDraft()">
@@ -532,34 +472,24 @@
                     </button>
                 </div>
 
-                {{-- MODO DE VISUALIZACIÓN LECTURA --}}
+                {{-- MODO DE VISUALIZACIÓN --}}
                 <div class="modal-footer-right hidden" id="footer-view">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar Pestaña</button>
                 </div>
 
-                {{-- MODO DE EVALUACIÓN: INTERFAZ ADMINISTRATIVA / GERENCIAL --}}
+                {{-- MODO DE EVALUACIÓN --}}
                 <div class="modal-footer-right hidden" id="footer-evaluate">
                     <button type="button" class="btn btn-ghost" onclick="closeModal()">Posponer</button>
-
-                    {{-- Botón para Rechazar (Común) --}}
                     <button type="button" class="btn btn-fail-solid" onclick="processEvaluation('Rechazado')">
                         <i class="bx bx-x"></i> Rechazar
                     </button>
-
-                    {{-- Botón Validar (Fase 1: Administración) --}}
-                    <button type="button" class="btn btn-secondary" id="btn-eval-validate"
-                        style="color:var(--teal-dark); border-color:var(--teal-dark);"
-                        onclick="processEvaluation('Validado')">
+                    <button type="button" class="btn btn-secondary btn-validate-special" id="btn-eval-validate" onclick="processEvaluation('Validado')">
                         <i class="bx bx-list-check"></i> Validar
                     </button>
-
-                    {{-- Botón Aprobar (Fase 2: Gerencia) --}}
-                    <button type="button" class="btn btn-ok-solid" id="btn-eval-approve"
-                        onclick="processEvaluation('Aprobado')">
+                    <button type="button" class="btn btn-ok-solid" id="btn-eval-approve" onclick="processEvaluation('Aprobado')">
                         <i class="bx bx-check-double"></i> Aprobar
                     </button>
                 </div>
-
             </div>
 
         </div>
@@ -572,119 +502,152 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
 
     <script>
-        /* ── INTERACCIÓN Y ACCESIBILIDAD: NAVEGACIÓN CON ENTER ── */
+        /* ── VARIABLES DE SESIÓN (Logueado) ── */
+        const sessionUser = {
+            id: 1,
+            nombre: "Saul Falcon Perez",
+            depto: "Desarrollo de Software",
+            rfc: "VES0000000"
+        };
+
+        /* ── SIMULADOR DB DE EMPLEADOS PARA BÚSQUEDA ── */
+        const companyEmployees = [
+            { id: 1, nombre: "Saul Falcon Perez", depto: "Desarrollo de Software", rfc: "VES0000000" },
+            { id: 2, nombre: "Carlos Izquierdo", depto: "Calidad y QHSE", rfc: "IZQC850101ABC" },
+            { id: 3, nombre: "Yanuri Martinez", depto: "Operaciones", rfc: "MARY900101DEF" },
+            { id: 4, nombre: "Jasiel", depto: "Administración y Finanzas", rfc: "JAS990101GHI" }
+        ];
+
+        /* ── NAVEGACIÓN Y ACCESIBILIDAD ── */
         document.getElementById('reimbursement-modal').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const focusableElements = Array.from(this.querySelectorAll('.modal-focusable'));
                 const currentIndex = focusableElements.indexOf(document.activeElement);
-
-                // Salto automático al siguiente campo disponible en el flujo
                 if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
                     focusableElements[currentIndex + 1].focus();
                 }
             }
         });
 
-        /* ── SISTEMA DE NOTIFICACIONES TOAST (SWEETALERT2) ── */
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 4500,
-            timerProgressBar: true,
-            didOpen: t => {
-                t.addEventListener('mouseenter', Swal.stopTimer);
-                t.addEventListener('mouseleave', Swal.resumeTimer);
+        /* ── CONTROL DE DELEGACIÓN Y AUTOCOMPLETADO (NUEVO) ── */
+        const modalNombre = document.getElementById('modal-nombre');
+        const modalDepto = document.getElementById('modal-depto');
+        const resRfc = document.getElementById('res-rfc');
+        const beneficiaryId = document.getElementById('modal-beneficiary-id');
+        const dropdown = document.getElementById('employee-dropdown');
+        const iconSolicitante = document.getElementById('icon-solicitante');
+
+        function handleDelegationToggle() {
+            const isDelegated = document.getElementById('toggle-delegation').checked;
+
+            if (isDelegated) {
+                // Modo Búsqueda
+                modalNombre.removeAttribute('readonly');
+                modalNombre.value = '';
+                modalNombre.placeholder = 'Buscar empleado por nombre...';
+                modalNombre.focus();
+                modalNombre.classList.add('input-active-search');
+                iconSolicitante.className = 'bx bx-search field-icon';
+                iconSolicitante.style.color = 'var(--teal-dark)';
+                showToast('Modo de captura delegada activo.', 'info');
+            } else {
+                // Modo Normal (Sesión actual)
+                modalNombre.setAttribute('readonly', 'true');
+                modalNombre.value = sessionUser.nombre;
+                modalDepto.value = sessionUser.depto;
+                resRfc.textContent = sessionUser.rfc;
+                beneficiaryId.value = sessionUser.id;
+                modalNombre.classList.remove('input-active-search');
+                iconSolicitante.className = 'bx bx-user field-icon';
+                iconSolicitante.style.color = '#94a3b8';
+                dropdown.classList.add('hidden');
             }
+        }
+
+        // Lógica del buscador predictivo
+        modalNombre.addEventListener('input', function() {
+            if (modalNombre.hasAttribute('readonly')) return;
+
+            const query = this.value.toLowerCase();
+            dropdown.innerHTML = '';
+
+            if (query.length < 2) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const results = companyEmployees.filter(emp => emp.nombre.toLowerCase().includes(query));
+
+            if (results.length > 0) {
+                results.forEach(emp => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    item.innerHTML = `<strong>${emp.nombre}</strong><span>${emp.depto}</span>`;
+                    item.onclick = () => selectEmployee(emp);
+                    dropdown.appendChild(item);
+                });
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.innerHTML = '<div class="dropdown-empty">No se encontraron coincidencias</div>';
+                dropdown.classList.remove('hidden');
+            }
+        });
+
+        // Selección de empleado del dropdown
+        function selectEmployee(emp) {
+            modalNombre.value = emp.nombre;
+            modalDepto.value = emp.depto;
+            resRfc.textContent = emp.rfc;
+            beneficiaryId.value = emp.id;
+            dropdown.classList.add('hidden');
+            showToast(`Beneficiario actualizado a: ${emp.nombre}`, 'success');
+        }
+
+        // Cerrar dropdown al hacer click afuera
+        document.addEventListener('click', function(e) {
+            if (!modalNombre.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        /* ── CONTROL DE PESTAÑAS DEL PANEL SAT ── */
+        function toggleSatPanel() {
+            document.getElementById('sat-panel').classList.toggle('hidden');
+        }
+
+        document.querySelectorAll('.sat-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.sat-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.sat-content').forEach(c => c.classList.add('hidden'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.target).classList.remove('hidden');
+            });
+        });
+
+        const Toast = Swal.mixin({
+            toast: true, position: 'top-end', showConfirmButton: false, timer: 4500, timerProgressBar: true,
+            didOpen: t => { t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer); }
         });
         const showToast = (msg, type = 'success') => Toast.fire({
-            icon: type,
-            title: `<span style="font-family:'Poppins', sans-serif; font-size:14px;">${msg}</span>`
+            icon: type, title: `<span style="font-family:'Poppins', sans-serif; font-size:14px;">${msg}</span>`
         });
 
-        /* ── DATOS TRANSACCIONALES (MOCK DB) ── */
-        // Aquí simulamos un backend. La estructura contempla el ciclo de 3 fases completas.
-        let requests = [{
-                id: 1001,
-                folioP: 'VES-0001',
-                folioU: 'SFP-001',
-                fecha: '02/05/2026',
-                nombre: 'Saul Falcon Perez',
-                motivo: 'Visita a cliente externo para auditoría en sitio',
-                depto: 'Desarrollo de Software',
-                amount: 3500.00,
-                status: 'Aprobado',
-                pago: 'Pagado'
-            },
-            {
-                id: 1002,
-                folioP: 'VES-0002',
-                folioU: 'SFP-002',
-                fecha: '05/05/2026',
-                nombre: 'Saul Falcon Perez',
-                motivo: 'Compra equipo menor (Ratón y Teclado Magnético Aula)',
-                depto: 'Desarrollo de Software',
-                amount: 850.50,
-                status: 'Validado', // Fase 1 administrativa: Papeleo OK
-                pago: 'Por autorizar' // Tesorería sabe que aún falta el gerente
-            },
-            {
-                id: 1003,
-                folioP: 'VES-0003',
-                folioU: 'SFP-003',
-                fecha: '08/05/2026',
-                nombre: 'Saul Falcon Perez',
-                motivo: 'Viáticos proyecto de despliegue servidor Dell / Ubuntu',
-                depto: 'Desarrollo de Software',
-                amount: 6200.00,
-                status: 'Pendiente', // Fase 0: Esperando a Administración
-                pago: 'En espera'
-            },
-            {
-                id: 1004,
-                folioP: 'VES-0004',
-                folioU: 'SFP-004',
-                fecha: '09/05/2026',
-                nombre: 'Saul Falcon Perez',
-                motivo: 'Mobiliario de oficina y organización general',
-                depto: 'Desarrollo de Software',
-                amount: 430.00,
-                status: 'Rechazado', // Rechazo en cualquier fase detiene la cadena
-                pago: 'No procede'
-            },
-            {
-                id: 1006,
-                folioP: 'VES-0005',
-                folioU: 'SFP-005',
-                fecha: '11/05/2026',
-                nombre: 'Saul Falcon Perez',
-                motivo: 'Pago de suscripción servidores IONOS y Dominio web',
-                depto: 'Desarrollo de Software',
-                amount: 1450.00,
-                status: 'Aprobado', // Aprobado por el Gerente, ya pasó la Fase 2
-                pago: 'Por pagar' // Tesorería (Fase 3) ya está preparando el dinero (Reemplazo de "En proceso")
-            }
+        let requests = [
+            { id: 1001, folioP: 'VES-0001', folioU: 'SFP-001', fecha: '02/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Visita a cliente externo para auditoría en sitio', depto: 'Desarrollo de Software', amount: 3500.00, status: 'Aprobado', pago: 'Pagado' },
+            { id: 1002, folioP: 'VES-0002', folioU: 'SFP-002', fecha: '05/05/2026', nombre: 'Yanuri Martinez', motivo: 'Compra equipo menor', depto: 'Operaciones', amount: 850.50, status: 'Validado', pago: 'Por autorizar' },
+            { id: 1003, folioP: 'VES-0003', folioU: 'SFP-003', fecha: '08/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Viáticos proyecto Dell', depto: 'Desarrollo de Software', amount: 6200.00, status: 'Pendiente', pago: 'En espera' },
+            { id: 1004, folioP: 'VES-0004', folioU: 'SFP-004', fecha: '09/05/2026', nombre: 'Carlos Izquierdo', motivo: 'Mobiliario de oficina', depto: 'Calidad y QHSE', amount: 430.00, status: 'Rechazado', pago: 'No procede' },
+            { id: 1006, folioP: 'VES-0005', folioU: 'SFP-005', fecha: '11/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Suscripción IONOS', depto: 'Desarrollo de Software', amount: 1450.00, status: 'Aprobado', pago: 'Por pagar' }
         ];
 
-        let currentId = 1007; // Secuenciador AI / DB Mock
+        let currentId = 1007;
         let currentEvaluateId = null;
 
-        const fmt = n => new Intl.NumberFormat('es-MX', {
-            style: 'currency',
-            currency: 'MXN'
-        }).format(n);
+        const fmt = n => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
 
-        /* ── INICIALIZACIÓN DE FECHAS DE ENCABEZADO ── */
-        document.getElementById('modal-fecha-hoy').textContent =
-            new Date().toLocaleDateString('es-MX', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
+        document.getElementById('modal-fecha-hoy').textContent = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        /* ── MANEJADORES DE FILTROS Y BÚSQUEDA DEL DATATABLE ── */
         let activeFilter = 'all';
         let searchQuery = '';
 
@@ -702,41 +665,21 @@
             });
         });
 
-        /* ── MOTOR DE RENDERIZADO DEL DASHBOARD (COMPUTADOR DE ESTADOS) ── */
         function renderDashboard() {
             const list = document.getElementById('dashboard-list');
             const emptyState = document.getElementById('empty-state');
             const tableCount = document.getElementById('table-count');
             list.innerHTML = '';
 
-            let totalAcc = 0,
-                pendCount = 0,
-                pendAmt = 0,
-                appCount = 0,
-                appAmt = 0,
-                rejCount = 0,
-                rejAmt = 0;
+            let totalAcc = 0, pendCount = 0, pendAmt = 0, appCount = 0, appAmt = 0, rejCount = 0, rejAmt = 0;
 
-            // Computar métricas analíticas
             requests.forEach(req => {
-                if (req.status !== 'Borrador') {
-                    totalAcc += req.amount;
-                }
-                if (req.status === 'Pendiente' || req.status === 'Validado') {
-                    pendCount++;
-                    pendAmt += req.amount;
-                }
-                if (req.status === 'Aprobado') {
-                    appCount++;
-                    appAmt += req.amount;
-                }
-                if (req.status === 'Rechazado') {
-                    rejCount++;
-                    rejAmt += req.amount;
-                }
+                if (req.status !== 'Borrador') totalAcc += req.amount;
+                if (req.status === 'Pendiente' || req.status === 'Validado') { pendCount++; pendAmt += req.amount; }
+                if (req.status === 'Aprobado') { appCount++; appAmt += req.amount; }
+                if (req.status === 'Rechazado') { rejCount++; rejAmt += req.amount; }
             });
 
-            // Actualizar tarjetas del DOM
             document.getElementById('metric-total-val').textContent = fmt(totalAcc);
             document.getElementById('metric-pending-val').textContent = pendCount;
             document.getElementById('metric-approved-val').textContent = appCount;
@@ -745,71 +688,36 @@
             document.getElementById('metric-approved-amount').textContent = fmt(appAmt);
             document.getElementById('metric-rejected-amount').textContent = fmt(rejAmt);
 
-            // Algoritmo de filtrado anidado
             let filtered = requests.filter(req => {
                 const matchFilter = activeFilter === 'all' || req.status === activeFilter;
-                const matchSearch = !searchQuery ||
-                    req.motivo.toLowerCase().includes(searchQuery) ||
-                    req.folioP.toLowerCase().includes(searchQuery) ||
-                    req.folioU.toLowerCase().includes(searchQuery) ||
-                    req.nombre.toLowerCase().includes(searchQuery);
+                const matchSearch = !searchQuery || req.motivo.toLowerCase().includes(searchQuery) || req.folioP.toLowerCase().includes(searchQuery) || req.folioU.toLowerCase().includes(searchQuery) || req.nombre.toLowerCase().includes(searchQuery);
                 return matchFilter && matchSearch;
             });
 
             tableCount.textContent = `${filtered.length} solicitud${filtered.length !== 1 ? 'es' : ''} registrada(s)`;
 
-            if (filtered.length === 0) {
-                emptyState.classList.remove('hidden');
-                return;
-            }
+            if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
 
-            // Renderizado de las filas
             filtered.forEach((req) => {
                 const globalIdx = requests.findIndex(r => r.id === req.id);
+                let badge = '', badgePago = '';
 
-                // 1. ÁRBOL DE DECISIÓN: ESTADO DE REVISIÓN
-                let badge = '';
-                if (req.status === 'Aprobado') badge =
-                    `<span class="status-badge badge-ok"><i class="bx bx-check-circle"></i> Aprobado</span>`;
-                else if (req.status === 'Rechazado') badge =
-                    `<span class="status-badge badge-fail"><i class="bx bx-x-circle"></i> Rechazado</span>`;
-                else if (req.status === 'Validado') badge =
-                    `<span class="status-badge badge-review"><i class="bx bx-list-check"></i> Validado</span>`;
-                else if (req.status === 'Borrador') badge =
-                    `<span class="status-badge badge-draft"><i class="bx bx-edit-alt"></i> Borrador</span>`;
-                else badge =
-                    `<span class="status-badge badge-wait"><i class="bx bx-hourglass"></i> Pendiente</span>`;
+                if (req.status === 'Aprobado') badge = `<span class="status-badge badge-ok"><i class="bx bx-check-circle"></i> Aprobado</span>`;
+                else if (req.status === 'Rechazado') badge = `<span class="status-badge badge-fail"><i class="bx bx-x-circle"></i> Rechazado</span>`;
+                else if (req.status === 'Validado') badge = `<span class="status-badge badge-review"><i class="bx bx-list-check"></i> Validado</span>`;
+                else if (req.status === 'Borrador') badge = `<span class="status-badge badge-draft"><i class="bx bx-edit-alt"></i> Borrador</span>`;
+                else badge = `<span class="status-badge badge-wait"><i class="bx bx-hourglass"></i> Pendiente</span>`;
 
-                // 2. ÁRBOL DE DECISIÓN: ESTADO FINANCIERO / PAGO
-                let badgePago = '';
-                if (req.pago === 'Pagado') badgePago =
-                    `<span class="status-badge badge-payment-paid"><i class="bx bx-money"></i> Pagado</span>`;
-                else if (req.pago === 'Por pagar') badgePago =
-                    `<span class="status-badge badge-payment-process"><i class="bx bx-wallet"></i> Por pagar</span>`;
-                else if (req.pago === 'Por autorizar') badgePago =
-                    `<span class="status-badge badge-payment-auth"><i class="bx bx-user-voice"></i> Por autorizar</span>`;
-                else if (req.pago === 'En espera') badgePago =
-                    `<span class="status-badge badge-payment-wait"><i class="bx bx-time-five"></i> En espera</span>`;
-                else if (req.pago === 'No procede') badgePago =
-                    `<span class="status-badge badge-payment-void"><i class="bx bx-block"></i> No procede</span>`;
-                else badgePago =
-                    `<span class="status-badge badge-disabled"><i class="bx bx-minus"></i> ${req.pago || 'N/A'}</span>`;
+                if (req.pago === 'Pagado') badgePago = `<span class="status-badge badge-payment-paid"><i class="bx bx-money"></i> Pagado</span>`;
+                else if (req.pago === 'Por pagar') badgePago = `<span class="status-badge badge-payment-process"><i class="bx bx-wallet"></i> Por pagar</span>`;
+                else if (req.pago === 'Por autorizar') badgePago = `<span class="status-badge badge-payment-auth"><i class="bx bx-user-voice"></i> Por autorizar</span>`;
+                else if (req.pago === 'En espera') badgePago = `<span class="status-badge badge-payment-wait"><i class="bx bx-time-five"></i> En espera</span>`;
+                else if (req.pago === 'No procede') badgePago = `<span class="status-badge badge-payment-void"><i class="bx bx-block"></i> No procede</span>`;
+                else badgePago = `<span class="status-badge badge-disabled"><i class="bx bx-minus"></i> ${req.pago || 'N/A'}</span>`;
 
-                // 3. RENDERIZACIÓN CONDICIONAL DE CONTROLES Y ACCIONES
-                // El botón evaluar se muestra a roles directivos en 'Pendiente' o 'Validado'.
-                const evaluateBtn = (req.status === 'Pendiente' || req.status === 'Validado') ?
-                    `<button class="btn-icon btn-icon-evaluate" onclick="evaluarSolicitud(${req.id})" title="Gestionar Resolución"><i class="bx bx-check-shield"></i></button>` :
-                    '';
+                const evaluateBtn = (req.status === 'Pendiente' || req.status === 'Validado') ? `<button class="btn-icon btn-icon-evaluate" onclick="evaluarSolicitud(${req.id})" title="Gestionar Resolución"><i class="bx bx-check-shield"></i></button>` : '';
 
-                const actions = `
-                    <div class="actions-wrap">
-                        <button class="btn-icon btn-icon-view" onclick="verDetalles(${req.id})" title="Visualizar Documentación"><i class="bx bx-show"></i></button>
-                        ${evaluateBtn}
-                    </div>
-                `;
-
-                // Insertando el HTML en el DOM. Notar el orden de columnas exigido: Folios -> Fecha -> Solicitante -> ...
                 list.innerHTML += `
                 <tr>
                     <td class="row-index">${globalIdx + 1}</td>
@@ -819,20 +727,19 @@
                     <td><span class="row-name">${req.nombre}</span></td>
                     <td><span class="row-motive">${req.motivo}</span></td>
                     <td><span class="row-depto">${req.depto}</span></td>
-                    <td>
-                        <div class="row-amount-wrap">
-                            <span class="row-amount">${fmt(req.amount)}</span>
-                            <span class="row-amount-label">MXN</span>
-                        </div>
-                    </td>
+                    <td><div class="row-amount-wrap"><span class="row-amount">${fmt(req.amount)}</span><span class="row-amount-label">MXN</span></div></td>
                     <td>${badge}</td>
                     <td>${badgePago}</td>
-                    <td class="cell-actions">${actions}</td>
+                    <td class="cell-actions">
+                        <div class="actions-wrap">
+                            <button class="btn-icon btn-icon-view" onclick="verDetalles(${req.id})" title="Visualizar Documentación"><i class="bx bx-show"></i></button>
+                            ${evaluateBtn}
+                        </div>
+                    </td>
                 </tr>`;
             });
         }
 
-        /* ── GESTIÓN DINÁMICA DE CONCEPTOS EN LA MATRIZ DE TABLAS ── */
         function getRowTemplate() {
             return `
             <tr class="data-row">
@@ -845,78 +752,53 @@
                 <td><input type="number" oninput="calcTotal()" class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
                 <td><input type="number" oninput="calcTotal()" class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
                 <td class="cell-row-total">-</td>
-                <td style="text-align:center;"><button type="button" class="btn-remove-row" onclick="removeRow(this)" aria-label="Eliminar concepto de la tabla"><i class="bx bx-trash"></i></button></td>
+                <td class="text-center"><button type="button" class="btn-remove-row" onclick="removeRow(this)" title="Eliminar"><i class="bx bx-trash"></i></button></td>
             </tr>`;
         }
 
         function addRow(tbodyId) {
             const tbody = document.getElementById(tbodyId);
             tbody.insertAdjacentHTML('beforeend', getRowTemplate());
-            const newRow = tbody.lastElementChild;
-            // Instanciar Flatpickr para el nuevo input de fecha
-            flatpickr(newRow.querySelector('[data-fp]'), {
-                locale: "es",
-                dateFormat: "d/m/Y",
-                allowInput: true,
-                disableMobile: "true"
-            });
+            flatpickr(tbody.lastElementChild.querySelector('[data-fp]'), { locale: "es", dateFormat: "d/m/Y", allowInput: true, disableMobile: "true" });
         }
 
         function removeRow(btn) {
-            const row = btn.closest('tr');
-            const tbody = row.closest('tbody');
-            // Impedir que se quede un body completamente vacío para garantizar integridad en calcTotal
+            const tbody = btn.closest('tbody');
             if (tbody.querySelectorAll('.data-row').length > 1) {
-                row.remove();
+                btn.closest('tr').remove();
                 calcTotal();
             } else {
-                showToast('Se requiere de manera obligatoria al menos una fila de ingreso para esta sección.', 'warning');
+                showToast('Se requiere de manera obligatoria al menos una fila de ingreso.', 'warning');
             }
         }
 
-        /* ── MANEJADORES DE ESTADO Y FLUJO DEL MODAL ── */
         function resetModalForm() {
-            // Limpieza y reseteo integral
             ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
-                const tbody = document.getElementById(cat);
-                const rows = tbody.querySelectorAll('.data-row');
-                for (let i = 1; i < rows.length; i++) {
-                    rows[i].remove();
-                } // Limpia clónicas
+                const rows = document.getElementById(cat).querySelectorAll('.data-row');
+                for (let i = 1; i < rows.length; i++) rows[i].remove();
             });
-
-            document.querySelectorAll('.cell-input').forEach(el => {
-                if (!el.hasAttribute('readonly') && (el.type === 'number' || (el.type === 'text' && !el
-                        .hasAttribute('data-fp')))) el.value = '';
-            });
+            document.querySelectorAll('.cell-input:not([readonly])').forEach(el => el.value = '');
             document.getElementById('modal-motivo').value = '';
             document.getElementById('modal-centro-costos').value = '';
-            document.getElementById('uuid-panel').classList.add('hidden');
+            document.getElementById('sat-panel').classList.add('hidden');
 
-            // Restablece ficheros
+            // Reset delegation
+            const toggleDel = document.getElementById('toggle-delegation');
+            if(toggleDel) { toggleDel.checked = false; handleDelegationToggle(); }
+            document.getElementById('delegation-container').classList.remove('hidden');
+
             evidenciasFiles = [];
             renderFileList();
             actualizarInputFiles();
             calcTotal();
-
-            // Re-vincular Datepickers
-            flatpickr(".data-row [data-fp]", {
-                locale: "es",
-                dateFormat: "d/m/Y",
-                allowInput: true,
-                disableMobile: "true"
-            });
+            flatpickr(".data-row [data-fp]", { locale: "es", dateFormat: "d/m/Y", allowInput: true, disableMobile: "true" });
         }
 
         function openModalForCreate() {
             resetModalForm();
-            document.getElementById('main-modal-title').innerHTML =
-                '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
+            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
             document.getElementById('modal-folio-p').textContent = `VES-${String(currentId).padStart(4, '0')}`;
-
-            // Datos del contexto personal de la aplicación, como solicitaste anteriormente
             document.getElementById('modal-folio-u').textContent = 'SFP-005';
-            document.getElementById('modal-nombre').value = 'Saul Falcon Perez';
 
             document.querySelector('input[name="tipo_gasto"][value="viaje"]').checked = true;
 
@@ -930,10 +812,11 @@
             const req = requests.find(r => r.id === id);
             if (!req) return;
             resetModalForm();
-            document.getElementById('main-modal-title').innerHTML =
-                '<i class="bx bx-search-alt"></i> Inspección del <strong>Folio: ' + req.folioP + '</strong>';
 
-            // Rellenar información analizada
+            // En modo ver, se oculta el toggle de delegación
+            document.getElementById('delegation-container').classList.add('hidden');
+
+            document.getElementById('main-modal-title').innerHTML = `<i class="bx bx-search-alt"></i> Inspección del <strong>Folio: ${req.folioP}</strong>`;
             document.getElementById('modal-folio-p').textContent = req.folioP;
             document.getElementById('modal-folio-u').textContent = req.folioU;
             document.getElementById('modal-nombre').value = req.nombre;
@@ -951,11 +834,12 @@
             const req = requests.find(r => r.id === id);
             if (!req) return;
             resetModalForm();
-            document.getElementById('main-modal-title').innerHTML =
-                '<i class="bx bx-check-shield"></i> Ejecución de Dictamen Administrativo';
+
+            document.getElementById('delegation-container').classList.add('hidden');
+
+            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-check-shield"></i> Ejecución de Dictamen Administrativo';
             currentEvaluateId = id;
 
-            // Inyección de Data Base Local
             document.getElementById('modal-folio-p').textContent = req.folioP;
             document.getElementById('modal-folio-u').textContent = req.folioU;
             document.getElementById('modal-nombre').value = req.nombre;
@@ -963,18 +847,11 @@
             document.getElementById('modal-motivo').value = req.motivo;
             document.getElementById('sum-total').textContent = fmt(req.amount);
 
-            // Lógica de botones según el estado actual
             const btnValidate = document.getElementById('btn-eval-validate');
             const btnApprove = document.getElementById('btn-eval-approve');
 
-            // Si está pendiente, Fase 1 (Validar) es el paso correcto. Si ya se validó, entra Fase 2 (Aprobar).
-            if (req.status === 'Pendiente') {
-                btnValidate.classList.remove('hidden');
-                btnApprove.classList.add('hidden');
-            } else if (req.status === 'Validado') {
-                btnValidate.classList.add('hidden');
-                btnApprove.classList.remove('hidden');
-            }
+            if (req.status === 'Pendiente') { btnValidate.classList.remove('hidden'); btnApprove.classList.add('hidden'); }
+            else if (req.status === 'Validado') { btnValidate.classList.add('hidden'); btnApprove.classList.remove('hidden'); }
 
             document.getElementById('footer-create').classList.add('hidden');
             document.getElementById('footer-view').classList.add('hidden');
@@ -982,36 +859,17 @@
             document.getElementById('reimbursement-modal').classList.remove('hidden');
         }
 
-        function closeModal() {
-            document.getElementById('reimbursement-modal').classList.add('hidden');
-        }
+        function closeModal() { document.getElementById('reimbursement-modal').classList.add('hidden'); }
 
-        /* ── MOTOR DE ORQUESTACIÓN Y FLUJOS CORPORATIVOS DE ESTADOS ── */
         function processEvaluation(status) {
             if (!currentEvaluateId) return;
-
-            let actionText = '';
-            let confirmColor = '';
-
-            // Asignando colores empresariales e intención de mensaje según caso de uso
-            if (status === 'Aprobado') {
-                actionText = 'Aprobar Definitivamente';
-                confirmColor = 'var(--teal-dark)';
-            } else if (status === 'Validado') {
-                actionText = 'Dar Visto Bueno a Documentación';
-                confirmColor = '#0284c7'; // Azul formal
-            } else if (status === 'Rechazado') {
-                actionText = 'Denegar y Rechazar';
-                confirmColor = '#ef4444'; // Rojo alarma
-            }
+            let actionText = status === 'Aprobado' ? 'Aprobar Definitivamente' : (status === 'Validado' ? 'Dar Visto Bueno a Documentación' : 'Denegar y Rechazar');
+            let confirmColor = status === 'Aprobado' ? 'var(--teal-dark)' : (status === 'Validado' ? '#0284c7' : '#ef4444');
 
             Swal.fire({
                 title: `<span style="font-family:'Poppins', sans-serif;">¿Emisión de Dictamen Final?</span>`,
-                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">La resolución afectará los balances financieros departamentales. Desea proceder a <strong>${actionText}</strong> este folio?</span>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: confirmColor,
-                cancelButtonColor: '#94a3b8',
+                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">La resolución afectará los balances financieros. Desea <strong>${actionText}</strong> este folio?</span>`,
+                icon: 'warning', showCancelButton: true, confirmButtonColor: confirmColor, cancelButtonColor: '#94a3b8',
                 confirmButtonText: `<span style="font-family:'Poppins', sans-serif; font-weight:600;">Autorizar Movimiento</span>`,
                 cancelButtonText: `<span style="font-family:'Poppins', sans-serif;">Cancelar Acción</span>`
             }).then((result) => {
@@ -1023,149 +881,67 @@
             });
         }
 
-        // Sistema de Cascada para Estados Conectados (Revisión -> Pagos)
         function updateStatus(id, status) {
             const i = requests.findIndex(r => r.id === id);
             if (i !== -1) {
                 requests[i].status = status;
-
-                // Aplicar el ciclo de vida del módulo financiero:
-                if (status === 'Rechazado') {
-                    // Detiene cualquier posibilidad de erogación futura
-                    requests[i].pago = 'No procede';
-                } else if (status === 'Validado') {
-                    // Fase administrativa validada, aún no aprueba el gerente
-                    requests[i].pago = 'Por autorizar';
-                } else if (status === 'Aprobado') {
-                    // El dinero queda consignado en tesorería para pago
-                    requests[i].pago = 'Por pagar';
-                }
-
+                if (status === 'Rechazado') requests[i].pago = 'No procede';
+                else if (status === 'Validado') requests[i].pago = 'Por autorizar';
+                else if (status === 'Aprobado') requests[i].pago = 'Por pagar';
                 renderDashboard();
-                showToast(`El folio fue procesado como ${status.toUpperCase()} exitosamente en la plataforma.`, status ===
-                    'Rechazado' ? 'error' : 'success');
+                showToast(`El folio fue procesado como ${status.toUpperCase()}.`, status === 'Rechazado' ? 'error' : 'success');
             }
         }
 
-        /* ── SUBSISTEMA DE GESTIÓN Y CARGA DE DOCUMENTOS COMPROBATORIOS (PDF) ── */
+        /* ── GESTOR PDF ── */
         let evidenciasFiles = [];
-        const maxFileSize = 10 * 1024 * 1024; // Limitante 10MB
+        const maxFileSize = 10 * 1024 * 1024;
         const evidenciaInput = document.getElementById('evidence-upload');
         const evidenciaPanel = document.getElementById('evidence-panel');
 
-        evidenciaInput.addEventListener('change', function(e) {
-            procesarArchivosEvidencia(e.target.files);
-            this.value = '';
-        });
-        evidenciaPanel.addEventListener('dragover', e => {
-            e.preventDefault();
-            evidenciaPanel.classList.add('dragover');
-        });
-        evidenciaPanel.addEventListener('dragleave', e => {
-            e.preventDefault();
-            evidenciaPanel.classList.remove('dragover');
-        });
-        evidenciaPanel.addEventListener('drop', e => {
-            e.preventDefault();
-            evidenciaPanel.classList.remove('dragover');
-            if (e.dataTransfer.files.length) procesarArchivosEvidencia(e.dataTransfer.files);
-        });
+        evidenciaInput.addEventListener('change', function(e) { procesarArchivosEvidencia(e.target.files); this.value = ''; });
+        evidenciaPanel.addEventListener('dragover', e => { e.preventDefault(); evidenciaPanel.classList.add('dragover'); });
+        evidenciaPanel.addEventListener('dragleave', e => { e.preventDefault(); evidenciaPanel.classList.remove('dragover'); });
+        evidenciaPanel.addEventListener('drop', e => { e.preventDefault(); evidenciaPanel.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivosEvidencia(e.dataTransfer.files); });
 
         function procesarArchivosEvidencia(files) {
-            let errorSize = false,
-                errorType = false;
+            let errorSize = false, errorType = false;
             Array.from(files).forEach(file => {
-                if (file.type !== 'application/pdf') {
-                    errorType = true;
-                    return;
-                }
-                if (file.size > maxFileSize) {
-                    errorSize = true;
-                    return;
-                }
+                if (file.type !== 'application/pdf') { errorType = true; return; }
+                if (file.size > maxFileSize) { errorSize = true; return; }
                 if (!evidenciasFiles.some(f => f.name === file.name)) evidenciasFiles.push(file);
             });
-
-            // Emisión de Alertas de validación de extensión
-            if (errorType) showToast('Exclusión de formato detectada: Restringido a documentos Adobe PDF.', 'warning');
-            if (errorSize) showToast('Restricción de volúmen: Uno o más ficheros superan la cota técnica (10 MB).',
-            'error');
-
-            renderFileList();
-            actualizarInputFiles();
+            if (errorType) showToast('Restringido a documentos Adobe PDF.', 'warning');
+            if (errorSize) showToast('Uno o más ficheros superan los 10 MB.', 'error');
+            renderFileList(); actualizarInputFiles();
         }
 
-        function removeFile(index) {
-            evidenciasFiles.splice(index, 1);
-            renderFileList();
-            actualizarInputFiles();
-        }
-
-        // Mantiene la integridad técnica del input de archivos ocultos en el DOM
-        function actualizarInputFiles() {
-            const dt = new DataTransfer();
-            evidenciasFiles.forEach(file => dt.items.add(file));
-            evidenciaInput.files = dt.files;
-        }
-
+        function removeFile(index) { evidenciasFiles.splice(index, 1); renderFileList(); actualizarInputFiles(); }
+        function actualizarInputFiles() { const dt = new DataTransfer(); evidenciasFiles.forEach(file => dt.items.add(file)); evidenciaInput.files = dt.files; }
         function formatBytes(bytes, decimals = 2) {
             if (!+bytes) return '0 Bytes';
-            const k = 1024,
-                dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            const k = 1024, dm = decimals < 0 ? 0 : decimals, sizes = ['Bytes', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k));
             return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
         }
-
         function renderFileList() {
             const listDiv = document.getElementById('evidence-list');
-            listDiv.innerHTML = '';
-            if (evidenciasFiles.length > 0) {
-                let html = '<div class="file-grid">';
-                evidenciasFiles.forEach((file, index) => {
-                    html += `
-                    <div class="file-card">
-                        <i class="bx bxs-file-pdf file-icon-lg"></i>
-                        <div class="file-info">
-                            <span class="file-name" title="${file.name}">${file.name}</span>
-                            <span class="file-size">${formatBytes(file.size)}</span>
-                        </div>
-                        <button type="button" class="btn-remove-file" onclick="event.stopPropagation(); removeFile(${index})" aria-label="Remover evidencia de la pasarela">
-                            <i class="bx bx-x"></i>
-                        </button>
-                    </div>`;
-                });
-                html += '</div>';
-                listDiv.innerHTML = html;
-            }
+            listDiv.innerHTML = evidenciasFiles.length > 0 ? `<div class="file-grid">${evidenciasFiles.map((f, i) => `
+                <div class="file-card"><i class="bx bxs-file-pdf file-icon-lg"></i><div class="file-info"><span class="file-name" title="${f.name}">${f.name}</span><span class="file-size">${formatBytes(f.size)}</span></div><button type="button" class="btn-remove-file" onclick="event.stopPropagation(); removeFile(${i})"><i class="bx bx-x"></i></button></div>`).join('')}</div>` : '';
         }
 
-        /* ── HERRAMIENTAS ADICIONALES Y PARSEADO DE XML DEL SAT ── */
-        function toggleUuidPanel() {
-            document.getElementById('uuid-panel').classList.toggle('hidden');
-        }
-
+        /* ── INTERACCIÓN LÓGICA DEL SAT ── */
         function buscarFactura() {
             const uuid = document.getElementById('search-uuid').value.trim();
             const btnB = document.getElementById('btn-buscar');
-            const dz = document.getElementById('drop-zone-container');
-            if (uuid.length < 10) {
-                showToast('Esquema UUID Inválido. Ingrese una nomenclatura SAT compatible.', 'warning');
-                return;
-            }
+            if (uuid.length < 10) { showToast('Esquema UUID Inválido.', 'warning'); return; }
 
-            // Feedback visual UX de red local
-            btnB.innerHTML = '<span class="spinner"></span> Consultando BD Local...';
+            btnB.innerHTML = '<span class="spinner"></span> Consultando...';
             btnB.disabled = true;
-            dz.classList.add('hidden');
 
             setTimeout(() => {
-                btnB.innerHTML = '<i class="bx bx-search"></i> Ejecutar Búsqueda';
+                btnB.innerHTML = '<i class="bx bx-search"></i> Buscar';
                 btnB.disabled = false;
-                dz.classList.remove('hidden');
-                showToast(
-                    'Búsqueda SAT en vacio: Registros no encontrados en el cache del sistema. Utilice Parseo XML Manual.',
-                    'error');
+                showToast('Búsqueda SAT en vacio: Registros no encontrados.', 'error');
             }, 850);
         }
 
@@ -1173,179 +949,90 @@
         const xmlInput = document.getElementById('xml-input');
         dropZoneUI.addEventListener('click', () => xmlInput.click());
         xmlInput.addEventListener('change', e => leerXML(e.target.files[0]));
-        dropZoneUI.addEventListener('dragover', e => {
-            e.preventDefault();
-            dropZoneUI.style.background = 'rgba(20,184,166,.18)';
-        });
-        dropZoneUI.addEventListener('dragleave', e => {
-            e.preventDefault();
-            dropZoneUI.style.background = '';
-        });
-        dropZoneUI.addEventListener('drop', e => {
-            e.preventDefault();
-            dropZoneUI.style.background = '';
-            if (e.dataTransfer.files.length) leerXML(e.dataTransfer.files[0]);
-        });
+        dropZoneUI.addEventListener('dragover', e => { e.preventDefault(); dropZoneUI.classList.add('dragover'); });
+        dropZoneUI.addEventListener('dragleave', e => { e.preventDefault(); dropZoneUI.classList.remove('dragover'); });
+        dropZoneUI.addEventListener('drop', e => { e.preventDefault(); dropZoneUI.classList.remove('dragover'); if (e.dataTransfer.files.length) leerXML(e.dataTransfer.files[0]); });
 
         function leerXML(file) {
-            if (!file || file.type !== 'text/xml') {
-                showToast('Incompatibilidad: Provea un archivo con extensión (.xml)', 'error');
-                return;
-            }
+            if (!file || file.type !== 'text/xml') { showToast('Provee un archivo .xml', 'error'); return; }
             const reader = new FileReader();
             reader.onload = e => {
                 const xml = new DOMParser().parseFromString(e.target.result, 'text/xml');
-                const attr = (tag, a) => {
-                    const n = xml.getElementsByTagNameNS('*', tag)[0] || xml.getElementsByTagName(tag)[0] || xml
-                        .getElementsByTagName('cfdi:' + tag)[0];
-                    return n ? n.getAttribute(a) : null;
-                };
-                // Análisis Estructural del CFDI 3.3/4.0
-                const d = {
-                    uuid: attr('TimbreFiscalDigital', 'UUID'),
-                    rfc: attr('Emisor', 'Rfc') || 'Sin RFC Asociado',
-                    fecha: (attr('Comprobante', 'Fecha') || '').split('T')[0]
-                };
-                if (d.fecha) {
-                    const [y, m, dd] = d.fecha.split('-');
-                    d.fechaFormateada = `${dd}/${m}/${y}`;
-                }
+                const attr = (tag, a) => { const n = xml.getElementsByTagNameNS('*', tag)[0] || xml.getElementsByTagName(tag)[0] || xml.getElementsByTagName('cfdi:' + tag)[0]; return n ? n.getAttribute(a) : null; };
+                const d = { uuid: attr('TimbreFiscalDigital', 'UUID'), rfc: attr('Emisor', 'Rfc') || 'Sin RFC', fecha: (attr('Comprobante', 'Fecha') || '').split('T')[0] };
+                if (d.fecha) { const [y, m, dd] = d.fecha.split('-'); d.fechaFormateada = `${dd}/${m}/${y}`; }
                 if (d.uuid) {
                     document.getElementById('res-rfc').textContent = d.rfc;
                     document.getElementById('search-uuid').value = d.uuid;
                     const firstDateInput = document.querySelector('[data-fp]');
                     if (firstDateInput && d.fechaFormateada) {
-                        if (firstDateInput._flatpickr) firstDateInput._flatpickr.setDate(d.fechaFormateada, true,
-                            "d/m/Y");
+                        if (firstDateInput._flatpickr) firstDateInput._flatpickr.setDate(d.fechaFormateada, true, "d/m/Y");
                         else firstDateInput.value = d.fechaFormateada;
                     }
-                    document.getElementById('uuid-panel').classList.add('hidden');
-                    showToast('Extracción sintáctica completada. Nodos poblados exitosamente.', 'success');
-                } else {
-                    showToast('Estructura CFDI desconocida. Imposible leer atributos fiscales del SAT.', 'error');
-                }
+                    showToast('Extracción sintáctica completada.', 'success');
+                } else { showToast('Estructura CFDI desconocida.', 'error'); }
             };
             reader.readAsText(file);
         }
 
-        /* ── COMPUTADORA CONTABLE DE LA TABLA ── */
+        /* ── COMPUTADORA CONTABLE ── */
         function calcTotal() {
-            let gSub = 0,
-                gIva = 0,
-                gIsh = 0;
+            let gSub = 0, gIva = 0, gIsh = 0;
             document.querySelectorAll('.data-row').forEach(row => {
                 let rSub = 0;
                 const rIva = parseFloat(row.querySelector('.c-iva')?.value) || 0;
                 const rIsh = parseFloat(row.querySelector('.c-ish')?.value) || 0;
                 row.querySelectorAll('.c-sub').forEach(i => rSub += parseFloat(i.value) || 0);
                 const rowTotal = row.querySelector('.cell-row-total');
-
                 if (rowTotal) rowTotal.textContent = (rSub + rIva + rIsh) > 0 ? fmt(rSub + rIva + rIsh) : '-';
-                gSub += rSub;
-                gIva += rIva;
-                gIsh += rIsh;
+                gSub += rSub; gIva += rIva; gIsh += rIsh;
             });
             const gTotal = gSub + gIva + gIsh;
-
             document.getElementById('sum-subtotal').textContent = fmt(gSub);
             document.getElementById('sum-gastos').textContent = fmt(gSub);
             document.getElementById('sum-iva').textContent = fmt(gIva);
             document.getElementById('sum-ish').textContent = fmt(gIsh);
-
-            const el = document.getElementById('sum-total');
-            el.textContent = fmt(gTotal);
-            // Salvar el valor numérico en el atributo data para usar en el Submit
-            el.setAttribute('data-value', gTotal);
+            document.getElementById('sum-total').textContent = fmt(gTotal);
+            document.getElementById('sum-total').setAttribute('data-value', gTotal);
         }
 
-        /* ── MANEJADORES DE ALMACENAMIENTO DE EROGACIONES (CREAR/ENVIAR) ── */
         function verifyAndSubmit() {
             const total = parseFloat(document.getElementById('sum-total').getAttribute('data-value'));
-            const motivo = document.getElementById('modal-motivo').value.trim();
-            const centroCostos = document.getElementById('modal-centro-costos').value;
-
-            // Restricciones del Negocio
-            if (total <= 0) {
-                showToast('Restricción: Las sumas del desglose deben ser mayores a $0 para enviar a contabilidad.',
-                'error');
-                return;
-            }
-            if (!centroCostos) {
-                showToast('Restricción: Por favor, ingrese un Centro de Costos válido.', 'error');
-                return;
-            }
-            if (!motivo) {
-                showToast('Falta de Información: Ingrese la justificación del gasto incurrido.', 'error');
-                return;
-            }
-            if (evidenciasFiles.length === 0) {
-                showToast('Auditoría Contable: Es mandatorio proveer la evidencia digital (Archivo PDF).', 'warning');
-                return;
-            }
+            if (total <= 0) { showToast('Las sumas deben ser mayores a $0.', 'error'); return; }
+            if (!document.getElementById('modal-centro-costos').value) { showToast('Ingrese un Centro de Costos válido.', 'error'); return; }
+            if (!document.getElementById('modal-motivo').value.trim()) { showToast('Ingrese justificación del gasto.', 'error'); return; }
+            if (evidenciasFiles.length === 0) { showToast('Es mandatorio proveer evidencia digital (PDF).', 'warning'); return; }
 
             Swal.fire({
-                title: `<span style="font-family:'Poppins', sans-serif;">Consentimiento de Transacción</span>`,
-                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">La matriz de reembolsos por valor de <strong>${fmt(total)}</strong> pasará a revisión de su jefatura. Toda alteración post-emisión quedará bloqueada.</span>`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: 'var(--teal-dark)',
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: `<span style="font-family:'Poppins', sans-serif; font-weight:600;">Emitir Responsiva</span>`,
-                cancelButtonText: `<span style="font-family:'Poppins', sans-serif;">Retornar al Formato</span>`
+                title: `<span style="font-family:'Poppins', sans-serif;">Consentimiento</span>`,
+                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">La matriz por valor de <strong>${fmt(total)}</strong> pasará a revisión.</span>`,
+                icon: 'question', showCancelButton: true, confirmButtonColor: 'var(--teal-dark)', cancelButtonColor: '#94a3b8',
+                confirmButtonText: `<span style="font-family:'Poppins', sans-serif; font-weight:600;">Emitir Responsiva</span>`, cancelButtonText: `<span style="font-family:'Poppins', sans-serif;">Retornar</span>`
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Empuja a fase 'Pendiente' con el status de caja 'En espera' de flujo inicial
                     procesarEnvio('Pendiente', 'En espera');
-                    Swal.fire({
-                        title: '<span style="font-family:\'Poppins\', sans-serif;">¡Expediente de Desembolso Creado!</span>',
-                        html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Su proceso compuesto por ${evidenciasFiles.length} documento(s) soporte ha sido despachado en la plataforma.</span>`,
-                        icon: 'success',
-                        confirmButtonColor: 'var(--teal-dark)',
-                        confirmButtonText: '<span style="font-family:\'Poppins\', sans-serif; font-weight:600;">Cerrar Sistema</span>'
-                    });
+                    Swal.fire({ title: '<span style="font-family:\'Poppins\', sans-serif;">¡Desembolso Creado!</span>', icon: 'success', confirmButtonColor: 'var(--teal-dark)' });
                 }
             });
         }
 
-        /* ── PROTOCOLO DE SALVAGUARDAS Y CONTINUIDAD OPERATIVA ── */
         function saveDraft() {
-            const motivo = document.getElementById('modal-motivo').value.trim();
-
-            if (!motivo) {
-                showToast(
-                    'Advertencia: El guardado referencial exige una descripción de motivo para ubicarlo en el futuro.',
-                    'warning');
-                return;
-            }
-
+            if (!document.getElementById('modal-motivo').value.trim()) { showToast('Ingrese una descripción de motivo para guardar borrador.', 'warning'); return; }
             procesarEnvio('Borrador', 'N/A');
-            showToast('Backup Sistémico: El borrador contable se empaquetó con éxito en su carpeta local.', 'success');
+            showToast('Backup Sistémico empaquetado con éxito.', 'success');
         }
 
-        /* ── ENSAMBLADOR DE OBJETOS AL DB MOCK FRONTEND ── */
         function procesarEnvio(estadoRevision, estadoPago) {
-            const total = parseFloat(document.getElementById('sum-total').getAttribute('data-value'));
-            const f = new Date();
-            const fechaStr =
-                `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
-
             requests.unshift({
-                id: currentId++,
-                fecha: fechaStr,
-                folioP: `VES-${String(currentId).padStart(4, '0')}`,
-                folioU: 'SFP-005',
-                nombre: document.getElementById('modal-nombre').value,
-                motivo: document.getElementById('modal-motivo').value.trim(),
-                depto: document.getElementById('modal-depto').value || 'Sin Asignar',
-                amount: total,
-                status: estadoRevision,
-                pago: estadoPago
+                id: currentId++, fecha: document.getElementById('modal-fecha-hoy').textContent,
+                folioP: `VES-${String(currentId).padStart(4, '0')}`, folioU: 'SFP-005',
+                nombre: document.getElementById('modal-nombre').value, motivo: document.getElementById('modal-motivo').value.trim(),
+                depto: document.getElementById('modal-depto').value || 'Sin Asignar', amount: parseFloat(document.getElementById('sum-total').getAttribute('data-value')),
+                status: estadoRevision, pago: estadoPago
             });
-            closeModal();
-            renderDashboard();
+            closeModal(); renderDashboard();
         }
 
-        /* ── INICIALIZADOR DE SUBSISTEMA AL DOM LOADED ── */
         renderDashboard();
     </script>
 @endpush

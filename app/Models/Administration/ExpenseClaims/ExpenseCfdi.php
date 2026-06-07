@@ -32,7 +32,6 @@ class ExpenseCfdi extends Model
         'is_reimbursed' => 'boolean',
     ];
 
-    // Relación: Un CFDI pertenece a un Nodo de Seguridad
     public function node(): BelongsTo
     {
         return $this->belongsTo(FslNode::class, 'fsl_node_id');
