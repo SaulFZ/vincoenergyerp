@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Systems\Tickets;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\PermissionHelper;
 use App\Models\Systems\Tickets\Ticket;
 use App\Models\Systems\Tickets\TicketTracking;
 use Illuminate\Http\Request;
@@ -12,6 +13,14 @@ class TicketStatusController extends Controller
 {
     public function update(Request $request, $id)
     {
+        // Bloqueo de seguridad: Validar permiso en el backend
+        if (!PermissionHelper::hasDirectPermission('atender_tickets')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Acceso denegado. No tienes permisos para atender tickets.'
+            ], 403);
+        }
+
         $request->validate([
             'status'     => 'required|string',
             'priority'   => 'required|string',
