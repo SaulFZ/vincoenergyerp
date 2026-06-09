@@ -317,6 +317,7 @@
                 opacity: 0;
                 transform: translateY(12px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1033,6 +1034,7 @@
                 opacity: 0;
                 transform: translateY(-10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1164,7 +1166,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* ─── PAGINACIÓN ──────────────────────────────────────────────────── */
@@ -1226,48 +1230,50 @@
     <div class="content active">
 
         {{-- ── ESTADÍSTICAS ────────────────────────────────────────────────── --}}
-        <div class="stats-row">
-            <div class="stat-card c-main">
-                <div class="stat-info">
-                    <span class="stat-label">Total Tickets</span>
-                    <h2 class="stat-value" id="stat-total">0</h2>
-                    <span class="stat-sub">Histórico global</span>
+        @if ($canAttendTickets)
+            <div class="stats-row">
+                <div class="stat-card c-main">
+                    <div class="stat-info">
+                        <span class="stat-label">Total Tickets</span>
+                        <h2 class="stat-value" id="stat-total">0</h2>
+                        <span class="stat-sub">Histórico global</span>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-ticket-alt"></i></div>
                 </div>
-                <div class="stat-icon"><i class="fas fa-ticket-alt"></i></div>
-            </div>
-            <div class="stat-card c-wait">
-                <div class="stat-info">
-                    <span class="stat-label">En Espera</span>
-                    <h2 class="stat-value" id="stat-espera">0</h2>
-                    <span class="stat-sub">Pausados</span>
+                <div class="stat-card c-wait">
+                    <div class="stat-info">
+                        <span class="stat-label">En Espera</span>
+                        <h2 class="stat-value" id="stat-espera">0</h2>
+                        <span class="stat-sub">Pausados</span>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
                 </div>
-                <div class="stat-icon"><i class="fas fa-clock"></i></div>
-            </div>
-            <div class="stat-card c-pend">
-                <div class="stat-info">
-                    <span class="stat-label">Por Concluir</span>
-                    <h2 class="stat-value" id="stat-por-concluir">0</h2>
-                    <span class="stat-sub">Pendiente cierre</span>
+                <div class="stat-card c-pend">
+                    <div class="stat-info">
+                        <span class="stat-label">Por Concluir</span>
+                        <h2 class="stat-value" id="stat-por-concluir">0</h2>
+                        <span class="stat-sub">Pendiente cierre</span>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
                 </div>
-                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            </div>
-            <div class="stat-card c-done">
-                <div class="stat-info">
-                    <span class="stat-label">Realizados</span>
-                    <h2 class="stat-value" id="stat-realizado">0</h2>
-                    <span class="stat-sub">Completados</span>
+                <div class="stat-card c-done">
+                    <div class="stat-info">
+                        <span class="stat-label">Realizados</span>
+                        <h2 class="stat-value" id="stat-realizado">0</h2>
+                        <span class="stat-sub">Completados</span>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                 </div>
-                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-            </div>
-            <div class="stat-card c-cancel">
-                <div class="stat-info">
-                    <span class="stat-label">Cancelados</span>
-                    <h2 class="stat-value" id="stat-cancelado">0</h2>
-                    <span class="stat-sub">No concluidos</span>
+                <div class="stat-card c-cancel">
+                    <div class="stat-info">
+                        <span class="stat-label">Cancelados</span>
+                        <h2 class="stat-value" id="stat-cancelado">0</h2>
+                        <span class="stat-sub">No concluidos</span>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-ban"></i></div>
                 </div>
-                <div class="stat-icon"><i class="fas fa-ban"></i></div>
             </div>
-        </div>
+        @endif
 
         {{-- ── TABLA PRINCIPAL ────────────────────────────────────────────── --}}
         <section class="data-section">
@@ -1281,34 +1287,36 @@
                     <input type="text" id="buscador" placeholder="Buscar folio, No. ticket, usuario o asunto...">
                 </div>
 
+
                 <select id="mostrar" class="f-sel">
                     <option value="7" selected>Mostrar: 7</option>
                     <option value="15">Mostrar: 15</option>
                     <option value="30">Mostrar: 30</option>
                     <option value="todos">Mostrar: Todos</option>
                 </select>
+                @if ($canSeeFiltersAndStats)
+                    <select id="fil-estado" class="f-sel">
+                        <option value="">Estado: Todos</option>
+                        <option value="nuevo">Nuevo</option>
+                        <option value="abierto">Abierto</option>
+                        <option value="en-espera">En Espera</option>
+                        <option value="por-concluir">Por Concluir</option>
+                        <option value="realizado">Realizado</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
 
-                <select id="fil-estado" class="f-sel">
-                    <option value="">Estado: Todos</option>
-                    <option value="nuevo">Nuevo</option>
-                    <option value="abierto">Abierto</option>
-                    <option value="en-espera">En Espera</option>
-                    <option value="por-concluir">Por Concluir</option>
-                    <option value="realizado">Realizado</option>
-                    <option value="cancelado">Cancelado</option>
-                </select>
+                    <select id="fil-prioridad" class="f-sel">
+                        <option value="">Prioridad: Todas</option>
+                        <option value="sin clasificar">Sin Clasificar</option>
+                        <option value="alta">Alta</option>
+                        <option value="media">Media</option>
+                        <option value="baja">Baja</option>
+                    </select>
 
-                <select id="fil-prioridad" class="f-sel">
-                    <option value="">Prioridad: Todas</option>
-                    <option value="sin clasificar">Sin Clasificar</option>
-                    <option value="alta">Alta</option>
-                    <option value="media">Media</option>
-                    <option value="baja">Baja</option>
-                </select>
-
-                <button class="btn btn-secondary" onclick="exportarTabla()">
-                    <i class="fas fa-file-export"></i> Exportar
-                </button>
+                    <button class="btn btn-secondary" onclick="exportarTabla()">
+                        <i class="fas fa-file-export"></i> Exportar
+                    </button>
+                @endif
             </div>
 
             <div class="table-responsive">
@@ -1548,7 +1556,7 @@
 
 @push('scripts')
     <script>
-        /* ── CONSTANTES ─────────────────────────────────────────────────────────── */
+        /* ── CONSTANTES Y PERMISOS ──────────────────────────────────────────────── */
         const CSRF = document.querySelector('meta[name="csrf-token"]')?.content ||
             document.querySelector('input[name="_token"]').value;
         const H = {
@@ -1556,6 +1564,9 @@
             'X-CSRF-TOKEN': CSRF,
             'Accept': 'application/json'
         };
+
+        // Variable JS para saber si pintar o no el botón de atender
+        const CAN_ATTEND = @json($canAttendTickets);
 
         const STATUS_COLORS = {
             nuevo: 'var(--s-new-text)',
@@ -1627,30 +1638,38 @@
         }
 
         function updateStats(data) {
-            document.getElementById('stat-total').innerText = data.length;
-            document.getElementById('stat-espera').innerText = data.filter(t => t.status === 'en-espera').length;
-            document.getElementById('stat-por-concluir').innerText = data.filter(t => t.status === 'por-concluir').length;
-            document.getElementById('stat-realizado').innerText = data.filter(t => t.status === 'realizado').length;
-            document.getElementById('stat-cancelado').innerText = data.filter(t => t.status === 'cancelado').length;
+            // Evaluamos primero si los IDs existen en el DOM (para evitar error si el usuario no tiene permisos)
+            if (document.getElementById('stat-total')) {
+                document.getElementById('stat-total').innerText = data.length;
+                document.getElementById('stat-espera').innerText = data.filter(t => t.status === 'en-espera').length;
+                document.getElementById('stat-por-concluir').innerText = data.filter(t => t.status === 'por-concluir')
+                    .length;
+                document.getElementById('stat-realizado').innerText = data.filter(t => t.status === 'realizado').length;
+                document.getElementById('stat-cancelado').innerText = data.filter(t => t.status === 'cancelado').length;
+            }
         }
 
         /* ── FILTRADO Y TABLA ───────────────────────────────────────────────────── */
         document.getElementById('buscador').addEventListener('keyup', filter);
-        document.getElementById('fil-estado').addEventListener('change', filter);
-        document.getElementById('fil-prioridad').addEventListener('change', filter);
-        document.getElementById('mostrar').addEventListener('change', () => {
-            page = 1;
-            renderTable();
-        });
+
+        // Verificamos si los filtros existen antes de agregar los event listeners
+        if (document.getElementById('fil-estado')) {
+            document.getElementById('fil-estado').addEventListener('change', filter);
+            document.getElementById('fil-prioridad').addEventListener('change', filter);
+            document.getElementById('mostrar').addEventListener('change', () => {
+                page = 1;
+                renderTable();
+            });
+        }
 
         function filter() {
             const q = document.getElementById('buscador').value.toLowerCase();
-            const est = document.getElementById('fil-estado').value;
-            const pri = document.getElementById('fil-prioridad').value;
+            const est = document.getElementById('fil-estado') ? document.getElementById('fil-estado').value : '';
+            const pri = document.getElementById('fil-prioridad') ? document.getElementById('fil-prioridad').value : '';
 
             filteredTickets = allTickets.filter(t => {
                 if (q && !`${t.display_id} ${t.folio} ${t.subject} ${t.user_name}`.toLowerCase().includes(q))
-                return false;
+                    return false;
                 if (est && t.status !== est) return false;
                 if (pri && t.priority !== pri) return false;
                 return true;
@@ -1670,14 +1689,26 @@
                 return;
             }
 
-            const perPage = document.getElementById('mostrar').value === 'todos' ?
-                filteredTickets.length : parseInt(document.getElementById('mostrar').value);
+            const perPage = document.getElementById('mostrar') ?
+                (document.getElementById('mostrar').value === 'todos' ? filteredTickets.length : parseInt(document
+                    .getElementById('mostrar').value)) :
+                7; // Valor por defecto si no están los filtros
 
             const totalPages = Math.max(1, Math.ceil(filteredTickets.length / perPage));
             if (page > totalPages) page = totalPages;
 
             const start = (page - 1) * perPage;
             filteredTickets.slice(start, start + perPage).forEach((t, i) => {
+
+                // CONDICIONAL PARA MOSTRAR/OCULTAR BOTÓN ATENDER
+                let btnAttend = '';
+                const isFinalized = ['realizado', 'cancelado'].includes(t.status);
+
+                if (CAN_ATTEND && !isFinalized) {
+                    btnAttend =
+                        `<button class="btn-attend" title="Atender Ticket" onclick="openTicketModal('atender',${t.id})"><i class="fas fa-tools"></i></button>`;
+                }
+
                 const tr = document.createElement('tr');
                 tr.style.animationDelay = `${i * .04}s`;
                 tr.innerHTML = `
@@ -1691,7 +1722,7 @@
             <td><span class="stag ${t.status}">${fmtStatus(t.status)}</span></td>
             <td class="tbl-actions">
                 <button class="btn-view"   title="Ver Detalles"    onclick="openTicketModal('ver',${t.id})"><i class="fas fa-eye"></i></button>
-                <button class="btn-attend" title="Atender Ticket"  onclick="openTicketModal('atender',${t.id})"><i class="fas fa-tools"></i></button>
+                ${btnAttend}
             </td>`;
                 tbody.appendChild(tr);
             });
@@ -1855,13 +1886,17 @@
 
                         d.trackings.push({
                             created_at: new Date().toISOString(),
-                            user: { name: '{{ auth()->user()->name ?? 'Sistema' }}' },
+                            user: {
+                                name: '{{ auth()->user()->name ?? 'Sistema' }}'
+                            },
                             status_after: 'abierto',
                             message: 'El estado del ticket ha cambiado de <strong>NUEVO</strong> a <strong>ABIERTO</strong>.'
                         });
                         d.trackings.push({
                             created_at: new Date().toISOString(),
-                            user: { name: '{{ auth()->user()->name ?? 'Sistema' }}' },
+                            user: {
+                                name: '{{ auth()->user()->name ?? 'Sistema' }}'
+                            },
                             status_after: 'abierto',
                             message: 'El ticket ha sido tomado para su atención.'
                         });
@@ -1968,14 +2003,13 @@
             const label = document.getElementById('p-comment-label');
             const field = document.getElementById('p-comment');
 
-            // Evaluamos si el usuario se está moviendo a este estado (true) o si ya estaba ahí (false)
             const isChangingStatus = val !== window.currentTicketOriginalStatus;
 
             if (val === 'por-concluir') {
                 block.classList.add('show');
                 block.classList.remove('danger');
-                // Si solo cambia la prioridad pero se queda en "por-concluir", es opcional
-                label.textContent = isChangingStatus ? 'Justificación técnica de "Por Concluir" *' : 'Agregar comentario (Opcional)';
+                label.textContent = isChangingStatus ? 'Justificación técnica de "Por Concluir" *' :
+                    'Agregar comentario (Opcional)';
                 field.placeholder = 'Detalle qué impide el cierre...';
                 forceResizeTextareas();
             } else if (val === 'cancelado') {
@@ -1998,7 +2032,6 @@
             const prioridad = document.getElementById('p-prioridad').value;
             const comentario = document.getElementById('p-comment').value;
 
-            // Validación estricta para estado "nuevo"
             if (estado === 'nuevo') {
                 Swal.fire({
                     title: 'Estado Requerido',
@@ -2022,7 +2055,6 @@
             const isStatusChanged = estado !== window.currentTicketOriginalStatus;
             const isPriorityChanged = prioridad !== window.currentTicketOriginalPriority;
 
-            // Evitar envíos innecesarios si no movió absolutamente nada
             if (!isStatusChanged && !isPriorityChanged && !comentario.trim()) {
                 Swal.fire({
                     title: 'Sin cambios',
@@ -2033,7 +2065,6 @@
                 return;
             }
 
-            // Exigir comentario SÓLO si se está transicionando a un estado crítico
             if (['por-concluir', 'cancelado'].includes(estado) && isStatusChanged && !comentario.trim()) {
                 Swal.fire({
                     title: 'Justificación obligatoria',
