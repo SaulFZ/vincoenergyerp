@@ -31,15 +31,17 @@
             </div>
         </div>
 
-        <nav class="nav-container">
-            <a href="#" class="nav-link active" data-route="management-tickets">
-                <i class="fas fa-chart-pie"></i> inicio
+        <nav class="nav-main">
+            <a href="{{ route('systems.tickets.index') }}" class="nav-link" data-route="management-tickets">
+                <i class="fas fa-ticket-alt"></i> Gestión de Tickets
             </a>
 
-            <a href="#" class="nav-link" data-route="stats">
-                <i class="fas fa-ticket-alt"></i> Estadisticas
-            </a>
-
+            {{-- Usamos directamente la variable del controlador. ¡Mucho más limpio! --}}
+            @if ($canSeeFiltersAndStats)
+                <a href="{{ route('systems.tickets.stats') }}" class="nav-link" data-route="stats">
+                    <i class="fas fa-chart-bar"></i> Estadísticas
+                </a>
+            @endif
         </nav>
 
         @include('components.layouts._user-profile')
@@ -60,7 +62,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('assets/js/sessionTimer.js') }}"></script>
-        <script src="{{ asset('assets/js/systems/tickets/index.js') }}"></script>
+    <script src="{{ asset('assets/js/systems/tickets/index.js') }}"></script>
 
     @stack('scripts')
 </body>
