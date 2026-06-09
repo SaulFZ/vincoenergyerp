@@ -15,18 +15,16 @@ use App\Models\RH\OrgManagement\Department;
 class TicketController extends Controller
 {
     /** Vista Principal de Gestión de Tickets */
-    public function index()
-    {
-        // 1. Evaluamos los permisos usando el Helper importado
-        $canSeeFiltersAndStats = PermissionHelper::hasDirectPermission('ver_estadisticas_tickets');
-        $canAttendTickets = PermissionHelper::hasDirectPermission('atender_tickets');
+ public function index()
+{
+    $canSeeFiltersAndStats = PermissionHelper::hasDirectPermission('ver_estadisticas_tickets');
+    $canAttendTickets = PermissionHelper::hasDirectPermission('atender_tickets');
 
-        // 2. Pasamos las variables limpias a la vista
-        return view('modules.systems.tickets.tickets_management', compact(
-            'canSeeFiltersAndStats',
-            'canAttendTickets'
-        ));
-    }
+    return view('modules.systems.tickets.tickets_management', compact(
+        'canSeeFiltersAndStats',
+        'canAttendTickets'
+    ));
+}
 
     /** Nueva Vista de Estadísticas */
     public function stats()

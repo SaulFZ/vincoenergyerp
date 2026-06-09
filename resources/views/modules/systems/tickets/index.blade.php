@@ -36,7 +36,6 @@
                 <i class="fas fa-ticket-alt"></i> Gestión de Tickets
             </a>
 
-            {{-- Usamos directamente la variable del controlador. ¡Mucho más limpio! --}}
             @if ($canSeeFiltersAndStats)
                 <a href="{{ route('systems.tickets.stats') }}" class="nav-link" data-route="stats">
                     <i class="fas fa-chart-bar"></i> Estadísticas

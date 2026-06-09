@@ -1294,6 +1294,8 @@
                     <option value="30">Mostrar: 30</option>
                     <option value="todos">Mostrar: Todos</option>
                 </select>
+
+
                 @if ($canSeeFiltersAndStats)
                     <select id="fil-estado" class="f-sel">
                         <option value="">Estado: Todos</option>
