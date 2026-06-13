@@ -4,11 +4,6 @@
 @extends('modules.administration.expense-claims.index')
 
 @section('content')
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
     <div class="reimbursements-container">
 
         {{-- ── ENCABEZADO PRINCIPAL DE LA VISTA ── --}}
@@ -144,44 +139,6 @@
 
             <div class="modal-body" id="modal-body-scroll">
 
-                {{-- NUEVO PANEL SAT CON PESTAÑAS --}}
-                <div id="sat-panel" class="sat-panel hidden">
-                    <div class="sat-panel-header">
-                        <h4 class="sat-panel-title"><i class="bx bx-link-external"></i> Vinculación SAT</h4>
-                        <div class="sat-tabs">
-                            <button type="button" class="sat-tab active" data-target="sat-tab-uuid"><i class="bx bx-search-alt"></i> Buscar UUID</button>
-                            <button type="button" class="sat-tab" data-target="sat-tab-xml"><i class="bx bx-upload"></i> Cargar XML</button>
-                        </div>
-                    </div>
-
-                    <div class="sat-panel-body">
-                        {{-- Pestaña 1: Búsqueda Manual --}}
-                        <div id="sat-tab-uuid" class="sat-content active">
-                            <label class="sat-label">Folio Fiscal (UUID) del comprobante SAT</label>
-                            <div class="sat-search-group">
-                                <div class="sat-input-wrap">
-                                    <i class="bx bx-barcode"></i>
-                                    <input type="text" id="search-uuid" class="sat-input modal-focusable"
-                                        placeholder="550E8400-E29B-41D4-A716-446655440000" autocomplete="off">
-                                </div>
-                                <button type="button" id="btn-buscar" class="btn btn-primary" onclick="buscarFactura()">
-                                    <i class="bx bx-search"></i> Buscar
-                                </button>
-                            </div>
-                        </div>
-
-                        {{-- Pestaña 2: Carga de Archivo --}}
-                        <div id="sat-tab-xml" class="sat-content hidden">
-                            <div id="drop-zone" class="sat-drop-zone">
-                                <i class="bx bx-cloud-upload"></i>
-                                <p>Arrastra tu archivo .XML aquí o haz clic para examinar</p>
-                                <small>El sistema extraerá automáticamente el UUID, RFC y Fecha.</small>
-                                <input type="file" id="xml-input" accept=".xml" class="hidden">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 {{-- CABECERA INFORMATIVA DEL REEMBOLSO --}}
                 <div class="form-header-card">
                     <div class="fh-info-strip">
@@ -191,7 +148,7 @@
                         </div>
                         <div class="fh-info-item folio">
                             <span>Folio Principal (Sistema)</span>
-                            <strong id="modal-folio-p">VES-0000</strong>
+                            <strong id="modal-folio-p">SIS-0000</strong>
                         </div>
                         <div class="fh-info-item user-folio">
                             <span>Folio Interno del Usuario</span>
@@ -232,32 +189,27 @@
                                 </div>
                             </div>
 
-                            {{-- NUEVO: TOGGLE DE CAPTURA DELEGADA --}}
+                            {{-- TOGGLE DE CAPTURA DELEGADA --}}
                             <div class="delegation-wrapper" id="delegation-container">
                                 <div class="delegation-toggle-wrap">
                                     <label class="switch">
                                         <input type="checkbox" id="toggle-delegation" onchange="handleDelegationToggle()">
                                         <span class="slider round"></span>
                                     </label>
-                                    <span class="delegation-text">Delegar Captura (A nombre de otro)</span>
+                                    <span class="delegation-text">Capturar Otro Beneficiario</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="fh-grid-4">
-                            {{-- NUEVO: BUSCADOR DE USUARIO INTEGRADO --}}
+                            {{-- BUSCADOR DE USUARIO INTEGRADO CON NUEVA CLASE EXCLUSIVA --}}
                             <div>
                                 <label class="input-label">Nombre del Beneficiario</label>
-                                <div class="input-group">
+                                <div class="input-group reimburse-dropdown-container">
                                     <i class="bx bx-user field-icon" id="icon-solicitante"></i>
-                                    {{-- Campo Oculto para Base de Datos --}}
                                     <input type="hidden" id="modal-beneficiary-id" value="1">
-
                                     <input type="text" id="modal-nombre" value="{{ $userData['nombre'] ?? 'Saul Falcon Perez' }}" class="input-field" readonly autocomplete="off">
-
-                                    {{-- Dropdown Flotante para Autocompletado --}}
-                                    <div id="employee-dropdown" class="custom-dropdown hidden">
-                                        </div>
+                                    <div id="employee-dropdown" class="reimburse-custom-dropdown hidden"></div>
                                 </div>
                             </div>
 
@@ -291,6 +243,72 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- PANEL SAT CON PESTAÑAS --}}
+                <div id="sat-panel" class="sat-panel hidden">
+                    <div class="sat-panel-header">
+                        <h4 class="sat-panel-title"><i class="bx bx-link-external"></i> Vinculación SAT</h4>
+                        <div class="sat-tabs">
+                            <button type="button" class="sat-tab active" data-target="sat-tab-uuid"><i class="bx bx-search-alt"></i> Buscar UUID</button>
+                            <button type="button" class="sat-tab" data-target="sat-tab-xml"><i class="bx bx-upload"></i> Cargar XML</button>
+                        </div>
+                    </div>
+
+                    <div class="sat-panel-body">
+                        {{-- Pestaña 1: Búsqueda Manual --}}
+                        <div id="sat-tab-uuid" class="sat-content active">
+                            <label class="sat-label">Folio Fiscal (UUID) del comprobante SAT</label>
+                            <div class="sat-search-group">
+                                <div class="sat-input-wrap">
+                                    <i class="bx bx-barcode"></i>
+                                    <input type="text" id="search-uuid" class="sat-input modal-focusable"
+                                        placeholder="550E8400-E29B-41D4-A716-446655440000" autocomplete="off">
+                                </div>
+                                <button type="button" id="btn-buscar" class="btn btn-primary" onclick="buscarFactura()">
+                                    <i class="bx bx-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Pestaña 2: Carga de Archivo --}}
+                        <div id="sat-tab-xml" class="sat-content hidden">
+                            <div id="drop-zone" class="sat-drop-zone">
+                                <i class="bx bx-cloud-upload"></i>
+                                <p>Arrastra tu archivo .XML aquí o haz clic para examinar</p>
+                                <small>El sistema extraerá automáticamente el UUID, RFC y Fecha.</small>
+                                <input type="file" id="xml-input" accept=".xml" class="hidden">
+                            </div>
+                        </div>
+
+                        {{-- ÁREA DE RESULTADO Y ASIGNACIÓN (Compartida) --}}
+                        <div id="sat-result-container" class="sat-result-box hidden">
+                            <div class="sat-result-success">
+                                <i class="bx bx-check-circle"></i>
+                                <div>
+                                    <strong>¡Comprobante Identificado Exitosamente!</strong>
+                                    <span id="sat-result-uuid" class="d-block text-xs text-slate-400"></span>
+                                </div>
+                            </div>
+                            <div class="sat-result-actions">
+                                <div class="input-group">
+                                    <i class="bx bx-purchase-tag-alt field-icon"></i>
+                                    <select id="sat-category" class="input-field">
+                                        <option value="" disabled selected>¿A qué categoría pertenece esta factura?</option>
+                                        <option value="cat-vuelos">Transportación, Vuelos y Peajes</option>
+                                        <option value="cat-restaurantes">Consumo de Alimentos y Restaurantes</option>
+                                        <option value="cat-combustible">Abastecimiento de Combustible</option>
+                                        <option value="cat-otros">Cargos Varios / Misceláneos</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="agregarFilaDesdeSAT()">
+                                    <i class="bx bx-plus"></i> Integrar Gasto a Matriz
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
 
                 {{-- MATRIZ DE DESGLOSE FINANCIERO --}}
                 <div class="expense-card">
@@ -463,7 +481,7 @@
 
                 {{-- MODO DE CREACIÓN --}}
                 <div class="modal-footer-right" id="footer-create">
-                    <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancelar Operación</button>
+                    <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
                     <button type="button" id="btn-borrador" class="btn btn-secondary" onclick="saveDraft()">
                         <i class="bx bx-save"></i> Guardar Borrador
                     </button>
@@ -474,12 +492,12 @@
 
                 {{-- MODO DE VISUALIZACIÓN --}}
                 <div class="modal-footer-right hidden" id="footer-view">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar Pestaña</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
                 </div>
 
                 {{-- MODO DE EVALUACIÓN --}}
                 <div class="modal-footer-right hidden" id="footer-evaluate">
-                    <button type="button" class="btn btn-ghost" onclick="closeModal()">Posponer</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
                     <button type="button" class="btn btn-fail-solid" onclick="processEvaluation('Rechazado')">
                         <i class="bx bx-x"></i> Rechazar
                     </button>
@@ -530,7 +548,7 @@
             }
         });
 
-        /* ── CONTROL DE DELEGACIÓN Y AUTOCOMPLETADO (NUEVO) ── */
+        /* ── CONTROL DE DELEGACIÓN Y AUTOCOMPLETADO (CON NUEVAS CLASES) ── */
         const modalNombre = document.getElementById('modal-nombre');
         const modalDepto = document.getElementById('modal-depto');
         const resRfc = document.getElementById('res-rfc');
@@ -542,30 +560,26 @@
             const isDelegated = document.getElementById('toggle-delegation').checked;
 
             if (isDelegated) {
-                // Modo Búsqueda
                 modalNombre.removeAttribute('readonly');
                 modalNombre.value = '';
                 modalNombre.placeholder = 'Buscar empleado por nombre...';
                 modalNombre.focus();
-                modalNombre.classList.add('input-active-search');
+                modalNombre.classList.add('reimburse-input-active-search');
                 iconSolicitante.className = 'bx bx-search field-icon';
                 iconSolicitante.style.color = 'var(--teal-dark)';
-                showToast('Modo de captura delegada activo.', 'info');
             } else {
-                // Modo Normal (Sesión actual)
                 modalNombre.setAttribute('readonly', 'true');
                 modalNombre.value = sessionUser.nombre;
                 modalDepto.value = sessionUser.depto;
                 resRfc.textContent = sessionUser.rfc;
                 beneficiaryId.value = sessionUser.id;
-                modalNombre.classList.remove('input-active-search');
+                modalNombre.classList.remove('reimburse-input-active-search');
                 iconSolicitante.className = 'bx bx-user field-icon';
                 iconSolicitante.style.color = '#94a3b8';
                 dropdown.classList.add('hidden');
             }
         }
 
-        // Lógica del buscador predictivo
         modalNombre.addEventListener('input', function() {
             if (modalNombre.hasAttribute('readonly')) return;
 
@@ -582,19 +596,18 @@
             if (results.length > 0) {
                 results.forEach(emp => {
                     const item = document.createElement('div');
-                    item.className = 'dropdown-item';
-                    item.innerHTML = `<strong>${emp.nombre}</strong><span>${emp.depto}</span>`;
+                    item.className = 'reimburse-dropdown-item';
+                    item.innerHTML = `<strong>${emp.nombre}</strong>`;
                     item.onclick = () => selectEmployee(emp);
                     dropdown.appendChild(item);
                 });
                 dropdown.classList.remove('hidden');
             } else {
-                dropdown.innerHTML = '<div class="dropdown-empty">No se encontraron coincidencias</div>';
+                dropdown.innerHTML = '<div class="reimburse-dropdown-empty">No se encontraron coincidencias</div>';
                 dropdown.classList.remove('hidden');
             }
         });
 
-        // Selección de empleado del dropdown
         function selectEmployee(emp) {
             modalNombre.value = emp.nombre;
             modalDepto.value = emp.depto;
@@ -604,7 +617,6 @@
             showToast(`Beneficiario actualizado a: ${emp.nombre}`, 'success');
         }
 
-        // Cerrar dropdown al hacer click afuera
         document.addEventListener('click', function(e) {
             if (!modalNombre.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.classList.add('hidden');
@@ -633,15 +645,25 @@
             icon: type, title: `<span style="font-family:'Poppins', sans-serif; font-size:14px;">${msg}</span>`
         });
 
+        /* ── GENERADOR DE FOLIOS Y DATA INICIAL ── */
+        function generateFolio(id) {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            return `SIS${dd}${mm}-${String(id).padStart(2, '0')}`;
+        }
+
+        let currentId = 1;
+
         let requests = [
-            { id: 1001, folioP: 'VES-0001', folioU: 'SFP-001', fecha: '02/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Visita a cliente externo para auditoría en sitio', depto: 'Desarrollo de Software', amount: 3500.00, status: 'Aprobado', pago: 'Pagado' },
-            { id: 1002, folioP: 'VES-0002', folioU: 'SFP-002', fecha: '05/05/2026', nombre: 'Yanuri Martinez', motivo: 'Compra equipo menor', depto: 'Operaciones', amount: 850.50, status: 'Validado', pago: 'Por autorizar' },
-            { id: 1003, folioP: 'VES-0003', folioU: 'SFP-003', fecha: '08/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Viáticos proyecto Dell', depto: 'Desarrollo de Software', amount: 6200.00, status: 'Pendiente', pago: 'En espera' },
-            { id: 1004, folioP: 'VES-0004', folioU: 'SFP-004', fecha: '09/05/2026', nombre: 'Carlos Izquierdo', motivo: 'Mobiliario de oficina', depto: 'Calidad y QHSE', amount: 430.00, status: 'Rechazado', pago: 'No procede' },
-            { id: 1006, folioP: 'VES-0005', folioU: 'SFP-005', fecha: '11/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Suscripción IONOS', depto: 'Desarrollo de Software', amount: 1450.00, status: 'Aprobado', pago: 'Por pagar' }
+            { id: 1001, folioP: generateFolio(1), folioU: 'SFP-001', fecha: '02/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Visita a cliente externo para auditoría en sitio', depto: 'Desarrollo de Software', amount: 3500.00, status: 'Aprobado', pago: 'Pagado' },
+            { id: 1002, folioP: generateFolio(2), folioU: 'SFP-002', fecha: '05/05/2026', nombre: 'Yanuri Martinez', motivo: 'Compra equipo menor', depto: 'Operaciones', amount: 850.50, status: 'Validado', pago: 'Por autorizar' },
+            { id: 1003, folioP: generateFolio(3), folioU: 'SFP-003', fecha: '08/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Viáticos proyecto Dell', depto: 'Desarrollo de Software', amount: 6200.00, status: 'Pendiente', pago: 'En espera' },
+            { id: 1004, folioP: generateFolio(4), folioU: 'SFP-004', fecha: '09/05/2026', nombre: 'Carlos Izquierdo', motivo: 'Mobiliario de oficina', depto: 'Calidad y QHSE', amount: 430.00, status: 'Rechazado', pago: 'No procede' },
+            { id: 1006, folioP: generateFolio(5), folioU: 'SFP-005', fecha: '11/05/2026', nombre: 'Saul Falcon Perez', motivo: 'Suscripción IONOS', depto: 'Desarrollo de Software', amount: 1450.00, status: 'Aprobado', pago: 'Por pagar' }
         ];
 
-        let currentId = 1007;
+        currentId = 6;
         let currentEvaluateId = null;
 
         const fmt = n => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -782,7 +804,9 @@
             document.getElementById('modal-centro-costos').value = '';
             document.getElementById('sat-panel').classList.add('hidden');
 
-            // Reset delegation
+            document.getElementById('sat-result-container').classList.add('hidden');
+            tempSatData = null;
+
             const toggleDel = document.getElementById('toggle-delegation');
             if(toggleDel) { toggleDel.checked = false; handleDelegationToggle(); }
             document.getElementById('delegation-container').classList.remove('hidden');
@@ -797,8 +821,9 @@
         function openModalForCreate() {
             resetModalForm();
             document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
-            document.getElementById('modal-folio-p').textContent = `VES-${String(currentId).padStart(4, '0')}`;
-            document.getElementById('modal-folio-u').textContent = 'SFP-005';
+
+            document.getElementById('modal-folio-p').textContent = generateFolio(currentId);
+            document.getElementById('modal-folio-u').textContent = 'SFP-006';
 
             document.querySelector('input[name="tipo_gasto"][value="viaje"]').checked = true;
 
@@ -813,7 +838,6 @@
             if (!req) return;
             resetModalForm();
 
-            // En modo ver, se oculta el toggle de delegación
             document.getElementById('delegation-container').classList.add('hidden');
 
             document.getElementById('main-modal-title').innerHTML = `<i class="bx bx-search-alt"></i> Inspección del <strong>Folio: ${req.folioP}</strong>`;
@@ -930,6 +954,8 @@
         }
 
         /* ── INTERACCIÓN LÓGICA DEL SAT ── */
+        let tempSatData = null;
+
         function buscarFactura() {
             const uuid = document.getElementById('search-uuid').value.trim();
             const btnB = document.getElementById('btn-buscar');
@@ -941,7 +967,19 @@
             setTimeout(() => {
                 btnB.innerHTML = '<i class="bx bx-search"></i> Buscar';
                 btnB.disabled = false;
-                showToast('Búsqueda SAT en vacio: Registros no encontrados.', 'error');
+
+                tempSatData = {
+                    fecha: new Date().toLocaleDateString('es-MX', {day: '2-digit', month: '2-digit', year: 'numeric'}),
+                    folio: uuid.substring(0, 8),
+                    desc: 'Servicios amparados por UUID',
+                    sub: 1200.00,
+                    iva: 192.00,
+                    ish: 0.00
+                };
+
+                document.getElementById('sat-result-uuid').textContent = uuid;
+                document.getElementById('sat-result-container').classList.remove('hidden');
+                showToast('Comprobante validado y localizado.', 'success');
             }, 850);
         }
 
@@ -961,18 +999,72 @@
                 const attr = (tag, a) => { const n = xml.getElementsByTagNameNS('*', tag)[0] || xml.getElementsByTagName(tag)[0] || xml.getElementsByTagName('cfdi:' + tag)[0]; return n ? n.getAttribute(a) : null; };
                 const d = { uuid: attr('TimbreFiscalDigital', 'UUID'), rfc: attr('Emisor', 'Rfc') || 'Sin RFC', fecha: (attr('Comprobante', 'Fecha') || '').split('T')[0] };
                 if (d.fecha) { const [y, m, dd] = d.fecha.split('-'); d.fechaFormateada = `${dd}/${m}/${y}`; }
+
                 if (d.uuid) {
                     document.getElementById('res-rfc').textContent = d.rfc;
                     document.getElementById('search-uuid').value = d.uuid;
-                    const firstDateInput = document.querySelector('[data-fp]');
-                    if (firstDateInput && d.fechaFormateada) {
-                        if (firstDateInput._flatpickr) firstDateInput._flatpickr.setDate(d.fechaFormateada, true, "d/m/Y");
-                        else firstDateInput.value = d.fechaFormateada;
-                    }
-                    showToast('Extracción sintáctica completada.', 'success');
+
+                    tempSatData = {
+                        fecha: d.fechaFormateada || '',
+                        folio: d.uuid.substring(0, 8),
+                        desc: 'Gasto extraído desde archivo XML',
+                        sub: parseFloat(attr('Comprobante', 'SubTotal')) || 0,
+                        iva: 0,
+                        ish: 0
+                    };
+
+                    document.getElementById('sat-result-uuid').textContent = d.uuid;
+                    document.getElementById('sat-result-container').classList.remove('hidden');
+
+                    showToast('Extracción XML completada.', 'success');
                 } else { showToast('Estructura CFDI desconocida.', 'error'); }
             };
             reader.readAsText(file);
+        }
+
+        /* ── INYECCIÓN AUTOMÁTICA EVITANDO FILAS DUPLICADAS ── */
+        function agregarFilaDesdeSAT() {
+            const cat = document.getElementById('sat-category').value;
+
+            if(!cat) { showToast('Seleccione la categoría correspondiente.', 'warning'); return; }
+            if(!tempSatData) return;
+
+            const tbody = document.getElementById(cat);
+            const dataRows = tbody.querySelectorAll('.data-row');
+            let targetRow = null;
+
+            if (dataRows.length > 0) {
+                const lastRow = dataRows[dataRows.length - 1];
+                const inputs = lastRow.querySelectorAll('.cell-input');
+                const isEmpty = !inputs[1].value.trim() && !inputs[2].value.trim();
+
+                if (isEmpty) {
+                    targetRow = lastRow;
+                }
+            }
+
+            if (!targetRow) {
+                addRow(cat);
+                targetRow = tbody.lastElementChild;
+            }
+
+            const inputs = targetRow.querySelectorAll('.cell-input');
+
+            if(inputs[0]._flatpickr && tempSatData.fecha) inputs[0]._flatpickr.setDate(tempSatData.fecha, true, "d/m/Y");
+            else inputs[0].value = tempSatData.fecha || '';
+
+            inputs[1].value = tempSatData.folio;
+            inputs[2].value = tempSatData.desc;
+            inputs[3].value = tempSatData.sub;
+            inputs[6].value = tempSatData.ish;
+            inputs[7].value = tempSatData.iva;
+
+            calcTotal();
+
+            document.getElementById('sat-result-container').classList.add('hidden');
+            document.getElementById('sat-category').value = '';
+            tempSatData = null;
+            showToast('El comprobante se inyectó en la matriz con éxito.', 'success');
         }
 
         /* ── COMPUTADORA CONTABLE ── */
@@ -1010,10 +1102,14 @@
                 confirmButtonText: `<span style="font-family:'Poppins', sans-serif; font-weight:600;">Emitir Responsiva</span>`, cancelButtonText: `<span style="font-family:'Poppins', sans-serif;">Retornar</span>`
             }).then((result) => {
                 if (result.isConfirmed) {
-                    procesarEnvio('Pendiente', 'En espera');
-                    Swal.fire({ title: '<span style="font-family:\'Poppins\', sans-serif;">¡Desembolso Creado!</span>', icon: 'success', confirmButtonColor: 'var(--teal-dark)' });
+                    onEnviarSubmit();
                 }
             });
+        }
+
+        function onEnviarSubmit() {
+            procesarEnvio('Pendiente', 'En espera');
+            Swal.fire({ title: '<span style="font-family:\'Poppins\', sans-serif;">¡Desembolso Creado!</span>', icon: 'success', confirmButtonColor: 'var(--teal-dark)' });
         }
 
         function saveDraft() {
@@ -1025,7 +1121,7 @@
         function procesarEnvio(estadoRevision, estadoPago) {
             requests.unshift({
                 id: currentId++, fecha: document.getElementById('modal-fecha-hoy').textContent,
-                folioP: `VES-${String(currentId).padStart(4, '0')}`, folioU: 'SFP-005',
+                folioP: document.getElementById('modal-folio-p').textContent, folioU: 'SFP-006',
                 nombre: document.getElementById('modal-nombre').value, motivo: document.getElementById('modal-motivo').value.trim(),
                 depto: document.getElementById('modal-depto').value || 'Sin Asignar', amount: parseFloat(document.getElementById('sum-total').getAttribute('data-value')),
                 status: estadoRevision, pago: estadoPago

@@ -2,6 +2,9 @@
 /* CONTROLADORES DE RECURSOS Generañ */
 use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
+use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStatusController;
+use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
+use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryController;
 
 /* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Auth\LoginController;
@@ -126,6 +129,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/departments', 'getDepartments')->name('reimbursements.departments');
                     Route::get('/concepts', 'getConcepts')->name('reimbursements.concepts');
                 });
+
+
 
                 // 3. BÓVEDA SAT (Credenciales de e.firma)
                 Route::controller(FslNodeController::class)->group(function () {

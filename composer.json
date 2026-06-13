@@ -8,8 +8,10 @@
         "php": "^8.2",
         "azuyalabs/yasumi": "^2.8",
         "barryvdh/laravel-dompdf": "*",
+        "eclipxe/cfdiutils": "^3.0",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.9",
+        "phpcfdi/sat-ws-descarga-masiva": "^1.1",
         "phpoffice/phpspreadsheet": "*",
         "rize/uri-template": "^0.4.0"
     },

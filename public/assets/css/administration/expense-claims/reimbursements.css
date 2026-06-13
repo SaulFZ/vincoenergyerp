@@ -37,9 +37,9 @@
     --payment-process-text: #9a3412;
     --payment-process-border: #fdba74;
 
-    --payment-auth-bg: #e0f2fe;
-    --payment-auth-text: #0369a1;
-    --payment-auth-border: #7dd3fc;
+    --payment-auth-bg: #eff6ff;
+    --payment-auth-text: #0f52ba; /* Azul Zafiro */
+    --payment-auth-border: #bfdbfe;
 
     --payment-wait-bg: #fef9c3;
     --payment-wait-text: #854d0e;
@@ -67,6 +67,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .view-subtitle { margin-top: .25rem; font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: .4rem; }
 .view-subtitle i { color: var(--teal-dark); font-size: 1.1rem; }
 
+/* Botones */
 .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.5rem; border-radius: .75rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; transition: background-color .15s, transform .15s, box-shadow .15s; }
 .btn-primary { background: var(--teal-dark); color: #fff; box-shadow: 0 4px 14px rgba(13, 148, 136, .25); }
 .btn-primary:hover { background: var(--teal-medium); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20, 184, 166, .3); }
@@ -80,6 +81,8 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .btn-ok-solid:hover { background: var(--teal-medium); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20, 184, 166, .3); }
 .btn-fail-solid { background: #ef4444; color: #fff; box-shadow: 0 4px 14px rgba(239, 68, 68, .25); }
 .btn-fail-solid:hover { background: #dc2626; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(220, 38, 38, .3); }
+.btn-cancel { background: transparent; color: #ef4444; border: 1px solid #fecaca; }
+.btn-cancel:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
 
 /* ── TARJETAS (KPIs) ── */
 .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
@@ -207,9 +210,45 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .sat-drop-zone p { font-size: .9rem; color: #cbd5e1; margin: 0 0 .25rem 0; font-weight: 500;}
 .sat-drop-zone small { font-size: .75rem; font-weight: 600; color: var(--teal-dark); text-transform: uppercase; }
 
+.sat-result-box {
+    background: var(--slate-mid);
+    border: 1px solid var(--teal-medium);
+    border-radius: .5rem;
+    padding: 1.25rem;
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    animation: fadeIn 0.3s ease;
+}
+.sat-result-success {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #fff;
+}
+.sat-result-success i {
+    font-size: 2.2rem;
+    color: var(--teal-medium);
+}
+.sat-result-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.sat-result-actions .input-group {
+    flex: 1;
+    min-width: 250px;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* ── FORMULARIO DE CABECERA Y DELEGACIÓN ── */
-.form-header-card { background: var(--surface); border: 1px solid #e2e8f0; border-radius: .75rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0, 0, 0, .03); overflow: hidden; display: flex; flex-direction: column; }
-.fh-info-strip { background: var(--surface-alt); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem; border-bottom: 1px solid #e2e8f0; }
+.form-header-card { background: var(--surface); border: 1px solid #e2e8f0; border-radius: .75rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0, 0, 0, .03); display: flex; flex-direction: column; position: relative; z-index: 20; }
+.fh-info-strip { background: var(--surface-alt); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem; border-bottom: 1px solid #e2e8f0; border-radius: .75rem .75rem 0 0; }
 .fh-info-item { display: flex; flex-direction: column; gap: 0.2rem; }
 .fh-info-item span { font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
 .fh-info-item strong { font-size: 0.95rem; color: #0f172a; font-weight: 600; }
@@ -220,7 +259,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .input-location { padding: 0.4rem 0.5rem 0.4rem 2rem; width: 140px; font-weight: 600; color: #0f172a; background: #fff; }
 
 .fh-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
-.fh-row-pills { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2rem; align-items: flex-end; }
+.fh-row-pills { display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-end; }
 .fh-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.5fr; gap: 1.25rem; }
 .input-label { display: block; font-size: 0.72rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .4rem; }
 
@@ -230,10 +269,10 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .radio-pill-label:has(input:checked) { background: var(--teal-dark); border-color: var(--teal-dark); color: #fff; box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25); }
 .radio-pill-label i { font-size: 1.05rem; }
 
-/* ── NUEVO: TOGGLE DELEGACIÓN DE CAPTURA ── */
+/* ── TOGGLE DELEGACIÓN DE CAPTURA ── */
 .delegation-wrapper { display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; padding: .4rem .8rem; border-radius: .5rem; }
 .delegation-toggle-wrap { display: flex; align-items: center; gap: .6rem; }
-.delegation-text { font-size: 0.75rem; font-weight: 600; color: var(--slate-mid); text-transform: uppercase; }
+.delegation-text { font-size: 0.75rem; font-weight: 700; color: var(--teal-dark); text-transform: uppercase; letter-spacing: .05em; }
 .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; }
@@ -243,23 +282,24 @@ input:checked + .slider:before { transform: translateX(18px); }
 .slider.round { border-radius: 22px; }
 .slider.round:before { border-radius: 50%; }
 
-/* ── NUEVO: INPUTS Y DROPDOWN AUTOCOMPLETE ── */
+/* ── 🚀 NUEVAS CLASES CORREGIDAS PARA EL DROPDOWN DEL BUSCADOR DE EMPLEADOS ── */
+.reimburse-dropdown-container { position: relative; width: 100%; }
+.reimburse-custom-dropdown { position: absolute; top: calc(100% + .4rem); left: 0; width: 100%; background: #fff; border: 1px solid #cbd5e1; border-radius: .5rem; box-shadow: 0 10px 25px rgba(0,0,0,.1); z-index: 50; max-height: 200px; overflow-y: auto; }
+.reimburse-dropdown-item { padding: .75rem 1rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; flex-direction: column; gap: .2rem; transition: background .15s; }
+.reimburse-dropdown-item:last-child { border-bottom: none; }
+.reimburse-dropdown-item:hover { background: var(--surface-alt); }
+.reimburse-dropdown-item strong { font-size: 0.8rem; color: var(--slate-dark); }
+.reimburse-dropdown-empty { padding: 1rem; text-align: center; font-size: 0.75rem; color: #94a3b8; }
+.reimburse-input-active-search { background: #fff !important; border-color: var(--teal-medium) !important; color: #0f172a; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1); }
+
+/* ── INPUTS GENERALES EN MATRIZ ── */
 .input-group { position: relative; display: flex; align-items: center; }
 .input-group i.field-icon { position: absolute; left: 0.85rem; color: #94a3b8; font-size: 1.15rem; pointer-events: none; transition: color .2s; }
 .input-field { width: 100%; padding: .6rem .75rem .6rem 2.5rem; background: var(--slate-light); border: 1px solid #e2e8f0; border-radius: .5rem; font-size: 0.85rem; color: #1e293b; outline: none; transition: border-color .15s, box-shadow .15s; }
 .input-field:focus { border-color: var(--teal-dark); box-shadow: 0 0 0 2px rgba(13, 148, 136, .2); background: #fff; }
 .input-field[readonly] { cursor: default; color: #64748b; background: #e2e8f0; border-color: #cbd5e1; }
-.input-active-search { background: #fff !important; border-color: var(--teal-medium) !important; color: #0f172a; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1); }
 
-.custom-dropdown { position: absolute; top: calc(100% + .4rem); left: 0; width: 100%; background: #fff; border: 1px solid #cbd5e1; border-radius: .5rem; box-shadow: 0 10px 25px rgba(0,0,0,.1); z-index: 50; max-height: 200px; overflow-y: auto; }
-.dropdown-item { padding: .75rem 1rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; flex-direction: column; gap: .2rem; transition: background .15s; }
-.dropdown-item:last-child { border-bottom: none; }
-.dropdown-item:hover { background: var(--surface-alt); }
-.dropdown-item strong { font-size: 0.8rem; color: var(--slate-dark); }
-.dropdown-item span { font-size: 0.65rem; color: #64748b; text-transform: uppercase; }
-.dropdown-empty { padding: 1rem; text-align: center; font-size: 0.75rem; color: #94a3b8; }
-
-/* ── 11. MÓDULO ANIDADO: MATRIZ DINÁMICA DE GASTOS ── */
+/* ── MÓDULO ANIDADO: MATRIZ DINÁMICA DE GASTOS ── */
 .expense-card { background: var(--surface); border: 1px solid #e2e8f0; border-radius: .75rem; overflow: hidden; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0, 0, 0, .06); }
 .expense-card-header { padding: .85rem 1.25rem; background: var(--slate-dark); display: flex; justify-content: space-between; align-items: center; }
 .expense-card-title { font-size: 0.85rem; font-weight: 600; color: #e2e8f0; text-transform: uppercase; letter-spacing: .08em; display: flex; align-items: center; gap: .5rem; }
@@ -295,7 +335,7 @@ input:checked + .slider:before { transform: translateX(18px); }
 .btn-remove-row { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: #ef4444; cursor: pointer; border-radius: .3rem; width: 1.8rem; height: 1.8rem; font-size: 1.2rem; transition: all .15s; padding: 0; }
 .btn-remove-row:hover { background: #fee2e2; color: #dc2626; }
 
-/* ── 12. INTEGRACIÓN CONTABLE Y EVIDENCIA DOCUMENTAL ── */
+/* ── INTEGRACIÓN CONTABLE Y EVIDENCIA DOCUMENTAL ── */
 .bottom-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; margin-bottom: 1.5rem; }
 .evidence-panel { flex: 1; background: var(--surface); border: 2px dashed #cbd5e1; border-radius: .75rem; padding: 2rem 1.5rem; text-align: center; transition: background .2s, border-color .2s; cursor: pointer; }
 .evidence-panel.dragover { border-color: var(--teal-medium); background: rgba(20, 184, 166, 0.08); }
@@ -314,7 +354,7 @@ input:checked + .slider:before { transform: translateX(18px); }
 
 .summary-box { width: 100%; max-width: 26rem; background: var(--slate-dark); border: 1px solid #1e293b; border-radius: .75rem; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, .3); position: relative; }
 .summary-box::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(to right, var(--teal-medium), var(--teal-dark)); }
-.summary-head { padding: 1rem 1.25rem; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: .5rem; }
+.summary-box-header { padding: 1rem 1.25rem; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: .5rem; }
 .summary-head i { color: var(--teal-medium); font-size: 1.3rem; }
 .summary-head span { font-size: 0.75rem; font-weight: 600; color: #e2e8f0; text-transform: uppercase; letter-spacing: .1em; }
 .summary-body { padding: 1rem 1.25rem; }
@@ -327,7 +367,7 @@ input:checked + .slider:before { transform: translateX(18px); }
 .spinner { width: 1.25rem; height: 1.25rem; border: 2px solid rgba(255, 255, 255, .25); border-top-color: var(--teal-dark); border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* ── 13. MEDIA QUERIES (COMPORTAMIENTO FLUIDO) ── */
+/* ── MEDIA QUERIES ── */
 @media (max-width: 900px) {
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -346,6 +386,8 @@ input:checked + .slider:before { transform: translateX(18px); }
     .card-header { flex-direction: column; align-items: flex-start; }
     .radio-pill-group { flex-direction: column; align-items: flex-start; }
     .radio-pill-label { width: 100%; justify-content: center; }
+    .sat-result-actions { flex-direction: column; align-items: stretch; }
+    .sat-result-actions .btn { width: 100%; justify-content: center; }
 }
 
 @media (max-width: 560px) {

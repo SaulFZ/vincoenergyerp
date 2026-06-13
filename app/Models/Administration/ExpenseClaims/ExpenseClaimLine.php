@@ -10,30 +10,21 @@ class ExpenseClaimLine extends Model
     protected $table = 'expense_claim_lines';
 
     protected $fillable = [
-        'expense_claim_id',
-        'expense_cfdi_id',
-        'concept_group',
-        'expense_date',
-        'document_number',
-        'description',
-        'amount_fiscal',
-        'amount_simple',
-        'amount_none',
-        'tax_ish',
-        'tax_iva',
-        'line_total',
-        'is_deductible',
-        'accounting_account',
+        'expense_claim_id', 'expense_cfdi_id', 'concept_group',
+        'expense_date', 'document_number', 'description',
+        'amount_fiscal', 'amount_simple', 'amount_none',
+        'tax_ish', 'tax_iva', 'line_total',
+        'is_deductible', 'accounting_account',
     ];
 
     protected $casts = [
-        'expense_date' => 'date',
+        'expense_date'  => 'date',
         'amount_fiscal' => 'decimal:2',
         'amount_simple' => 'decimal:2',
-        'amount_none' => 'decimal:2',
-        'tax_ish' => 'decimal:2',
-        'tax_iva' => 'decimal:2',
-        'line_total' => 'decimal:2',
+        'amount_none'   => 'decimal:2',
+        'tax_ish'       => 'decimal:2',
+        'tax_iva'       => 'decimal:2',
+        'line_total'    => 'decimal:2',
         'is_deductible' => 'boolean',
     ];
 
