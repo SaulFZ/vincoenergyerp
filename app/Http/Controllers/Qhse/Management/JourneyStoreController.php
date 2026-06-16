@@ -74,16 +74,23 @@ class JourneyStoreController extends Controller
             }
 
             // =========================================================
-            // 7. ENVIAR CORREO DE ANOMALÍAS A LOGÍSTICA / MANTENIMIENTO
+            // 7. ENVIAR CORREO DE ANOMALÍAS (MANTENIMIENTO + JEFES DIRECTOS Y SUPERIORES)
             // =========================================================
             try {
-                $journey->load(['units.lightInspection', 'units.heavyInspection']);
+                // Cargamos toda la jerarquía de un jalón para no saturar la BD
+                $journey->load([
+                    'units.lightInspection',
+                    'units.heavyInspection',
+                    'creator.employee.area.responsible.user',
+                    'creator.employee.area.parentArea.responsible.user', // <-- Cargamos al jefe superior
+                ]);
+
                 $anomaliesList = [];
 
                 foreach ($journey->units as $unit) {
                     $hasAnomaly  = false;
                     $comments    = '';
-                    $failedItems = []; // Array para guardar lo que falló
+                    $failedItems = [];
 
                     $inspection = $unit->lightInspection ?: $unit->heavyInspection;
 
@@ -91,7 +98,6 @@ class JourneyStoreController extends Controller
                         $hasAnomaly = true;
                         $comments   = $inspection->anomaly_comments;
 
-                        // Obtenemos todos los datos de la inspección y buscamos los "no"
                         foreach ($inspection->getAttributes() as $key => $value) {
                             if ($value === 'no' && ! in_array($key, ['has_anomalies'])) {
                                 $failedItems[] = $this->translateInspectionField($key);
@@ -104,13 +110,14 @@ class JourneyStoreController extends Controller
                             'unidad'          => $unit->economic_number,
                             'tipo'            => $unit->unit_type,
                             'comentarios'     => $comments ?: 'Sin comentarios detallados.',
-                            'puntos_fallidos' => $failedItems, // Guardamos la lista de fallos
+                            'puntos_fallidos' => $failedItems,
                         ];
                     }
                 }
 
                 if (count($anomaliesList) > 0) {
-                    $usersWithPermission = User::active()
+                    // 7.1. Obtener correos de los de Mantenimiento / QHSE (Los mecánicos)
+                    $recipientEmails = User::active()
                         ->whereHas('directPermissions', function ($query) {
                             $query->where('name', 'notificacion_anomalias');
                         })
@@ -118,8 +125,41 @@ class JourneyStoreController extends Controller
                         ->filter()
                         ->toArray();
 
-                    if (! empty($usersWithPermission)) {
-                        Mail::to($usersWithPermission)->send(new AnomalyNotificationMail($journey, $anomaliesList));
+                    // 7.2. Identificar el correo del Aprobador (para no mandarle doble si él mismo es el gerente)
+                    $approverEmail = null;
+                    if ($journey->approver_id) {
+                        $approver      = User::find($journey->approver_id);
+                        $approverEmail = $approver ? $approver->email : null;
+                    }
+
+                    // 7.3. Extraer la jerarquía completa del Área del solicitante
+                    if ($journey->creator && $journey->creator->employee && $journey->creator->employee->area) {
+                        $area = $journey->creator->employee->area;
+
+                        // A) El Jefe Directo (Ej. Encargado de Geociencias)
+                        $areaManager = $area->responsible;
+                        if ($areaManager) {
+                            $managerEmail = $areaManager->personal_email ?? ($areaManager->user ? $areaManager->user->email : null);
+                            if ($managerEmail && $managerEmail !== $approverEmail && ! in_array($managerEmail, $recipientEmails)) {
+                                $recipientEmails[] = $managerEmail;
+                            }
+                        }
+
+                        // B) El Jefe Superior / Director (Ej. Gerente de Operaciones que está en el parent_id)
+                        if ($area->parentArea && $area->parentArea->responsible) {
+                            $parentManager      = $area->parentArea->responsible;
+                            $parentManagerEmail = $parentManager->personal_email ?? ($parentManager->user ? $parentManager->user->email : null);
+
+                            // Aseguramos de no meterlo si ya está en la lista o si es el aprobador
+                            if ($parentManagerEmail && $parentManagerEmail !== $approverEmail && ! in_array($parentManagerEmail, $recipientEmails)) {
+                                $recipientEmails[] = $parentManagerEmail;
+                            }
+                        }
+                    }
+
+                    // 7.4. Enviar el correo final si hay a quién mandarlo
+                    if (! empty($recipientEmails)) {
+                        Mail::to($recipientEmails)->send(new AnomalyNotificationMail($journey, $anomaliesList));
                     }
                 }
             } catch (\Exception $anomalyMailEx) {
@@ -650,21 +690,21 @@ class JourneyStoreController extends Controller
         return 'Ligera'; // Valor por defecto
     }
 
-   /**
+    /**
      * Traduce las columnas de la BD al texto exacto que el usuario vio en la pantalla
      */
     private function translateInspectionField($field)
     {
         $labels = [
             // ================= I. DOCUMENTACIÓN =================
-            'doc_registration_card' => 'Tarjeta de circulación',
-            'doc_insurance_policy'  => 'Póliza de seguro vigente',
-            'doc_emergency_phones'  => 'Teléfonos Emergencia / Aseguradora',
+            'doc_registration_card'   => 'Tarjeta de circulación',
+            'doc_insurance_policy'    => 'Póliza de seguro vigente',
+            'doc_emergency_phones'    => 'Teléfonos Emergencia / Aseguradora',
             // Exclusivos Pesadas
-            'doc_cargo_permit'      => 'Permiso de transporte de carga',
-            'doc_emissions_cert'    => 'Certificado de bajos contaminantes',
-            'doc_mechanical_cert'   => 'Certificado físico mecánico',
-            'doc_waybill'           => 'Carta Porte',
+            'doc_cargo_permit'        => 'Permiso de transporte de carga',
+            'doc_emissions_cert'      => 'Certificado de bajos contaminantes',
+            'doc_mechanical_cert'     => 'Certificado físico mecánico',
+            'doc_waybill'             => 'Carta Porte',
 
             // ================= II. INSPECCIÓN VISUAL =================
             'vis_first_aid_kit'       => 'Kit de primeros auxilios',
@@ -707,27 +747,27 @@ class JourneyStoreController extends Controller
 
             // ================= III. MANTENIMIENTO =================
             // Exclusivos Ligeras
-            'maint_leaks_check'         => 'Revisión de fugas',
-            'maint_fluid_levels'        => 'Niveles óptimos (Aceite, Líquido de Frenos, Agua)',
-            'maint_belts_condition'     => 'Revisión de estado de bandas',
+            'maint_leaks_check'       => 'Revisión de fugas',
+            'maint_fluid_levels'      => 'Niveles óptimos (Aceite, Líquido de Frenos, Agua)',
+            'maint_belts_condition'   => 'Revisión de estado de bandas',
 
             // Exclusivos Pesadas
-            'maint_engine_start'        => 'Encendido de motor',
-            'maint_oil_pressure'        => 'Presión de aceite de motor',
-            'maint_engine_temp'         => 'Temperatura del motor',
-            'maint_air_pressure'        => 'Presión de Aire',
-            'maint_fan_clutch'          => 'Fan clutch',
-            'maint_batteries'           => 'Condiciones de baterías',
-            'maint_speedometer'         => 'Velocímetro',
-            'maint_rpm_indicator'       => 'Indicador de RPM',
-            'maint_oil_level'           => 'Nivel Aceite de motor',
-            'maint_coolant_level'       => 'Nivel Anticongelante',
-            'maint_hydraulic_level'     => 'Nivel de aceite hidráulico',
-            'maint_diesel_level'        => 'Nivel de diésel',
-            'maint_engine_brake'        => 'Freno de motor',
-            'maint_parking_brake'       => 'Freno de parqueo',
-            'maint_belts'               => 'Bandas',
-            'maint_air_tank_purge'      => 'Purgado de tanque de aire',
+            'maint_engine_start'      => 'Encendido de motor',
+            'maint_oil_pressure'      => 'Presión de aceite de motor',
+            'maint_engine_temp'       => 'Temperatura del motor',
+            'maint_air_pressure'      => 'Presión de Aire',
+            'maint_fan_clutch'        => 'Fan clutch',
+            'maint_batteries'         => 'Condiciones de baterías',
+            'maint_speedometer'       => 'Velocímetro',
+            'maint_rpm_indicator'     => 'Indicador de RPM',
+            'maint_oil_level'         => 'Nivel Aceite de motor',
+            'maint_coolant_level'     => 'Nivel Anticongelante',
+            'maint_hydraulic_level'   => 'Nivel de aceite hidráulico',
+            'maint_diesel_level'      => 'Nivel de diésel',
+            'maint_engine_brake'      => 'Freno de motor',
+            'maint_parking_brake'     => 'Freno de parqueo',
+            'maint_belts'             => 'Bandas',
+            'maint_air_tank_purge'    => 'Purgado de tanque de aire',
         ];
 
         return $labels[$field] ?? ucfirst(str_replace('_', ' ', $field));
