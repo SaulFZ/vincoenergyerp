@@ -17,16 +17,19 @@ class ExpenseClaimLine extends Model
         'is_deductible', 'accounting_account',
     ];
 
-    protected $casts = [
-        'expense_date'  => 'date',
-        'amount_fiscal' => 'decimal:2',
-        'amount_simple' => 'decimal:2',
-        'amount_none'   => 'decimal:2',
-        'tax_ish'       => 'decimal:2',
-        'tax_iva'       => 'decimal:2',
-        'line_total'    => 'decimal:2',
-        'is_deductible' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'expense_date'  => 'date',
+            'amount_fiscal' => 'decimal:2',
+            'amount_simple' => 'decimal:2',
+            'amount_none'   => 'decimal:2',
+            'tax_ish'       => 'decimal:2',
+            'tax_iva'       => 'decimal:2',
+            'line_total'    => 'decimal:2',
+            'is_deductible' => 'boolean',
+        ];
+    }
 
     public function claim(): BelongsTo
     {

@@ -14,15 +14,18 @@ class ExpenseCfdi extends Model
         'fsl_node_id', 'uuid', 'issuer_rfc', 'issuer_name',
         'receiver_rfc', 'subtotal', 'total', 'currency',
         'issue_date', 'sat_status', 'is_reimbursed',
-        'xml_path', 'pdf_path',
+        'xml_path'
     ];
 
-    protected $casts = [
-        'issue_date'    => 'datetime',
-        'subtotal'      => 'decimal:2',
-        'total'         => 'decimal:2',
-        'is_reimbursed' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'issue_date'    => 'datetime',
+            'subtotal'      => 'decimal:2',
+            'total'         => 'decimal:2',
+            'is_reimbursed' => 'boolean',
+        ];
+    }
 
     public function node(): BelongsTo
     {

@@ -14,19 +14,5 @@ class ReimbursementController extends Controller
         return view('modules.administration.expense-claims.reimbursements');
     }
 
-    // Aquí puedes dejar vacíos por ahora los demás métodos que definiste en tus rutas
-    public function getEmployees()
-    {
-        // Lógica futura
-    }
 
-    public function getDepartments()
-    {
-        // Lógica futura
-    }
-
-    public function getConcepts()
-    {
-        // Lógica futura
-    }
 }

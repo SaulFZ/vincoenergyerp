@@ -1,7 +1,8 @@
 <?php
+
 namespace App\Models\Administration\ExpenseClaims;
 
-use App\Models\Auth\User;
+use App\Models\User; // Asegúrate de que esta ruta coincida con la ubicación de tu modelo User
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,16 +12,24 @@ class ExpenseClaim extends Model
     protected $table = 'expense_claims';
 
     protected $fillable = [
-        'folio_system', 'folio_user', 'category',
-        'user_id', 'created_by_id', 'area',
-        'cost_center', 'emission_place', 'motive',
-        'total_amount', 'status_review', 'status_payment',
-        'rejection_reason',
+        'folio_system', 'folio_user', 'claim_date', 'category',
+        'user_id', 'created_by_id', 'area', 'cost_center',
+        'emission_place', 'motive', 'total_subtotal',
+        'total_iva', 'total_ish', 'total_amount',
+        'evidence_documents', 'status_review', 'status_payment'
     ];
 
-    protected $casts = [
-        'total_amount' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'claim_date'         => 'date',
+            'total_subtotal'     => 'decimal:2',
+            'total_iva'          => 'decimal:2',
+            'total_ish'          => 'decimal:2',
+            'total_amount'       => 'decimal:2',
+            'evidence_documents' => 'array', // Crucial para que el JSON funcione como arreglo en PHP
+        ];
+    }
 
     public function beneficiary(): BelongsTo
     {
@@ -37,32 +46,8 @@ class ExpenseClaim extends Model
         return $this->hasMany(ExpenseClaimLine::class, 'expense_claim_id');
     }
 
-    /**
-     * Los atributos que se deben agregar al array del modelo (Virtuales)
-     */
-    protected $appends = ['subtotal_neto', 'total_iva', 'total_ish'];
-
-/**
- * Genera un campo virtual sumando los subtotales de las líneas
- */
-    public function getSubtotalNetoAttribute()
+    public function logs(): HasMany
     {
-        return $this->lines()->sum('subtotal');
-    }
-
-/**
- * Genera un campo virtual sumando los IVAs de las líneas
- */
-    public function getTotalIvaAttribute()
-    {
-        return $this->lines()->sum('tax_iva');
-    }
-
-/**
- * Genera un campo virtual sumando los impuestos locales de las líneas
- */
-    public function getTotalIshAttribute()
-    {
-        return $this->lines()->sum('tax_ish');
+        return $this->hasMany(ExpenseClaimLog::class, 'expense_claim_id');
     }
 }

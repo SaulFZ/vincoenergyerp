@@ -329,13 +329,15 @@
                                 </tr>
                                 <tr class="th-cols">
                                     <th class="th-w-140">Fecha Factura</th>
-                                    <th class="th-w-100">Folio/Num. Fac.</th>
+                                    <th    class="th-w-100">Folio/Num. Fac.</th>
                                     <th>Descripción Comercial</th>
+
+
                                     <th class="th-w-90">Comp. Fiscal<br>(PDF + XML)</th>
                                     <th class="th-w-90">Comp. Simple<br>No Fiscal</th>
                                     <th class="th-w-90">Sin Comp.<br>y Propinas</th>
                                     <th class="th-w-80">I.S.H.<br>Otros Imp.</th>
-                                    <th class="th-w-75">I.V.A. (16%)</th>
+                                    <th class="th-w-75">I.V.A.</th>
                                 </tr>
                             </thead>
 
