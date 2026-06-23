@@ -1,18 +1,22 @@
 <?php
-namespace App\Http\Controllers\Administration\ExpenseClaims; // Ajusta el namespace si lo guardaste en una subcarpeta
+namespace App\Http\Controllers\Administration\ExpenseClaims;
 
 use App\Http\Controllers\Controller;
+use App\Models\Administration\ExpenseClaims\ExpenseClaim;
+use Illuminate\Support\Facades\Auth;
 
 class ReimbursementController extends Controller
 {
-    /**
-     * Muestra la vista principal del módulo de reembolsos.
-     */
     public function index()
     {
-        // Asegúrate de que esta ruta coincida con la ubicación de tu archivo Blade
-        return view('modules.administration.expense-claims.reimbursements');
+        // Ejemplo de cómo mandar datos reales a la vista:
+        // Traemos todos los reembolsos ordenados por los más recientes
+        $reembolsos = ExpenseClaim::with('beneficiary')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+        return view('modules.administration.expense-claims.reimbursements', [
+            'reembolsos' => $reembolsos
+        ]);
     }
-
-
 }

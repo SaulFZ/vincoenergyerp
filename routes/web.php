@@ -2,9 +2,8 @@
 /* CONTROLADORES DE RECURSOS Generañ */
 use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
-use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStatusController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
-use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryController;
+use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
 
 /* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Auth\LoginController;
@@ -108,37 +107,36 @@ Route::middleware(['web', 'auth'])->group(function () {
 // MÓDULO: ADMINISTRACIÓN
 // ===================================================
     Route::prefix('administration')
-        ->middleware(['auth', 'check.permission:administration'])
+        ->middleware(['auth']) // Asegúrate de tener tus middlewares
         ->group(function () {
 
-            // ===================================================
-            // GRUPO GESTIÓN DE REEMBOLSOS (EXPENSE CLAIMS)
-            // ===================================================
             Route::prefix('expense-claims')->group(function () {
 
-                // 1. Redirección automática
+                // Redirección
                 Route::get('/', function () {
                     return redirect()->route('expense-claims.reimbursements');
-                })->name('administration.expense-claims')
-                    ->middleware('check.permission:administration,expense-claims');
+                })->name('administration.expense-claims');
 
-                // 2. VISTAS Y CARGA DE DATOS (Catálogos, Empleados)
+                // VISTAS PRINCIPALES
                 Route::controller(ReimbursementController::class)->group(function () {
                     Route::get('/reimbursements', 'index')->name('expense-claims.reimbursements');
-                    Route::get('/employees', 'getEmployees')->name('reimbursements.employees');
-                    Route::get('/departments', 'getDepartments')->name('reimbursements.departments');
-                    Route::get('/concepts', 'getConcepts')->name('reimbursements.concepts');
                 });
 
+                // ── NUEVO: GUARDADO DEL FORMULARIO ──
+                Route::controller(ReimbursementStoreController::class)->group(function () {
+                    Route::post('/reimbursements/store', 'store')->name('expense-claims.store');
+                });
 
-
-                // 3. BÓVEDA SAT (Credenciales de e.firma)
+                // BÓVEDA SAT
                 Route::controller(FslNodeController::class)->group(function () {
-                    // La URL no dirá nada sobre "sat" o "credenciales"
                     Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
                     Route::post('/sys-config-node', 'store')->name('expense-claims.node.store');
                 });
 
+                Route::controller(SatRequestsController::class)->group(function () {
+                    Route::get('/sat-requests', 'index')->name('expense-claims.sat-sync.index');
+                    Route::post('/sat-requests/force', 'forceSync')->name('expense-claims.sat-sync.force');
+                });
             });
         });
 
@@ -295,7 +293,7 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 });
 
-               // ---------------------------------------------------
+                // ---------------------------------------------------
                 // 6. GESTIÓN DE LICENCIAS Y CREDENCIALES
                 // Controlador: DriverLicenseController
                 // ---------------------------------------------------

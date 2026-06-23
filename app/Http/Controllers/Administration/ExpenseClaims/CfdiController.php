@@ -7,22 +7,17 @@ use App\Models\Administration\ExpenseClaims\ExpenseCfdi;
 use App\Models\Administration\ExpenseClaims\FslNode;
 use App\Services\Administration\ExpenseClaims\FiscalConnectorService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CfdiController extends Controller
 {
     protected $fiscalService;
 
-    // Inyectamos el servicio mediante el constructor
     public function __construct(FiscalConnectorService $fiscalService)
     {
         $this->fiscalService = $fiscalService;
     }
 
-    /**
-     * Recibe un XML arrastrado por el usuario, lo valida y lo guarda.
-     */
     public function uploadXml(Request $request)
     {
         $request->validate([
@@ -32,17 +27,12 @@ class CfdiController extends Controller
         $file = $request->file('xml_file');
         $xmlContent = file_get_contents($file->getRealPath());
 
-        // 1. Validar la estructura del XML usando el Servicio
         $validation = $this->fiscalService->validateLocalXml($xmlContent);
 
         if (!$validation['is_valid']) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El archivo XML cargado presenta inconsistencias o está corrompido.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'El archivo XML cargado presenta inconsistencias.'], 422);
         }
 
-        // 2. Extraer datos básicos del XML (Parseo manual para DB)
         $xml = simplexml_load_string($xmlContent);
         $namespaces = $xml->getNamespaces(true);
         $xml->registerXPathNamespace('tfd', $namespaces['tfd']);
@@ -55,9 +45,8 @@ class CfdiController extends Controller
             return response()->json(['success' => false, 'message' => 'No se encontraron los nodos fiscales requeridos en el XML.'], 422);
         }
 
-        $uuid = (string) $timbre['UUID'];
+        $uuid = strtoupper((string) $timbre['UUID']);
 
-        // 3. Evitar duplicados (Regla de negocio crítica)
         if (ExpenseCfdi::where('uuid', $uuid)->exists()) {
             return response()->json([
                 'success' => true,
@@ -66,12 +55,10 @@ class CfdiController extends Controller
             ]);
         }
 
-        // 4. Guardar archivo físico en la bóveda
-        // Generamos un nombre seguro para el archivo
-        $filename = $uuid . '_' . Str::random(5) . '.xml';
-        $path = $file->storeAs('private/administration/expense-claims/invoices', $filename);
+        // ── CORRECCIÓN: Guardar en la bóveda oficial de XMLs ──
+        $filename = $uuid . '.xml';
+        $path = $file->storeAs('private/administration/expense-claims/xml', $filename);
 
-        // 5. Guardar en Base de Datos
         $activeNode = FslNode::where('is_live', true)->first();
 
         $cfdi = ExpenseCfdi::create([
@@ -79,14 +66,14 @@ class CfdiController extends Controller
             'uuid'         => $uuid,
             'issuer_rfc'   => (string) $emisor['Rfc'],
             'issuer_name'  => (string) $emisor['Nombre'],
-            'receiver_rfc' => (string) $receptor['Rfc'],
+            'receiver_rfc' => $receptor ? (string) $receptor['Rfc'] : null,
             'subtotal'     => (float) $xml['SubTotal'],
             'total'        => (float) $xml['Total'],
             'currency'     => (string) ($xml['Moneda'] ?? 'MXN'),
-            'issue_date'   => (string) $xml['Fecha'],
-            'sat_status'   => 'Vigente', // Se asume vigente temporalmente hasta la verificación masiva
-            'is_reimbursed'=> false,
+            'issue_date'   => str_replace('T', ' ', (string) $xml['Fecha']),
+            'sat_status'   => 'Vigente',
             'xml_path'     => $path,
+            // is_reimbursed se omite porque la BD le pone false por default
         ]);
 
         return response()->json([

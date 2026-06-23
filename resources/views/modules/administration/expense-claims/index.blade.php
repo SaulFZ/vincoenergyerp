@@ -13,7 +13,8 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -33,9 +34,8 @@
                 </div>
             </div>
         </div>
-
         <nav class="nav-main">
-            <a href="#" class="nav-link" data-route="reimbursements">
+            <a href="{{ route('expense-claims.reimbursements') }}" class="nav-link" data-route="reimbursements">
                 <i class="fas fa-home"></i> Reembolsos
             </a>
 
@@ -43,8 +43,13 @@
                 <i class="fas fa-chart-pie"></i> Estadísticas
             </a>
 
-            {{-- ── NUEVO ENLACE: NODOS DE SEGURIDAD (BÓVEDA SAT CAMUFLADA) ── --}}
-            <a href="#" class="nav-link" data-route="sys-config-node">
+            {{-- ── NUEVO ENLACE: BITÁCORA DE SINCRONIZACIÓN SAT ── --}}
+            <a href="{{ route('expense-claims.sat-sync.index') }}" class="nav-link" data-route="sat-requests">
+                <i class="fas fa-sync-alt"></i> Sincronización SAT
+            </a>
+
+            {{-- ── ENLACE: NODOS DE SEGURIDAD (BÓVEDA SAT CAMUFLADA) ── --}}
+            <a href="{{ route('expense-claims.node.index') }}" class="nav-link" data-route="sys-config-node">
                 <i class="fas fa-shield-alt"></i> Nodos de Seguridad
             </a>
         </nav>
