@@ -9,7 +9,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use App\Services\Administration\ExpenseClaims\FiscalConnectorService;
-use App\Models\Administration\ExpenseClaims\SatRequests;
+use App\Models\Administration\ExpenseClaims\SatRequest;
+use App\Models\Administration\ExpenseClaims\FslNode;
 
 class RequestFiscalDownloadJob implements ShouldQueue
 {
@@ -30,23 +31,29 @@ class RequestFiscalDownloadJob implements ShouldQueue
 
     public function handle(FiscalConnectorService $service): void
     {
-        Log::info("Job 1: Solicitando descargas al SAT para el RFC: {$this->rfc}");
+        Log::info("Job 1: Iniciando petición masiva al SAT para el RFC: {$this->rfc}");
 
         try {
+            $node = FslNode::where('is_live', true)->first();
+
+            if (!$node) {
+                throw new \Exception("No existe un certificado activo configurado en el sistema.");
+            }
+
             $ticketId = $service->requestDownload(
                 $this->rfc,
                 new \DateTimeImmutable($this->start),
-                new \DateTimeImmutable($this->end)
+                new \DateTimeImmutable($this->end),
+                $node
             );
 
             if ($ticketId) {
-                // Vinculamos el número de ticket a nuestra solicitud de control
                 $satRequest = SatRequest::find($this->satRequestId);
                 if ($satRequest) {
                     $satRequest->update([
                         'ticket_id' => $ticketId
                     ]);
-                    Log::info("Job 1: Ticket {$ticketId} guardado con éxito en la solicitud ID: {$this->satRequestId}");
+                    Log::info("Job 1: Ticket oficial de SAT [{$ticketId}] guardado en la solicitud ID: {$this->satRequestId}");
                 }
             } else {
                 $this->markAsFailed();

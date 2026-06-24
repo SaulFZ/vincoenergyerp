@@ -43,32 +43,48 @@ class FslNodeController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Faltan campos, fechas incorrectas o los archivos son inválidos.',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
 
         try {
+            $storagePath = 'private/administration/expense-claims/sys-nodes';
+
             if ($isUpdate) {
-                // FLUJO DE ACTUALIZACIÓN (Mantiene el mismo ID)
+                // ── FLUJO DE ACTUALIZACIÓN (mantiene el mismo ID) ─────────────────
+
                 $node = FslNode::findOrFail($request->node_id);
-                $node->e_name = $request->entity_n;
-                $node->g_id = strtoupper($request->gov_id);
+                $node->e_name     = $request->entity_n;
+                $node->g_id       = strtoupper($request->gov_id);
                 $node->start_date = $request->start_d;
-                $node->end_date = $request->end_d;
+                $node->end_date   = $request->end_d;
 
                 if ($request->filled('s_token')) {
                     $node->sec_token = Crypt::encryptString($request->s_token);
                 }
 
                 if ($request->hasFile('doc_c')) {
-                    // Opcional: Eliminar el archivo viejo si así lo requieres
-                    // Storage::delete($node->c_bin);
-                    $node->c_bin = $request->file('doc_c')->store('private/administration/expense-claims/sys-nodes');
+                    // Eliminar archivo anterior si existe
+                    if ($node->c_bin && Storage::exists($node->c_bin)) {
+                        Storage::delete($node->c_bin);
+                    }
+                    // Guardar preservando la extensión original (.cer)
+                    $node->c_bin = $request->file('doc_c')->storeAs(
+                        $storagePath,
+                        $request->file('doc_c')->getClientOriginalName()
+                    );
                 }
 
                 if ($request->hasFile('doc_k')) {
-                    // Storage::delete($node->k_bin);
-                    $node->k_bin = $request->file('doc_k')->store('private/administration/expense-claims/sys-nodes');
+                    // Eliminar archivo anterior si existe
+                    if ($node->k_bin && Storage::exists($node->k_bin)) {
+                        Storage::delete($node->k_bin);
+                    }
+                    // Guardar preservando la extensión original (.key)
+                    $node->k_bin = $request->file('doc_k')->storeAs(
+                        $storagePath,
+                        $request->file('doc_k')->getClientOriginalName()
+                    );
                 }
 
                 $node->save();
@@ -76,11 +92,20 @@ class FslNodeController extends Controller
                 $message = 'El nodo de seguridad ha sido actualizado exitosamente.';
 
             } else {
-                // FLUJO DE CREACIÓN / RENOVACIÓN (Crea un nuevo ID y desactiva los demás)
+                // ── FLUJO DE CREACIÓN / RENOVACIÓN (nuevo ID, desactiva los demás) ─
+
                 FslNode::where('is_live', true)->update(['is_live' => false]);
 
-                $cPath = $request->file('doc_c')->store('private/administration/expense-claims/sys-nodes');
-                $kPath = $request->file('doc_k')->store('private/administration/expense-claims/sys-nodes');
+                // Guardar preservando la extensión original (.cer / .key)
+                $cPath = $request->file('doc_c')->storeAs(
+                    $storagePath,
+                    $request->file('doc_c')->getClientOriginalName()
+                );
+                $kPath = $request->file('doc_k')->storeAs(
+                    $storagePath,
+                    $request->file('doc_k')->getClientOriginalName()
+                );
+
                 $encryptedToken = Crypt::encryptString($request->s_token);
 
                 FslNode::create([

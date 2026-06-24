@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Services\Administration\ExpenseClaims\FiscalConnectorService;
 use App\Models\Administration\ExpenseClaims\ExpenseCfdi;
 use App\Models\Administration\ExpenseClaims\SatRequest;
-use App\Models\Administration\ExpenseClaims\FslNode; // IMPORTANTE: Agregado para el nodo
+use App\Models\Administration\ExpenseClaims\FslNode;
 use ZipArchive;
 
 class VerifyFiscalDownloadJob implements ShouldQueue
@@ -30,44 +30,48 @@ class VerifyFiscalDownloadJob implements ShouldQueue
 
     public function handle(FiscalConnectorService $service): void
     {
-        Log::info("Job 2: Validando estatus del ticket SAT: {$this->ticketId}");
+        Log::info("Job 2: Validando estatus del ticket oficial del SAT: {$this->ticketId}");
 
         try {
-            $verify = $service->verifyDownload($this->ticketId);
+            $node = FslNode::where('is_live', true)->first();
+            $satRequest = SatRequest::find($this->satRequestId);
 
-            if (!$verify) {
-                Log::warning("Job 2: Sin respuesta del SAT para el ticket {$this->ticketId}. Se volverá a intentar en la siguiente ejecución programada.");
+            if (!$node || !$satRequest) {
+                Log::warning("Job 2: Credenciales o registro de solicitud no localizados.");
                 return;
             }
 
-            // Validamos el código de estado del paquete del SAT
-            // '5000' significa: El SAT terminó de empaquetar y está listo para descarga.
-            if ($verify->getCodeRequest()->getValue() === '5000') {
+            $verify = $service->verifyDownload($this->ticketId, $node);
 
-                Log::info("Job 2: El SAT aprobó y empaquetó la solicitud. Iniciando descargas de paquetes ZIP.");
+            if (!$verify) {
+                Log::warning("Job 2: Sin respuesta del servidor SOAP del SAT para el ticket {$this->ticketId}.");
+                return;
+            }
+
+            $statusCode = $verify->getCodeRequest()->getValue();
+
+            if ($statusCode === '5000') {
+                Log::info("Job 2: El SAT terminó el procesamiento. Descargando paquetes ZIP.");
 
                 foreach ($verify->getPackageIds() as $packageId) {
-                    $zipPath = $service->downloadPackage($packageId);
+                    $zipPath = $service->downloadPackage($packageId, $node);
                     if ($zipPath) {
                         $this->processZip($zipPath);
                     }
                 }
 
-                // ACTUALIZACIÓN DE ESTADO: Cambiamos la solicitud a completada
-                $satRequest = SatRequest::find($this->satRequestId);
-                if ($satRequest) {
-                    $satRequest->update(['status' => 'completed']);
-                    Log::info("Job 2: Descarga diaria finalizada. Estatus de Solicitud ID {$this->satRequestId} actualizado a COMPLETED. Preguntas suspendidas.");
-                }
+                $satRequest->update(['status' => 'completed']);
+                Log::info("Job 2: Descarga masiva finalizada con éxito.");
 
+            } elseif ($statusCode === '5001' || $statusCode === '5002') {
+                Log::info("Job 2: El SAT reporta que el ticket {$this->ticketId} sigue en proceso (Código: {$statusCode}).");
             } else {
-                // Si el código no es 5000, significa que el SAT lo sigue procesando en sus servidores.
-                // No hacemos nada; la tarea programada de la consola volverá a lanzarlo en 2 horas automáticamente.
-                Log::info("Job 2: El SAT sigue procesando el ticket {$this->ticketId}. Código actual: " . $verify->getCodeRequest()->getValue());
+                $satRequest->update(['status' => 'failed']);
+                Log::error("Job 2: El SAT rechazó el ticket {$this->ticketId} (Código: {$statusCode}).");
             }
 
         } catch (\Exception $e) {
-            Log::error("Job 2: Error crítico en la verificación de descargas: " . $e->getMessage());
+            Log::error("Job 2: Error en verificación de descargas: " . $e->getMessage());
         }
     }
 
@@ -75,8 +79,6 @@ class VerifyFiscalDownloadJob implements ShouldQueue
     {
         $zip = new ZipArchive();
         if ($zip->open($zipPath) === true) {
-
-            // Obtenemos el nodo activo una sola vez antes del loop para optimizar rendimiento
             $activeNode = FslNode::where('is_live', true)->first();
             $nodeId = $activeNode ? $activeNode->id : null;
 
@@ -84,48 +86,32 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 $filename = $zip->getNameIndex($i);
                 if (pathinfo($filename, PATHINFO_EXTENSION) === 'xml') {
                     $xmlContent = $zip->getFromIndex($i);
-                    $this->saveCfdi($xmlContent, $nodeId); // Pasamos el ID del nodo
+                    $this->saveCfdi($xmlContent, $nodeId);
                 }
             }
             $zip->close();
-
-            // Destrucción física del paquete ZIP (Estrategia de limpieza)
             Storage::delete('private/temp_sat/' . basename($zipPath));
         }
     }
 
-  /**
-     * Procesa el contenido crudo de un XML, valida duplicados en BD y
-     * almacena el archivo físico en la carpeta definitiva de manera eficiente.
-     */
     private function saveCfdi(string $xmlContent, ?int $nodeId): void
     {
         try {
-            // 1. Parseamos el XML usando el motor nativo de PHP
             $dom = new \DOMDocument();
-            // Desactivamos la carga de entidades externas por seguridad (Prevención de ataques XXE)
             $oldEntityLoader = libxml_disable_entity_loader(true);
             $dom->loadXML($xmlContent);
             libxml_disable_entity_loader($oldEntityLoader);
 
-            // 2. Extraemos el UUID (Folio Fiscal) del nodo del Timbre Fiscal Digital
             $uuidElement = $dom->getElementsByTagNameNS('*', 'TimbreFiscalDigital')->item(0);
-            if (!$uuidElement) {
-                return; // Si no tiene Timbre Fiscal, no es un CFDI válido del SAT
-            }
+            if (!$uuidElement) return;
 
             $uuid = strtoupper($uuidElement->getAttribute('UUID'));
-
-            // 3. Extraemos los nodos principales para la recolecta de datos fiscales
             $comprobante = $dom->getElementsByTagNameNS('*', 'Comprobante')->item(0);
             $emisor = $dom->getElementsByTagNameNS('*', 'Emisor')->item(0);
             $receptor = $dom->getElementsByTagNameNS('*', 'Receptor')->item(0);
 
-            if (!$comprobante || !$emisor) {
-                return;
-            }
+            if (!$comprobante || !$emisor) return;
 
-            // ── OPTIMIZACIÓN DE DISCO (EVITAR SOBREESCRITURA INÚTIL) ──
             $finalXmlFolder = 'private/administration/expense-claims/xml';
             $finalXmlPath = $finalXmlFolder . '/' . $uuid . '.xml';
 
@@ -134,13 +120,10 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 Storage::put($finalXmlPath, $xmlContent);
             }
 
-            // ── OPTIMIZACIÓN DE BASE DE DATOS (UPSERT LIBRE DE DUPLICADOS) ──
             ExpenseCfdi::updateOrCreate(
+                ['uuid' => $uuid],
                 [
-                    'uuid' => $uuid
-                ],
-                [
-                    'fsl_node_id'   => $nodeId, // Relacionamos con el certificado que lo descargó
+                    'fsl_node_id'   => $nodeId,
                     'subtotal'      => (string) $comprobante->getAttribute('SubTotal'),
                     'total'         => (string) $comprobante->getAttribute('Total'),
                     'issuer_rfc'    => (string) $emisor->getAttribute('Rfc'),
@@ -150,13 +133,11 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                     'issue_date'    => str_replace('T', ' ', $comprobante->getAttribute('Fecha')),
                     'sat_status'    => 'Vigente',
                     'xml_path'      => $finalXmlPath,
-                    // is_reimbursed no se incluye aquí para que no sobreescriba a false
-                    // si la factura ya había sido procesada en un reembolso.
                 ]
             );
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Error procesando e inyectando XML del SAT (UUID: " . ($uuid ?? 'Desconocido') . "): " . $e->getMessage());
+            Log::error("Error inyectando XML desde Job 2: " . $e->getMessage());
         }
     }
 }

@@ -24,19 +24,16 @@ class ReimbursementStatusController extends Controller
             $oldStatus = $claim->status_review;
             $newStatus = $request->new_status;
 
-            // Mapeo lógico de estados de pago según revisión
             $newPaymentStatus = $claim->status_payment;
             if ($newStatus === 'Rechazado') $newPaymentStatus = 'No procede';
             if ($newStatus === 'Validado') $newPaymentStatus = 'Por autorizar';
             if ($newStatus === 'Aprobado') $newPaymentStatus = 'Por pagar';
 
-            // 1. Actualizar el Padre
             $claim->update([
                 'status_review'  => $newStatus,
                 'status_payment' => $newPaymentStatus,
             ]);
 
-            // 2. Insertar el Log de Auditoría
             ExpenseClaimLog::create([
                 'expense_claim_id' => $claim->id,
                 'user_id'          => auth()->id() ?? 1,
@@ -48,17 +45,11 @@ class ReimbursementStatusController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => "El folio ha sido procesado como {$newStatus}."
-            ]);
+            return response()->json(['success' => true, 'message' => "El folio ha sido procesado como {$newStatus}."]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al procesar el dictamen: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Error al procesar: ' . $e->getMessage()], 500);
         }
     }
 }

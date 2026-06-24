@@ -20,14 +20,12 @@
             <form id="form-force-sync" action="{{ route('expense-claims.sat-sync.force') }}" method="POST">
                 @csrf
 
-                {{-- La variable $hasRequestToday ahora viene limpia y directa desde el Controlador --}}
                 @if ($hasRequestToday)
-                    <button type="button" class="btn btn-secondary" disabled
-                        title="Ya existe una petición registrada hoy.">
+                    <button type="button" class="btn btn-secondary" disabled title="Ya existe una petición registrada hoy.">
                         <i class="bx bx-check-shield"></i> Sincronización de Hoy Registrada
                     </button>
                 @else
-                    <button type="button" class="btn btn-primary" onclick="confirmSync()"
+                    <button type="button" id="btn-submit-sync" class="btn btn-primary" onclick="confirmSync()"
                         aria-label="Forzar petición al SAT">
                         <i class="bx bx-refresh"></i> Forzar Sincronización Manual
                     </button>
@@ -66,9 +64,11 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="row-folio user-folio" style="font-family: monospace;">
-                                        {{ $req->ticket_id ?? 'Esperando asignación...' }}
-                                    </span>
+                                    {{-- ── CORRECCIÓN: Eliminado el prefijo 'tk-' ── --}}
+                                    <code class="row-folio user-folio"
+                                        style="font-family: monospace; color: var(--teal-dark); background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">
+                                        {{ $req->ticket_id ? strtolower($req->ticket_id) : 'Esperando asignación...' }}
+                                    </code>
                                 </td>
                                 <td><span class="row-motive">{{ $req->created_at->format('d/m/Y H:i:s') }}</span></td>
                                 <td><span class="row-motive">{{ $req->updated_at->format('d/m/Y H:i:s') }}</span></td>
@@ -167,22 +167,22 @@
         function confirmSync() {
             Swal.fire({
                 title: `<span style="font-family:'Poppins', sans-serif;">¿Forzar Descarga?</span>`,
-                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Esto encolará una petición inmediata al SAT para descargar los XML del día de hoy.</span>`,
+                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Esto encolará una petición inmediata al SAT.</span>`,
                 icon: 'info',
                 showCancelButton: true,
                 confirmButtonColor: 'var(--teal-dark)',
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: `<span style="font-family:'Poppins', sans-serif; font-weight:600;">Sí, sincronizar</span>`,
-                cancelButtonText: `<span style="font-family:'Poppins', sans-serif;">Cancelar</span>`
+                confirmButtonText: 'Sí, sincronizar'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    // BLINDAJE: Deshabilitar botón y mostrar loading
+                    const btn = document.getElementById('btn-submit-sync');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Conectando...';
+
                     Swal.fire({
                         title: 'Conectando...',
-                        text: 'Enviando petición a los servidores del SAT.',
                         allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
+                        didOpen: () => Swal.showLoading()
                     });
 
                     document.getElementById('form-force-sync').submit();

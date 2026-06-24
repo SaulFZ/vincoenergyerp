@@ -122,24 +122,30 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/reimbursements', 'index')->name('expense-claims.reimbursements');
                 });
 
-                // ── NUEVO: GUARDADO DEL FORMULARIO ──
+                // GUARDADO DEL FORMULARIO DE REEMBOLSOS
                 Route::controller(ReimbursementStoreController::class)->group(function () {
                     Route::post('/reimbursements/store', 'store')->name('expense-claims.store');
                 });
 
-                // BÓVEDA SAT
+                // ── NUEVO: BÚSQUEDA Y CARGA MANUAL DE CFDI (XML) ──
+                Route::controller(CfdiController::class)->group(function () {
+                    Route::get('/cfdi/search', 'searchByUuid')->name('expense-claims.cfdi.search');
+                    Route::post('/cfdi/upload', 'uploadXml')->name('expense-claims.cfdi.upload');
+                });
+
+                // BÓVEDA SAT (Credenciales y Nodos)
                 Route::controller(FslNodeController::class)->group(function () {
                     Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
                     Route::post('/sys-config-node', 'store')->name('expense-claims.node.store');
                 });
 
+                // BITÁCORA Y SINCRONIZACIÓN SAT (CRON / Manual)
                 Route::controller(SatRequestsController::class)->group(function () {
                     Route::get('/sat-requests', 'index')->name('expense-claims.sat-sync.index');
                     Route::post('/sat-requests/force', 'forceSync')->name('expense-claims.sat-sync.force');
                 });
             });
         });
-
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS SISTEMAS
     // ===================================================

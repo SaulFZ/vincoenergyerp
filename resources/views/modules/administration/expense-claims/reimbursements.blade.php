@@ -212,9 +212,9 @@
                                 <label class="input-label">Nombre del Beneficiario</label>
                                 <div class="input-group reimburse-dropdown-container">
                                     <i class="bx bx-user field-icon" id="icon-solicitante"></i>
-                                    <input type="hidden" id="modal-beneficiary-id" value="1">
+                                    <input type="hidden" id="modal-beneficiary-id" value="{{ Auth::id() ?? 1 }}">
                                     <input type="text" id="modal-nombre"
-                                        value="{{ $userData['nombre'] ?? 'Saul Falcon Perez' }}" class="input-field"
+                                        value="{{ Auth::user()->name ?? 'Saul Falcon Perez' }}" class="input-field"
                                         readonly autocomplete="off">
                                     <div id="employee-dropdown" class="reimburse-custom-dropdown hidden"></div>
                                 </div>
@@ -225,7 +225,7 @@
                                 <div class="input-group">
                                     <i class="bx bx-buildings field-icon"></i>
                                     <input type="text" id="modal-depto"
-                                        value="{{ $userData['departamento'] ?? 'Desarrollo de Software' }}"
+                                        value="Desarrollo de Software"
                                         class="input-field" readonly>
                                 </div>
                             </div>
@@ -267,7 +267,7 @@
                     </div>
 
                     <div class="sat-panel-body">
-                        {{-- Pestaña 1: Búsqueda Manual --}}
+                        {{-- Pestaña 1: Búsqueda Manual en BD --}}
                         <div id="sat-tab-uuid" class="sat-content active">
                             <label class="sat-label">Folio Fiscal (UUID) del comprobante SAT</label>
                             <div class="sat-search-group">
@@ -283,7 +283,7 @@
                             </div>
                         </div>
 
-                        {{-- Pestaña 2: Carga de Archivo --}}
+                        {{-- Pestaña 2: Carga de Archivo (Manual) --}}
                         <div id="sat-tab-xml" class="sat-content hidden">
                             <div id="drop-zone" class="sat-drop-zone">
                                 <i class="bx bx-cloud-upload"></i>
@@ -597,8 +597,8 @@
     <script>
         /* ── VARIABLES DE SESIÓN (Logueado) ── */
         const sessionUser = {
-            id: 1,
-            nombre: "Saul Falcon Perez",
+            id: {{ Auth::id() ?? 1 }},
+            nombre: "{{ Auth::user()->name ?? 'Saul Falcon Perez' }}",
             depto: "Desarrollo de Software",
             rfc: "VES0000000"
         };
@@ -755,72 +755,25 @@
             return `SIS${dd}${mm}-${String(id).padStart(2, '0')}`;
         }
 
-        let currentId = 1;
+        // ── CARGA DINÁMICA DE REEMBOLSOS DESDE LARAVEL ──
+        let currentId = {{ $reembolsos->max('id') ?? 0 }} + 1;
 
-        // Simulador de datos para cargar el dashboard
-        let requests = [{
-                id: 1001,
-                folioP: generateFolio(1),
-                folioU: 'SFP-001',
-                fecha: '02/05/2026',
-                nombre: 'Saul Falcon Perez',
-                motivo: 'Visita a cliente externo para auditoría en sitio',
-                depto: 'Desarrollo de Software',
-                amount: 3500.00,
-                status: 'Aprobado',
-                pago: 'Pagado'
-            },
-            {
-                id: 1002,
-                folioP: generateFolio(2),
-                folioU: 'SFP-002',
-                fecha: '05/05/2026',
-                nombre: 'Yanuri Martinez',
-                motivo: 'Compra equipo menor',
-                depto: 'Operaciones',
-                amount: 850.50,
-                status: 'Validado',
-                pago: 'Por autorizar'
-            },
-            {
-                id: 1003,
-                folioP: generateFolio(3),
-                folioU: 'SFP-003',
-                fecha: '08/05/2026',
-                nombre: 'Saul Falcon Perez',
-                motivo: 'Viáticos proyecto Dell',
-                depto: 'Desarrollo de Software',
-                amount: 6200.00,
-                status: 'Pendiente',
-                pago: 'En espera'
-            },
-            {
-                id: 1004,
-                folioP: generateFolio(4),
-                folioU: 'SFP-004',
-                fecha: '09/05/2026',
-                nombre: 'Carlos Izquierdo',
-                motivo: 'Mobiliario de oficina',
-                depto: 'Calidad y QHSE',
-                amount: 430.00,
-                status: 'Rechazado',
-                pago: 'No procede'
-            },
-            {
-                id: 1006,
-                folioP: generateFolio(5),
-                folioU: 'SFP-005',
-                fecha: '11/05/2026',
-                nombre: 'Saul Falcon Perez',
-                motivo: 'Suscripción IONOS',
-                depto: 'Desarrollo de Software',
-                amount: 1450.00,
-                status: 'Aprobado',
-                pago: 'Por pagar'
-            }
-        ];
+        // CORRECCIÓN: Declaramos 'requests' una sola vez y usamos json_encode para evitar errores de parseo
+        let requests = {!! json_encode($reembolsos->map(function ($req) {
+            return [
+                'id' => $req->id,
+                'folioP' => $req->folio_system,
+                'folioU' => $req->folio_user ?? 'N/A',
+                'fecha' => \Carbon\Carbon::parse($req->claim_date)->format('d/m/Y'),
+                'nombre' => $req->beneficiary ? $req->beneficiary->name : 'Usuario Desconocido',
+                'motivo' => $req->motive,
+                'depto' => $req->area ?? 'Sin Asignar',
+                'amount' => (float) $req->total_amount,
+                'status' => $req->status_review,
+                'pago' => $req->status_payment,
+            ];
+        })) !!};
 
-        currentId = 6;
         let currentEvaluateId = null;
 
         const fmt = n => new Intl.NumberFormat('es-MX', {
@@ -1220,38 +1173,57 @@
         /* ── INTERACCIÓN LÓGICA DEL SAT ── */
         let tempSatData = null;
 
-        function buscarFactura() {
+        async function buscarFactura() {
             const uuid = document.getElementById('search-uuid').value.trim();
             const btnB = document.getElementById('btn-buscar');
-            if (uuid.length < 10) {
-                showToast('Esquema UUID Inválido.', 'warning');
+
+            if (uuid.length !== 36) {
+                showToast('El esquema UUID debe tener exactamente 36 caracteres.', 'warning');
                 return;
             }
 
             btnB.innerHTML = '<span class="spinner"></span> Consultando...';
             btnB.disabled = true;
 
-            setTimeout(() => {
+            try {
+                const response = await fetch(`{{ route('expense-claims.cfdi.search') }}?uuid=${uuid}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const cfdi = data.data;
+                    const [y, m, d] = cfdi.issue_date.split(' ')[0].split('-');
+
+                    document.getElementById('res-rfc').textContent = cfdi.issuer_rfc;
+
+                    tempSatData = {
+                        fecha: `${d}/${m}/${y}`,
+                        folio: cfdi.uuid.substring(0, 8),
+                        desc: 'Servicios amparados por UUID (Bóveda)',
+                        sub: parseFloat(cfdi.subtotal),
+                        iva: parseFloat(cfdi.total) - parseFloat(cfdi.subtotal),
+                        ish: 0
+                    };
+
+                    document.getElementById('sat-result-uuid').textContent = cfdi.uuid;
+                    document.getElementById('sat-result-container').classList.remove('hidden');
+
+                    showToast('Comprobante localizado en la bóveda del sistema.', 'success');
+                } else {
+                    Swal.fire('Atención', data.message, 'warning');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'Problema de conexión con la Bóveda Fiscal.', 'error');
+            } finally {
                 btnB.innerHTML = '<i class="bx bx-search"></i> Buscar';
                 btnB.disabled = false;
-
-                tempSatData = {
-                    fecha: new Date().toLocaleDateString('es-MX', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                    }),
-                    folio: uuid.substring(0, 8),
-                    desc: 'Servicios amparados por UUID',
-                    sub: 1200.00,
-                    iva: 192.00,
-                    ish: 0.00
-                };
-
-                document.getElementById('sat-result-uuid').textContent = uuid;
-                document.getElementById('sat-result-container').classList.remove('hidden');
-                showToast('Comprobante validado y localizado.', 'success');
-            }, 850);
+            }
         }
 
         const dropZoneUI = document.getElementById('drop-zone');
@@ -1272,51 +1244,61 @@
             if (e.dataTransfer.files.length) leerXML(e.dataTransfer.files[0]);
         });
 
-        function leerXML(file) {
+        async function leerXML(file) {
             if (!file || file.type !== 'text/xml') {
-                showToast('Provee un archivo .xml', 'error');
+                showToast('Provee un archivo .xml válido', 'error');
                 return;
             }
-            const reader = new FileReader();
-            reader.onload = e => {
-                const xml = new DOMParser().parseFromString(e.target.result, 'text/xml');
-                const attr = (tag, a) => {
-                    const n = xml.getElementsByTagNameNS('*', tag)[0] || xml.getElementsByTagName(tag)[0] || xml
-                        .getElementsByTagName('cfdi:' + tag)[0];
-                    return n ? n.getAttribute(a) : null;
-                };
-                const d = {
-                    uuid: attr('TimbreFiscalDigital', 'UUID'),
-                    rfc: attr('Emisor', 'Rfc') || 'Sin RFC',
-                    fecha: (attr('Comprobante', 'Fecha') || '').split('T')[0]
-                };
-                if (d.fecha) {
-                    const [y, m, dd] = d.fecha.split('-');
-                    d.fechaFormateada = `${dd}/${m}/${y}`;
-                }
 
-                if (d.uuid) {
-                    document.getElementById('res-rfc').textContent = d.rfc;
-                    document.getElementById('search-uuid').value = d.uuid;
+            Swal.fire({
+                title: 'Procesando XML...',
+                text: 'Validando ante la Bóveda del Sistema.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            let formData = new FormData();
+            formData.append('xml_file', file);
+            formData.append('_token', '{{ csrf_token() }}');
+
+            try {
+                const response = await fetch('{{ route("expense-claims.cfdi.upload") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    Swal.close();
+                    const cfdi = data.data;
+
+                    document.getElementById('res-rfc').textContent = cfdi.issuer_rfc;
+                    document.getElementById('search-uuid').value = cfdi.uuid;
+
+                    const [y, m, d] = cfdi.issue_date.split(' ')[0].split('-');
 
                     tempSatData = {
-                        fecha: d.fechaFormateada || '',
-                        folio: d.uuid.substring(0, 8),
-                        desc: 'Gasto extraído desde archivo XML',
-                        sub: parseFloat(attr('Comprobante', 'SubTotal')) || 0,
-                        iva: 0,
+                        fecha: `${d}/${m}/${y}`,
+                        folio: cfdi.uuid.substring(0, 8),
+                        desc: 'Gasto importado manualmente (XML)',
+                        sub: parseFloat(cfdi.subtotal),
+                        iva: parseFloat(cfdi.total) - parseFloat(cfdi.subtotal),
                         ish: 0
                     };
 
-                    document.getElementById('sat-result-uuid').textContent = d.uuid;
+                    document.getElementById('sat-result-uuid').textContent = cfdi.uuid;
                     document.getElementById('sat-result-container').classList.remove('hidden');
 
-                    showToast('Extracción XML completada.', 'success');
+                    showToast(data.message, 'success');
                 } else {
-                    showToast('Estructura CFDI desconocida.', 'error');
+                    Swal.fire('Error de Validación', data.message || 'El XML es inválido o corrupto.', 'error');
                 }
-            };
-            reader.readAsText(file);
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo comunicar con el servidor.', 'error');
+            }
         }
 
         /* ── INYECCIÓN AUTOMÁTICA EVITANDO FILAS DUPLICADAS ── */
