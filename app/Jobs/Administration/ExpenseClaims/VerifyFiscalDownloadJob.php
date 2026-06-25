@@ -28,7 +28,7 @@ class VerifyFiscalDownloadJob implements ShouldQueue
         $this->satRequestId = $satRequestId;
     }
 
-    public function handle(FiscalConnectorService $service): void
+   public function handle(FiscalConnectorService $service): void
     {
         Log::info("Job 2: Validando estatus del ticket oficial del SAT: {$this->ticketId}");
 
@@ -48,9 +48,12 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 return;
             }
 
-            $statusCode = $verify->getCodeRequest()->getValue();
+            // ─── LA LÓGICA CORRECTA BASADA EN ESTADOS, NO EN CÓDIGOS ───
+            $statusRequest = $verify->getStatusRequest();
+            $codigoGeneral = $verify->getStatus()->getCode();
 
-            if ($statusCode === '5000') {
+            // 1. ¿El SAT ya terminó de comprimir los paquetes?
+            if ($statusRequest->isFinished()) {
                 Log::info("Job 2: El SAT terminó el procesamiento. Descargando paquetes ZIP.");
 
                 foreach ($verify->getPackageIds() as $packageId) {
@@ -63,14 +66,17 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 $satRequest->update(['status' => 'completed']);
                 Log::info("Job 2: Descarga masiva finalizada con éxito.");
 
-            } elseif ($statusCode === '5001' || $statusCode === '5002') {
-                Log::info("Job 2: El SAT reporta que el ticket {$this->ticketId} sigue en proceso (Código: {$statusCode}).");
+            // 2. ¿El SAT lo aceptó pero sigue trabajando en la compresión?
+            } elseif ($statusRequest->isAccepted() || $statusRequest->isInProgress()) {
+                Log::info("Job 2: El ticket {$this->ticketId} sigue en proceso en el SAT (Código SOAP: {$codigoGeneral}). Esperaremos al próximo ciclo.");
+
+            // 3. Ocurrió un fallo real o expiró (Estados 4, 5 o 6)
             } else {
                 $satRequest->update(['status' => 'failed']);
-                Log::error("Job 2: El SAT rechazó el ticket {$this->ticketId} (Código: {$statusCode}).");
+                Log::error("Job 2: El paquete falló o fue rechazado (Estado Paquete: {$statusRequest->getValue()} - Código SOAP: {$codigoGeneral}).");
             }
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("Job 2: Error en verificación de descargas: " . $e->getMessage());
         }
     }
