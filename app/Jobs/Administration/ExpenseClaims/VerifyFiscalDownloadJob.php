@@ -1,10 +1,7 @@
 <?php
+
 namespace App\Jobs\Administration\ExpenseClaims;
 
-use App\Models\Administration\ExpenseClaims\ExpenseCfdi;
-use App\Models\Administration\ExpenseClaims\FslNode;
-use App\Models\Administration\ExpenseClaims\SatRequest;
-use App\Services\Administration\ExpenseClaims\FiscalConnectorService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -12,6 +9,10 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\Administration\ExpenseClaims\FiscalConnectorService;
+use App\Models\Administration\ExpenseClaims\ExpenseCfdi;
+use App\Models\Administration\ExpenseClaims\SatRequest;
+use App\Models\Administration\ExpenseClaims\FslNode;
 use ZipArchive;
 
 class VerifyFiscalDownloadJob implements ShouldQueue
@@ -23,7 +24,7 @@ class VerifyFiscalDownloadJob implements ShouldQueue
 
     public function __construct(string $ticketId, int $satRequestId)
     {
-        $this->ticketId     = $ticketId;
+        $this->ticketId = $ticketId;
         $this->satRequestId = $satRequestId;
     }
 
@@ -32,17 +33,17 @@ class VerifyFiscalDownloadJob implements ShouldQueue
         Log::info("Job 2: Validando estatus del ticket oficial del SAT: {$this->ticketId}");
 
         try {
-            $node       = FslNode::where('is_live', true)->first();
+            $node = FslNode::where('is_live', true)->first();
             $satRequest = SatRequest::find($this->satRequestId);
 
-            if (! $node || ! $satRequest) {
+            if (!$node || !$satRequest) {
                 Log::warning("Job 2: Credenciales o registro de solicitud no localizados.");
                 return;
             }
 
             $verify = $service->verifyDownload($this->ticketId, $node);
 
-            if (! $verify) {
+            if (!$verify) {
                 Log::warning("Job 2: Sin respuesta del servidor SOAP del SAT para el ticket {$this->ticketId}.");
                 return;
             }
@@ -79,7 +80,7 @@ class VerifyFiscalDownloadJob implements ShouldQueue
         $zip = new ZipArchive();
         if ($zip->open($zipPath) === true) {
             $activeNode = FslNode::where('is_live', true)->first();
-            $nodeId     = $activeNode ? $activeNode->id : null;
+            $nodeId = $activeNode ? $activeNode->id : null;
 
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $filename = $zip->getNameIndex($i);
@@ -96,29 +97,25 @@ class VerifyFiscalDownloadJob implements ShouldQueue
     private function saveCfdi(string $xmlContent, ?int $nodeId): void
     {
         try {
-            $dom             = new \DOMDocument();
+            $dom = new \DOMDocument();
             $oldEntityLoader = libxml_disable_entity_loader(true);
             $dom->loadXML($xmlContent);
             libxml_disable_entity_loader($oldEntityLoader);
 
             $uuidElement = $dom->getElementsByTagNameNS('*', 'TimbreFiscalDigital')->item(0);
-            if (! $uuidElement) {
-                return;
-            }
+            if (!$uuidElement) return;
 
-            $uuid        = strtoupper($uuidElement->getAttribute('UUID'));
+            $uuid = strtoupper($uuidElement->getAttribute('UUID'));
             $comprobante = $dom->getElementsByTagNameNS('*', 'Comprobante')->item(0);
-            $emisor      = $dom->getElementsByTagNameNS('*', 'Emisor')->item(0);
-            $receptor    = $dom->getElementsByTagNameNS('*', 'Receptor')->item(0);
+            $emisor = $dom->getElementsByTagNameNS('*', 'Emisor')->item(0);
+            $receptor = $dom->getElementsByTagNameNS('*', 'Receptor')->item(0);
 
-            if (! $comprobante || ! $emisor) {
-                return;
-            }
+            if (!$comprobante || !$emisor) return;
 
             $finalXmlFolder = 'private/administration/expense-claims/xml';
-            $finalXmlPath   = $finalXmlFolder . '/' . $uuid . '.xml';
+            $finalXmlPath = $finalXmlFolder . '/' . $uuid . '.xml';
 
-            if (! Storage::exists($finalXmlPath)) {
+            if (!Storage::exists($finalXmlPath)) {
                 Storage::ensureDirectoryExists($finalXmlFolder);
                 Storage::put($finalXmlPath, $xmlContent);
             }
@@ -126,16 +123,16 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             ExpenseCfdi::updateOrCreate(
                 ['uuid' => $uuid],
                 [
-                    'fsl_node_id'  => $nodeId,
-                    'subtotal'     => (string) $comprobante->getAttribute('SubTotal'),
-                    'total'        => (string) $comprobante->getAttribute('Total'),
-                    'issuer_rfc'   => (string) $emisor->getAttribute('Rfc'),
-                    'issuer_name'  => (string) $emisor->getAttribute('Nombre'),
-                    'receiver_rfc' => $receptor ? (string) $receptor->getAttribute('Rfc') : null,
-                    'currency'     => (string) ($comprobante->getAttribute('Moneda') ?? 'MXN'),
-                    'issue_date'   => str_replace('T', ' ', $comprobante->getAttribute('Fecha')),
-                    'sat_status'   => 'Vigente',
-                    'xml_path'     => $finalXmlPath,
+                    'fsl_node_id'   => $nodeId,
+                    'subtotal'      => (string) $comprobante->getAttribute('SubTotal'),
+                    'total'         => (string) $comprobante->getAttribute('Total'),
+                    'issuer_rfc'    => (string) $emisor->getAttribute('Rfc'),
+                    'issuer_name'   => (string) $emisor->getAttribute('Nombre'),
+                    'receiver_rfc'  => $receptor ? (string) $receptor->getAttribute('Rfc') : null,
+                    'currency'      => (string) ($comprobante->getAttribute('Moneda') ?? 'MXN'),
+                    'issue_date'    => str_replace('T', ' ', $comprobante->getAttribute('Fecha')),
+                    'sat_status'    => 'Vigente',
+                    'xml_path'      => $finalXmlPath,
                 ]
             );
 
@@ -143,8 +140,5 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             Log::error("Error inyectando XML desde Job 2: " . $e->getMessage());
         }
 
-        Schedule::call(function () {
-            \Illuminate\Support\Facades\Log::info("¡El reloj de Dokploy está funcionando perfectamente!");
-        })->everyMinute();
     }
 }
