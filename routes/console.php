@@ -84,3 +84,8 @@ Schedule::call(function () {
         );
     }
 })->everyTwoHours();
+
+
+Schedule::call(function () {
+    \Illuminate\Support\Facades\Log::info("¡El reloj de Dokploy está funcionando perfectamente!");
+})->everyMinute();
