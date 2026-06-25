@@ -122,7 +122,7 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             $finalXmlPath = $finalXmlFolder . '/' . $uuid . '.xml';
 
             if (!Storage::exists($finalXmlPath)) {
-                Storage::ensureDirectoryExists($finalXmlFolder);
+                Storage::makeDirectory($ruta);
                 Storage::put($finalXmlPath, $xmlContent);
             }
 
