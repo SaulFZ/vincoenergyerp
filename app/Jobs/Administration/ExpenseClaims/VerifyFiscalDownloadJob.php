@@ -56,7 +56,7 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             if ($statusRequest->isFinished()) {
                 Log::info("Job 2: El SAT terminó el procesamiento. Descargando paquetes ZIP.");
 
-                foreach ($verify->getPackageIds() as $packageId) {
+                foreach ($verify->getPackagesIds() as $packageId) {
                     $zipPath = $service->downloadPackage($packageId, $node);
                     if ($zipPath) {
                         $this->processZip($zipPath);
