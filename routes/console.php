@@ -9,15 +9,19 @@ use Carbon\Carbon;
 
 // ── 1. PROCESO DE MEDIANOCHE: VENTANA MÓVIL DE 15 DÍAS ──
 Schedule::call(function () {
+    // Si ya hay algo pendiente, no satures al SAT
     if (SatRequest::where('status', 'pending')->exists()) {
         return;
     }
 
     $hoy = Carbon::now();
-    $haceQuinceDias = Carbon::now()->subDays(15); // <--- Ajustado a 15 días
+    $haceQuinceDias = Carbon::now()->subDays(15);
     $fechaRegistro = $hoy->format('Y-m-d');
 
-    $alreadyExists = SatRequest::where('request_date', $fechaRegistro)->where('type', 'daily')->exists();
+    // Aquí usamos la columna 'type' que ya configuramos
+    $alreadyExists = SatRequest::where('request_date', $fechaRegistro)
+                               ->where('type', 'daily')
+                               ->exists();
 
     if (!$alreadyExists) {
         $satRequest = SatRequest::create([
@@ -29,13 +33,10 @@ Schedule::call(function () {
         $node = FslNode::where('is_live', true)->first();
 
         if ($node) {
-            $startDate = $haceQuinceDias->format('Y-m-d') . 'T00:00:00';
-            $endDate   = $hoy->format('Y-m-d') . 'T23:59:59';
-
             RequestFiscalDownloadJob::dispatch(
                 $node->g_id,
-                $startDate,
-                $endDate,
+                $haceQuinceDias->format('Y-m-d') . 'T00:00:00',
+                $hoy->format('Y-m-d') . 'T23:59:59',
                 $satRequest->id
             );
         }
@@ -43,9 +44,7 @@ Schedule::call(function () {
 })->dailyAt('00:00');
 
 // ── 2. PROCESO MENSUAL: BARRIDO DE LOS ÚLTIMOS 2 MESES ──
-// Se ejecuta el día 3 de cada mes a la 1:00 AM
 Schedule::call(function () {
-    // Ejemplo si corre el 3 de Julio: Traerá desde el 1 de Mayo hasta el 30 de Junio
     $dosMesesAtrasInicio = Carbon::now()->subMonths(2)->startOfMonth();
     $mesAnteriorFin      = Carbon::now()->subMonth()->endOfMonth();
     $fechaRegistro       = Carbon::now()->format('Y-m-d');
@@ -59,22 +58,21 @@ Schedule::call(function () {
     $node = FslNode::where('is_live', true)->first();
 
     if ($node) {
-        $startDate = $dosMesesAtrasInicio->format('Y-m-d') . 'T00:00:00';
-        $endDate   = $mesAnteriorFin->format('Y-m-d') . 'T23:59:59';
-
         RequestFiscalDownloadJob::dispatch(
             $node->g_id,
-            $startDate,
-            $endDate,
+            $dosMesesAtrasInicio->format('Y-m-d') . 'T00:00:00',
+            $mesAnteriorFin->format('Y-m-d') . 'T23:59:59',
             $satRequest->id
         );
     }
 })->monthlyOn(3, '01:00');
 
-// ── 3. PROCESO CONTINUO: REVISAR CADA 2 HORAS SI HAY DESCARGAS PENDIENTES ──
+// ── 3. PROCESO CONTINUO: REVISAR CADA 30 MINUTOS ──
+// Cambiado de everyTwoHours() a everyThirtyMinutes() para mayor agilidad
 Schedule::call(function () {
     $pendingDownload = SatRequest::where('status', 'pending')
         ->whereNotNull('ticket_id')
+        ->orderBy('created_at', 'asc') // Procesar primero el más antiguo
         ->first();
 
     if ($pendingDownload) {
@@ -83,6 +81,4 @@ Schedule::call(function () {
             $pendingDownload->id
         );
     }
-})->everyTwoHours();
-
-
+})->everyThirtyMinutes();
