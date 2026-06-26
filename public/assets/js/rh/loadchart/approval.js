@@ -443,20 +443,29 @@ function setupEventListeners() {
         setActiveButton("quincena1");
     });
 
-   document.getElementById("quincena2").addEventListener("click", () => {
-    showLoadingState(); // Mostramos el overlay
+    document.getElementById("quincena2").addEventListener("click", () => {
+        showLoadingState(); // Mostramos el overlay
 
-    setTimeout(() => {
-        showQuincena(2); // Trabajo pesado
-        setActiveButton("quincena2");
-        hideLoadingState(); // Ocultamos el overlay
-    }, 50);
-});
+        setTimeout(() => {
+            showQuincena(2); // Trabajo pesado
+            setActiveButton("quincena2");
+            hideLoadingState(); // Ocultamos el overlay
+        }, 50);
+    });
 
     document.getElementById("full-month").addEventListener("click", () => {
+    // 1. Mostramos el overlay inmediatamente
+    showLoadingState();
+
+    // 2. Usamos el setTimeout para ceder el control al hilo de UI
+    setTimeout(() => {
         showFullMonth();
         setActiveButton("full-month");
-    });
+
+        // 3. Ocultamos el overlay cuando los cambios ya estén dibujados
+        hideLoadingState();
+    }, 50);
+});
 
     const backToCalendarBtn = document.getElementById("back-to-calendar");
     if (backToCalendarBtn) {
