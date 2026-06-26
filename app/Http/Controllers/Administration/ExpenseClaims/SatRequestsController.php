@@ -51,6 +51,7 @@ class SatRequestsController extends Controller
         $satRequest = SatRequest::create([
             'request_date' => $today,
             'status'       => 'pending',
+            'type'         => 'manual',
         ]);
 
         // ─── LA CORRECCIÓN MÁGICA AQUÍ ───
