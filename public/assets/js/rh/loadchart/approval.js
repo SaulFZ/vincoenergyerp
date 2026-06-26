@@ -1522,6 +1522,7 @@ async function navigateToNextMonth() {
     await loadMonthData();
 }
 
+// --- 3. REORDENAMOS LA FUNCIÓN PRINCIPAL DE CARGA ---
 async function loadMonthData(isRefresh = false) {
     try {
         if (!isRefresh) {
@@ -1556,9 +1557,11 @@ async function loadMonthData(isRefresh = false) {
         monthlyDays = data.monthlyDays;
         employees = data.employees;
 
+        // 1. Reconstruir estructura de la tabla (inyección en el DOM invisible gracias al overlay)
         updateTableStructure(data.monthlyDays, data.employees);
         updatePeriodInfo();
 
+        // 2. Aplicar vista de quincena
         if (currentView === 'quincena1') {
             showQuincena(1);
         } else if (currentView === 'quincena2') {
@@ -1570,7 +1573,7 @@ async function loadMonthData(isRefresh = false) {
         allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
         allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
 
-        // ✅ RECONSTRUIMOS EL SELECT DE CARGOS AL CARGAR DATOS
+        // 3. IMPORTANTISIMO: Aplicar filtros ANTES de quitar el overlay
         if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
             populatePositionFilter();
             applyFilters();
@@ -1578,8 +1581,12 @@ async function loadMonthData(isRefresh = false) {
 
         setupEmployeeRowListeners();
 
+        // 4. Ahora sí, con el DOM 100% procesado y filtrado, ocultamos la carga y dejamos que corra la animación Fade-In
         if (!isRefresh) {
-            hideLoadingState();
+            // Le damos un respiro muy breve al navegador para renderizar el DOM final
+            setTimeout(() => {
+                hideLoadingState();
+            }, 50);
         }
 
         lastUpdateTime = new Date();
@@ -1593,11 +1600,11 @@ async function loadMonthData(isRefresh = false) {
     }
 }
 
+// --- 1. MODIFICAMOS EL ESTADO DE CARGA PARA USAR EL OVERLAY ---
 function showLoadingState() {
-    const table = document.getElementById('approval-table');
-    if (table) {
-        table.style.opacity = '0.5';
-        table.style.pointerEvents = 'none';
+    const overlay = document.getElementById('table-loading-overlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
     }
 
     const prevBtn = document.getElementById('prev-period');
@@ -1606,11 +1613,11 @@ function showLoadingState() {
     if (nextBtn) nextBtn.disabled = true;
 }
 
+// --- 2. MODIFICAMOS EL OCULTAMIENTO PARA QUE SEA SUAVE ---
 function hideLoadingState() {
-    const table = document.getElementById('approval-table');
-    if (table) {
-        table.style.opacity = '1';
-        table.style.pointerEvents = 'auto';
+    const overlay = document.getElementById('table-loading-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
     }
 
     const prevBtn = document.getElementById('prev-period');
@@ -1618,7 +1625,6 @@ function hideLoadingState() {
     if (prevBtn) prevBtn.disabled = false;
     if (nextBtn) nextBtn.disabled = false;
 }
-
 function updatePeriodInfo() {
     const monthNames = [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
