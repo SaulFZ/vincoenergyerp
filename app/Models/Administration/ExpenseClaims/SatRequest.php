@@ -10,10 +10,11 @@ class SatRequest extends Model
     protected $table = 'sat_requests';
 
     // Campos permitidos para inserción masiva (Mass Assignment)
-    protected $fillable = [
-        'ticket_id',
+   protected $fillable = [
         'request_date',
-        'status'
+        'status',
+        'ticket_id',
+        'type',
     ];
 
     // Casteo de tipos de datos automáticos
