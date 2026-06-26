@@ -174,174 +174,187 @@
                 </div>
             </div>
 
-            <div class="table-container">
-                <table class="approval-table" id="approval-table">
-                    <thead>
-                        <tr class="header-row">
-                            <th rowspan="2">Nombre</th>
-                            <th rowspan="2">KPI</th>
-                            {{-- ⭐ CORRECCIÓN: Contar solo los días de la Q1 desde el principio --}}
+            <div class="table-master-wrapper">
+
+                <!-- Overlay de carga posicionado de forma absoluta respecto al Wrapper Maestro -->
+                <div id="table-loading-overlay" class="table-loading-overlay hidden">
+                    <div class="table-loader-spinner"></div>
+                    <div class="table-loader-text">Procesando estructura y aplicando filtros...</div>
+                </div>
+
+                <!-- Contenedor original de la tabla con su scroll independiente -->
+                <div class="table-container">
+                    <table class="approval-table" id="approval-table">
+                        <thead>
+                            <tr class="header-row">
+                                <th rowspan="2">Nombre</th>
+                                <th rowspan="2">KPI</th>
+                                {{-- ⭐ CORRECCIÓN: Contar solo los días de la Q1 desde el principio --}}
+                                @php
+                                    $q1DaysCount = collect($monthlyDays)->where('is_quincena_1', true)->count();
+                                @endphp
+                                <th colspan="{{ $q1DaysCount }}" id="days-columns">Días del Período ({{ $q1DaysCount }}
+                                    días)</th>
+                                <th rowspan="2">Total</th>
+                                <th rowspan="2" class="vacations-header" title="Vacaciones">Vac.</th>
+                                <th rowspan="2" class="breaks-header" title="Descansos/Otros">Desc.</th>
+                                <th rowspan="2" class="utilization-header" title="Utilización">Utiliz.</th>
+                                <th rowspan="2" class="utilization-header" title="Aprobación">Aprob.</th>
+                            </tr>
+                            <tr class="header-row" id="days-header-row">
+                                @foreach ($monthlyDays as $dayInfo)
+                                    <th class="day-header {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
+                                        data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
+                                        data-quincena-1="{{ $dayInfo['is_quincena_1'] ? 'true' : 'false' }}"
+                                        data-quincena-2="{{ $dayInfo['is_quincena_2'] ? 'true' : 'false' }}"
+                                        data-current-month="{{ $dayInfo['is_current_month'] ? 'true' : 'false' }}"
+                                        data-month="{{ $dayInfo['month'] }}"
+                                        title="{{ \Carbon\Carbon::parse($dayInfo['date'])->format('d/m/Y') }}{{ !$dayInfo['is_current_month'] ? ' (Mes anterior)' : '' }}"
+                                        style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">
+                                        {{-- ⭐ OCULTAR SI NO ES Q1 --}}
+                                        {{ $dayInfo['day'] }}<br>{{ $dayInfo['day_name'] }}
+                                    </th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody id="approval-table-body">
                             @php
-                                $q1DaysCount = collect($monthlyDays)->where('is_quincena_1', true)->count();
+                                // 1. Obtener empleados con su número de cuadrilla (si tienen asignación)
+                                $employeesWithSquad = $employees->map(function ($employee) {
+                                    // Asume que un empleado puede tener múltiples entradas en la tabla Squad,
+                                    // pero para propósitos de la cuadrilla principal, tomaremos la primera o la más relevante.
+                                    // Si no hay squad, se asigna un número grande para que vaya al final.
+                                    $squad = $employee->squads->first();
+                                    $employee->squad_number = $squad ? $squad->squad_number : 999;
+                                    return $employee;
+                                });
+
+                                // 2. Ordenar y agrupar por número de cuadrilla
+                                $groupedEmployees = $employeesWithSquad
+                                    ->sortBy('squad_number')
+                                    ->groupBy('squad_number');
+
+                                $showSquadGrouping = \App\Helpers\PermissionHelper::hasDirectPermission(
+                                    'control_cuadrillas',
+                                );
+                                // Colspan = 1 (Nombre) + 1 (KPI) + Días + 1 (Total) + 1 (Vac) + 1 (Desc) + 1 (Utiliz) + 1 (Aprob) = 6 + count($monthlyDays)
+                                $colspanValue = 6 + count($monthlyDays);
+                                $currentUserId = auth()->id();
                             @endphp
-                            <th colspan="{{ $q1DaysCount }}" id="days-columns">Días del Período ({{ $q1DaysCount }}
-                                días)</th>
-                            <th rowspan="2">Total</th>
-                            <th rowspan="2" class="vacations-header" title="Vacaciones">Vac.</th>
-                            <th rowspan="2" class="breaks-header" title="Descansos/Otros">Desc.</th>
-                            <th rowspan="2" class="utilization-header" title="Utilización">Utiliz.</th>
-                            <th rowspan="2" class="utilization-header" title="Aprobación">Aprob.</th>
-                        </tr>
-                        <tr class="header-row" id="days-header-row">
-                            @foreach ($monthlyDays as $dayInfo)
-                                <th class="day-header {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
-                                    data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
-                                    data-quincena-1="{{ $dayInfo['is_quincena_1'] ? 'true' : 'false' }}"
-                                    data-quincena-2="{{ $dayInfo['is_quincena_2'] ? 'true' : 'false' }}"
-                                    data-current-month="{{ $dayInfo['is_current_month'] ? 'true' : 'false' }}"
-                                    data-month="{{ $dayInfo['month'] }}"
-                                    title="{{ \Carbon\Carbon::parse($dayInfo['date'])->format('d/m/Y') }}{{ !$dayInfo['is_current_month'] ? ' (Mes anterior)' : '' }}"
-                                    style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">
-                                    {{-- ⭐ OCULTAR SI NO ES Q1 --}}
-                                    {{ $dayInfo['day'] }}<br>{{ $dayInfo['day_name'] }}
-                                </th>
-                            @endforeach
-                        </tr>
-                    </thead>
-                    <tbody id="approval-table-body">
-                        @php
-                            // 1. Obtener empleados con su número de cuadrilla (si tienen asignación)
-                            $employeesWithSquad = $employees->map(function ($employee) {
-                                // Asume que un empleado puede tener múltiples entradas en la tabla Squad,
-                                // pero para propósitos de la cuadrilla principal, tomaremos la primera o la más relevante.
-                                // Si no hay squad, se asigna un número grande para que vaya al final.
-                                $squad = $employee->squads->first();
-                                $employee->squad_number = $squad ? $squad->squad_number : 999;
-                                return $employee;
-                            });
 
-                            // 2. Ordenar y agrupar por número de cuadrilla
-                            $groupedEmployees = $employeesWithSquad->sortBy('squad_number')->groupBy('squad_number');
-
-                            $showSquadGrouping = \App\Helpers\PermissionHelper::hasDirectPermission(
-                                'control_cuadrillas',
-                            );
-                            // Colspan = 1 (Nombre) + 1 (KPI) + Días + 1 (Total) + 1 (Vac) + 1 (Desc) + 1 (Utiliz) + 1 (Aprob) = 6 + count($monthlyDays)
-                            $colspanValue = 6 + count($monthlyDays);
-                            $currentUserId = auth()->id();
-                        @endphp
-
-                        @foreach ($groupedEmployees as $squadNumber => $squadEmployees)
-                            {{-- INICIO: Fila de Encabezado de Cuadrilla (Solo si tiene permiso) --}}
-                            @if ($showSquadGrouping)
-                                @php
-                                    $squadLabel =
-                                        $squadNumber !== 999
-                                            ? 'Cuadrilla-' . str_pad($squadNumber, 2, '0', STR_PAD_LEFT)
-                                            : 'Sin Cuadrilla Asignada';
-                                    $squadClass =
-                                        $squadNumber !== 999 ? 'squad-group-row-active' : 'squad-group-row-none';
-                                @endphp
-                                <tr class="squad-group-row {{ $squadClass }}" data-squad-number="{{ $squadNumber }}">
-                                    <td colspan="{{ $colspanValue }}" class="squad-group-label">
-                                        {{ $squadLabel }}
-                                    </td>
-                                </tr>
-                            @endif
-                            {{-- FIN: Fila de Encabezado de Cuadrilla --}}
-
-                            @foreach ($squadEmployees as $employee)
-                                {{-- LÓGICA DE PERMISOS PARA LOS BOTONES --}}
-                                @php
-                                    $employeeAssignment = $loadChartAssignments->firstWhere(
-                                        'employee_id',
-                                        $employee->id,
-                                    );
-                                    $isReviewerForEmployee =
-                                        $employeeAssignment && $employeeAssignment->reviewer_id === $currentUserId;
-                                    $isApproverForEmployee =
-                                        $employeeAssignment && $employeeAssignment->approver_id === $currentUserId;
-
-                                    // ✅ OBTENEMOS EL ÁREA
-                                    $areaName = $employee->area ? $employee->area->name : '';
-                                @endphp
-
-                                {{-- Fila Principal (Actividad) ✅ data-area --}}
-                                <tr class="employee-row" data-employee-id="{{ $employee->id }}"
-                                    data-area="{{ $areaName }}">
-                                    <td rowspan="4" class="employee-info-cell" data-icon="bx bx-calendar"
-                                        data-text="ver calendario">
-                                        {{ $employee->full_name }}
-                                    </td>
-                                    <td class="activity-label-cell">Actividad</td>
-                                    @foreach ($monthlyDays as $dayInfo)
-                                        <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
-                                            data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
-                                            style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">
-                                            {{-- ⭐ OCULTAR SI NO ES Q1 --}}
-                                            <div class="status-indicator status-n">N</div>
+                            @foreach ($groupedEmployees as $squadNumber => $squadEmployees)
+                                {{-- INICIO: Fila de Encabezado de Cuadrilla (Solo si tiene permiso) --}}
+                                @if ($showSquadGrouping)
+                                    @php
+                                        $squadLabel =
+                                            $squadNumber !== 999
+                                                ? 'Cuadrilla-' . str_pad($squadNumber, 2, '0', STR_PAD_LEFT)
+                                                : 'Sin Cuadrilla Asignada';
+                                        $squadClass =
+                                            $squadNumber !== 999 ? 'squad-group-row-active' : 'squad-group-row-none';
+                                    @endphp
+                                    <tr class="squad-group-row {{ $squadClass }}"
+                                        data-squad-number="{{ $squadNumber }}">
+                                        <td colspan="{{ $colspanValue }}" class="squad-group-label">
+                                            {{ $squadLabel }}
                                         </td>
-                                    @endforeach
-                                    <td class="data-cell total-activity">
-                                        <div class="status-indicator">0</div>
-                                    </td>
-                                    <td rowspan="4" class="vacations-cell">
-                                        <div class="vacations-container">
-                                            <div class="vacations-value">0</div>
-                                        </div>
-                                    </td>
-                                    <td rowspan="4" class="breaks-cell">
-                                        <div class="breaks-container">
-                                            <div class="breaks-value">0</div>
-                                        </div>
-                                    </td>
-                                    <td rowspan="4" class="utilization-cell">
-                                        <div class="utilization-container">
-                                            <div class="utilization-value">0%</div>
-                                        </div>
-                                    </td>
-                                    <td rowspan="4" class="actions-cell">
-                                        <div class="actions-container">
-                                            {{-- MOSTRAR BOTONES DE ACCIÓN SOLO SI ES REVISOR O APROBADOR DEL EMPLEADO --}}
-                                            @if ($isReviewerForEmployee)
-                                                <button class="btn-review">Revisar</button>
-                                            @endif
+                                    </tr>
+                                @endif
+                                {{-- FIN: Fila de Encabezado de Cuadrilla --}}
 
-                                            @if ($isApproverForEmployee)
-                                                <button class="btn-approve">Aprobar</button>
-                                            @endif
+                                @foreach ($squadEmployees as $employee)
+                                    {{-- LÓGICA DE PERMISOS PARA LOS BOTONES --}}
+                                    @php
+                                        $employeeAssignment = $loadChartAssignments->firstWhere(
+                                            'employee_id',
+                                            $employee->id,
+                                        );
+                                        $isReviewerForEmployee =
+                                            $employeeAssignment && $employeeAssignment->reviewer_id === $currentUserId;
+                                        $isApproverForEmployee =
+                                            $employeeAssignment && $employeeAssignment->approver_id === $currentUserId;
 
-                                            @if (!$isReviewerForEmployee && !$isApproverForEmployee)
-                                                <span class="no-permissions">Sin permisos</span>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                                {{-- Filas de Detalle ✅ data-area --}}
-                                @php $rowTypes = ['Comida', 'Bono', 'Servicio']; @endphp
-                                @foreach ($rowTypes as $rowType)
-                                    <tr class="activity-row hidden" data-employee-id="{{ $employee->id }}"
+                                        // ✅ OBTENEMOS EL ÁREA
+                                        $areaName = $employee->area ? $employee->area->name : '';
+                                    @endphp
+
+                                    {{-- Fila Principal (Actividad) ✅ data-area --}}
+                                    <tr class="employee-row" data-employee-id="{{ $employee->id }}"
                                         data-area="{{ $areaName }}">
-                                        <td class="activity-label-cell">{{ $rowType }}</td>
+                                        <td rowspan="4" class="employee-info-cell" data-icon="bx bx-calendar"
+                                            data-text="ver calendario">
+                                            {{ $employee->full_name }}
+                                        </td>
+                                        <td class="activity-label-cell">Actividad</td>
                                         @foreach ($monthlyDays as $dayInfo)
                                             <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
                                                 data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
-                                                style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">0
+                                                style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">
                                                 {{-- ⭐ OCULTAR SI NO ES Q1 --}}
+                                                <div class="status-indicator status-n">N</div>
                                             </td>
                                         @endforeach
-                                        <td class="data-cell total-{{ strtolower(str_replace(' ', '-', $rowType)) }}">0
+                                        <td class="data-cell total-activity">
+                                            <div class="status-indicator">0</div>
+                                        </td>
+                                        <td rowspan="4" class="vacations-cell">
+                                            <div class="vacations-container">
+                                                <div class="vacations-value">0</div>
+                                            </div>
+                                        </td>
+                                        <td rowspan="4" class="breaks-cell">
+                                            <div class="breaks-container">
+                                                <div class="breaks-value">0</div>
+                                            </div>
+                                        </td>
+                                        <td rowspan="4" class="utilization-cell">
+                                            <div class="utilization-container">
+                                                <div class="utilization-value">0%</div>
+                                            </div>
+                                        </td>
+                                        <td rowspan="4" class="actions-cell">
+                                            <div class="actions-container">
+                                                {{-- MOSTRAR BOTONES DE ACCIÓN SOLO SI ES REVISOR O APROBADOR DEL EMPLEADO --}}
+                                                @if ($isReviewerForEmployee)
+                                                    <button class="btn-review">Revisar</button>
+                                                @endif
+
+                                                @if ($isApproverForEmployee)
+                                                    <button class="btn-approve">Aprobar</button>
+                                                @endif
+
+                                                @if (!$isReviewerForEmployee && !$isApproverForEmployee)
+                                                    <span class="no-permissions">Sin permisos</span>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
+                                    {{-- Filas de Detalle ✅ data-area --}}
+                                    @php $rowTypes = ['Comida', 'Bono', 'Servicio']; @endphp
+                                    @foreach ($rowTypes as $rowType)
+                                        <tr class="activity-row hidden" data-employee-id="{{ $employee->id }}"
+                                            data-area="{{ $areaName }}">
+                                            <td class="activity-label-cell">{{ $rowType }}</td>
+                                            @foreach ($monthlyDays as $dayInfo)
+                                                <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
+                                                    data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
+                                                    style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">0
+                                                    {{-- ⭐ OCULTAR SI NO ES Q1 --}}
+                                                </td>
+                                            @endforeach
+                                            <td class="data-cell total-{{ strtolower(str_replace(' ', '-', $rowType)) }}">
+                                                0
+                                            </td>
+                                        </tr>
+                                    @endforeach
                                 @endforeach
                             @endforeach
-                        @endforeach
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
-
         </div>
-
         <script>
             // Variables globales
             let currentMonth = {{ $currentMonth }};
