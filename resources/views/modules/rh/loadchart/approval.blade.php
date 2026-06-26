@@ -176,13 +176,11 @@
 
             <div class="table-master-wrapper">
 
-                <!-- Overlay de carga posicionado de forma absoluta respecto al Wrapper Maestro -->
-                <div id="table-loading-overlay" class="table-loading-overlay hidden">
+                <div id="table-loading-overlay" class="table-loading-overlay">
                     <div class="table-loader-spinner"></div>
-                    <div class="table-loader-text">Procesando estructura y aplicando filtros...</div>
+                    <div class="table-loader-text">Procesando y aplicando filtros...</div>
                 </div>
 
-                <!-- Contenedor original de la tabla con su scroll independiente -->
                 <div class="table-container">
                     <table class="approval-table" id="approval-table">
                         <thead>
