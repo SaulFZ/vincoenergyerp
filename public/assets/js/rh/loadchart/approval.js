@@ -443,10 +443,15 @@ function setupEventListeners() {
         setActiveButton("quincena1");
     });
 
-    document.getElementById("quincena2").addEventListener("click", () => {
-        showQuincena(2);
+   document.getElementById("quincena2").addEventListener("click", () => {
+    showLoadingState(); // Mostramos el overlay
+
+    setTimeout(() => {
+        showQuincena(2); // Trabajo pesado
         setActiveButton("quincena2");
-    });
+        hideLoadingState(); // Ocultamos el overlay
+    }, 50);
+});
 
     document.getElementById("full-month").addEventListener("click", () => {
         showFullMonth();
@@ -1539,16 +1544,12 @@ async function loadMonthData(isRefresh = false) {
             }
         });
 
-        if (!response.ok) {
-            throw new Error('Error al cargar los datos del mes');
-        }
+        if (!response.ok) throw new Error('Error al cargar los datos del mes');
 
         const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'Error al cargar los datos');
 
-        if (!data.success) {
-            throw new Error(data.error || 'Error al cargar los datos');
-        }
-
+        // Asignación de variables globales
         workLogsData = data.workLogsData;
         fortnightlyConfig = data.fortnightlyConfig;
         loadChartAssignments = data.loadChartAssignments;
@@ -1557,40 +1558,39 @@ async function loadMonthData(isRefresh = false) {
         monthlyDays = data.monthlyDays;
         employees = data.employees;
 
-        // 1. Reconstruir estructura de la tabla (inyección en el DOM invisible gracias al overlay)
-        updateTableStructure(data.monthlyDays, data.employees);
-        updatePeriodInfo();
+        // ⭐ LA MAGIA SUCEDE AQUÍ ⭐
+        // Le damos 50ms al navegador para que procese visualmente el showLoadingState()
+        // ANTES de congelarse armando la tabla.
+        setTimeout(() => {
+            // 1. Reconstrucción masiva del DOM
+            updateTableStructure(data.monthlyDays, data.employees);
+            updatePeriodInfo();
 
-        // 2. Aplicar vista de quincena
-        if (currentView === 'quincena1') {
-            showQuincena(1);
-        } else if (currentView === 'quincena2') {
-            showQuincena(2);
-        } else {
-            showFullMonth();
-        }
+            // 2. Aplicar vistas
+            if (currentView === 'quincena1') showQuincena(1);
+            else if (currentView === 'quincena2') showQuincena(2);
+            else showFullMonth();
 
-        allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
-        allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
+            allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
+            allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
 
-        // 3. IMPORTANTISIMO: Aplicar filtros ANTES de quitar el overlay
-        if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
-            populatePositionFilter();
-            applyFilters();
-        }
+            // 3. Aplicar filtros
+            if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
+                populatePositionFilter();
+                applyFilters();
+            }
 
-        setupEmployeeRowListeners();
+            setupEmployeeRowListeners();
 
-        // 4. Ahora sí, con el DOM 100% procesado y filtrado, ocultamos la carga y dejamos que corra la animación Fade-In
-        if (!isRefresh) {
-            // Le damos un respiro muy breve al navegador para renderizar el DOM final
-            setTimeout(() => {
+            // 4. Quitar el loader suavemente una vez que todo el renderizado finalizó
+            if (!isRefresh) {
                 hideLoadingState();
-            }, 50);
-        }
+            }
 
-        lastUpdateTime = new Date();
-        initializeAutoRefresh();
+            lastUpdateTime = new Date();
+            initializeAutoRefresh();
+
+        }, 50); // 50 milisegundos de respiro para el motor de renderizado
 
     } catch (error) {
         console.error('Error loading month data:', error);
