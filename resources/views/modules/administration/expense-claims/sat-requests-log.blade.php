@@ -50,6 +50,7 @@
                             <th>Ticket ID (Asignado por SAT)</th>
                             <th>Hora de Creación</th>
                             <th>Última Actualización</th>
+                            <th>Tipo</th>
                             <th>Estatus de Paquete</th>
                         </tr>
                     </thead>
@@ -72,6 +73,18 @@
                                 </td>
                                 <td><span class="row-motive">{{ $req->created_at->format('d/m/Y H:i:s') }}</span></td>
                                 <td><span class="row-motive">{{ $req->updated_at->format('d/m/Y H:i:s') }}</span></td>
+                                <td>
+                                    @if ($req->type === 'manual')
+                                        <span class="badge"
+                                            style="background-color: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Manual</span>
+                                    @elseif($req->type === 'monthly')
+                                        <span class="badge"
+                                            style="background-color: #8b5cf6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Mensual</span>
+                                    @else
+                                        <span class="badge"
+                                            style="background-color: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">Diario</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if ($req->status === 'completed')
                                         <span class="status-badge badge-ok">
