@@ -28,7 +28,7 @@ class VerifyFiscalDownloadJob implements ShouldQueue
         $this->satRequestId = $satRequestId;
     }
 
-   public function handle(FiscalConnectorService $service): void
+    public function handle(FiscalConnectorService $service): void
     {
         Log::info("Job 2: Validando estatus del ticket oficial del SAT: {$this->ticketId}");
 
@@ -48,7 +48,6 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 return;
             }
 
-            // ─── LA LÓGICA CORRECTA BASADA EN ESTADOS, NO EN CÓDIGOS ───
             $statusRequest = $verify->getStatusRequest();
             $codigoGeneral = $verify->getStatus()->getCode();
 
@@ -96,7 +95,11 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 }
             }
             $zip->close();
-            Storage::delete('private/temp_sat/' . basename($zipPath));
+
+            // ── CORRECCIÓN 1: Borrado absoluto y seguro del archivo temporal ZIP ──
+            if (file_exists($zipPath)) {
+                @unlink($zipPath);
+            }
         }
     }
 
@@ -122,7 +125,8 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             $finalXmlPath = $finalXmlFolder . '/' . $uuid . '.xml';
 
             if (!Storage::exists($finalXmlPath)) {
-                Storage::makeDirectory($ruta);
+                // ── CORRECCIÓN 2: Usamos $finalXmlFolder en lugar de $ruta ──
+                Storage::makeDirectory($finalXmlFolder);
                 Storage::put($finalXmlPath, $xmlContent);
             }
 
@@ -145,6 +149,5 @@ class VerifyFiscalDownloadJob implements ShouldQueue
         } catch (\Exception $e) {
             Log::error("Error inyectando XML desde Job 2: " . $e->getMessage());
         }
-
     }
 }
