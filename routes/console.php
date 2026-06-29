@@ -7,18 +7,18 @@ use App\Jobs\Administration\ExpenseClaims\RequestFiscalDownloadJob;
 use App\Jobs\Administration\ExpenseClaims\VerifyFiscalDownloadJob;
 use Carbon\Carbon;
 
-// ── 1. PROCESO DE MEDIANOCHE: VENTANA MÓVIL DE 15 DÍAS ──
+// ── 1. PROCESO DE MEDIANOCHE: VENTANA MÓVIL DE 1 SEMANA (7 DÍAS) ──
 Schedule::call(function () {
-    // Si ya hay algo pendiente, no satures al SAT
+    // Evitamos enviar peticiones si ya hay una "pending" (Protección contra ban del SAT)
     if (SatRequest::where('status', 'pending')->exists()) {
         return;
     }
 
     $hoy = Carbon::now();
-    $haceQuinceDias = Carbon::now()->subDays(15);
+    // 7 DÍAS HACIA ATRÁS: Para atrapar facturas con timbrado tardío
+    $haceUnaSemana = Carbon::now()->subDays(7);
     $fechaRegistro = $hoy->format('Y-m-d');
 
-    // Aquí usamos la columna 'type' que ya configuramos
     $alreadyExists = SatRequest::where('request_date', $fechaRegistro)
                                ->where('type', 'daily')
                                ->exists();
@@ -35,17 +35,20 @@ Schedule::call(function () {
         if ($node) {
             RequestFiscalDownloadJob::dispatch(
                 $node->g_id,
-                $haceQuinceDias->format('Y-m-d') . 'T00:00:00',
-                $hoy->format('Y-m-d') . 'T23:59:59',
+                $haceUnaSemana->format('Y-m-d') . 'T00:00:00',
+                // HORA EXACTA ACTUAL: Para evitar el error de "Fecha final invalida"
+                $hoy->format('Y-m-d\TH:i:s'),
                 $satRequest->id
             );
         }
     }
 })->dailyAt('00:00');
 
-// ── 2. PROCESO MENSUAL: BARRIDO DE LOS ÚLTIMOS 2 MESES ──
+
+// ── 2. PROCESO MENSUAL: BARRIDO COMPLETO DEL MES ANTERIOR ──
+// Corre el día 3 de cada mes para atrapar cualquier rezago o cancelación extrema
 Schedule::call(function () {
-    $dosMesesAtrasInicio = Carbon::now()->subMonths(2)->startOfMonth();
+    $mesAnteriorInicio = Carbon::now()->subMonth()->startOfMonth();
     $mesAnteriorFin      = Carbon::now()->subMonth()->endOfMonth();
     $fechaRegistro       = Carbon::now()->format('Y-m-d');
 
@@ -60,19 +63,20 @@ Schedule::call(function () {
     if ($node) {
         RequestFiscalDownloadJob::dispatch(
             $node->g_id,
-            $dosMesesAtrasInicio->format('Y-m-d') . 'T00:00:00',
+            $mesAnteriorInicio->format('Y-m-d') . 'T00:00:00',
+            // El fin de mes anterior siempre está en el pasado, el 23:59:59 es seguro aquí
             $mesAnteriorFin->format('Y-m-d') . 'T23:59:59',
             $satRequest->id
         );
     }
 })->monthlyOn(3, '01:00');
 
-// ── 3. PROCESO CONTINUO: REVISAR CADA 30 MINUTOS ──
-// Cambiado de everyTwoHours() a everyThirtyMinutes() para mayor agilidad
+
+// ── 3. PROCESO CONTINUO: VERIFICADOR CADA 30 MINUTOS ──
 Schedule::call(function () {
     $pendingDownload = SatRequest::where('status', 'pending')
         ->whereNotNull('ticket_id')
-        ->orderBy('created_at', 'asc') // Procesar primero el más antiguo
+        ->orderBy('created_at', 'asc')
         ->first();
 
     if ($pendingDownload) {
