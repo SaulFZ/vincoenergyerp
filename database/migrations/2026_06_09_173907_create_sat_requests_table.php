@@ -11,8 +11,12 @@ return new class extends Migration
         Schema::create('sat_requests', function (Blueprint $table) {
             $table->id();
             $table->string('ticket_id')->nullable()->unique()->comment('ID de solicitud devuelto por el SAT');
-            $table->date('request_date')->index()->comment('Fecha de la consulta (Hoy)');
+            $table->date('request_date')->index()->comment('Fecha de la consulta');
             $table->string('status')->comment('pending, completed, failed');
+
+            // ── NUEVA COLUMNA DE TRAZABILIDAD ──
+            $table->string('type', 50)->nullable()->comment('daily, monthly, manual');
+
             $table->timestamps();
         });
     }
