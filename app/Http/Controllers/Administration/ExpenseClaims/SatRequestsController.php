@@ -11,13 +11,14 @@ use Carbon\Carbon;
 
 class SatRequestsController extends Controller
 {
-   public function index()
+    public function index()
     {
-        // 1. Verificamos si ya existe una petición hoy usando la clase correcta: SatRequest
+        // 1. Verificamos si ya existe una petición generada de forma automática (daily) o manual en proceso
         $hasRequestToday = SatRequest::whereDate('request_date', now()->format('Y-m-d'))
+                                    ->where('status', 'pending')
                                     ->exists();
 
-        // 2. Obtenemos el historial paginado usando la clase correcta: SatRequest
+        // 2. Obtenemos el historial paginado ordenado por el más reciente
         $requests = SatRequest::orderBy('created_at', 'desc')->paginate(15);
 
         return view('modules.administration.expense-claims.sat-requests-log', [
@@ -28,39 +29,40 @@ class SatRequestsController extends Controller
 
     public function forceSync(Request $request)
     {
-        // 1. CANDADO ESTRICTO
+        // 1. CANDADO ESTRICTO: Bloquear solo si ya hay una sincronización corriendo en este mismo momento
         $pendingRequest = SatRequest::where('status', 'pending')->first();
         if ($pendingRequest) {
-            return redirect()->back()->with('warning', "Operación bloqueada. Ya existe una sincronización en curso (ID: {$pendingRequest->id}).");
+            return redirect()->back()->with('warning', "Operación bloqueada. Ya existe una sincronización en curso (ID: {$pendingRequest->id}). Espere a que finalice.");
         }
 
-        // 2. CANDADO DE DÍA
-        $today = Carbon::now()->format('Y-m-d');
-        $todayCompleted = SatRequest::where('request_date', $today)->where('status', 'completed')->exists();
-        if ($todayCompleted) {
-            return redirect()->back()->with('info', 'La sincronización de hoy ya fue completada.');
-        }
-
-        // 3. Revisar certificado
+        // 2. Revisar el certificado activo del nodo FSL
         $node = FslNode::where('is_live', true)->first();
         if (!$node) {
-            return redirect()->back()->with('error', 'No existe un certificado activo.');
+            return redirect()->back()->with('error', 'No existe un certificado activo configurado en el sistema.');
         }
 
-        // 4. Crear la solicitud
+        $hoy = Carbon::now();
+        $todayString = $hoy->format('Y-m-d');
+
+        // 3. Crear la solicitud en BD con la etiqueta 'manual' para nuestra trazabilidad
         $satRequest = SatRequest::create([
-            'request_date' => $today,
+            'request_date' => $todayString,
             'status'       => 'pending',
             'type'         => 'manual',
         ]);
 
         // ─── LA CORRECCIÓN MÁGICA AQUÍ ───
-        // Le damos un inicio y fin de día exacto para que el SAT lo acepte
-        $startDate = $today . ' 00:00:00';
-        $endDate   = $today . ' 23:59:59';
 
-        // Despachar el Job con las fechas corregidas (usando el RFC del nodo, no el ID)
+        // Inicio: Buscamos 7 días hacia atrás igual que el CRON, por si la factura que les urge es de ayer o antier.
+        $haceUnaSemana = Carbon::now()->subDays(7)->format('Y-m-d');
+        $startDate = $haceUnaSemana . 'T00:00:00';
+
+        // Fin: La hora y segundo EXACTOS del clic. Ni un segundo en el futuro para que el SAT lo acepte.
+        $endDate   = $hoy->format('Y-m-d\TH:i:s');
+
+        // 4. Despachar el Job con las fechas perfectas
         RequestFiscalDownloadJob::dispatch($node->g_id, $startDate, $endDate, $satRequest->id);
 
-        return redirect()->back()->with('success', 'Sincronización manual enviada a la cola exitosamente.');
-    }}
+        return redirect()->back()->with('success', 'Sincronización manual enviada a la cola exitosamente. En breve se reflejarán los resultados.');
+    }
+}
