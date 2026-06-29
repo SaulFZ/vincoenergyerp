@@ -51,7 +51,6 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             $statusRequest = $verify->getStatusRequest();
             $codigoGeneral = $verify->getStatus()->getCode();
 
-            // 1. ¿El SAT ya terminó de comprimir los paquetes?
             if ($statusRequest->isFinished()) {
                 Log::info("Job 2: El SAT terminó el procesamiento. Descargando paquetes ZIP.");
 
@@ -65,14 +64,11 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 $satRequest->update(['status' => 'completed']);
                 Log::info("Job 2: Descarga masiva finalizada con éxito.");
 
-            // 2. ¿El SAT lo aceptó pero sigue trabajando en la compresión?
             } elseif ($statusRequest->isAccepted() || $statusRequest->isInProgress()) {
-                Log::info("Job 2: El ticket {$this->ticketId} sigue en proceso en el SAT (Código SOAP: {$codigoGeneral}). Esperaremos al próximo ciclo.");
-
-            // 3. Ocurrió un fallo real o expiró (Estados 4, 5 o 6)
+                Log::info("Job 2: El ticket {$this->ticketId} sigue en proceso en el SAT. Esperaremos al próximo ciclo.");
             } else {
                 $satRequest->update(['status' => 'failed']);
-                Log::error("Job 2: El paquete falló o fue rechazado (Estado Paquete: {$statusRequest->getValue()} - Código SOAP: {$codigoGeneral}).");
+                Log::error("Job 2: El paquete falló o fue rechazado (Código SOAP: {$codigoGeneral}).");
             }
 
         } catch (\Throwable $e) {
@@ -96,7 +92,6 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             }
             $zip->close();
 
-            // ── CORRECCIÓN 1: Borrado absoluto y seguro del archivo temporal ZIP ──
             if (file_exists($zipPath)) {
                 @unlink($zipPath);
             }
@@ -111,38 +106,90 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             $dom->loadXML($xmlContent);
             libxml_disable_entity_loader($oldEntityLoader);
 
-            $uuidElement = $dom->getElementsByTagNameNS('*', 'TimbreFiscalDigital')->item(0);
+            $xpath = new \DOMXPath($dom);
+            $xpath->registerNamespace('cfdi', 'http://www.sat.gob.mx/cfd/4');
+            $xpath->registerNamespace('tfd', 'http://www.sat.gob.mx/TimbreFiscalDigital');
+            $xpath->registerNamespace('implocal', 'http://www.sat.gob.mx/implocal');
+
+            $uuidElement = $xpath->query('//tfd:TimbreFiscalDigital')->item(0);
             if (!$uuidElement) return;
 
             $uuid = strtoupper($uuidElement->getAttribute('UUID'));
-            $comprobante = $dom->getElementsByTagNameNS('*', 'Comprobante')->item(0);
-            $emisor = $dom->getElementsByTagNameNS('*', 'Emisor')->item(0);
-            $receptor = $dom->getElementsByTagNameNS('*', 'Receptor')->item(0);
+            $comprobante = $xpath->query('/cfdi:Comprobante')->item(0);
+            $emisor = $xpath->query('/cfdi:Comprobante/cfdi:Emisor')->item(0);
+            $receptor = $xpath->query('/cfdi:Comprobante/cfdi:Receptor')->item(0);
 
             if (!$comprobante || !$emisor) return;
+
+            // ── EXTRACCIÓN DE CONCEPTOS MULTIPLES (Resumen) ──
+            $conceptos = $xpath->query('/cfdi:Comprobante/cfdi:Conceptos/cfdi:Concepto');
+            $resumen = [];
+            for ($i = 0; $i < $conceptos->length; $i++) {
+                $resumen[] = $conceptos->item($i)->getAttribute('Descripcion');
+                // Si hay más de 2 conceptos, armamos un resumen corto
+                if ($i == 1 && $conceptos->length > 2) {
+                    $resumen[] = '... (+ ' . ($conceptos->length - 2) . ' arts. más)';
+                    break;
+                }
+            }
+            $conceptSummaryStr = implode(', ', $resumen);
+
+            // ── EXTRACCIÓN DE IMPUESTOS REALES ──
+            $iva = 0.00;
+            $retenciones = 0.00;
+            $ish = 0.00;
+
+            // IVA (Impuesto 002)
+            $nodosIva = $xpath->query('/cfdi:Comprobante/cfdi:Impuestos/cfdi:Traslados/cfdi:Traslado[@Impuesto="002"]');
+            foreach ($nodosIva as $nodo) {
+                $iva += (float) $nodo->getAttribute('Importe');
+            }
+
+            // Retenciones (Ej. 4% Fletes)
+            $nodosRet = $xpath->query('/cfdi:Comprobante/cfdi:Impuestos/cfdi:Retenciones/cfdi:Retencion');
+            foreach ($nodosRet as $nodo) {
+                $retenciones += (float) $nodo->getAttribute('Importe');
+            }
+
+            // Impuestos Locales (ISH)
+            $nodoIsh = $xpath->query('//implocal:ImpuestosLocales')->item(0);
+            if ($nodoIsh) {
+                $ish = (float) $nodoIsh->getAttribute('TotaldeTraslados');
+            }
 
             $finalXmlFolder = 'private/administration/expense-claims/xml';
             $finalXmlPath = $finalXmlFolder . '/' . $uuid . '.xml';
 
             if (!Storage::exists($finalXmlPath)) {
-                // ── CORRECCIÓN 2: Usamos $finalXmlFolder en lugar de $ruta ──
                 Storage::makeDirectory($finalXmlFolder);
                 Storage::put($finalXmlPath, $xmlContent);
             }
 
+            // Aquí evitamos los duplicados en la base de datos automáticamente
             ExpenseCfdi::updateOrCreate(
                 ['uuid' => $uuid],
                 [
-                    'fsl_node_id'   => $nodeId,
-                    'subtotal'      => (string) $comprobante->getAttribute('SubTotal'),
-                    'total'         => (string) $comprobante->getAttribute('Total'),
-                    'issuer_rfc'    => (string) $emisor->getAttribute('Rfc'),
-                    'issuer_name'   => (string) $emisor->getAttribute('Nombre'),
-                    'receiver_rfc'  => $receptor ? (string) $receptor->getAttribute('Rfc') : null,
-                    'currency'      => (string) ($comprobante->getAttribute('Moneda') ?? 'MXN'),
-                    'issue_date'    => str_replace('T', ' ', $comprobante->getAttribute('Fecha')),
-                    'sat_status'    => 'Vigente',
-                    'xml_path'      => $finalXmlPath,
+                    'fsl_node_id'    => $nodeId,
+                    'serie'          => $comprobante->getAttribute('Serie') ?: null,
+                    'folio'          => $comprobante->getAttribute('Folio') ?: null,
+                    'cfdi_type'      => $comprobante->getAttribute('TipoDeComprobante') ?: null,
+                    'payment_method' => $comprobante->getAttribute('MetodoPago') ?: null,
+                    'payment_form'   => $comprobante->getAttribute('FormaPago') ?: null,
+                    'use_cfdi'       => $receptor ? $receptor->getAttribute('UsoCFDI') : null,
+                    'concept_summary'=> $conceptSummaryStr,
+                    'issuer_rfc'     => (string) $emisor->getAttribute('Rfc'),
+                    'issuer_name'    => (string) $emisor->getAttribute('Nombre'),
+                    'receiver_rfc'   => $receptor ? (string) $receptor->getAttribute('Rfc') : null,
+                    'receiver_name'  => $receptor ? (string) $receptor->getAttribute('Nombre') : null,
+                    'subtotal'       => (float) $comprobante->getAttribute('SubTotal'),
+                    'total'          => (float) $comprobante->getAttribute('Total'),
+                    'tax_iva'        => $iva,
+                    'tax_ish'        => $ish,
+                    'tax_retenciones'=> $retenciones,
+                    'currency'       => (string) ($comprobante->getAttribute('Moneda') ?: 'MXN'),
+                    'issue_date'     => str_replace('T', ' ', $comprobante->getAttribute('Fecha')),
+                    'sat_status'     => 'Vigente',
+                    'xml_path'       => $finalXmlPath,
                 ]
             );
 

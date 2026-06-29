@@ -51,18 +51,19 @@ class SatRequestsController extends Controller
             'type'         => 'manual',
         ]);
 
-        // ─── LA CORRECCIÓN MÁGICA AQUÍ ───
+       // ─── LA CORRECCIÓN MÁGICA Y BLINDADA ───
 
-        // Inicio: Buscamos 7 días hacia atrás igual que el CRON, por si la factura que les urge es de ayer o antier.
-        $haceUnaSemana = Carbon::now()->subDays(7)->format('Y-m-d');
+        // Forzamos la hora de México
+        $hoy = Carbon::now('America/Mexico_City');
+
+        // Inicio: Buscamos 7 días hacia atrás
+        $haceUnaSemana = $hoy->copy()->subDays(7)->format('Y-m-d');
         $startDate = $haceUnaSemana . 'T00:00:00';
 
-        // Fin: La hora y segundo EXACTOS del clic. Ni un segundo en el futuro para que el SAT lo acepte.
-        $endDate   = $hoy->format('Y-m-d\TH:i:s');
+        // Fin: Le restamos 10 minutos a la hora actual para evitar el desface del reloj del SAT
+        $endDate = $hoy->copy()->subMinutes(10)->format('Y-m-d\TH:i:s');
 
-        // 4. Despachar el Job con las fechas perfectas
+        // Despachar el Job con las fechas corregidas
         RequestFiscalDownloadJob::dispatch($node->g_id, $startDate, $endDate, $satRequest->id);
-
-        return redirect()->back()->with('success', 'Sincronización manual enviada a la cola exitosamente. En breve se reflejarán los resultados.');
     }
 }

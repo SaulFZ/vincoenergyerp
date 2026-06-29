@@ -35,18 +35,22 @@ class CfdiController extends Controller
 
         $xml = simplexml_load_string($xmlContent);
         $namespaces = $xml->getNamespaces(true);
-        $xml->registerXPathNamespace('tfd', $namespaces['tfd']);
+        $xml->registerXPathNamespace('cfdi', 'http://www.sat.gob.mx/cfd/4');
+        $xml->registerXPathNamespace('tfd', 'http://www.sat.gob.mx/TimbreFiscalDigital');
+        $xml->registerXPathNamespace('implocal', 'http://www.sat.gob.mx/implocal');
 
         $timbre = $xml->xpath('//tfd:TimbreFiscalDigital')[0] ?? null;
-        $emisor = $xml->xpath('//cfdi:Emisor')[0] ?? null;
-        $receptor = $xml->xpath('//cfdi:Receptor')[0] ?? null;
+        $comprobante = $xml->xpath('/cfdi:Comprobante')[0] ?? null;
+        $emisor = $xml->xpath('/cfdi:Comprobante/cfdi:Emisor')[0] ?? null;
+        $receptor = $xml->xpath('/cfdi:Comprobante/cfdi:Receptor')[0] ?? null;
 
-        if (!$timbre || !$emisor) {
+        if (!$timbre || !$emisor || !$comprobante) {
             return response()->json(['success' => false, 'message' => 'No se encontraron los nodos fiscales requeridos en el XML.'], 422);
         }
 
         $uuid = strtoupper((string) $timbre['UUID']);
 
+        // ── Candado de seguridad para evitar cargar duplicados manualmente ──
         if (ExpenseCfdi::where('uuid', $uuid)->exists()) {
             return response()->json([
                 'success' => true,
@@ -55,25 +59,68 @@ class CfdiController extends Controller
             ]);
         }
 
-        // ── CORRECCIÓN: Guardar en la bóveda oficial de XMLs ──
+        // ── RESUMEN DE CONCEPTOS ──
+        $conceptos = $xml->xpath('/cfdi:Comprobante/cfdi:Conceptos/cfdi:Concepto');
+        $resumen = [];
+        if ($conceptos) {
+            foreach ($conceptos as $index => $concepto) {
+                $resumen[] = (string) $concepto['Descripcion'];
+                if ($index == 1 && count($conceptos) > 2) {
+                    $resumen[] = '... (+ ' . (count($conceptos) - 2) . ' arts. más)';
+                    break;
+                }
+            }
+        }
+        $conceptSummaryStr = implode(', ', $resumen);
+
+        // ── IMPUESTOS GLOBALES ──
+        $iva = 0.00;
+        $retenciones = 0.00;
+        $ish = 0.00;
+
+        $nodosIva = $xml->xpath('/cfdi:Comprobante/cfdi:Impuestos/cfdi:Traslados/cfdi:Traslado[@Impuesto="002"]');
+        if ($nodosIva) {
+            foreach ($nodosIva as $n) { $iva += (float) $n['Importe']; }
+        }
+
+        $nodosRet = $xml->xpath('/cfdi:Comprobante/cfdi:Impuestos/cfdi:Retenciones/cfdi:Retencion');
+        if ($nodosRet) {
+            foreach ($nodosRet as $n) { $retenciones += (float) $n['Importe']; }
+        }
+
+        $nodoIsh = $xml->xpath('//implocal:ImpuestosLocales');
+        if ($nodoIsh && isset($nodoIsh[0]['TotaldeTraslados'])) {
+            $ish = (float) $nodoIsh[0]['TotaldeTraslados'];
+        }
+
         $filename = $uuid . '.xml';
         $path = $file->storeAs('private/administration/expense-claims/xml', $filename);
 
         $activeNode = FslNode::where('is_live', true)->first();
 
         $cfdi = ExpenseCfdi::create([
-            'fsl_node_id'  => $activeNode ? $activeNode->id : null,
-            'uuid'         => $uuid,
-            'issuer_rfc'   => (string) $emisor['Rfc'],
-            'issuer_name'  => (string) $emisor['Nombre'],
-            'receiver_rfc' => $receptor ? (string) $receptor['Rfc'] : null,
-            'subtotal'     => (float) $xml['SubTotal'],
-            'total'        => (float) $xml['Total'],
-            'currency'     => (string) ($xml['Moneda'] ?? 'MXN'),
-            'issue_date'   => str_replace('T', ' ', (string) $xml['Fecha']),
-            'sat_status'   => 'Vigente',
-            'xml_path'     => $path,
-            // is_reimbursed se omite porque la BD le pone false por default
+            'fsl_node_id'    => $activeNode ? $activeNode->id : null,
+            'uuid'           => $uuid,
+            'serie'          => (string) $comprobante['Serie'] ?: null,
+            'folio'          => (string) $comprobante['Folio'] ?: null,
+            'cfdi_type'      => (string) $comprobante['TipoDeComprobante'] ?: null,
+            'payment_method' => (string) $comprobante['MetodoPago'] ?: null,
+            'payment_form'   => (string) $comprobante['FormaPago'] ?: null,
+            'use_cfdi'       => $receptor ? (string) $receptor['UsoCFDI'] : null,
+            'concept_summary'=> $conceptSummaryStr,
+            'issuer_rfc'     => (string) $emisor['Rfc'],
+            'issuer_name'    => (string) $emisor['Nombre'],
+            'receiver_rfc'   => $receptor ? (string) $receptor['Rfc'] : null,
+            'receiver_name'  => $receptor ? (string) $receptor['Nombre'] : null,
+            'subtotal'       => (float) $comprobante['SubTotal'],
+            'total'          => (float) $comprobante['Total'],
+            'tax_iva'        => $iva,
+            'tax_ish'        => $ish,
+            'tax_retenciones'=> $retenciones,
+            'currency'       => (string) ($comprobante['Moneda'] ?? 'MXN'),
+            'issue_date'     => str_replace('T', ' ', (string) $comprobante['Fecha']),
+            'sat_status'     => 'Vigente',
+            'xml_path'       => $path,
         ]);
 
         return response()->json([
@@ -81,5 +128,26 @@ class CfdiController extends Controller
             'message' => 'Factura validada y resguardada exitosamente.',
             'data'    => $cfdi
         ]);
+    }
+
+    public function searchByUuid(Request $request)
+    {
+        $request->validate([
+            'uuid' => 'required|string|size:36'
+        ]);
+
+        $cfdi = ExpenseCfdi::where('uuid', strtoupper($request->uuid))->first();
+
+        if ($cfdi) {
+            return response()->json([
+                'success' => true,
+                'data' => $cfdi
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No se encontró ningún comprobante con este UUID en la bóveda fiscal del sistema.'
+        ], 404);
     }
 }

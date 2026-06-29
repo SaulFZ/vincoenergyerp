@@ -9,14 +9,15 @@ use Carbon\Carbon;
 
 // ── 1. PROCESO DE MEDIANOCHE: VENTANA MÓVIL DE 1 SEMANA (7 DÍAS) ──
 Schedule::call(function () {
-    // Evitamos enviar peticiones si ya hay una "pending" (Protección contra ban del SAT)
     if (SatRequest::where('status', 'pending')->exists()) {
         return;
     }
 
-    $hoy = Carbon::now();
-    // 7 DÍAS HACIA ATRÁS: Para atrapar facturas con timbrado tardío
-    $haceUnaSemana = Carbon::now()->subDays(7);
+    // Forzamos la zona horaria de México para evitar que Dokploy mande hora de Londres (UTC)
+    $hoy = Carbon::now('America/Mexico_City');
+    $ayer = $hoy->copy()->subDay(); // Ayer
+    $haceUnaSemana = $hoy->copy()->subDays(7); // Hace 7 días
+
     $fechaRegistro = $hoy->format('Y-m-d');
 
     $alreadyExists = SatRequest::where('request_date', $fechaRegistro)
@@ -36,14 +37,13 @@ Schedule::call(function () {
             RequestFiscalDownloadJob::dispatch(
                 $node->g_id,
                 $haceUnaSemana->format('Y-m-d') . 'T00:00:00',
-                // HORA EXACTA ACTUAL: Para evitar el error de "Fecha final invalida"
-                $hoy->format('Y-m-d\TH:i:s'),
+                // EL TRUCO ESTÁ AQUÍ: Pedimos hasta las 23:59:59 de AYER. 100% en el pasado.
+                $ayer->format('Y-m-d') . 'T23:59:59',
                 $satRequest->id
             );
         }
     }
 })->dailyAt('00:00');
-
 
 // ── 2. PROCESO MENSUAL: BARRIDO COMPLETO DEL MES ANTERIOR ──
 // Corre el día 3 de cada mes para atrapar cualquier rezago o cancelación extrema

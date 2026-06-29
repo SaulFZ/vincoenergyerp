@@ -4,6 +4,9 @@ use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
 use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
+use App\Http\Controllers\Administration\ExpenseClaims\CfdiController;
+
+
 
 /* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Auth\LoginController;
