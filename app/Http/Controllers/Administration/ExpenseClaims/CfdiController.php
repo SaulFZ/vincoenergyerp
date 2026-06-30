@@ -38,6 +38,8 @@ class CfdiController extends Controller
         $xml->registerXPathNamespace('cfdi', 'http://www.sat.gob.mx/cfd/4');
         $xml->registerXPathNamespace('tfd', 'http://www.sat.gob.mx/TimbreFiscalDigital');
         $xml->registerXPathNamespace('implocal', 'http://www.sat.gob.mx/implocal');
+        // ── NUEVO: Agregamos el namespace de Pagos 2.0 ──
+        $xml->registerXPathNamespace('pago20', 'http://www.sat.gob.mx/Pagos20');
 
         $timbre = $xml->xpath('//tfd:TimbreFiscalDigital')[0] ?? null;
         $comprobante = $xml->xpath('/cfdi:Comprobante')[0] ?? null;
@@ -50,7 +52,6 @@ class CfdiController extends Controller
 
         $uuid = strtoupper((string) $timbre['UUID']);
 
-        // ── Candado de seguridad para evitar cargar duplicados manualmente ──
         if (ExpenseCfdi::where('uuid', $uuid)->exists()) {
             return response()->json([
                 'success' => true,
@@ -58,6 +59,10 @@ class CfdiController extends Controller
                 'data' => ExpenseCfdi::where('uuid', $uuid)->first()
             ]);
         }
+
+        $cfdiType = (string) $comprobante['TipoDeComprobante'] ?: null;
+        $subtotal = (float) $comprobante['SubTotal'];
+        $total    = (float) $comprobante['Total'];
 
         // ── RESUMEN DE CONCEPTOS ──
         $conceptos = $xml->xpath('/cfdi:Comprobante/cfdi:Conceptos/cfdi:Concepto');
@@ -93,6 +98,18 @@ class CfdiController extends Controller
             $ish = (float) $nodoIsh[0]['TotaldeTraslados'];
         }
 
+        // ── REGLA ESPECIAL PARA COMPLEMENTOS DE PAGO (TIPO P) ──
+        if ($cfdiType === 'P') {
+            $nodoTotalesPago = $xml->xpath('//pago20:Totales')[0] ?? null;
+            if ($nodoTotalesPago) {
+                $total = (float) $nodoTotalesPago['MontoTotalPagos'];
+                $baseIva = isset($nodoTotalesPago['TotalTrasladosBaseIVA16']) ? (float) $nodoTotalesPago['TotalTrasladosBaseIVA16'] : 0;
+                $subtotal = $baseIva > 0 ? $baseIva : $total;
+                $iva = isset($nodoTotalesPago['TotalTrasladosImpuestoIVA16']) ? (float) $nodoTotalesPago['TotalTrasladosImpuestoIVA16'] : 0;
+            }
+            $conceptSummaryStr = 'Pago de Factura (Complemento de Recepción de Pagos)';
+        }
+
         $filename = $uuid . '.xml';
         $path = $file->storeAs('private/administration/expense-claims/xml', $filename);
 
@@ -103,7 +120,7 @@ class CfdiController extends Controller
             'uuid'           => $uuid,
             'serie'          => (string) $comprobante['Serie'] ?: null,
             'folio'          => (string) $comprobante['Folio'] ?: null,
-            'cfdi_type'      => (string) $comprobante['TipoDeComprobante'] ?: null,
+            'cfdi_type'      => $cfdiType,
             'payment_method' => (string) $comprobante['MetodoPago'] ?: null,
             'payment_form'   => (string) $comprobante['FormaPago'] ?: null,
             'use_cfdi'       => $receptor ? (string) $receptor['UsoCFDI'] : null,
@@ -112,8 +129,8 @@ class CfdiController extends Controller
             'issuer_name'    => (string) $emisor['Nombre'],
             'receiver_rfc'   => $receptor ? (string) $receptor['Rfc'] : null,
             'receiver_name'  => $receptor ? (string) $receptor['Nombre'] : null,
-            'subtotal'       => (float) $comprobante['SubTotal'],
-            'total'          => (float) $comprobante['Total'],
+            'subtotal'       => $subtotal,
+            'total'          => $total,
             'tax_iva'        => $iva,
             'tax_ish'        => $ish,
             'tax_retenciones'=> $retenciones,
