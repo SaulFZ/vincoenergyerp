@@ -110,6 +110,8 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             $xpath->registerNamespace('cfdi', 'http://www.sat.gob.mx/cfd/4');
             $xpath->registerNamespace('tfd', 'http://www.sat.gob.mx/TimbreFiscalDigital');
             $xpath->registerNamespace('implocal', 'http://www.sat.gob.mx/implocal');
+            // ── NUEVO: Agregamos el namespace de Pagos 2.0 ──
+            $xpath->registerNamespace('pago20', 'http://www.sat.gob.mx/Pagos20');
 
             $uuidElement = $xpath->query('//tfd:TimbreFiscalDigital')->item(0);
             if (!$uuidElement) return;
@@ -121,12 +123,15 @@ class VerifyFiscalDownloadJob implements ShouldQueue
 
             if (!$comprobante || !$emisor) return;
 
-            // ── EXTRACCIÓN DE CONCEPTOS MULTIPLES (Resumen) ──
+            $cfdiType = $comprobante->getAttribute('TipoDeComprobante') ?: null;
+            $subtotal = (float) $comprobante->getAttribute('SubTotal');
+            $total    = (float) $comprobante->getAttribute('Total');
+
+            // ── EXTRACCIÓN DE CONCEPTOS MULTIPLES ──
             $conceptos = $xpath->query('/cfdi:Comprobante/cfdi:Conceptos/cfdi:Concepto');
             $resumen = [];
             for ($i = 0; $i < $conceptos->length; $i++) {
                 $resumen[] = $conceptos->item($i)->getAttribute('Descripcion');
-                // Si hay más de 2 conceptos, armamos un resumen corto
                 if ($i == 1 && $conceptos->length > 2) {
                     $resumen[] = '... (+ ' . ($conceptos->length - 2) . ' arts. más)';
                     break;
@@ -134,27 +139,30 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             }
             $conceptSummaryStr = implode(', ', $resumen);
 
-            // ── EXTRACCIÓN DE IMPUESTOS REALES ──
+            // ── EXTRACCIÓN DE IMPUESTOS ──
             $iva = 0.00;
             $retenciones = 0.00;
             $ish = 0.00;
 
-            // IVA (Impuesto 002)
             $nodosIva = $xpath->query('/cfdi:Comprobante/cfdi:Impuestos/cfdi:Traslados/cfdi:Traslado[@Impuesto="002"]');
-            foreach ($nodosIva as $nodo) {
-                $iva += (float) $nodo->getAttribute('Importe');
-            }
+            foreach ($nodosIva as $nodo) { $iva += (float) $nodo->getAttribute('Importe'); }
 
-            // Retenciones (Ej. 4% Fletes)
             $nodosRet = $xpath->query('/cfdi:Comprobante/cfdi:Impuestos/cfdi:Retenciones/cfdi:Retencion');
-            foreach ($nodosRet as $nodo) {
-                $retenciones += (float) $nodo->getAttribute('Importe');
-            }
+            foreach ($nodosRet as $nodo) { $retenciones += (float) $nodo->getAttribute('Importe'); }
 
-            // Impuestos Locales (ISH)
             $nodoIsh = $xpath->query('//implocal:ImpuestosLocales')->item(0);
-            if ($nodoIsh) {
-                $ish = (float) $nodoIsh->getAttribute('TotaldeTraslados');
+            if ($nodoIsh) { $ish = (float) $nodoIsh->getAttribute('TotaldeTraslados'); }
+
+            // ── REGLA ESPECIAL PARA COMPLEMENTOS DE PAGO (TIPO P) ──
+            if ($cfdiType === 'P') {
+                $nodoTotalesPago = $xpath->query('//pago20:Totales')->item(0);
+                if ($nodoTotalesPago) {
+                    $total = (float) $nodoTotalesPago->getAttribute('MontoTotalPagos');
+                    $baseIva = (float) $nodoTotalesPago->getAttribute('TotalTrasladosBaseIVA16');
+                    $subtotal = $baseIva > 0 ? $baseIva : $total;
+                    $iva = (float) $nodoTotalesPago->getAttribute('TotalTrasladosImpuestoIVA16');
+                }
+                $conceptSummaryStr = 'Pago de Factura (Complemento de Recepción de Pagos)';
             }
 
             $finalXmlFolder = 'private/administration/expense-claims/xml';
@@ -165,14 +173,13 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 Storage::put($finalXmlPath, $xmlContent);
             }
 
-            // Aquí evitamos los duplicados en la base de datos automáticamente
             ExpenseCfdi::updateOrCreate(
                 ['uuid' => $uuid],
                 [
                     'fsl_node_id'    => $nodeId,
                     'serie'          => $comprobante->getAttribute('Serie') ?: null,
                     'folio'          => $comprobante->getAttribute('Folio') ?: null,
-                    'cfdi_type'      => $comprobante->getAttribute('TipoDeComprobante') ?: null,
+                    'cfdi_type'      => $cfdiType,
                     'payment_method' => $comprobante->getAttribute('MetodoPago') ?: null,
                     'payment_form'   => $comprobante->getAttribute('FormaPago') ?: null,
                     'use_cfdi'       => $receptor ? $receptor->getAttribute('UsoCFDI') : null,
@@ -181,8 +188,8 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                     'issuer_name'    => (string) $emisor->getAttribute('Nombre'),
                     'receiver_rfc'   => $receptor ? (string) $receptor->getAttribute('Rfc') : null,
                     'receiver_name'  => $receptor ? (string) $receptor->getAttribute('Nombre') : null,
-                    'subtotal'       => (float) $comprobante->getAttribute('SubTotal'),
-                    'total'          => (float) $comprobante->getAttribute('Total'),
+                    'subtotal'       => $subtotal,
+                    'total'          => $total,
                     'tax_iva'        => $iva,
                     'tax_ish'        => $ish,
                     'tax_retenciones'=> $retenciones,
