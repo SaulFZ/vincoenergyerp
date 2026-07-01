@@ -38,7 +38,7 @@
     --payment-process-border: #fdba74;
 
     --payment-auth-bg: #eff6ff;
-    --payment-auth-text: #0f52ba; /* Azul Zafiro */
+    --payment-auth-text: #0f52ba;
     --payment-auth-border: #bfdbfe;
 
     --payment-wait-bg: #fef9c3;
@@ -60,14 +60,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .text-right { text-align: right !important; }
 .text-left { text-align: left !important; }
 
-/* ── COMPONENTES PRINCIPALES ── */
-.view-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-.view-title { font-size: 2rem; font-weight: 400; color: #1e293b; margin: 0; }
-.view-title strong { font-weight: 800; color: #0f172a; }
-.view-subtitle { margin-top: .25rem; font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: .4rem; }
-.view-subtitle i { color: var(--teal-dark); font-size: 1.1rem; }
-
-/* Botones */
+/* ── BOTONES GLOBALES ── */
 .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .7rem 1.5rem; border-radius: .75rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; transition: background-color .15s, transform .15s, box-shadow .15s; }
 .btn-primary { background: var(--teal-dark); color: #fff; box-shadow: 0 4px 14px rgba(13, 148, 136, .25); }
 .btn-primary:hover { background: var(--teal-medium); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20, 184, 166, .3); }
@@ -109,7 +102,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .card-title { font-size: 1rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: .5rem; }
 .card-title i { color: #94a3b8; font-size: 1.2rem; }
 
-.table-controls { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.table-controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .search-wrap { position: relative; display: flex; align-items: center; }
 .search-icon { position: absolute; left: .7rem; color: #94a3b8; font-size: 1.1rem; pointer-events: none; }
 .search-input { padding: .5rem .75rem .5rem 2.2rem; background: var(--surface-alt); border: 1px solid #e2e8f0; border-radius: .6rem; font-size: 0.8rem; color: #1e293b; outline: none; width: 250px; transition: border-color .15s, box-shadow .15s; }
@@ -189,8 +182,18 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .btn-validate-special { color: var(--teal-dark); border-color: var(--teal-dark); }
 
 /* ── MÓDULO SAT CON PESTAÑAS ── */
-.sat-panel { background: var(--slate-dark); border: 1px solid var(--slate-mid); border-radius: .75rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
-.sat-panel::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(to right, var(--teal-medium), var(--teal-dark)); }
+.sat-panel { background: var(--slate-dark); border: 1px solid var(--slate-mid); border-radius: .75rem; margin-bottom: 1.5rem; position: relative; }
+.sat-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, var(--teal-medium), var(--teal-dark));
+    border-radius: .75rem .75rem 0 0;
+    z-index: 1;
+}
 .sat-panel-header { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--slate-mid); flex-wrap: wrap; gap: 1rem;}
 .sat-panel-title { color: #fff; font-size: 1rem; margin: 0; display: flex; align-items: center; gap: .5rem; font-weight: 600; }
 .sat-tabs { display: flex; background: var(--slate-mid); border-radius: .5rem; padding: .3rem; }
@@ -246,6 +249,33 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* ── ESTILOS DEL DROPDOWN DEL SAT (Modo Oscuro) ── */
+.sat-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: 100%;
+    background: var(--slate-mid);
+    border: 1px solid var(--teal-medium);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    z-index: 999;
+    max-height: 220px;
+    overflow-y: auto;
+}
+.sat-dropdown-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #334155;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
+}
+.sat-dropdown-item:last-child { border-bottom: none; }
+.sat-dropdown-item:hover { background: #334155; }
+.sat-dropdown-item strong { display: block; color: var(--teal-light); font-family: monospace; font-size: 0.85rem; }
+.sat-dropdown-item span { display: block; color: #cbd5e1; font-size: 0.75rem; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sat-dropdown-empty { padding: 1rem; text-align: center; color: #94a3b8; font-size: 0.8rem; }
+
 /* ── FORMULARIO DE CABECERA Y DELEGACIÓN ── */
 .form-header-card { background: var(--surface); border: 1px solid #e2e8f0; border-radius: .75rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0, 0, 0, .03); display: flex; flex-direction: column; position: relative; z-index: 20; }
 .fh-info-strip { background: var(--surface-alt); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem; border-bottom: 1px solid #e2e8f0; border-radius: .75rem .75rem 0 0; }
@@ -282,7 +312,7 @@ input:checked + .slider:before { transform: translateX(18px); }
 .slider.round { border-radius: 22px; }
 .slider.round:before { border-radius: 50%; }
 
-/* ── 🚀 NUEVAS CLASES CORREGIDAS PARA EL DROPDOWN DEL BUSCADOR DE EMPLEADOS ── */
+/* ── DROPDOWN DEL BUSCADOR DE EMPLEADOS ── */
 .reimburse-dropdown-container { position: relative; width: 100%; }
 .reimburse-custom-dropdown { position: absolute; top: calc(100% + .4rem); left: 0; width: 100%; background: #fff; border: 1px solid #cbd5e1; border-radius: .5rem; box-shadow: 0 10px 25px rgba(0,0,0,.1); z-index: 50; max-height: 200px; overflow-y: auto; }
 .reimburse-dropdown-item { padding: .75rem 1rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; flex-direction: column; gap: .2rem; transition: background .15s; }
@@ -380,7 +410,6 @@ input:checked + .slider:before { transform: translateX(18px); }
     .sat-search-group .btn { width: 100%; justify-content: center; }
     .fh-row-pills { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
     .fh-grid-4 { grid-template-columns: 1fr; gap: 1rem; }
-    .view-header { flex-direction: column; align-items: flex-start; }
     .bottom-section { flex-direction: column-reverse; }
     .summary-box { max-width: 100%; }
     .card-header { flex-direction: column; align-items: flex-start; }

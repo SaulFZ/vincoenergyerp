@@ -6,20 +6,6 @@
 @section('content')
     <div class="reimbursements-container">
 
-        {{-- ── ENCABEZADO PRINCIPAL DE LA VISTA ── --}}
-        <header class="view-header">
-            <div>
-                <h2 class="view-title">Panel de <strong>Reembolsos</strong></h2>
-                <p class="view-subtitle">
-                    <i class="bx bx-line-chart"></i>
-                    Administra el historial de gastos, valida facturas y gestiona comprobaciones departamentales.
-                </p>
-            </div>
-            <button class="btn btn-primary" onclick="openModalForCreate()" aria-label="Crear un nuevo reembolso">
-                <i class="bx bx-plus-circle"></i> Nuevo Reembolso
-            </button>
-        </header>
-
         {{-- ── DASHBOARD: TARJETAS DE MÉTRICAS GLOBALES ── --}}
         <div class="metrics-grid">
             <div class="metric-card metric-total">
@@ -74,6 +60,10 @@
                         <button class="filter-tab" data-filter="Aprobado">Aprobado</button>
                         <button class="filter-tab" data-filter="Rechazado">Rechazado</button>
                     </div>
+                    {{-- ── BOTÓN MOVIDO AQUÍ ── --}}
+                    <button class="btn btn-primary" style="padding: 0.45rem 1.2rem; font-size: 0.8rem;" onclick="openModalForCreate()" aria-label="Crear un nuevo reembolso">
+                        <i class="bx bx-plus-circle"></i> Nuevo Reembolso
+                    </button>
                 </div>
             </div>
 
@@ -144,8 +134,8 @@
                 <div class="form-header-card">
                     <div class="fh-info-strip">
                         <div class="fh-info-item">
-                            <span>RFC Empresa Matriz / Emisor</span>
-                            <strong id="res-rfc">VES0000000</strong>
+                            <span>RFC Empresa Matriz</span>
+                            <strong id="company-rfc">Cargando...</strong>
                         </div>
                         <div class="fh-info-item folio">
                             <span>Folio Principal (Sistema)</span>
@@ -204,10 +194,19 @@
                                     <span class="delegation-text">Capturar Otro Beneficiario</span>
                                 </div>
                             </div>
+                            <div class="delegation-wrapper" id="deductible-container" style="margin-left: 1rem;">
+                                <div class="delegation-toggle-wrap">
+                                    <label class="switch">
+                                        <input type="checkbox" id="toggle-deductible">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="delegation-text">Es Gasto Deducible</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="fh-grid-4">
-                            {{-- BUSCADOR DE USUARIO INTEGRADO CON NUEVA CLASE EXCLUSIVA --}}
+                            {{-- BUSCADOR DE USUARIO INTEGRADO --}}
                             <div>
                                 <label class="input-label">Nombre del Beneficiario</label>
                                 <div class="input-group reimburse-dropdown-container">
@@ -224,8 +223,7 @@
                                 <label class="input-label">Área de Adscripción</label>
                                 <div class="input-group">
                                     <i class="bx bx-buildings field-icon"></i>
-                                    <input type="text" id="modal-depto"
-                                        value="Desarrollo de Software"
+                                    <input type="text" id="modal-depto" value="Desarrollo de Software"
                                         class="input-field" readonly>
                                 </div>
                             </div>
@@ -271,10 +269,12 @@
                         <div id="sat-tab-uuid" class="sat-content active">
                             <label class="sat-label">Folio Fiscal (UUID) del comprobante SAT</label>
                             <div class="sat-search-group">
-                                <div class="sat-input-wrap">
+                                <div class="sat-input-wrap" style="position: relative;">
                                     <i class="bx bx-barcode"></i>
                                     <input type="text" id="search-uuid" class="sat-input modal-focusable"
-                                        placeholder="550E8400-E29B-41D4-A716-446655440000" autocomplete="off">
+                                        placeholder="Buscar por últimos dígitos, Folio o Proveedor..." autocomplete="off">
+
+                                    <div id="uuid-dropdown" class="sat-dropdown hidden"></div>
                                 </div>
                                 <button type="button" id="btn-buscar" class="btn btn-primary"
                                     onclick="buscarFactura()">
@@ -293,7 +293,7 @@
                             </div>
                         </div>
 
-                        {{-- ÁREA DE RESULTADO Y ASIGNACIÓN (Compartida) --}}
+                        {{-- ÁREA DE RESULTADO Y ASIGNACIÓN --}}
                         <div id="sat-result-container" class="sat-result-box hidden">
                             <div class="sat-result-success">
                                 <i class="bx bx-check-circle"></i>
@@ -526,13 +526,15 @@
                             <span>Consolidado Financiero</span>
                         </div>
                         <div class="summary-body">
-                            <div class="summary-row"><span class="sum-lbl">Sub-Total Neto:</span><span id="sum-subtotal"
-                                    class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Suma Erogada (Base):</span><span
-                                    id="sum-gastos" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Gastos Fiscales (XML+PDF):</span><span
+                                    id="sum-fiscal" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Gastos No Fiscales (Notas):</span><span
+                                    id="sum-simple" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Sin Comprobante / Propinas:</span><span
+                                    id="sum-propinas" class="sum-val">$0.00</span></div>
                             <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva"
                                     class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Impuestos Locales (I.S.H.):</span><span
+                            <div class="summary-row"><span class="sum-lbl">I.S.H. y Retenciones:</span><span
                                     id="sum-ish" class="sum-val">$0.00</span></div>
                             <div class="sum-total-row">
                                 <span class="sum-total-lbl">TOTAL A REEMBOLSAR</span>
@@ -595,40 +597,19 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
 
     <script>
-        /* ── VARIABLES DE SESIÓN (Logueado) ── */
+        /* ── VARIABLES REALES DESDE EL BACKEND ── */
+        const rfcEmpresa = "{{ $rfcEmpresa }}";
+        const companyEmployees = {!! json_encode($usersList) !!};
+
         const sessionUser = {
             id: {{ Auth::id() ?? 1 }},
-            nombre: "{{ Auth::user()->name ?? 'Saul Falcon Perez' }}",
-            depto: "Desarrollo de Software",
-            rfc: "VES0000000"
+            nombre: "{{ Auth::user()->name ?? 'Usuario No Definido' }}",
+            depto: "{{ Auth::user()->employee->area->name ?? 'Sin Asignar' }}",
+            rfc: "{{ Auth::user()->employee->rfc ?? 'S/N' }}"
         };
 
-        /* ── SIMULADOR DB DE EMPLEADOS PARA BÚSQUEDA ── */
-        const companyEmployees = [{
-                id: 1,
-                nombre: "Saul Falcon Perez",
-                depto: "Desarrollo de Software",
-                rfc: "VES0000000"
-            },
-            {
-                id: 2,
-                nombre: "Carlos Izquierdo",
-                depto: "Calidad y QHSE",
-                rfc: "IZQC850101ABC"
-            },
-            {
-                id: 3,
-                nombre: "Yanuri Martinez",
-                depto: "Operaciones",
-                rfc: "MARY900101DEF"
-            },
-            {
-                id: 4,
-                nombre: "Jasiel",
-                depto: "Administración y Finanzas",
-                rfc: "JAS990101GHI"
-            }
-        ];
+        // Asignación única del RFC de la empresa
+        document.getElementById('company-rfc').textContent = rfcEmpresa;
 
         /* ── NAVEGACIÓN Y ACCESIBILIDAD ── */
         document.getElementById('reimbursement-modal').addEventListener('keydown', function(e) {
@@ -642,10 +623,9 @@
             }
         });
 
-        /* ── CONTROL DE DELEGACIÓN Y AUTOCOMPLETADO (CON NUEVAS CLASES) ── */
+        /* ── CONTROL DE DELEGACIÓN Y AUTOCOMPLETADO ── */
         const modalNombre = document.getElementById('modal-nombre');
         const modalDepto = document.getElementById('modal-depto');
-        const resRfc = document.getElementById('res-rfc');
         const beneficiaryId = document.getElementById('modal-beneficiary-id');
         const dropdown = document.getElementById('employee-dropdown');
         const iconSolicitante = document.getElementById('icon-solicitante');
@@ -665,7 +645,6 @@
                 modalNombre.setAttribute('readonly', 'true');
                 modalNombre.value = sessionUser.nombre;
                 modalDepto.value = sessionUser.depto;
-                resRfc.textContent = sessionUser.rfc;
                 beneficiaryId.value = sessionUser.id;
                 modalNombre.classList.remove('reimburse-input-active-search');
                 iconSolicitante.className = 'bx bx-user field-icon';
@@ -691,7 +670,8 @@
                 results.forEach(emp => {
                     const item = document.createElement('div');
                     item.className = 'reimburse-dropdown-item';
-                    item.innerHTML = `<strong>${emp.nombre}</strong>`;
+                    item.innerHTML =
+                        `<strong>${emp.nombre}</strong><small style="color:#64748b; font-size:11px;">${emp.depto}</small>`;
                     item.onclick = () => selectEmployee(emp);
                     dropdown.appendChild(item);
                 });
@@ -705,7 +685,6 @@
         function selectEmployee(emp) {
             modalNombre.value = emp.nombre;
             modalDepto.value = emp.depto;
-            resRfc.textContent = emp.rfc;
             beneficiaryId.value = emp.id;
             dropdown.classList.add('hidden');
             showToast(`Beneficiario actualizado a: ${emp.nombre}`, 'success');
@@ -747,7 +726,6 @@
             title: `<span style="font-family:'Poppins', sans-serif; font-size:14px;">${msg}</span>`
         });
 
-        /* ── GENERADOR DE FOLIOS Y DATA INICIAL ── */
         function generateFolio(id) {
             const today = new Date();
             const dd = String(today.getDate()).padStart(2, '0');
@@ -755,24 +733,24 @@
             return `SIS${dd}${mm}-${String(id).padStart(2, '0')}`;
         }
 
-        // ── CARGA DINÁMICA DE REEMBOLSOS DESDE LARAVEL ──
         let currentId = {{ $reembolsos->max('id') ?? 0 }} + 1;
 
-        // CORRECCIÓN: Declaramos 'requests' una sola vez y usamos json_encode para evitar errores de parseo
-        let requests = {!! json_encode($reembolsos->map(function ($req) {
-            return [
-                'id' => $req->id,
-                'folioP' => $req->folio_system,
-                'folioU' => $req->folio_user ?? 'N/A',
-                'fecha' => \Carbon\Carbon::parse($req->claim_date)->format('d/m/Y'),
-                'nombre' => $req->beneficiary ? $req->beneficiary->name : 'Usuario Desconocido',
-                'motivo' => $req->motive,
-                'depto' => $req->area ?? 'Sin Asignar',
-                'amount' => (float) $req->total_amount,
-                'status' => $req->status_review,
-                'pago' => $req->status_payment,
-            ];
-        })) !!};
+        let requests = {!! json_encode(
+            $reembolsos->map(function ($req) {
+                return [
+                    'id' => $req->id,
+                    'folioP' => $req->folio_system,
+                    'folioU' => $req->folio_user ?? 'N/A',
+                    'fecha' => \Carbon\Carbon::parse($req->claim_date)->format('d/m/Y'),
+                    'nombre' => $req->beneficiary ? $req->beneficiary->name : 'Usuario Desconocido',
+                    'motivo' => $req->motive,
+                    'depto' => $req->area ?? 'Sin Asignar',
+                    'amount' => (float) $req->total_amount,
+                    'status' => $req->status_review,
+                    'pago' => $req->status_payment,
+                ];
+            }),
+        ) !!};
 
         let currentEvaluateId = null;
 
@@ -960,7 +938,6 @@
             document.getElementById('modal-motivo').value = '';
             document.getElementById('modal-centro-costos').value = '';
             document.getElementById('sat-panel').classList.add('hidden');
-
             document.getElementById('sat-result-container').classList.add('hidden');
             tempSatData = null;
 
@@ -988,10 +965,13 @@
             document.getElementById('main-modal-title').innerHTML =
                 '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
 
-            document.getElementById('modal-folio-p').textContent = generateFolio(currentId);
-            document.getElementById('modal-folio-u').textContent = 'SFP-006';
+            document.getElementById('modal-folio-p').innerHTML =
+                '<span class="status-badge badge-draft" style="border:none; padding: 2px 6px;">Asignación Automática</span>';
+            document.getElementById('modal-folio-u').innerHTML =
+                '<span class="status-badge badge-draft" style="border:none; padding: 2px 6px;">Automático</span>';
 
             document.querySelector('input[name="tipo_gasto"][value="viaje"]').checked = true;
+            document.getElementById('toggle-deductible').checked = true;
 
             document.getElementById('footer-create').classList.remove('hidden');
             document.getElementById('footer-view').classList.add('hidden');
@@ -1003,7 +983,6 @@
             const req = requests.find(r => r.id === id);
             if (!req) return;
             resetModalForm();
-
             document.getElementById('delegation-container').classList.add('hidden');
 
             document.getElementById('main-modal-title').innerHTML =
@@ -1012,7 +991,7 @@
             document.getElementById('modal-folio-u').textContent = req.folioU;
             document.getElementById('modal-nombre').value = req.nombre;
             document.getElementById('modal-depto').value = req.depto;
-            document.getElementById('modal-motivo').value = req.motivo;
+            document.getElementById('modal-motivo').value = req.motive || req.motivo;
             document.getElementById('sum-total').textContent = fmt(req.amount);
 
             document.getElementById('footer-create').classList.add('hidden');
@@ -1025,7 +1004,6 @@
             const req = requests.find(r => r.id === id);
             if (!req) return;
             resetModalForm();
-
             document.getElementById('delegation-container').classList.add('hidden');
 
             document.getElementById('main-modal-title').innerHTML =
@@ -1036,7 +1014,7 @@
             document.getElementById('modal-folio-u').textContent = req.folioU;
             document.getElementById('modal-nombre').value = req.nombre;
             document.getElementById('modal-depto').value = req.depto;
-            document.getElementById('modal-motivo').value = req.motivo;
+            document.getElementById('modal-motivo').value = req.motive || req.motivo;
             document.getElementById('sum-total').textContent = fmt(req.amount);
 
             const btnValidate = document.getElementById('btn-eval-validate');
@@ -1068,13 +1046,13 @@
 
             Swal.fire({
                 title: `<span style="font-family:'Poppins', sans-serif;">¿Emisión de Dictamen Final?</span>`,
-                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">La resolución afectará los balances financieros. Desea <strong>${actionText}</strong> este folio?</span>`,
+                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Desea <strong>${actionText}</strong> este folio?</span>`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: confirmColor,
                 cancelButtonColor: '#94a3b8',
-                confirmButtonText: `<span style="font-family:'Poppins', sans-serif; font-weight:600;">Autorizar Movimiento</span>`,
-                cancelButtonText: `<span style="font-family:'Poppins', sans-serif;">Cancelar Acción</span>`
+                confirmButtonText: `Autorizar Movimiento`,
+                cancelButtonText: `Cancelar Acción`
             }).then((result) => {
                 if (result.isConfirmed) {
                     updateStatus(currentEvaluateId, status);
@@ -1166,11 +1144,11 @@
             const listDiv = document.getElementById('evidence-list');
             listDiv.innerHTML = evidenciasFiles.length > 0 ?
                 `<div class="file-grid">${evidenciasFiles.map((f, i) => `
-                    <div class="file-card"><i class="bx bxs-file-pdf file-icon-lg"></i><div class="file-info"><span class="file-name" title="${f.name}">${f.name}</span><span class="file-size">${formatBytes(f.size)}</span></div><button type="button" class="btn-remove-file" onclick="event.stopPropagation(); removeFile(${i})"><i class="bx bx-x"></i></button></div>`).join('')}</div>` :
+                                <div class="file-card"><i class="bx bxs-file-pdf file-icon-lg"></i><div class="file-info"><span class="file-name" title="${f.name}">${f.name}</span><span class="file-size">${formatBytes(f.size)}</span></div><button type="button" class="btn-remove-file" onclick="event.stopPropagation(); removeFile(${i})"><i class="bx bx-x"></i></button></div>`).join('')}</div>` :
                 '';
         }
 
-        /* ── INTERACCIÓN LÓGICA DEL SAT ── */
+        /* ── INTERACCIÓN LÓGICA DEL SAT (BLINDADA CONTRA AÑOS CORRUPTOS) ── */
         let tempSatData = null;
 
         async function buscarFactura() {
@@ -1181,7 +1159,6 @@
                 showToast('El esquema UUID debe tener exactamente 36 caracteres.', 'warning');
                 return;
             }
-
             btnB.innerHTML = '<span class="spinner"></span> Consultando...';
             btnB.disabled = true;
 
@@ -1192,33 +1169,32 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
-
                 const data = await response.json();
 
                 if (response.ok && data.success) {
                     const cfdi = data.data;
-                    const [y, m, d] = cfdi.issue_date.split(' ')[0].split('-');
 
-                    document.getElementById('res-rfc').textContent = cfdi.issuer_rfc;
+                    let serieFolio = '';
+                    if (cfdi.serie) serieFolio += cfdi.serie + '-';
+                    if (cfdi.folio) serieFolio += cfdi.folio;
+                    if (!serieFolio) serieFolio = cfdi.uuid.substring(0, 8);
 
                     tempSatData = {
-                        fecha: `${d}/${m}/${y}`,
-                        folio: cfdi.uuid.substring(0, 8),
-                        desc: 'Servicios amparados por UUID (Bóveda)',
-                        sub: parseFloat(cfdi.subtotal),
-                        iva: parseFloat(cfdi.total) - parseFloat(cfdi.subtotal),
-                        ish: 0
+                        fecha_iso: cfdi.issue_date.split(' ')[0], // Almacenamos YYYY-MM-DD para flatpickr
+                        folio: serieFolio,
+                        desc: cfdi.concept_summary || 'Servicios amparados por UUID',
+                        sub: parseFloat(cfdi.subtotal) || 0,
+                        iva: parseFloat(cfdi.tax_iva) || 0,
+                        ish: (parseFloat(cfdi.tax_ish) || 0) - (parseFloat(cfdi.tax_retenciones) || 0)
                     };
 
                     document.getElementById('sat-result-uuid').textContent = cfdi.uuid;
                     document.getElementById('sat-result-container').classList.remove('hidden');
-
-                    showToast('Comprobante localizado en la bóveda del sistema.', 'success');
+                    showToast('Comprobante localizado en la bóveda.', 'success');
                 } else {
                     Swal.fire('Atención', data.message, 'warning');
                 }
             } catch (error) {
-                console.error(error);
                 Swal.fire('Error', 'Problema de conexión con la Bóveda Fiscal.', 'error');
             } finally {
                 btnB.innerHTML = '<i class="bx bx-search"></i> Buscar';
@@ -1249,7 +1225,6 @@
                 showToast('Provee un archivo .xml válido', 'error');
                 return;
             }
-
             Swal.fire({
                 title: 'Procesando XML...',
                 text: 'Validando ante la Bóveda del Sistema.',
@@ -1262,49 +1237,47 @@
             formData.append('_token', '{{ csrf_token() }}');
 
             try {
-                const response = await fetch('{{ route("expense-claims.cfdi.upload") }}', {
+                const response = await fetch('{{ route('expense-claims.cfdi.upload') }}', {
                     method: 'POST',
                     body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
-
                 const data = await response.json();
 
                 if (response.ok && data.success) {
                     Swal.close();
                     const cfdi = data.data;
-
-                    document.getElementById('res-rfc').textContent = cfdi.issuer_rfc;
                     document.getElementById('search-uuid').value = cfdi.uuid;
 
-                    const [y, m, d] = cfdi.issue_date.split(' ')[0].split('-');
+                    let serieFolio = '';
+                    if (cfdi.serie) serieFolio += cfdi.serie + '-';
+                    if (cfdi.folio) serieFolio += cfdi.folio;
+                    if (!serieFolio) serieFolio = cfdi.uuid.substring(0, 8);
 
                     tempSatData = {
-                        fecha: `${d}/${m}/${y}`,
-                        folio: cfdi.uuid.substring(0, 8),
-                        desc: 'Gasto importado manualmente (XML)',
-                        sub: parseFloat(cfdi.subtotal),
-                        iva: parseFloat(cfdi.total) - parseFloat(cfdi.subtotal),
-                        ish: 0
+                        fecha_iso: cfdi.issue_date.split(' ')[0], // Almacenamos YYYY-MM-DD para flatpickr
+                        folio: serieFolio,
+                        desc: cfdi.concept_summary || 'Gasto importado (XML)',
+                        sub: parseFloat(cfdi.subtotal) || 0,
+                        iva: parseFloat(cfdi.tax_iva) || 0,
+                        ish: (parseFloat(cfdi.tax_ish) || 0) - (parseFloat(cfdi.tax_retenciones) || 0)
                     };
 
                     document.getElementById('sat-result-uuid').textContent = cfdi.uuid;
                     document.getElementById('sat-result-container').classList.remove('hidden');
-
                     showToast(data.message, 'success');
                 } else {
                     Swal.fire('Error de Validación', data.message || 'El XML es inválido o corrupto.', 'error');
                 }
             } catch (error) {
-                console.error(error);
                 Swal.fire('Error', 'No se pudo comunicar con el servidor.', 'error');
             }
         }
 
-        /* ── INYECCIÓN AUTOMÁTICA EVITANDO FILAS DUPLICADAS ── */
         function agregarFilaDesdeSAT() {
             const cat = document.getElementById('sat-category').value;
-
             if (!cat) {
                 showToast('Seleccione la categoría correspondiente.', 'warning');
                 return;
@@ -1318,56 +1291,69 @@
             if (dataRows.length > 0) {
                 const lastRow = dataRows[dataRows.length - 1];
                 const inputs = lastRow.querySelectorAll('.cell-input');
-                const isEmpty = !inputs[1].value.trim() && !inputs[2].value.trim();
-
-                if (isEmpty) {
-                    targetRow = lastRow;
-                }
+                if (!inputs[1].value.trim() && !inputs[2].value.trim()) targetRow = lastRow;
             }
 
             if (!targetRow) {
                 addRow(cat);
                 targetRow = tbody.lastElementChild;
             }
-
             const inputs = targetRow.querySelectorAll('.cell-input');
 
-            if (inputs[0]._flatpickr && tempSatData.fecha) inputs[0]._flatpickr.setDate(tempSatData.fecha, true, "d/m/Y");
-            else inputs[0].value = tempSatData.fecha || '';
+            // Sincronización limpia con Flatpickr usando el formato ISO nativo
+            if (inputs[0]._flatpickr && tempSatData.fecha_iso) {
+                inputs[0]._flatpickr.setDate(tempSatData.fecha_iso, true, "Y-m-d");
+            } else if (tempSatData.fecha_iso) {
+                const [y, m, d] = tempSatData.fecha_iso.split('-');
+                inputs[0].value = `${d}/${m}/${y}`;
+            }
 
             inputs[1].value = tempSatData.folio;
             inputs[2].value = tempSatData.desc;
             inputs[3].value = tempSatData.sub;
+            inputs[4].value = '';
+            inputs[5].value = '';
             inputs[6].value = tempSatData.ish;
             inputs[7].value = tempSatData.iva;
 
             calcTotal();
-
             document.getElementById('sat-result-container').classList.add('hidden');
             document.getElementById('sat-category').value = '';
             tempSatData = null;
-            showToast('El comprobante se inyectó en la matriz con éxito.', 'success');
+            showToast('El comprobante se inyectó con éxito.', 'success');
         }
 
-        /* ── COMPUTADORA CONTABLE ── */
         function calcTotal() {
-            let gSub = 0,
+            let gFiscal = 0,
+                gSimple = 0,
+                gPropina = 0,
                 gIva = 0,
                 gIsh = 0;
+
             document.querySelectorAll('.data-row').forEach(row => {
-                let rSub = 0;
-                const rIva = parseFloat(row.querySelector('.c-iva')?.value) || 0;
-                const rIsh = parseFloat(row.querySelector('.c-ish')?.value) || 0;
-                row.querySelectorAll('.c-sub').forEach(i => rSub += parseFloat(i.value) || 0);
-                const rowTotal = row.querySelector('.cell-row-total');
-                if (rowTotal) rowTotal.textContent = (rSub + rIva + rIsh) > 0 ? fmt(rSub + rIva + rIsh) : '-';
-                gSub += rSub;
-                gIva += rIva;
+                const inputs = row.querySelectorAll('.cell-input');
+                const rFiscal = parseFloat(inputs[3].value) || 0;
+                const rSimple = parseFloat(inputs[4].value) || 0;
+                const rPropina = parseFloat(inputs[5].value) || 0;
+                const rIsh = parseFloat(inputs[6].value) || 0;
+                const rIva = parseFloat(inputs[7].value) || 0;
+
+                const rowTotal = rFiscal + rSimple + rPropina + rIsh + rIva;
+                const rowTotalCell = row.querySelector('.cell-row-total');
+                if (rowTotalCell) rowTotalCell.textContent = rowTotal > 0 ? fmt(rowTotal) : '-';
+
+                gFiscal += rFiscal;
+                gSimple += rSimple;
+                gPropina += rPropina;
                 gIsh += rIsh;
+                gIva += rIva;
             });
-            const gTotal = gSub + gIva + gIsh;
-            document.getElementById('sum-subtotal').textContent = fmt(gSub);
-            document.getElementById('sum-gastos').textContent = fmt(gSub);
+
+            const gTotal = gFiscal + gSimple + gPropina + gIva + gIsh;
+
+            document.getElementById('sum-fiscal').textContent = fmt(gFiscal);
+            document.getElementById('sum-simple').textContent = fmt(gSimple);
+            document.getElementById('sum-propinas').textContent = fmt(gPropina);
             document.getElementById('sum-iva').textContent = fmt(gIva);
             document.getElementById('sum-ish').textContent = fmt(gIsh);
             document.getElementById('sum-total').textContent = fmt(gTotal);
@@ -1388,24 +1374,18 @@
                 showToast('Ingrese justificación del gasto.', 'error');
                 return;
             }
-            if (evidenciasFiles.length === 0) {
-                showToast('Es mandatorio proveer evidencia digital (PDF).', 'warning');
-                return;
-            }
 
             Swal.fire({
-                title: `<span style="font-family:'Poppins', sans-serif;">Consentimiento</span>`,
-                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">La matriz por valor de <strong>${fmt(total)}</strong> pasará a revisión.</span>`,
+                title: `Consentimiento`,
+                html: `La matriz por valor de <strong>${fmt(total)}</strong> pasará a revisión.`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: 'var(--teal-dark)',
                 cancelButtonColor: '#94a3b8',
-                confirmButtonText: `<span style="font-family:'Poppins', sans-serif; font-weight:600;">Emitir Responsiva</span>`,
-                cancelButtonText: `<span style="font-family:'Poppins', sans-serif;">Retornar</span>`
+                confirmButtonText: `Emitir Responsiva`,
+                cancelButtonText: `Retornar`
             }).then((result) => {
-                if (result.isConfirmed) {
-                    procesarEnvio('Pendiente', 'En espera');
-                }
+                if (result.isConfirmed) procesarEnvio('Pendiente', 'En espera');
             });
         }
 
@@ -1417,15 +1397,13 @@
             procesarEnvio('Borrador', 'N/A');
         }
 
-        /* ── ENVÍO AL BACKEND (FETCH API) ── */
         async function procesarEnvio(estadoRevision, estadoPago) {
-            // 1. Recolectar las líneas del formulario
             let lineasArray = [];
             ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
                 const rows = document.getElementById(cat).querySelectorAll('.data-row');
                 rows.forEach(row => {
                     const inputs = row.querySelectorAll('.cell-input');
-                    if (inputs[0].value) { // Solo si tiene fecha (no está vacía)
+                    if (inputs[0].value) {
                         lineasArray.push({
                             categoria: cat,
                             fecha: inputs[0].value,
@@ -1436,8 +1414,7 @@
                             monto_sin: parseFloat(inputs[5].value) || 0,
                             ish: parseFloat(inputs[6].value) || 0,
                             iva: parseFloat(inputs[7].value) || 0,
-                            total_linea: parseFloat(row.querySelector('.cell-row-total')
-                                .textContent.replace(/[^0-9.-]+/g, "")) || 0
+                            total_linea: parseFloat(row.querySelector('.cell-row-total').textContent.replace(/[^0-9.-]+/g, "")) || 0
                         });
                     }
                 });
@@ -1448,35 +1425,30 @@
                 return;
             }
 
-            // 2. Crear FormData para enviar archivos y texto mixto
-            let formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}'); // Token de seguridad de Laravel
+            let totalSubtotal = 0;
+            ['sum-fiscal', 'sum-simple', 'sum-propinas'].forEach(id => {
+                totalSubtotal += parseFloat(document.getElementById(id).textContent.replace(/[^0-9.-]+/g, "")) || 0;
+            });
 
-            // Variables generales
+            let formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
             formData.append('motivo', document.getElementById('modal-motivo').value.trim());
+            formData.append('is_deductible', document.getElementById('toggle-deductible').checked ? 1 : 0);
             formData.append('centro_costo', document.getElementById('modal-centro-costos').value);
             formData.append('tipo_gasto', document.querySelector('input[name="tipo_gasto"]:checked').value);
             formData.append('beneficiary_id', document.getElementById('modal-beneficiary-id').value);
             formData.append('depto', document.getElementById('modal-depto').value);
             formData.append('lugar_emision', document.getElementById('modal-lugar').value);
             formData.append('is_draft', estadoRevision === 'Borrador');
-
-            // Totales Financieros
-            formData.append('total_subtotal', document.getElementById('sum-subtotal').textContent.replace(/[^0-9.-]+/g,
-                ""));
+            formData.append('total_subtotal', totalSubtotal);
             formData.append('total_iva', document.getElementById('sum-iva').textContent.replace(/[^0-9.-]+/g, ""));
             formData.append('total_ish', document.getElementById('sum-ish').textContent.replace(/[^0-9.-]+/g, ""));
             formData.append('total_amount', document.getElementById('sum-total').getAttribute('data-value'));
-
-            // Adjuntar las líneas como string JSON
             formData.append('lineas', JSON.stringify(lineasArray));
-
-            // Adjuntar los archivos PDF del Gestor Documental
             evidenciasFiles.forEach((file, index) => {
                 formData.append(`evidencias[${index}]`, file);
             });
 
-            // 3. Enviar al Controlador de Laravel
             try {
                 Swal.fire({
                     title: 'Procesando...',
@@ -1484,7 +1456,6 @@
                     allowOutsideClick: false,
                     didOpen: () => Swal.showLoading()
                 });
-
                 const response = await fetch('{{ route('expense-claims.store') }}', {
                     method: 'POST',
                     body: formData,
@@ -1492,7 +1463,6 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
-
                 const data = await response.json();
 
                 if (data.success) {
@@ -1507,12 +1477,77 @@
                 } else {
                     Swal.fire('Error', data.message || 'Ocurrió un error en el servidor.', 'error');
                 }
-
             } catch (error) {
-                console.error('Fetch Error:', error);
                 Swal.fire('Error Critico', 'No se pudo comunicar con el servidor.', 'error');
             }
         }
+
+        /* ── AUTOCOMPLETADO OMNIDIRECCIONAL (UUID, FOLIO, PROVEEDOR) ── */
+        const searchUuidInput = document.getElementById('search-uuid');
+        const uuidDropdown = document.getElementById('uuid-dropdown');
+        let uuidTimeout = null;
+
+        searchUuidInput.addEventListener('input', function() {
+            clearTimeout(uuidTimeout);
+            const term = this.value.trim();
+            if (term.length < 2) {
+                uuidDropdown.classList.add('hidden');
+                return;
+            }
+
+            uuidTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(
+                        `{{ route('expense-claims.cfdi.autocomplete') }}?term=${term}`, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                    const data = await response.json();
+                    uuidDropdown.innerHTML = '';
+
+                    if (data.length > 0) {
+                        data.forEach(cfdi => {
+                            const item = document.createElement('div');
+                            item.className = 'sat-dropdown-item';
+                            let serieFolio = '';
+                            if (cfdi.serie) serieFolio += cfdi.serie + '-';
+                            if (cfdi.folio) serieFolio += cfdi.folio;
+                            const folioBadge = serieFolio ?
+                                `<span style="background: var(--teal-dark); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Folio: ${serieFolio}</span>` :
+                                '';
+
+                            item.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <strong style="color: var(--teal-light); font-family: monospace; font-size: 0.85rem;">${cfdi.uuid.substring(0, 13)}...</strong>
+                                    ${folioBadge}
+                                </div>
+                                <span style="display: block; color: #cbd5e1; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <i class="bx bx-store-alt"></i> ${cfdi.issuer_name} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${fmt(cfdi.total)}</strong>
+                                </span>`;
+                            item.onclick = () => {
+                                searchUuidInput.value = cfdi.uuid;
+                                uuidDropdown.classList.add('hidden');
+                                buscarFactura();
+                            };
+                            uuidDropdown.appendChild(item);
+                        });
+                    } else {
+                        uuidDropdown.innerHTML =
+                            '<div class="sat-dropdown-empty">No hay coincidencias en la bóveda fiscal.</div>';
+                    }
+                    uuidDropdown.classList.remove('hidden');
+                } catch (error) {
+                    console.error("Error al autocompletar UUID:", error);
+                }
+            }, 300);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!searchUuidInput.contains(e.target) && !uuidDropdown.contains(e.target)) uuidDropdown.classList.add(
+                'hidden');
+        });
 
         renderDashboard();
     </script>

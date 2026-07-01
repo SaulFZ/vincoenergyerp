@@ -2,7 +2,7 @@
 
 namespace App\Models\Administration\ExpenseClaims;
 
-use App\Models\User; // Asegúrate de que esta ruta coincida con la ubicación de tu modelo User
+use App\Models\Auth\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +12,7 @@ class ExpenseClaim extends Model
     protected $table = 'expense_claims';
 
     protected $fillable = [
-        'folio_system', 'folio_user', 'claim_date', 'category',
+        'folio_system', 'folio_user', 'claim_date', 'category', 'is_deductible',
         'user_id', 'created_by_id', 'area', 'cost_center',
         'emission_place', 'motive', 'total_subtotal',
         'total_iva', 'total_ish', 'total_amount',

@@ -17,6 +17,9 @@ return new class extends Migration
             $table->date('claim_date')->comment('Fecha del Documento (modal-fecha-hoy)');
             $table->string('category')->index()->comment('Viaje, Operacion, Otros');
 
+            // ── CAMPO NUEVO: CONTROL FISCAL ──
+            $table->boolean('is_deductible')->default(true)->comment('Flag para control fiscal global del reembolso');
+
             // ── TRAZABILIDAD Y UBICACIÓN ──
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete()->comment('Beneficiario');
             $table->foreignId('created_by_id')->constrained('users')->cascadeOnDelete()->comment('Capturista en sesión');
@@ -24,20 +27,19 @@ return new class extends Migration
             $table->string('cost_center')->index()->comment('Centro de Costos (Imputación)');
             $table->string('emission_place')->default('VHSA, TAB.')->comment('Lugar de Emisión');
 
-            // ── DETALLES Y TOTALES CONSOLIDADOS (Optimizados para Dashboard) ──
+            // ── DETALLES Y TOTALES CONSOLIDADOS ──
             $table->string('motive')->comment('Motivo de la erogación');
             $table->decimal('total_subtotal', 20, 2)->default(0)->comment('Suma Erogada (Base)');
             $table->decimal('total_iva', 20, 2)->default(0)->comment('Impuesto (I.V.A.) global');
             $table->decimal('total_ish', 20, 2)->default(0)->comment('Impuestos Locales (I.S.H.) global');
             $table->decimal('total_amount', 20, 2)->comment('Gran total a reembolsar líquido');
 
-            // ── GESTOR DOCUMENTAL (EVIDENCIA NO FISCAL Y MIXTA) ──
-            $table->json('evidence_documents')->nullable()->comment('Arreglo JSON con rutas a PDFs. Guardados dinámicamente en: private/administration/expense-claims/pdf/{folio_system}/');
+            // ── GESTOR DOCUMENTAL ──
+            $table->json('evidence_documents')->nullable()->comment('Arreglo JSON con rutas a PDFs');
 
             // ── ESTADOS DE REVISIÓN Y PAGO ──
             $table->string('status_review')->index()->comment('Borrador, Pendiente, Validado, Aprobado, Rechazado');
             $table->string('status_payment')->index()->comment('N/A, En espera, Por autorizar, Por pagar, Pagado, No procede');
-
 
             $table->timestamps();
         });

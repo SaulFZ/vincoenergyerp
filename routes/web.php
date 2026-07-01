@@ -1,12 +1,10 @@
 <?php
 /* CONTROLADORES DE RECURSOS Generañ */
+use App\Http\Controllers\Administration\ExpenseClaims\CfdiController;
 use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
 use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
-use App\Http\Controllers\Administration\ExpenseClaims\CfdiController;
-
-
 
 /* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Auth\LoginController;
@@ -130,9 +128,11 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/reimbursements/store', 'store')->name('expense-claims.store');
                 });
 
-                // ── NUEVO: BÚSQUEDA Y CARGA MANUAL DE CFDI (XML) ──
+                // ── BÚSQUEDA Y CARGA MANUAL DE CFDI (XML) ──
                 Route::controller(CfdiController::class)->group(function () {
                     Route::get('/cfdi/search', 'searchByUuid')->name('expense-claims.cfdi.search');
+                    // 👇 AGREGA ESTA LÍNEA 👇
+                    Route::get('/cfdi/autocomplete', 'autocomplete')->name('expense-claims.cfdi.autocomplete');
                     Route::post('/cfdi/upload', 'uploadXml')->name('expense-claims.cfdi.upload');
                 });
 

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Administration\ExpenseClaims\ExpenseClaim;
 use App\Models\Administration\ExpenseClaims\ExpenseClaimLine;
 use App\Models\Administration\ExpenseClaims\ExpenseClaimLog;
+use App\Models\Auth\User;
 use Carbon\Carbon;
 
 class ReimbursementStoreController extends Controller
@@ -16,31 +17,63 @@ class ReimbursementStoreController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'motivo'       => 'required|string|max:255',
-            'centro_costo' => 'required|string',
-            'tipo_gasto'   => 'required|string',
-            'total_amount' => 'required|numeric|min:0.01',
-            'evidencias.*' => 'file|mimes:pdf|max:10240',
-            'lineas'       => 'required|json'
+            'motivo'        => 'required|string|max:255',
+            'centro_costo'  => 'required|string',
+            'tipo_gasto'    => 'required|string',
+            'total_amount'  => 'required|numeric|min:0.01',
+            'evidencias.*'  => 'file|mimes:pdf|max:10240',
+            'lineas'        => 'required|json',
+            'is_deductible' => 'required|boolean'
         ]);
 
         try {
             DB::beginTransaction();
 
-            $datePrefix = Carbon::now()->format('dmy');
-            $todayCount = ExpenseClaim::whereDate('created_at', Carbon::today())->count() + 1;
-            $folioSystem = 'SIS' . $datePrefix . '-' . str_pad($todayCount, 2, '0', STR_PAD_LEFT);
+            $isDraft = $request->input('is_draft') == 'true';
 
-            $statusReview = $request->input('is_draft') == 'true' ? 'Borrador' : 'Pendiente';
-            $statusPayment = $statusReview === 'Borrador' ? 'N/A' : 'En espera';
+            // Determinar Identificadores de Usuarios
+            $creatorId = Auth::id();
+            $beneficiaryId = $request->beneficiary_id ?? $creatorId;
+            $beneficiary = User::find($beneficiaryId);
 
+            // ── LÓGICA DE FOLIOS (FICTICIOS VS REALES) ──
+            if ($isDraft) {
+                // Borrador: Folio temporal que no quema los correlativos
+                $folioSystem = 'TMP-' . strtoupper(substr(uniqid(), -6));
+                $folioUser = 'TMP-USR';
+            } else {
+                // 1. Folio del Sistema (VES-01, VES-02...)
+                $lastSys = ExpenseClaim::where('folio_system', 'like', 'VES-%')
+                                        ->orderByRaw('CAST(SUBSTRING(folio_system, 5) AS UNSIGNED) DESC')
+                                        ->first();
+                $sysNum = $lastSys ? (int) str_replace('VES-', '', $lastSys->folio_system) + 1 : 1;
+                $folioSystem = 'VES-' . str_pad($sysNum, 2, '0', STR_PAD_LEFT);
+
+                // 2. Folio del Usuario (Iniciales)
+                $words = explode(' ', trim($beneficiary->name));
+                $initials = '';
+                foreach ($words as $w) { $initials .= strtoupper(substr($w, 0, 1)); }
+
+                $lastUser = ExpenseClaim::where('user_id', $beneficiaryId)
+                                        ->where('folio_user', 'like', $initials . '-%')
+                                        ->orderByRaw('CAST(SUBSTRING(folio_user, LENGTH("'.$initials.'") + 2) AS UNSIGNED) DESC')
+                                        ->first();
+                $userNum = $lastUser ? (int) str_replace($initials . '-', '', $lastUser->folio_user) + 1 : 1;
+                $folioUser = $initials . '-' . str_pad($userNum, 2, '0', STR_PAD_LEFT);
+            }
+
+            $statusReview = $isDraft ? 'Borrador' : 'Pendiente';
+            $statusPayment = $isDraft ? 'N/A' : 'En espera';
+
+            // Guardado del Reembolso
             $claim = ExpenseClaim::create([
                 'folio_system'   => $folioSystem,
-                'folio_user'     => 'SFP-006',
+                'folio_user'     => $folioUser,
                 'claim_date'     => Carbon::now()->toDateString(),
                 'category'       => $request->tipo_gasto,
-                'user_id'        => $request->beneficiary_id ?? Auth::id(),
-                'created_by_id'  => Auth::id(),
+                'is_deductible'  => $request->boolean('is_deductible'),
+                'user_id'        => $beneficiaryId, // Quien recibe el dinero
+                'created_by_id'  => $creatorId,     // Quien llenó el formulario
                 'area'           => $request->depto,
                 'cost_center'    => $request->centro_costo,
                 'emission_place' => $request->lugar_emision ?? 'VHSA, TAB.',
@@ -54,6 +87,7 @@ class ReimbursementStoreController extends Controller
                 'evidence_documents' => []
             ]);
 
+            // Guardado de PDFs
             $rutasPdf = [];
             if ($request->hasFile('evidencias')) {
                 $carpetaDestino = "private/administration/expense-claims/pdf/{$folioSystem}";
@@ -63,6 +97,7 @@ class ReimbursementStoreController extends Controller
                 $claim->update(['evidence_documents' => $rutasPdf]);
             }
 
+            // Guardado de Líneas (Matriz)
             $lineas = json_decode($request->input('lineas'), true);
             foreach ($lineas as $linea) {
                 ExpenseClaimLine::create([
@@ -82,7 +117,7 @@ class ReimbursementStoreController extends Controller
 
             ExpenseClaimLog::create([
                 'expense_claim_id' => $claim->id,
-                'user_id'          => Auth::id(),
+                'user_id'          => $creatorId,
                 'action'           => 'Creación',
                 'new_status'       => $statusReview,
                 'comments'         => 'Reembolso generado desde el portal web.'
