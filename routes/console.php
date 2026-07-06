@@ -7,16 +7,16 @@ use App\Jobs\Administration\ExpenseClaims\RequestFiscalDownloadJob;
 use App\Jobs\Administration\ExpenseClaims\VerifyFiscalDownloadJob;
 use Carbon\Carbon;
 
-// ── 1. PROCESO DE MEDIANOCHE: VENTANA MÓVIL DE 1 SEMANA (7 DÍAS) ──
+// ── 1. PROCESO DIARIO: SOLO EL DÍA ANTERIOR (SIN TRASLAPES) ──
 Schedule::call(function () {
-    if (SatRequest::where('status', 'pending')->exists()) {
+    // Evitar accionar si hay peticiones pendientes masivas
+    if (SatRequest::where('status', 'pending')->count() > 3) {
         return;
     }
 
-    // Forzamos la zona horaria de México para evitar que Dokploy mande hora de Londres (UTC)
+    // Forzamos la zona horaria para precisión exacta
     $hoy = Carbon::now('America/Mexico_City');
-    $ayer = $hoy->copy()->subDay(); // Ayer
-    $haceUnaSemana = $hoy->copy()->subDays(7); // Hace 7 días
+    $ayer = $hoy->copy()->subDay(); // Solo tomamos ayer
 
     $fechaRegistro = $hoy->format('Y-m-d');
 
@@ -36,21 +36,20 @@ Schedule::call(function () {
         if ($node) {
             RequestFiscalDownloadJob::dispatch(
                 $node->g_id,
-                $haceUnaSemana->format('Y-m-d') . 'T00:00:00',
-                // EL TRUCO ESTÁ AQUÍ: Pedimos hasta las 23:59:59 de AYER. 100% en el pasado.
-                $ayer->format('Y-m-d') . 'T23:59:59',
+                $ayer->format('Y-m-d') . 'T00:00:00', // EXACTAMENTE desde las 00:00 de ayer
+                $ayer->format('Y-m-d') . 'T23:59:59', // HASTA las 23:59 de ayer (0 traslapes)
                 $satRequest->id
             );
         }
     }
-})->dailyAt('00:00');
+})->dailyAt('01:30'); // Lo movemos a la 1:30 AM para asegurar que los servidores del SAT ya cerraron el día previo
 
 // ── 2. PROCESO MENSUAL: BARRIDO COMPLETO DEL MES ANTERIOR ──
-// Corre el día 3 de cada mes para atrapar cualquier rezago o cancelación extrema
+// Corre el día 3 de cada mes para atrapar facturas desfasadas
 Schedule::call(function () {
     $mesAnteriorInicio = Carbon::now()->subMonth()->startOfMonth();
-    $mesAnteriorFin      = Carbon::now()->subMonth()->endOfMonth();
-    $fechaRegistro       = Carbon::now()->format('Y-m-d');
+    $mesAnteriorFin    = Carbon::now()->subMonth()->endOfMonth();
+    $fechaRegistro     = Carbon::now()->format('Y-m-d');
 
     $satRequest = SatRequest::create([
         'request_date' => $fechaRegistro,
@@ -64,25 +63,25 @@ Schedule::call(function () {
         RequestFiscalDownloadJob::dispatch(
             $node->g_id,
             $mesAnteriorInicio->format('Y-m-d') . 'T00:00:00',
-            // El fin de mes anterior siempre está en el pasado, el 23:59:59 es seguro aquí
             $mesAnteriorFin->format('Y-m-d') . 'T23:59:59',
             $satRequest->id
         );
     }
-})->monthlyOn(3, '01:00');
+})->monthlyOn(3, '02:00');
 
 
-// ── 3. PROCESO CONTINUO: VERIFICADOR CADA 30 MINUTOS ──
+// ── 3. PROCESO CONTINUO: VERIFICADOR MULTI-TICKET (Cada 30 min) ──
 Schedule::call(function () {
-    $pendingDownload = SatRequest::where('status', 'pending')
+    // Extraemos TODOS los pendientes (no solo el ->first) para evitar cuellos de botella
+    $pendingDownloads = SatRequest::where('status', 'pending')
         ->whereNotNull('ticket_id')
         ->orderBy('created_at', 'asc')
-        ->first();
+        ->get();
 
-    if ($pendingDownload) {
+    foreach ($pendingDownloads as $pending) {
         VerifyFiscalDownloadJob::dispatch(
-            $pendingDownload->ticket_id,
-            $pendingDownload->id
+            $pending->ticket_id,
+            $pending->id
         );
     }
 })->everyThirtyMinutes();
