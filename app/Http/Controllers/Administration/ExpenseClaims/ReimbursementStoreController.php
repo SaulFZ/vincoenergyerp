@@ -21,7 +21,6 @@ class ReimbursementStoreController extends Controller
             'centro_costo'  => 'required|string',
             'tipo_gasto'    => 'required|string',
             'total_amount'  => 'required|numeric|min:0.01',
-            'evidencias.*'  => 'file|mimes:pdf|max:10240',
             'lineas'        => 'required|json',
             'is_deductible' => 'required|boolean'
         ]);
@@ -30,34 +29,23 @@ class ReimbursementStoreController extends Controller
             DB::beginTransaction();
 
             $isDraft = $request->input('is_draft') == 'true';
-
-            // Determinar Identificadores de Usuarios
             $creatorId = Auth::id();
             $beneficiaryId = $request->beneficiary_id ?? $creatorId;
             $beneficiary = User::find($beneficiaryId);
 
-            // ── LÓGICA DE FOLIOS (FICTICIOS VS REALES) ──
             if ($isDraft) {
-                // Borrador: Folio temporal que no quema los correlativos
                 $folioSystem = 'TMP-' . strtoupper(substr(uniqid(), -6));
                 $folioUser = 'TMP-USR';
             } else {
-                // 1. Folio del Sistema (VES-01, VES-02...)
-                $lastSys = ExpenseClaim::where('folio_system', 'like', 'VES-%')
-                                        ->orderByRaw('CAST(SUBSTRING(folio_system, 5) AS UNSIGNED) DESC')
-                                        ->first();
+                $lastSys = ExpenseClaim::where('folio_system', 'like', 'VES-%')->orderByRaw('CAST(SUBSTRING(folio_system, 5) AS UNSIGNED) DESC')->first();
                 $sysNum = $lastSys ? (int) str_replace('VES-', '', $lastSys->folio_system) + 1 : 1;
                 $folioSystem = 'VES-' . str_pad($sysNum, 2, '0', STR_PAD_LEFT);
 
-                // 2. Folio del Usuario (Iniciales)
                 $words = explode(' ', trim($beneficiary->name));
                 $initials = '';
                 foreach ($words as $w) { $initials .= strtoupper(substr($w, 0, 1)); }
 
-                $lastUser = ExpenseClaim::where('user_id', $beneficiaryId)
-                                        ->where('folio_user', 'like', $initials . '-%')
-                                        ->orderByRaw('CAST(SUBSTRING(folio_user, LENGTH("'.$initials.'") + 2) AS UNSIGNED) DESC')
-                                        ->first();
+                $lastUser = ExpenseClaim::where('user_id', $beneficiaryId)->where('folio_user', 'like', $initials . '-%')->orderByRaw('CAST(SUBSTRING(folio_user, LENGTH("'.$initials.'") + 2) AS UNSIGNED) DESC')->first();
                 $userNum = $lastUser ? (int) str_replace($initials . '-', '', $lastUser->folio_user) + 1 : 1;
                 $folioUser = $initials . '-' . str_pad($userNum, 2, '0', STR_PAD_LEFT);
             }
@@ -65,15 +53,14 @@ class ReimbursementStoreController extends Controller
             $statusReview = $isDraft ? 'Borrador' : 'Pendiente';
             $statusPayment = $isDraft ? 'N/A' : 'En espera';
 
-            // Guardado del Reembolso
             $claim = ExpenseClaim::create([
                 'folio_system'   => $folioSystem,
                 'folio_user'     => $folioUser,
                 'claim_date'     => Carbon::now()->toDateString(),
                 'category'       => $request->tipo_gasto,
                 'is_deductible'  => $request->boolean('is_deductible'),
-                'user_id'        => $beneficiaryId, // Quien recibe el dinero
-                'created_by_id'  => $creatorId,     // Quien llenó el formulario
+                'user_id'        => $beneficiaryId,
+                'created_by_id'  => $creatorId,
                 'area'           => $request->depto,
                 'cost_center'    => $request->centro_costo,
                 'emission_place' => $request->lugar_emision ?? 'VHSA, TAB.',
@@ -97,11 +84,12 @@ class ReimbursementStoreController extends Controller
                 $claim->update(['evidence_documents' => $rutasPdf]);
             }
 
-            // Guardado de Líneas (Matriz)
+            // Guardado de Líneas (AQUÍ CORREGIMOS EL CFDI_ID)
             $lineas = json_decode($request->input('lineas'), true);
             foreach ($lineas as $linea) {
                 ExpenseClaimLine::create([
                     'expense_claim_id' => $claim->id,
+                    'expense_cfdi_id'  => !empty($linea['cfdi_id']) ? $linea['cfdi_id'] : null, // Se vincula al XML validado
                     'concept_group'    => $linea['categoria'],
                     'expense_date'     => Carbon::createFromFormat('d/m/Y', $linea['fecha'])->toDateString(),
                     'document_number'  => $linea['folio'],
@@ -124,8 +112,96 @@ class ReimbursementStoreController extends Controller
             ]);
 
             DB::commit();
-
             return response()->json(['success' => true, 'message' => 'El reembolso fue procesado.', 'folio' => $folioSystem]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // ── NUEVO: EDICIÓN (Borradores y Reenvíos de Rechazados) ──
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'motivo'        => 'required|string|max:255',
+            'total_amount'  => 'required|numeric|min:0.01',
+            'lineas'        => 'required|json'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $claim = ExpenseClaim::findOrFail($id);
+            $isDraft = $request->input('is_draft') == 'true';
+            $creatorId = Auth::id();
+
+            $oldStatus = $claim->status_review;
+            $newStatus = $isDraft ? 'Borrador' : 'Pendiente';
+            $newPayment = $isDraft ? 'N/A' : 'En espera';
+
+            // Si es un borrador que por fin se enviará a revisión, asignamos los folios reales
+            if ($oldStatus === 'Borrador' && !$isDraft) {
+                $beneficiary = User::find($claim->user_id);
+                $lastSys = ExpenseClaim::where('folio_system', 'like', 'VES-%')->orderByRaw('CAST(SUBSTRING(folio_system, 5) AS UNSIGNED) DESC')->first();
+                $sysNum = $lastSys ? (int) str_replace('VES-', '', $lastSys->folio_system) + 1 : 1;
+                $claim->folio_system = 'VES-' . str_pad($sysNum, 2, '0', STR_PAD_LEFT);
+
+                $words = explode(' ', trim($beneficiary->name));
+                $initials = '';
+                foreach ($words as $w) { $initials .= strtoupper(substr($w, 0, 1)); }
+
+                $lastUser = ExpenseClaim::where('user_id', $claim->user_id)->where('folio_user', 'like', $initials . '-%')->orderByRaw('CAST(SUBSTRING(folio_user, LENGTH("'.$initials.'") + 2) AS UNSIGNED) DESC')->first();
+                $userNum = $lastUser ? (int) str_replace($initials . '-', '', $lastUser->folio_user) + 1 : 1;
+                $claim->folio_user = $initials . '-' . str_pad($userNum, 2, '0', STR_PAD_LEFT);
+            }
+
+            $claim->update([
+                'category'       => $request->tipo_gasto,
+                'is_deductible'  => $request->boolean('is_deductible'),
+                'cost_center'    => $request->centro_costo,
+                'emission_place' => $request->lugar_emision ?? 'VHSA, TAB.',
+                'motive'         => $request->motivo,
+                'total_subtotal' => $request->total_subtotal,
+                'total_iva'      => $request->total_iva,
+                'total_ish'      => $request->total_ish,
+                'total_amount'   => $request->total_amount,
+                'status_review'  => $newStatus,
+                'status_payment' => $newPayment,
+            ]);
+
+            // Borramos las líneas viejas y creamos las nuevas (Arquitectura más segura para matrices dinámicas)
+            ExpenseClaimLine::where('expense_claim_id', $claim->id)->delete();
+
+            $lineas = json_decode($request->input('lineas'), true);
+            foreach ($lineas as $linea) {
+                ExpenseClaimLine::create([
+                    'expense_claim_id' => $claim->id,
+                    'expense_cfdi_id'  => !empty($linea['cfdi_id']) ? $linea['cfdi_id'] : null,
+                    'concept_group'    => $linea['categoria'],
+                    'expense_date'     => Carbon::createFromFormat('d/m/Y', $linea['fecha'])->toDateString(),
+                    'document_number'  => $linea['folio'],
+                    'description'      => $linea['descripcion'],
+                    'amount_fiscal'    => $linea['monto_fiscal'] ?? 0,
+                    'amount_simple'    => $linea['monto_simple'] ?? 0,
+                    'amount_none'      => $linea['monto_sin'] ?? 0,
+                    'tax_ish'          => $linea['ish'] ?? 0,
+                    'tax_iva'          => $linea['iva'] ?? 0,
+                    'line_total'       => $linea['total_linea'] ?? 0,
+                ]);
+            }
+
+            ExpenseClaimLog::create([
+                'expense_claim_id' => $claim->id,
+                'user_id'          => $creatorId,
+                'action'           => 'Edición',
+                'previous_status'  => $oldStatus,
+                'new_status'       => $newStatus,
+                'comments'         => $oldStatus === 'Rechazado' ? 'El usuario corrigió y reenvió la solicitud a revisión.' : 'Se guardó la edición del documento.'
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'El reembolso fue actualizado con éxito.', 'folio' => $claim->folio_system]);
 
         } catch (\Exception $e) {
             DB::rollBack();

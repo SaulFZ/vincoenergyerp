@@ -2,7 +2,7 @@
 
 namespace App\Models\Administration\ExpenseClaims;
 
-use App\Models\User;
+use App\Models\Auth\User; // <-- RUTA CORREGIDA
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

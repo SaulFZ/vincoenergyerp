@@ -276,6 +276,22 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .sat-dropdown-item span { display: block; color: #cbd5e1; font-size: 0.75rem; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sat-dropdown-empty { padding: 1rem; text-align: center; color: #94a3b8; font-size: 0.8rem; }
 
+/* ── NUEVO: ALERTA DE RECHAZO ROJA ── */
+.rejection-alert {
+    background-color: #fee2e2;
+    border-left: 4px solid #ef4444;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+.rejection-alert i { font-size: 1.8rem; color: #ef4444; margin-top: -2px; }
+.rejection-alert-content { flex: 1; }
+.rejection-alert-title { font-weight: 700; color: #991b1b; font-size: 0.95rem; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.rejection-alert-text { font-size: 0.85rem; color: #7f1d1d; line-height: 1.4; }
+
 /* ── FORMULARIO DE CABECERA Y DELEGACIÓN ── */
 .form-header-card { background: var(--surface); border: 1px solid #e2e8f0; border-radius: .75rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0, 0, 0, .03); display: flex; flex-direction: column; position: relative; z-index: 20; }
 .fh-info-strip { background: var(--surface-alt); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem; border-bottom: 1px solid #e2e8f0; border-radius: .75rem .75rem 0 0; }

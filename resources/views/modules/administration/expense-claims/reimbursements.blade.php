@@ -60,7 +60,6 @@
                         <button class="filter-tab" data-filter="Aprobado">Aprobado</button>
                         <button class="filter-tab" data-filter="Rechazado">Rechazado</button>
                     </div>
-                    {{-- ── BOTÓN MOVIDO AQUÍ ── --}}
                     <button class="btn btn-primary" style="padding: 0.45rem 1.2rem; font-size: 0.8rem;" onclick="openModalForCreate()" aria-label="Crear un nuevo reembolso">
                         <i class="bx bx-plus-circle"></i> Nuevo Reembolso
                     </button>
@@ -130,6 +129,15 @@
 
             <div class="modal-body" id="modal-body-scroll">
 
+                {{-- NUEVO: PANEL DE ALERTA DE RECHAZO --}}
+                <div id="rejection-container" class="rejection-alert hidden">
+                    <i class="bx bxs-error-circle"></i>
+                    <div class="rejection-alert-content">
+                        <div class="rejection-alert-title">Motivo de Rechazo</div>
+                        <div class="rejection-alert-text" id="rejection-text"></div>
+                    </div>
+                </div>
+
                 {{-- CABECERA INFORMATIVA DEL REEMBOLSO --}}
                 <div class="form-header-card">
                     <div class="fh-info-strip">
@@ -183,6 +191,21 @@
                                 </div>
                             </div>
 
+                            {{-- NUEVO: TOGGLE DE GASTO DEDUCIBLE COMO PÍLDORAS SI/NO --}}
+                            <div>
+                                <label class="input-label">¿Es Gasto Deducible?</label>
+                                <div class="radio-pill-group" style="gap: 0.25rem;">
+                                    <label class="radio-pill-label">
+                                        <input type="radio" name="is_deductible" value="1" class="modal-focusable" checked>
+                                        <i class="bx bx-check"></i> Sí
+                                    </label>
+                                    <label class="radio-pill-label">
+                                        <input type="radio" name="is_deductible" value="0" class="modal-focusable">
+                                        <i class="bx bx-x"></i> No
+                                    </label>
+                                </div>
+                            </div>
+
                             {{-- TOGGLE DE CAPTURA DELEGADA --}}
                             <div class="delegation-wrapper" id="delegation-container">
                                 <div class="delegation-toggle-wrap">
@@ -192,15 +215,6 @@
                                         <span class="slider round"></span>
                                     </label>
                                     <span class="delegation-text">Capturar Otro Beneficiario</span>
-                                </div>
-                            </div>
-                            <div class="delegation-wrapper" id="deductible-container" style="margin-left: 1rem;">
-                                <div class="delegation-toggle-wrap">
-                                    <label class="switch">
-                                        <input type="checkbox" id="toggle-deductible">
-                                        <span class="slider round"></span>
-                                    </label>
-                                    <span class="delegation-text">Es Gasto Deducible</span>
                                 </div>
                             </div>
                         </div>
@@ -364,29 +378,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr class="data-row">
-                                    <td>
-                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
-                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
-                                                data-fp></div>
-                                    </td>
-                                    <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
-                                    <td class="cell-row-total">-</td>
-                                    <td class="text-center"><button type="button" class="btn-remove-row"
-                                            onclick="removeRow(this)" title="Eliminar"><i
-                                                class="bx bx-trash"></i></button></td>
-                                </tr>
                             </tbody>
 
                             {{-- SECCIÓN: RESTAURANTES --}}
@@ -402,29 +393,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr class="data-row">
-                                    <td>
-                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
-                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
-                                                data-fp></div>
-                                    </td>
-                                    <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
-                                    <td class="cell-row-total">-</td>
-                                    <td class="text-center"><button type="button" class="btn-remove-row"
-                                            onclick="removeRow(this)" title="Eliminar"><i
-                                                class="bx bx-trash"></i></button></td>
-                                </tr>
                             </tbody>
 
                             {{-- SECCIÓN: COMBUSTIBLE --}}
@@ -439,29 +407,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr class="data-row">
-                                    <td>
-                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
-                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
-                                                data-fp></div>
-                                    </td>
-                                    <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
-                                    <td class="cell-row-total">-</td>
-                                    <td class="text-center"><button type="button" class="btn-remove-row"
-                                            onclick="removeRow(this)" title="Eliminar"><i
-                                                class="bx bx-trash"></i></button></td>
-                                </tr>
                             </tbody>
 
                             {{-- SECCIÓN: OTROS --}}
@@ -474,29 +419,6 @@
                                                 title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
-                                </tr>
-                                <tr class="data-row">
-                                    <td>
-                                        <div class="date-wrap"><i class="bx bx-calendar"></i><input type="text"
-                                                class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA"
-                                                data-fp></div>
-                                    </td>
-                                    <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-sub modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-ish modal-focusable" placeholder="0.00"></td>
-                                    <td><input type="number" oninput="calcTotal()"
-                                            class="cell-input num c-iva modal-focusable" placeholder="0.00"></td>
-                                    <td class="cell-row-total">-</td>
-                                    <td class="text-center"><button type="button" class="btn-remove-row"
-                                            onclick="removeRow(this)" title="Eliminar"><i
-                                                class="bx bx-trash"></i></button></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -586,7 +508,6 @@
                     </button>
                 </div>
             </div>
-
         </div>
     </div>
 @endsection
@@ -608,8 +529,28 @@
             rfc: "{{ Auth::user()->employee->rfc ?? 'S/N' }}"
         };
 
-        // Asignación única del RFC de la empresa
+        let currentActiveClaimId = null;
+        let isEditMode = false;
+
         document.getElementById('company-rfc').textContent = rfcEmpresa;
+
+        /* ── ALERTA CENTRALIZADA NORMAL (SWEETALERT2) ── */
+        function showAlert(msg, type = 'success') {
+            const titles = {
+                'success': '¡Operación Exitosa!',
+                'error': 'Error de Validación',
+                'warning': 'Atención Requerida',
+                'info': 'Información'
+            };
+
+            Swal.fire({
+                title: `<span style="font-family:'Poppins', sans-serif;">${titles[type]}</span>`,
+                html: `<span style="font-family:'Poppins', sans-serif; font-size:14px; color:#64748b;">${msg}</span>`,
+                icon: type,
+                confirmButtonColor: 'var(--teal-dark)',
+                confirmButtonText: `<span style="font-family:'Poppins', sans-serif; font-weight:600;">Entendido</span>`
+            });
+        }
 
         /* ── NAVEGACIÓN Y ACCESIBILIDAD ── */
         document.getElementById('reimbursement-modal').addEventListener('keydown', function(e) {
@@ -623,7 +564,7 @@
             }
         });
 
-        /* ── CONTROL DE DELEGACIÓN Y AUTOCOMPLETADO ── */
+        /* ── CONTROL DE DELEGACIÓN ── */
         const modalNombre = document.getElementById('modal-nombre');
         const modalDepto = document.getElementById('modal-depto');
         const beneficiaryId = document.getElementById('modal-beneficiary-id');
@@ -634,10 +575,13 @@
             const isDelegated = document.getElementById('toggle-delegation').checked;
 
             if (isDelegated) {
-                modalNombre.removeAttribute('readonly');
-                modalNombre.value = '';
+                // Solo si el campo no está bloqueado por el sistema
+                if(!document.getElementById('toggle-delegation').disabled) {
+                    modalNombre.removeAttribute('readonly');
+                    modalNombre.value = ''; // Se limpia para que busque uno nuevo
+                    modalNombre.focus();
+                }
                 modalNombre.placeholder = 'Buscar empleado por nombre...';
-                modalNombre.focus();
                 modalNombre.classList.add('reimburse-input-active-search');
                 iconSolicitante.className = 'bx bx-search field-icon';
                 iconSolicitante.style.color = 'var(--teal-dark)';
@@ -654,24 +598,17 @@
         }
 
         modalNombre.addEventListener('input', function() {
-            if (modalNombre.hasAttribute('readonly')) return;
-
+            if (modalNombre.hasAttribute('readonly') || modalNombre.disabled) return;
             const query = this.value.toLowerCase();
             dropdown.innerHTML = '';
-
-            if (query.length < 2) {
-                dropdown.classList.add('hidden');
-                return;
-            }
+            if (query.length < 2) { dropdown.classList.add('hidden'); return; }
 
             const results = companyEmployees.filter(emp => emp.nombre.toLowerCase().includes(query));
-
             if (results.length > 0) {
                 results.forEach(emp => {
                     const item = document.createElement('div');
                     item.className = 'reimburse-dropdown-item';
-                    item.innerHTML =
-                        `<strong>${emp.nombre}</strong><small style="color:#64748b; font-size:11px;">${emp.depto}</small>`;
+                    item.innerHTML = `<strong>${emp.nombre}</strong><small style="color:#64748b; font-size:11px;">${emp.depto}</small>`;
                     item.onclick = () => selectEmployee(emp);
                     dropdown.appendChild(item);
                 });
@@ -687,20 +624,15 @@
             modalDepto.value = emp.depto;
             beneficiaryId.value = emp.id;
             dropdown.classList.add('hidden');
-            showToast(`Beneficiario actualizado a: ${emp.nombre}`, 'success');
+            showAlert(`El beneficiario del reembolso ha sido actualizado a: <strong>${emp.nombre}</strong>`, 'info');
         }
 
         document.addEventListener('click', function(e) {
-            if (!modalNombre.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
-            }
+            if (!modalNombre.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden');
         });
 
         /* ── CONTROL DE PESTAÑAS DEL PANEL SAT ── */
-        function toggleSatPanel() {
-            document.getElementById('sat-panel').classList.toggle('hidden');
-        }
-
+        function toggleSatPanel() { document.getElementById('sat-panel').classList.toggle('hidden'); }
         document.querySelectorAll('.sat-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.sat-tab').forEach(t => t.classList.remove('active'));
@@ -710,70 +642,17 @@
             });
         });
 
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 4500,
-            timerProgressBar: true,
-            didOpen: t => {
-                t.addEventListener('mouseenter', Swal.stopTimer);
-                t.addEventListener('mouseleave', Swal.resumeTimer);
-            }
-        });
-        const showToast = (msg, type = 'success') => Toast.fire({
-            icon: type,
-            title: `<span style="font-family:'Poppins', sans-serif; font-size:14px;">${msg}</span>`
-        });
-
-        function generateFolio(id) {
-            const today = new Date();
-            const dd = String(today.getDate()).padStart(2, '0');
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            return `SIS${dd}${mm}-${String(id).padStart(2, '0')}`;
-        }
-
-        let currentId = {{ $reembolsos->max('id') ?? 0 }} + 1;
-
-        let requests = {!! json_encode(
-            $reembolsos->map(function ($req) {
-                return [
-                    'id' => $req->id,
-                    'folioP' => $req->folio_system,
-                    'folioU' => $req->folio_user ?? 'N/A',
-                    'fecha' => \Carbon\Carbon::parse($req->claim_date)->format('d/m/Y'),
-                    'nombre' => $req->beneficiary ? $req->beneficiary->name : 'Usuario Desconocido',
-                    'motivo' => $req->motive,
-                    'depto' => $req->area ?? 'Sin Asignar',
-                    'amount' => (float) $req->total_amount,
-                    'status' => $req->status_review,
-                    'pago' => $req->status_payment,
-                ];
-            }),
-        ) !!};
-
+        /* ── VARIABLES TABLA MAESTRA ── */
+        let requests = {!! json_encode($requestsData) !!};
         let currentEvaluateId = null;
 
-        const fmt = n => new Intl.NumberFormat('es-MX', {
-            style: 'currency',
-            currency: 'MXN'
-        }).format(n);
-
-        document.getElementById('modal-fecha-hoy').textContent = new Date().toLocaleDateString('es-MX', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        const fmt = n => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
+        document.getElementById('modal-fecha-hoy').textContent = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
         let activeFilter = 'all';
         let searchQuery = '';
 
-        document.getElementById('table-search').addEventListener('input', function() {
-            searchQuery = this.value.toLowerCase().trim();
-            renderDashboard();
-        });
-
+        document.getElementById('table-search').addEventListener('input', function() { searchQuery = this.value.toLowerCase().trim(); renderDashboard(); });
         document.querySelectorAll('.filter-tab').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
@@ -789,28 +668,13 @@
             const tableCount = document.getElementById('table-count');
             list.innerHTML = '';
 
-            let totalAcc = 0,
-                pendCount = 0,
-                pendAmt = 0,
-                appCount = 0,
-                appAmt = 0,
-                rejCount = 0,
-                rejAmt = 0;
+            let totalAcc = 0, pendCount = 0, pendAmt = 0, appCount = 0, appAmt = 0, rejCount = 0, rejAmt = 0;
 
             requests.forEach(req => {
                 if (req.status !== 'Borrador') totalAcc += req.amount;
-                if (req.status === 'Pendiente' || req.status === 'Validado') {
-                    pendCount++;
-                    pendAmt += req.amount;
-                }
-                if (req.status === 'Aprobado') {
-                    appCount++;
-                    appAmt += req.amount;
-                }
-                if (req.status === 'Rechazado') {
-                    rejCount++;
-                    rejAmt += req.amount;
-                }
+                if (req.status === 'Pendiente' || req.status === 'Validado') { pendCount++; pendAmt += req.amount; }
+                if (req.status === 'Aprobado') { appCount++; appAmt += req.amount; }
+                if (req.status === 'Rechazado') { rejCount++; rejAmt += req.amount; }
             });
 
             document.getElementById('metric-total-val').textContent = fmt(totalAcc);
@@ -823,52 +687,33 @@
 
             let filtered = requests.filter(req => {
                 const matchFilter = activeFilter === 'all' || req.status === activeFilter;
-                const matchSearch = !searchQuery || req.motivo.toLowerCase().includes(searchQuery) || req.folioP
-                    .toLowerCase().includes(searchQuery) || req.folioU.toLowerCase().includes(searchQuery) || req
-                    .nombre.toLowerCase().includes(searchQuery);
+                const matchSearch = !searchQuery || req.motivo.toLowerCase().includes(searchQuery) || req.folioP.toLowerCase().includes(searchQuery) || req.folioU.toLowerCase().includes(searchQuery) || req.nombre.toLowerCase().includes(searchQuery);
                 return matchFilter && matchSearch;
             });
 
             tableCount.textContent = `${filtered.length} solicitud${filtered.length !== 1 ? 'es' : ''} registrada(s)`;
-
-            if (filtered.length === 0) {
-                emptyState.classList.remove('hidden');
-                return;
-            }
+            if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
 
             filtered.forEach((req) => {
                 const globalIdx = requests.findIndex(r => r.id === req.id);
-                let badge = '',
-                    badgePago = '';
+                let badge = '', badgePago = '';
 
-                if (req.status === 'Aprobado') badge =
-                    `<span class="status-badge badge-ok"><i class="bx bx-check-circle"></i> Aprobado</span>`;
-                else if (req.status === 'Rechazado') badge =
-                    `<span class="status-badge badge-fail"><i class="bx bx-x-circle"></i> Rechazado</span>`;
-                else if (req.status === 'Validado') badge =
-                    `<span class="status-badge badge-review"><i class="bx bx-list-check"></i> Validado</span>`;
-                else if (req.status === 'Borrador') badge =
-                    `<span class="status-badge badge-draft"><i class="bx bx-edit-alt"></i> Borrador</span>`;
-                else badge =
-                    `<span class="status-badge badge-wait"><i class="bx bx-hourglass"></i> Pendiente</span>`;
+                if (req.status === 'Aprobado') badge = `<span class="status-badge badge-ok"><i class="bx bx-check-circle"></i> Aprobado</span>`;
+                else if (req.status === 'Rechazado') badge = `<span class="status-badge badge-fail"><i class="bx bx-x-circle"></i> Rechazado</span>`;
+                else if (req.status === 'Validado') badge = `<span class="status-badge badge-review"><i class="bx bx-list-check"></i> Validado</span>`;
+                else if (req.status === 'Borrador') badge = `<span class="status-badge badge-draft"><i class="bx bx-edit-alt"></i> Borrador</span>`;
+                else badge = `<span class="status-badge badge-wait"><i class="bx bx-hourglass"></i> Pendiente</span>`;
 
-                if (req.pago === 'Pagado') badgePago =
-                    `<span class="status-badge badge-payment-paid"><i class="bx bx-money"></i> Pagado</span>`;
-                else if (req.pago === 'Por pagar') badgePago =
-                    `<span class="status-badge badge-payment-process"><i class="bx bx-wallet"></i> Por pagar</span>`;
-                else if (req.pago === 'Por autorizar') badgePago =
-                    `<span class="status-badge badge-payment-auth"><i class="bx bx-user-voice"></i> Por autorizar</span>`;
-                else if (req.pago === 'En espera') badgePago =
-                    `<span class="status-badge badge-payment-wait"><i class="bx bx-time-five"></i> En espera</span>`;
-                else if (req.pago === 'No procede') badgePago =
-                    `<span class="status-badge badge-payment-void"><i class="bx bx-block"></i> No procede</span>`;
-                else badgePago =
-                    `<span class="status-badge badge-disabled"><i class="bx bx-minus"></i> ${req.pago || 'N/A'}</span>`;
+                if (req.pago === 'Pagado') badgePago = `<span class="status-badge badge-payment-paid"><i class="bx bx-money"></i> Pagado</span>`;
+                else if (req.pago === 'Por pagar') badgePago = `<span class="status-badge badge-payment-process"><i class="bx bx-wallet"></i> Por pagar</span>`;
+                else if (req.pago === 'Por autorizar') badgePago = `<span class="status-badge badge-payment-auth"><i class="bx bx-user-voice"></i> Por autorizar</span>`;
+                else if (req.pago === 'En espera') badgePago = `<span class="status-badge badge-payment-wait"><i class="bx bx-time-five"></i> En espera</span>`;
+                else if (req.pago === 'No procede') badgePago = `<span class="status-badge badge-payment-void"><i class="bx bx-block"></i> No procede</span>`;
+                else badgePago = `<span class="status-badge badge-disabled"><i class="bx bx-minus"></i> ${req.pago || 'N/A'}</span>`;
 
                 const evaluateBtn = (req.status === 'Pendiente' || req.status === 'Validado') ?
-                    `<button class="btn-icon btn-icon-evaluate" onclick="evaluarSolicitud(${req.id})" title="Gestionar Resolución"><i class="bx bx-check-shield"></i></button>` :
-                    '';
+                    `<button class="btn-icon btn-icon-evaluate" onclick="evaluarSolicitud(${req.id})" title="Gestionar Resolución"><i class="bx bx-check-shield"></i></button>` : '';
 
                 list.innerHTML += `
                 <tr>
@@ -884,7 +729,7 @@
                     <td>${badgePago}</td>
                     <td class="cell-actions">
                         <div class="actions-wrap">
-                            <button class="btn-icon btn-icon-view" onclick="verDetalles(${req.id})" title="Visualizar Documentación"><i class="bx bx-show"></i></button>
+                            <button class="btn-icon btn-icon-view" onclick="verDetalles(${req.id})" title="Ver o Editar"><i class="bx bx-show"></i></button>
                             ${evaluateBtn}
                         </div>
                     </td>
@@ -892,9 +737,11 @@
             });
         }
 
-        function getRowTemplate() {
+        /* ── INYECCIÓN EN HTML DEL TEMPLATE ── */
+        function getRowTemplate(cfdiId = '') {
             return `
             <tr class="data-row">
+                <input type="hidden" class="c-cfdi-id" value="${cfdiId}">
                 <td><div class="date-wrap"><i class="bx bx-calendar"></i><input type="text" class="cell-input date-in modal-focusable" placeholder="DD/MM/AAAA" data-fp></div></td>
                 <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
                 <td><input type="text" class="cell-input modal-focusable" placeholder="—"></td>
@@ -908,15 +755,10 @@
             </tr>`;
         }
 
-        function addRow(tbodyId) {
+        function addRow(tbodyId, cfdiId = '') {
             const tbody = document.getElementById(tbodyId);
-            tbody.insertAdjacentHTML('beforeend', getRowTemplate());
-            flatpickr(tbody.lastElementChild.querySelector('[data-fp]'), {
-                locale: "es",
-                dateFormat: "d/m/Y",
-                allowInput: true,
-                disableMobile: "true"
-            });
+            tbody.insertAdjacentHTML('beforeend', getRowTemplate(cfdiId));
+            flatpickr(tbody.lastElementChild.querySelector('[data-fp]'), { locale: "es", dateFormat: "d/m/Y", allowInput: true, disableMobile: "true" });
         }
 
         function removeRow(btn) {
@@ -925,7 +767,41 @@
                 btn.closest('tr').remove();
                 calcTotal();
             } else {
-                showToast('Se requiere de manera obligatoria al menos una fila de ingreso.', 'warning');
+                showAlert('Se requiere de manera obligatoria mantener al menos una fila de captura en la categoría.', 'warning');
+            }
+        }
+
+        /* ── BLOQUEO / DESBLOQUEO DE FORMULARIO ── */
+        function lockForm() {
+            // Bloqueamos los inputs generales
+            document.querySelectorAll('#reimbursement-modal .modal-focusable, #reimbursement-modal .cell-input').forEach(el => el.setAttribute('disabled', 'true'));
+            document.querySelectorAll('input[name="is_deductible"]').forEach(el => el.disabled = true);
+            document.querySelectorAll('.btn-add-row, .btn-remove-row').forEach(el => el.classList.add('hidden'));
+
+            document.getElementById('evidence-panel').style.pointerEvents = 'none';
+            document.querySelector('.modal-header-actions .btn-secondary').classList.add('hidden');
+
+            // Bloqueamos el Switch y el campo de nombre para que no sean editables en modo Vista
+            document.getElementById('toggle-delegation').disabled = true;
+            document.getElementById('modal-nombre').setAttribute('readonly', 'true');
+            document.getElementById('modal-nombre').disabled = true;
+        }
+
+        function unlockForm() {
+            document.querySelectorAll('#reimbursement-modal .modal-focusable, #reimbursement-modal .cell-input').forEach(el => el.removeAttribute('disabled'));
+            document.querySelectorAll('input[name="is_deductible"]').forEach(el => el.disabled = false);
+            document.querySelectorAll('.btn-add-row, .btn-remove-row').forEach(el => el.classList.remove('hidden'));
+            document.getElementById('evidence-panel').style.pointerEvents = 'auto';
+            document.querySelector('.modal-header-actions .btn-secondary').classList.remove('hidden');
+
+            document.getElementById('toggle-delegation').disabled = false;
+            document.getElementById('modal-nombre').disabled = false;
+
+            // Si el toggle está activado, quitamos el readonly para permitir búsqueda
+            if (document.getElementById('toggle-delegation').checked) {
+                document.getElementById('modal-nombre').removeAttribute('readonly');
+            } else {
+                document.getElementById('modal-nombre').setAttribute('readonly', 'true');
             }
         }
 
@@ -935,98 +811,196 @@
                 for (let i = 1; i < rows.length; i++) rows[i].remove();
             });
             document.querySelectorAll('.cell-input:not([readonly])').forEach(el => el.value = '');
+            document.querySelectorAll('.c-cfdi-id').forEach(el => el.value = '');
+
             document.getElementById('modal-motivo').value = '';
             document.getElementById('modal-centro-costos').value = '';
             document.getElementById('sat-panel').classList.add('hidden');
             document.getElementById('sat-result-container').classList.add('hidden');
-            tempSatData = null;
+            document.getElementById('rejection-container').classList.add('hidden');
+
+            tempSatData = null; currentActiveClaimId = null; isEditMode = false;
 
             const toggleDel = document.getElementById('toggle-delegation');
-            if (toggleDel) {
-                toggleDel.checked = false;
-                handleDelegationToggle();
-            }
+            if (toggleDel) { toggleDel.checked = false; handleDelegationToggle(); }
             document.getElementById('delegation-container').classList.remove('hidden');
 
-            evidenciasFiles = [];
-            renderFileList();
-            actualizarInputFiles();
-            calcTotal();
-            flatpickr(".data-row [data-fp]", {
-                locale: "es",
-                dateFormat: "d/m/Y",
-                allowInput: true,
-                disableMobile: "true"
-            });
+            evidenciasFiles = []; renderFileList(); actualizarInputFiles(); calcTotal();
+            unlockForm();
         }
 
+        /* ── MODOS DEL MODAL ── */
         function openModalForCreate() {
             resetModalForm();
-            document.getElementById('main-modal-title').innerHTML =
-                '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
-
-            document.getElementById('modal-folio-p').innerHTML =
-                '<span class="status-badge badge-draft" style="border:none; padding: 2px 6px;">Asignación Automática</span>';
-            document.getElementById('modal-folio-u').innerHTML =
-                '<span class="status-badge badge-draft" style="border:none; padding: 2px 6px;">Automático</span>';
+            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
+            document.getElementById('modal-folio-p').innerHTML = '<span class="status-badge badge-draft" style="border:none; padding: 2px 6px;">Asignación Automática</span>';
+            document.getElementById('modal-folio-u').innerHTML = '<span class="status-badge badge-draft" style="border:none; padding: 2px 6px;">Automático</span>';
 
             document.querySelector('input[name="tipo_gasto"][value="viaje"]').checked = true;
-            document.getElementById('toggle-deductible').checked = true;
+            document.querySelector('input[name="is_deductible"][value="1"]').checked = true;
+
+            document.getElementById('btn-enviar').innerHTML = '<i class="bx bx-send"></i> Emitir Solicitud a Revisión';
+            document.getElementById('btn-borrador').classList.remove('hidden');
 
             document.getElementById('footer-create').classList.remove('hidden');
             document.getElementById('footer-view').classList.add('hidden');
             document.getElementById('footer-evaluate').classList.add('hidden');
             document.getElementById('reimbursement-modal').classList.remove('hidden');
+
+            ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
+                if (document.getElementById(cat).querySelectorAll('.data-row').length === 0) { addRow(cat); }
+            });
         }
 
-        function verDetalles(id) {
-            const req = requests.find(r => r.id === id);
-            if (!req) return;
-            resetModalForm();
-            document.getElementById('delegation-container').classList.add('hidden');
+        async function fetchAndPopulateClaim(id) {
+            Swal.fire({ title: 'Cargando Documento...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const fetchUrl = `{{ url('administration/expense-claims/reimbursements') }}/${id}`;
+                const response = await fetch(fetchUrl);
+                const res = await response.json();
 
-            document.getElementById('main-modal-title').innerHTML =
-                `<i class="bx bx-search-alt"></i> Inspección del <strong>Folio: ${req.folioP}</strong>`;
-            document.getElementById('modal-folio-p').textContent = req.folioP;
-            document.getElementById('modal-folio-u').textContent = req.folioU;
-            document.getElementById('modal-nombre').value = req.nombre;
-            document.getElementById('modal-depto').value = req.depto;
-            document.getElementById('modal-motivo').value = req.motive || req.motivo;
-            document.getElementById('sum-total').textContent = fmt(req.amount);
+                if (res.success) {
+                    const claim = res.data;
+                    currentActiveClaimId = claim.id;
+
+                    document.getElementById('rejection-container').classList.add('hidden');
+                    if (claim.status_review === 'Rechazado' && claim.logs && claim.logs.length > 0) {
+                        const rejectLog = claim.logs.find(log => log.new_status === 'Rechazado');
+                        if (rejectLog && rejectLog.comments) {
+                            document.getElementById('rejection-text').textContent = rejectLog.comments;
+                            document.getElementById('rejection-container').classList.remove('hidden');
+                        }
+                    }
+
+                    document.getElementById('modal-folio-p').textContent = claim.folio_system;
+                    document.getElementById('modal-folio-u').textContent = claim.folio_user || 'N/A';
+                    document.getElementById('modal-lugar').value = claim.emission_place;
+
+                    // Ajuste estético delegado sin borrar el valor cargado de la BD
+                    if (claim.user_id !== sessionUser.id) {
+                        document.getElementById('toggle-delegation').checked = true;
+                        iconSolicitante.className = 'bx bx-search field-icon';
+                        iconSolicitante.style.color = 'var(--teal-dark)';
+                        modalNombre.classList.add('reimburse-input-active-search');
+                    } else {
+                        document.getElementById('toggle-delegation').checked = false;
+                        iconSolicitante.className = 'bx bx-user field-icon';
+                        iconSolicitante.style.color = '#94a3b8';
+                        modalNombre.classList.remove('reimburse-input-active-search');
+                    }
+
+                    // Asignar los valores inyectados de la consulta
+                    document.getElementById('modal-nombre').value = claim.beneficiary.name;
+                    document.getElementById('modal-depto').value = claim.beneficiary.employee?.area?.name || 'Sin asignar';
+                    document.getElementById('modal-beneficiary-id').value = claim.user_id;
+
+                    document.getElementById('modal-centro-costos').value = claim.cost_center;
+                    document.getElementById('modal-motivo').value = claim.motive;
+                    document.querySelector(`input[name="tipo_gasto"][value="${claim.category}"]`).checked = true;
+                    document.querySelector(`input[name="is_deductible"][value="${claim.is_deductible ? '1' : '0'}"]`).checked = true;
+
+                    ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
+                        document.getElementById(cat).querySelectorAll('.data-row').forEach(r => r.remove());
+                    });
+
+                    claim.lines.forEach(line => {
+                        const cat = line.concept_group;
+                        addRow(cat, line.expense_cfdi_id || '');
+
+                        const targetRow = document.getElementById(cat).lastElementChild;
+                        const inputs = targetRow.querySelectorAll('.cell-input');
+
+                        const dateOnly = line.expense_date.substring(0, 10);
+                        const [y, m, d] = dateOnly.split('-');
+
+                        if (inputs[0]._flatpickr) { inputs[0]._flatpickr.setDate(dateOnly, true, "Y-m-d"); }
+                        else { inputs[0].value = `${d}/${m}/${y}`; }
+
+                        inputs[1].value = line.document_number || '';
+                        inputs[2].value = line.description || '';
+                        inputs[3].value = line.amount_fiscal > 0 ? line.amount_fiscal : '';
+                        inputs[4].value = line.amount_simple > 0 ? line.amount_simple : '';
+                        inputs[5].value = line.amount_none > 0 ? line.amount_none : '';
+                        inputs[6].value = line.tax_ish !== '0.00' ? line.tax_ish : '';
+                        inputs[7].value = line.tax_iva > 0 ? line.tax_iva : '';
+                    });
+
+                    ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
+                        if (document.getElementById(cat).querySelectorAll('.data-row').length === 0) { addRow(cat); }
+                    });
+
+                    calcTotal();
+                    Swal.close();
+                    return claim;
+                }
+            } catch (error) {
+                console.error(error);
+                showAlert('Error del servidor: No se pudo cargar la información.', 'error');
+            }
+        }
+
+        async function verDetalles(id) {
+            resetModalForm();
+            const claim = await fetchAndPopulateClaim(id);
+            if(!claim) return;
+
+            document.getElementById('main-modal-title').innerHTML = `<i class="bx bx-search-alt"></i> Inspección del <strong>Folio: ${claim.folio_system}</strong>`;
+
+            lockForm(); // ── BLOQUEAMOS EDICIÓN EN MODO VISTA ──
 
             document.getElementById('footer-create').classList.add('hidden');
             document.getElementById('footer-view').classList.remove('hidden');
             document.getElementById('footer-evaluate').classList.add('hidden');
+
+            const viewFooter = document.getElementById('footer-view');
+            viewFooter.innerHTML = '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button>';
+
+            // Si es Borrador o fue Rechazado, damos opción de corregir
+            if (claim.status_review === 'Borrador' || claim.status_review === 'Rechazado') {
+                const btnEdit = document.createElement('button');
+                btnEdit.type = 'button';
+                btnEdit.className = 'btn btn-primary';
+                btnEdit.innerHTML = '<i class="bx bx-edit"></i> ' + (claim.status_review === 'Rechazado' ? 'Corregir y Reenviar' : 'Continuar Borrador');
+                btnEdit.onclick = () => habilitarEdicion(claim.status_review);
+                viewFooter.appendChild(btnEdit);
+            }
+
             document.getElementById('reimbursement-modal').classList.remove('hidden');
         }
 
-        function evaluarSolicitud(id) {
-            const req = requests.find(r => r.id === id);
-            if (!req) return;
-            resetModalForm();
-            document.getElementById('delegation-container').classList.add('hidden');
+        function habilitarEdicion(status) {
+            isEditMode = true;
+            unlockForm();
+            document.getElementById('main-modal-title').innerHTML = `<i class="bx bx-edit"></i> Edición del <strong>Folio: ${document.getElementById('modal-folio-p').textContent}</strong>`;
 
-            document.getElementById('main-modal-title').innerHTML =
-                '<i class="bx bx-check-shield"></i> Ejecución de Dictamen Administrativo';
+            document.getElementById('footer-view').classList.add('hidden');
+            document.getElementById('footer-create').classList.remove('hidden');
+
+            const btnEnviar = document.getElementById('btn-enviar');
+            if (status === 'Rechazado') {
+                btnEnviar.innerHTML = '<i class="bx bx-send"></i> Enviar Nuevamente a Revisión';
+                document.getElementById('btn-borrador').classList.add('hidden');
+            } else {
+                btnEnviar.innerHTML = '<i class="bx bx-send"></i> Emitir Solicitud a Revisión';
+                document.getElementById('btn-borrador').classList.remove('hidden');
+            }
+        }
+
+        async function evaluarSolicitud(id) {
+            resetModalForm();
+            const claim = await fetchAndPopulateClaim(id);
+            if(!claim) return;
+
+            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-check-shield"></i> Ejecución de Dictamen Administrativo';
             currentEvaluateId = id;
 
-            document.getElementById('modal-folio-p').textContent = req.folioP;
-            document.getElementById('modal-folio-u').textContent = req.folioU;
-            document.getElementById('modal-nombre').value = req.nombre;
-            document.getElementById('modal-depto').value = req.depto;
-            document.getElementById('modal-motivo').value = req.motive || req.motivo;
-            document.getElementById('sum-total').textContent = fmt(req.amount);
+            lockForm(); // ── EN EVALUACIÓN NADIE EDITA LOS CAMPOS ──
 
             const btnValidate = document.getElementById('btn-eval-validate');
             const btnApprove = document.getElementById('btn-eval-approve');
 
-            if (req.status === 'Pendiente') {
-                btnValidate.classList.remove('hidden');
-                btnApprove.classList.add('hidden');
-            } else if (req.status === 'Validado') {
-                btnValidate.classList.add('hidden');
-                btnApprove.classList.remove('hidden');
-            }
+            if (claim.status_review === 'Pendiente') { btnValidate.classList.remove('hidden'); btnApprove.classList.add('hidden'); }
+            else if (claim.status_review === 'Validado') { btnValidate.classList.add('hidden'); btnApprove.classList.remove('hidden'); }
 
             document.getElementById('footer-create').classList.add('hidden');
             document.getElementById('footer-view').classList.add('hidden');
@@ -1034,45 +1008,63 @@
             document.getElementById('reimbursement-modal').classList.remove('hidden');
         }
 
-        function closeModal() {
-            document.getElementById('reimbursement-modal').classList.add('hidden');
-        }
+        function closeModal() { document.getElementById('reimbursement-modal').classList.add('hidden'); }
 
         function processEvaluation(status) {
             if (!currentEvaluateId) return;
-            let actionText = status === 'Aprobado' ? 'Aprobar Definitivamente' : (status === 'Validado' ?
-                'Dar Visto Bueno a Documentación' : 'Denegar y Rechazar');
+            let actionText = status === 'Aprobado' ? 'Aprobar Definitivamente' : (status === 'Validado' ? 'Dar Visto Bueno a Documentación' : 'Denegar y Rechazar');
             let confirmColor = status === 'Aprobado' ? 'var(--teal-dark)' : (status === 'Validado' ? '#0284c7' : '#ef4444');
 
-            Swal.fire({
-                title: `<span style="font-family:'Poppins', sans-serif;">¿Emisión de Dictamen Final?</span>`,
-                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Desea <strong>${actionText}</strong> este folio?</span>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: confirmColor,
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: `Autorizar Movimiento`,
-                cancelButtonText: `Cancelar Acción`
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    updateStatus(currentEvaluateId, status);
-                    closeModal();
-                    currentEvaluateId = null;
-                }
-            });
+            if (status === 'Rechazado') {
+                Swal.fire({
+                    title: `<span style="font-family:'Poppins', sans-serif;">Motivo de Rechazo</span>`,
+                    html: `<span style="font-family:'Poppins', sans-serif; color:#64748b; font-size: 0.85rem;">Explica por qué no procede esta solicitud. El usuario podrá ver el comentario y corregirlo.</span>`,
+                    input: 'textarea',
+                    inputPlaceholder: 'Ej. Montos incorrectos, falta factura de hotel...',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: confirmColor,
+                    cancelButtonColor: '#94a3b8',
+                    confirmButtonText: `Rechazar Folio`,
+                    cancelButtonText: `Cancelar`,
+                    inputValidator: (value) => { if (!value.trim()) return '¡Es obligatorio justificar el rechazo para auditoría!'; }
+                }).then((result) => {
+                    if (result.isConfirmed) { updateStatus(currentEvaluateId, status, result.value); closeModal(); currentEvaluateId = null; }
+                });
+            } else {
+                Swal.fire({
+                    title: `<span style="font-family:'Poppins', sans-serif;">¿Emisión de Dictamen Final?</span>`,
+                    html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Desea <strong>${actionText}</strong> este folio?</span>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: confirmColor,
+                    cancelButtonColor: '#94a3b8',
+                    confirmButtonText: `Autorizar Movimiento`,
+                    cancelButtonText: `Cancelar Acción`
+                }).then((result) => {
+                    if (result.isConfirmed) { updateStatus(currentEvaluateId, status, null); closeModal(); currentEvaluateId = null; }
+                });
+            }
         }
 
-        function updateStatus(id, status) {
-            const i = requests.findIndex(r => r.id === id);
-            if (i !== -1) {
-                requests[i].status = status;
-                if (status === 'Rechazado') requests[i].pago = 'No procede';
-                else if (status === 'Validado') requests[i].pago = 'Por autorizar';
-                else if (status === 'Aprobado') requests[i].pago = 'Por pagar';
-                renderDashboard();
-                showToast(`El folio fue procesado como ${status.toUpperCase()}.`, status === 'Rechazado' ? 'error' :
-                    'success');
-            }
+        async function updateStatus(id, status, comments) {
+            try {
+                Swal.fire({ title: 'Dictaminando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                let formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('new_status', status);
+                if (comments) formData.append('comments', comments);
+
+                const statusUrl = `{{ url('administration/expense-claims/reimbursements') }}/${id}/status`;
+                const response = await fetch(statusUrl, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire('Completado', data.message, 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else { showAlert(data.message, 'error'); }
+            } catch (error) { showAlert('No se pudo comunicar con el servidor.', 'error'); }
         }
 
         /* ── GESTOR PDF ── */
@@ -1081,174 +1073,88 @@
         const evidenciaInput = document.getElementById('evidence-upload');
         const evidenciaPanel = document.getElementById('evidence-panel');
 
-        evidenciaInput.addEventListener('change', function(e) {
-            procesarArchivosEvidencia(e.target.files);
-            this.value = '';
-        });
-        evidenciaPanel.addEventListener('dragover', e => {
-            e.preventDefault();
-            evidenciaPanel.classList.add('dragover');
-        });
-        evidenciaPanel.addEventListener('dragleave', e => {
-            e.preventDefault();
-            evidenciaPanel.classList.remove('dragover');
-        });
-        evidenciaPanel.addEventListener('drop', e => {
-            e.preventDefault();
-            evidenciaPanel.classList.remove('dragover');
-            if (e.dataTransfer.files.length) procesarArchivosEvidencia(e.dataTransfer.files);
-        });
+        evidenciaInput.addEventListener('change', function(e) { procesarArchivosEvidencia(e.target.files); this.value = ''; });
+        evidenciaPanel.addEventListener('dragover', e => { e.preventDefault(); evidenciaPanel.classList.add('dragover'); });
+        evidenciaPanel.addEventListener('dragleave', e => { e.preventDefault(); evidenciaPanel.classList.remove('dragover'); });
+        evidenciaPanel.addEventListener('drop', e => { e.preventDefault(); evidenciaPanel.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivosEvidencia(e.dataTransfer.files); });
 
         function procesarArchivosEvidencia(files) {
-            let errorSize = false,
-                errorType = false;
+            let errorSize = false, errorType = false;
             Array.from(files).forEach(file => {
-                if (file.type !== 'application/pdf') {
-                    errorType = true;
-                    return;
-                }
-                if (file.size > maxFileSize) {
-                    errorSize = true;
-                    return;
-                }
+                if (file.type !== 'application/pdf') { errorType = true; return; }
+                if (file.size > maxFileSize) { errorSize = true; return; }
                 if (!evidenciasFiles.some(f => f.name === file.name)) evidenciasFiles.push(file);
             });
-            if (errorType) showToast('Restringido a documentos Adobe PDF.', 'warning');
-            if (errorSize) showToast('Uno o más ficheros superan los 10 MB.', 'error');
-            renderFileList();
-            actualizarInputFiles();
+            if (errorType) showAlert('Aviso: Solo se permiten subir documentos en formato PDF.', 'warning');
+            if (errorSize) showAlert('Límite de tamaño: Uno o más archivos superan el máximo permitido de 10 MB.', 'error');
+            renderFileList(); actualizarInputFiles();
         }
 
-        function removeFile(index) {
-            evidenciasFiles.splice(index, 1);
-            renderFileList();
-            actualizarInputFiles();
-        }
+        function removeFile(index) { evidenciasFiles.splice(index, 1); renderFileList(); actualizarInputFiles(); }
+        function actualizarInputFiles() { const dt = new DataTransfer(); evidenciasFiles.forEach(file => dt.items.add(file)); evidenciaInput.files = dt.files; }
+        function formatBytes(bytes, decimals = 2) { if (!+bytes) return '0 Bytes'; const k = 1024, dm = decimals < 0 ? 0 : decimals, sizes = ['Bytes', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`; }
+        function renderFileList() { const listDiv = document.getElementById('evidence-list'); listDiv.innerHTML = evidenciasFiles.length > 0 ? `<div class="file-grid">${evidenciasFiles.map((f, i) => `<div class="file-card"><i class="bx bxs-file-pdf file-icon-lg"></i><div class="file-info"><span class="file-name" title="${f.name}">${f.name}</span><span class="file-size">${formatBytes(f.size)}</span></div><button type="button" class="btn-remove-file" onclick="event.stopPropagation(); removeFile(${i})"><i class="bx bx-x"></i></button></div>`).join('')}</div>` : ''; }
 
-        function actualizarInputFiles() {
-            const dt = new DataTransfer();
-            evidenciasFiles.forEach(file => dt.items.add(file));
-            evidenciaInput.files = dt.files;
-        }
-
-        function formatBytes(bytes, decimals = 2) {
-            if (!+bytes) return '0 Bytes';
-            const k = 1024,
-                dm = decimals < 0 ? 0 : decimals,
-                sizes = ['Bytes', 'KB', 'MB', 'GB'],
-                i = Math.floor(Math.log(bytes) / Math.log(k));
-            return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-        }
-
-        function renderFileList() {
-            const listDiv = document.getElementById('evidence-list');
-            listDiv.innerHTML = evidenciasFiles.length > 0 ?
-                `<div class="file-grid">${evidenciasFiles.map((f, i) => `
-                                <div class="file-card"><i class="bx bxs-file-pdf file-icon-lg"></i><div class="file-info"><span class="file-name" title="${f.name}">${f.name}</span><span class="file-size">${formatBytes(f.size)}</span></div><button type="button" class="btn-remove-file" onclick="event.stopPropagation(); removeFile(${i})"><i class="bx bx-x"></i></button></div>`).join('')}</div>` :
-                '';
-        }
-
-        /* ── INTERACCIÓN LÓGICA DEL SAT (BLINDADA CONTRA AÑOS CORRUPTOS) ── */
+        /* ── INTERACCIÓN SAT & BÚSQUEDA ── */
         let tempSatData = null;
 
         async function buscarFactura() {
             const uuid = document.getElementById('search-uuid').value.trim();
             const btnB = document.getElementById('btn-buscar');
-
-            if (uuid.length !== 36) {
-                showToast('El esquema UUID debe tener exactamente 36 caracteres.', 'warning');
-                return;
-            }
-            btnB.innerHTML = '<span class="spinner"></span> Consultando...';
-            btnB.disabled = true;
+            if (uuid.length !== 36) { showAlert('Revisión requerida: El código UUID ingresado debe contener exactamente 36 caracteres.', 'warning'); return; }
+            btnB.innerHTML = '<span class="spinner"></span> Consultando...'; btnB.disabled = true;
 
             try {
-                const response = await fetch(`{{ route('expense-claims.cfdi.search') }}?uuid=${uuid}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
+                const response = await fetch(`{{ route('expense-claims.cfdi.search') }}?uuid=${uuid}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await response.json();
 
                 if (response.ok && data.success) {
                     const cfdi = data.data;
-
                     let serieFolio = '';
                     if (cfdi.serie) serieFolio += cfdi.serie + '-';
                     if (cfdi.folio) serieFolio += cfdi.folio;
                     if (!serieFolio) serieFolio = cfdi.uuid.substring(0, 8);
 
                     tempSatData = {
-                        fecha_iso: cfdi.issue_date.split(' ')[0], // Almacenamos YYYY-MM-DD para flatpickr
+                        id: cfdi.id,
+                        fecha_iso: cfdi.issue_date.split(' ')[0],
                         folio: serieFolio,
                         desc: cfdi.concept_summary || 'Servicios amparados por UUID',
-                        sub: parseFloat(cfdi.subtotal) || 0,
-                        iva: parseFloat(cfdi.tax_iva) || 0,
+                        sub: parseFloat(cfdi.subtotal) || 0, iva: parseFloat(cfdi.tax_iva) || 0,
                         ish: (parseFloat(cfdi.tax_ish) || 0) - (parseFloat(cfdi.tax_retenciones) || 0)
                     };
 
                     document.getElementById('sat-result-uuid').textContent = cfdi.uuid;
                     document.getElementById('sat-result-container').classList.remove('hidden');
-                    showToast('Comprobante localizado en la bóveda.', 'success');
-                } else {
-                    Swal.fire('Atención', data.message, 'warning');
-                }
-            } catch (error) {
-                Swal.fire('Error', 'Problema de conexión con la Bóveda Fiscal.', 'error');
-            } finally {
-                btnB.innerHTML = '<i class="bx bx-search"></i> Buscar';
-                btnB.disabled = false;
-            }
+
+                    showAlert('El comprobante fiscal se ha localizado exitosamente en la bóveda.', 'success');
+                } else { showAlert(data.message, 'warning'); }
+            } catch (error) { showAlert('Falla de Red: Imposible contactar con la bóveda satelital.', 'error'); }
+            finally { btnB.innerHTML = '<i class="bx bx-search"></i> Buscar'; btnB.disabled = false; }
         }
 
         const dropZoneUI = document.getElementById('drop-zone');
         const xmlInput = document.getElementById('xml-input');
         dropZoneUI.addEventListener('click', () => xmlInput.click());
         xmlInput.addEventListener('change', e => leerXML(e.target.files[0]));
-        dropZoneUI.addEventListener('dragover', e => {
-            e.preventDefault();
-            dropZoneUI.classList.add('dragover');
-        });
-        dropZoneUI.addEventListener('dragleave', e => {
-            e.preventDefault();
-            dropZoneUI.classList.remove('dragover');
-        });
-        dropZoneUI.addEventListener('drop', e => {
-            e.preventDefault();
-            dropZoneUI.classList.remove('dragover');
-            if (e.dataTransfer.files.length) leerXML(e.dataTransfer.files[0]);
-        });
+        dropZoneUI.addEventListener('dragover', e => { e.preventDefault(); dropZoneUI.classList.add('dragover'); });
+        dropZoneUI.addEventListener('dragleave', e => { e.preventDefault(); dropZoneUI.classList.remove('dragover'); });
+        dropZoneUI.addEventListener('drop', e => { e.preventDefault(); dropZoneUI.classList.remove('dragover'); if (e.dataTransfer.files.length) leerXML(e.dataTransfer.files[0]); });
 
         async function leerXML(file) {
-            if (!file || file.type !== 'text/xml') {
-                showToast('Provee un archivo .xml válido', 'error');
-                return;
-            }
-            Swal.fire({
-                title: 'Procesando XML...',
-                text: 'Validando ante la Bóveda del Sistema.',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
+            if (!file || file.type !== 'text/xml') { showAlert('Por favor, asegúrese de seleccionar un archivo con extensión .xml válido.', 'error'); return; }
+            Swal.fire({ title: 'Procesando XML...', text: 'Validando ante la Bóveda del Sistema.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             let formData = new FormData();
             formData.append('xml_file', file);
             formData.append('_token', '{{ csrf_token() }}');
 
             try {
-                const response = await fetch('{{ route('expense-claims.cfdi.upload') }}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
+                const response = await fetch('{{ route('expense-claims.cfdi.upload') }}', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    Swal.close();
-                    const cfdi = data.data;
+                    Swal.close(); const cfdi = data.data;
                     document.getElementById('search-uuid').value = cfdi.uuid;
 
                     let serieFolio = '';
@@ -1257,31 +1163,24 @@
                     if (!serieFolio) serieFolio = cfdi.uuid.substring(0, 8);
 
                     tempSatData = {
-                        fecha_iso: cfdi.issue_date.split(' ')[0], // Almacenamos YYYY-MM-DD para flatpickr
-                        folio: serieFolio,
-                        desc: cfdi.concept_summary || 'Gasto importado (XML)',
-                        sub: parseFloat(cfdi.subtotal) || 0,
-                        iva: parseFloat(cfdi.tax_iva) || 0,
+                        id: cfdi.id,
+                        fecha_iso: cfdi.issue_date.split(' ')[0],
+                        folio: serieFolio, desc: cfdi.concept_summary || 'Gasto importado (XML)',
+                        sub: parseFloat(cfdi.subtotal) || 0, iva: parseFloat(cfdi.tax_iva) || 0,
                         ish: (parseFloat(cfdi.tax_ish) || 0) - (parseFloat(cfdi.tax_retenciones) || 0)
                     };
 
                     document.getElementById('sat-result-uuid').textContent = cfdi.uuid;
                     document.getElementById('sat-result-container').classList.remove('hidden');
-                    showToast(data.message, 'success');
-                } else {
-                    Swal.fire('Error de Validación', data.message || 'El XML es inválido o corrupto.', 'error');
-                }
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo comunicar con el servidor.', 'error');
-            }
+
+                    showAlert(data.message, 'success');
+                } else { showAlert(data.message || 'El XML proporcionado presenta inconsistencias fiscales.', 'error'); }
+            } catch (error) { showAlert('No se pudo establecer conexión con el servidor de análisis.', 'error'); }
         }
 
         function agregarFilaDesdeSAT() {
             const cat = document.getElementById('sat-category').value;
-            if (!cat) {
-                showToast('Seleccione la categoría correspondiente.', 'warning');
-                return;
-            }
+            if (!cat) { showAlert('Debe indicar en qué categoría se contabilizará este gasto antes de integrarlo.', 'warning'); return; }
             if (!tempSatData) return;
 
             const tbody = document.getElementById(cat);
@@ -1294,25 +1193,19 @@
                 if (!inputs[1].value.trim() && !inputs[2].value.trim()) targetRow = lastRow;
             }
 
-            if (!targetRow) {
-                addRow(cat);
-                targetRow = tbody.lastElementChild;
-            }
-            const inputs = targetRow.querySelectorAll('.cell-input');
+            if (!targetRow) { addRow(cat, tempSatData.id); targetRow = tbody.lastElementChild; }
 
-            // Sincronización limpia con Flatpickr usando el formato ISO nativo
-            if (inputs[0]._flatpickr && tempSatData.fecha_iso) {
-                inputs[0]._flatpickr.setDate(tempSatData.fecha_iso, true, "Y-m-d");
-            } else if (tempSatData.fecha_iso) {
-                const [y, m, d] = tempSatData.fecha_iso.split('-');
-                inputs[0].value = `${d}/${m}/${y}`;
-            }
+            let hiddenCfdiInput = targetRow.querySelector('.c-cfdi-id');
+            if (hiddenCfdiInput) hiddenCfdiInput.value = tempSatData.id || '';
+
+            const inputs = targetRow.querySelectorAll('.cell-input');
+            if (inputs[0]._flatpickr && tempSatData.fecha_iso) { inputs[0]._flatpickr.setDate(tempSatData.fecha_iso, true, "Y-m-d"); }
+            else if (tempSatData.fecha_iso) { const [y, m, d] = tempSatData.fecha_iso.split('-'); inputs[0].value = `${d}/${m}/${y}`; }
 
             inputs[1].value = tempSatData.folio;
             inputs[2].value = tempSatData.desc;
             inputs[3].value = tempSatData.sub;
-            inputs[4].value = '';
-            inputs[5].value = '';
+            inputs[4].value = ''; inputs[5].value = '';
             inputs[6].value = tempSatData.ish;
             inputs[7].value = tempSatData.iva;
 
@@ -1320,15 +1213,13 @@
             document.getElementById('sat-result-container').classList.add('hidden');
             document.getElementById('sat-category').value = '';
             tempSatData = null;
-            showToast('El comprobante se inyectó con éxito.', 'success');
+
+            // Reemplazo del Toast por Alerta Normal
+            showAlert('El comprobante fiscal ha sido inyectado correctamente en la matriz de gastos.', 'success');
         }
 
         function calcTotal() {
-            let gFiscal = 0,
-                gSimple = 0,
-                gPropina = 0,
-                gIva = 0,
-                gIsh = 0;
+            let gFiscal = 0, gSimple = 0, gPropina = 0, gIva = 0, gIsh = 0;
 
             document.querySelectorAll('.data-row').forEach(row => {
                 const inputs = row.querySelectorAll('.cell-input');
@@ -1342,11 +1233,7 @@
                 const rowTotalCell = row.querySelector('.cell-row-total');
                 if (rowTotalCell) rowTotalCell.textContent = rowTotal > 0 ? fmt(rowTotal) : '-';
 
-                gFiscal += rFiscal;
-                gSimple += rSimple;
-                gPropina += rPropina;
-                gIsh += rIsh;
-                gIva += rIva;
+                gFiscal += rFiscal; gSimple += rSimple; gPropina += rPropina; gIsh += rIsh; gIva += rIva;
             });
 
             const gTotal = gFiscal + gSimple + gPropina + gIva + gIsh;
@@ -1360,60 +1247,84 @@
             document.getElementById('sum-total').setAttribute('data-value', gTotal);
         }
 
+        /* ── VALIDACIONES ORDENADAS PARA GUARDAR Y ENVIAR ── */
         function verifyAndSubmit() {
+            const nombreBen = document.getElementById('modal-nombre').value.trim();
+            const motivo = document.getElementById('modal-motivo').value.trim();
+            const centroCosto = document.getElementById('modal-centro-costos').value;
             const total = parseFloat(document.getElementById('sum-total').getAttribute('data-value'));
+
+            if (!nombreBen) {
+                showAlert('Debe asignar o buscar el nombre del beneficiario.', 'warning');
+                return;
+            }
+            if (!centroCosto) {
+                showAlert('Debe asignar el Centro de Costos correspondiente al departamento responsable.', 'warning');
+                return;
+            }
+            if (!motivo) {
+                showAlert('Es obligatorio detallar la justificación o motivo de la erogación para auditoría.', 'warning');
+                return;
+            }
+
+            let hasValidRows = false;
+            document.querySelectorAll('.data-row').forEach(row => {
+                const dateVal = row.querySelector('.cell-input').value;
+                if (dateVal) hasValidRows = true;
+            });
+
+            if (!hasValidRows) {
+                showAlert('El comprobante no tiene información válida. Registre al menos un concepto de gasto en la matriz.', 'error');
+                return;
+            }
+
             if (total <= 0) {
-                showToast('Las sumas deben ser mayores a $0.', 'error');
-                return;
-            }
-            if (!document.getElementById('modal-centro-costos').value) {
-                showToast('Ingrese un Centro de Costos válido.', 'error');
-                return;
-            }
-            if (!document.getElementById('modal-motivo').value.trim()) {
-                showToast('Ingrese justificación del gasto.', 'error');
+                showAlert('La sumatoria contable debe ser mayor a cero. Verifique los importes desglosados en las filas.', 'error');
                 return;
             }
 
             Swal.fire({
-                title: `Consentimiento`,
-                html: `La matriz por valor de <strong>${fmt(total)}</strong> pasará a revisión.`,
+                title: `<span style="font-family:'Poppins', sans-serif;">¿Confirmar Revisión Gerencial?</span>`,
+                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Los datos por un valor de <strong>${fmt(total)}</strong> quedarán temporalmente inmutables y la solicitud será procesada.</span>`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: 'var(--teal-dark)',
                 cancelButtonColor: '#94a3b8',
                 confirmButtonText: `Emitir Responsiva`,
-                cancelButtonText: `Retornar`
-            }).then((result) => {
-                if (result.isConfirmed) procesarEnvio('Pendiente', 'En espera');
-            });
+                cancelButtonText: `Cancelar`
+            }).then((result) => { if (result.isConfirmed) procesarEnvio('Pendiente', 'En espera'); });
         }
 
         function saveDraft() {
-            if (!document.getElementById('modal-motivo').value.trim()) {
-                showToast('Ingrese una descripción de motivo para guardar borrador.', 'warning');
+            const nombreBen = document.getElementById('modal-nombre').value.trim();
+            const motivo = document.getElementById('modal-motivo').value.trim();
+
+            if (!nombreBen) {
+                showAlert('Para salvaguardar un borrador, debe existir un nombre de beneficiario.', 'warning');
+                return;
+            }
+            if (!motivo) {
+                showAlert('Para salvaguardar su información parcial, requerimos al menos capturar el Motivo de la Erogación.', 'warning');
                 return;
             }
             procesarEnvio('Borrador', 'N/A');
         }
 
+        /* ── EMPAQUETADO FINAL (POST) ── */
         async function procesarEnvio(estadoRevision, estadoPago) {
             let lineasArray = [];
             ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
                 const rows = document.getElementById(cat).querySelectorAll('.data-row');
                 rows.forEach(row => {
+                    const cfdiIdInput = row.querySelector('.c-cfdi-id');
                     const inputs = row.querySelectorAll('.cell-input');
                     if (inputs[0].value) {
                         lineasArray.push({
                             categoria: cat,
-                            fecha: inputs[0].value,
-                            folio: inputs[1].value,
-                            descripcion: inputs[2].value,
-                            monto_fiscal: parseFloat(inputs[3].value) || 0,
-                            monto_simple: parseFloat(inputs[4].value) || 0,
-                            monto_sin: parseFloat(inputs[5].value) || 0,
-                            ish: parseFloat(inputs[6].value) || 0,
-                            iva: parseFloat(inputs[7].value) || 0,
+                            cfdi_id: cfdiIdInput ? cfdiIdInput.value : null,
+                            fecha: inputs[0].value, folio: inputs[1].value, descripcion: inputs[2].value,
+                            monto_fiscal: parseFloat(inputs[3].value) || 0, monto_simple: parseFloat(inputs[4].value) || 0, monto_sin: parseFloat(inputs[5].value) || 0,
+                            ish: parseFloat(inputs[6].value) || 0, iva: parseFloat(inputs[7].value) || 0,
                             total_linea: parseFloat(row.querySelector('.cell-row-total').textContent.replace(/[^0-9.-]+/g, "")) || 0
                         });
                     }
@@ -1421,102 +1332,68 @@
             });
 
             if (lineasArray.length === 0 && estadoRevision !== 'Borrador') {
-                showToast('Debes agregar al menos una fila de gastos.', 'error');
+                showAlert('El sistema ha detectado una matriz vacía. Debe agregar conceptos contables.', 'error');
                 return;
             }
 
             let totalSubtotal = 0;
-            ['sum-fiscal', 'sum-simple', 'sum-propinas'].forEach(id => {
-                totalSubtotal += parseFloat(document.getElementById(id).textContent.replace(/[^0-9.-]+/g, "")) || 0;
-            });
+            ['sum-fiscal', 'sum-simple', 'sum-propinas'].forEach(id => { totalSubtotal += parseFloat(document.getElementById(id).textContent.replace(/[^0-9.-]+/g, "")) || 0; });
 
             let formData = new FormData();
             formData.append('_token', '{{ csrf_token() }}');
             formData.append('motivo', document.getElementById('modal-motivo').value.trim());
-            formData.append('is_deductible', document.getElementById('toggle-deductible').checked ? 1 : 0);
+            formData.append('is_deductible', document.querySelector('input[name="is_deductible"]:checked').value);
             formData.append('centro_costo', document.getElementById('modal-centro-costos').value);
             formData.append('tipo_gasto', document.querySelector('input[name="tipo_gasto"]:checked').value);
             formData.append('beneficiary_id', document.getElementById('modal-beneficiary-id').value);
             formData.append('depto', document.getElementById('modal-depto').value);
             formData.append('lugar_emision', document.getElementById('modal-lugar').value);
             formData.append('is_draft', estadoRevision === 'Borrador');
+
             formData.append('total_subtotal', totalSubtotal);
             formData.append('total_iva', document.getElementById('sum-iva').textContent.replace(/[^0-9.-]+/g, ""));
             formData.append('total_ish', document.getElementById('sum-ish').textContent.replace(/[^0-9.-]+/g, ""));
             formData.append('total_amount', document.getElementById('sum-total').getAttribute('data-value'));
+
             formData.append('lineas', JSON.stringify(lineasArray));
-            evidenciasFiles.forEach((file, index) => {
-                formData.append(`evidencias[${index}]`, file);
-            });
+            evidenciasFiles.forEach((file, index) => { formData.append(`evidencias[${index}]`, file); });
 
             try {
-                Swal.fire({
-                    title: 'Procesando...',
-                    text: 'Empaquetando datos y subiendo evidencias.',
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
-                const response = await fetch('{{ route('expense-claims.store') }}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
+                Swal.fire({ title: 'Sincronizando Base de Datos...', text: 'Registrando matrices y empaquetando evidencias documentales.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                let fetchUrl = '{{ route('expense-claims.store') }}';
+                if (isEditMode) { fetchUrl = `{{ url('administration/expense-claims/reimbursements') }}/${currentActiveClaimId}/update`; }
+
+                const response = await fetch(fetchUrl, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await response.json();
 
                 if (data.success) {
-                    Swal.fire({
-                        title: '¡Operación Exitosa!',
-                        text: data.message + ' Folio: ' + data.folio,
-                        icon: 'success',
-                        confirmButtonColor: 'var(--teal-dark)'
-                    });
-                    closeModal();
-                    setTimeout(() => window.location.reload(), 1500);
-                } else {
-                    Swal.fire('Error', data.message || 'Ocurrió un error en el servidor.', 'error');
-                }
-            } catch (error) {
-                Swal.fire('Error Critico', 'No se pudo comunicar con el servidor.', 'error');
-            }
+                    Swal.fire({ title: 'Trámite Procesado', html: data.message + '<br><strong>Folio Asignado: ' + data.folio + '</strong>', icon: 'success', confirmButtonColor: 'var(--teal-dark)' });
+                    closeModal(); setTimeout(() => window.location.reload(), 1800);
+                } else { showAlert(data.message || 'Error del servidor en la sincronización de datos.', 'error'); }
+            } catch (error) { showAlert('No se pudo establecer el enlace seguro con los servidores internos.', 'error'); }
         }
 
-        /* ── AUTOCOMPLETADO OMNIDIRECCIONAL (UUID, FOLIO, PROVEEDOR) ── */
         const searchUuidInput = document.getElementById('search-uuid');
         const uuidDropdown = document.getElementById('uuid-dropdown');
         let uuidTimeout = null;
 
         searchUuidInput.addEventListener('input', function() {
-            clearTimeout(uuidTimeout);
-            const term = this.value.trim();
-            if (term.length < 2) {
-                uuidDropdown.classList.add('hidden');
-                return;
-            }
+            clearTimeout(uuidTimeout); const term = this.value.trim();
+            if (term.length < 2) { uuidDropdown.classList.add('hidden'); return; }
 
             uuidTimeout = setTimeout(async () => {
                 try {
-                    const response = await fetch(
-                        `{{ route('expense-claims.cfdi.autocomplete') }}?term=${term}`, {
-                            headers: {
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        });
-                    const data = await response.json();
-                    uuidDropdown.innerHTML = '';
+                    const response = await fetch(`{{ route('expense-claims.cfdi.autocomplete') }}?term=${term}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                    const data = await response.json(); uuidDropdown.innerHTML = '';
 
                     if (data.length > 0) {
                         data.forEach(cfdi => {
-                            const item = document.createElement('div');
-                            item.className = 'sat-dropdown-item';
+                            const item = document.createElement('div'); item.className = 'sat-dropdown-item';
                             let serieFolio = '';
                             if (cfdi.serie) serieFolio += cfdi.serie + '-';
                             if (cfdi.folio) serieFolio += cfdi.folio;
-                            const folioBadge = serieFolio ?
-                                `<span style="background: var(--teal-dark); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Folio: ${serieFolio}</span>` :
-                                '';
+                            const folioBadge = serieFolio ? `<span style="background: var(--teal-dark); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Folio: ${serieFolio}</span>` : '';
 
                             item.innerHTML = `
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -1526,28 +1403,16 @@
                                 <span style="display: block; color: #cbd5e1; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     <i class="bx bx-store-alt"></i> ${cfdi.issuer_name} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${fmt(cfdi.total)}</strong>
                                 </span>`;
-                            item.onclick = () => {
-                                searchUuidInput.value = cfdi.uuid;
-                                uuidDropdown.classList.add('hidden');
-                                buscarFactura();
-                            };
+                            item.onclick = () => { searchUuidInput.value = cfdi.uuid; uuidDropdown.classList.add('hidden'); buscarFactura(); };
                             uuidDropdown.appendChild(item);
                         });
-                    } else {
-                        uuidDropdown.innerHTML =
-                            '<div class="sat-dropdown-empty">No hay coincidencias en la bóveda fiscal.</div>';
-                    }
+                    } else { uuidDropdown.innerHTML = '<div class="sat-dropdown-empty">El código introducido no existe en nuestra base receptora.</div>'; }
                     uuidDropdown.classList.remove('hidden');
-                } catch (error) {
-                    console.error("Error al autocompletar UUID:", error);
-                }
+                } catch (error) { console.error("Error al autocompletar UUID:", error); }
             }, 300);
         });
 
-        document.addEventListener('click', function(e) {
-            if (!searchUuidInput.contains(e.target) && !uuidDropdown.contains(e.target)) uuidDropdown.classList.add(
-                'hidden');
-        });
+        document.addEventListener('click', function(e) { if (!searchUuidInput.contains(e.target) && !uuidDropdown.contains(e.target)) uuidDropdown.classList.add('hidden'); });
 
         renderDashboard();
     </script>

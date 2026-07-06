@@ -3,6 +3,9 @@
 use App\Http\Controllers\Administration\ExpenseClaims\CfdiController;
 use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
+use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStatusController;
+use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryController;
+
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
 use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
 
@@ -118,20 +121,30 @@ Route::middleware(['web', 'auth'])->group(function () {
                     return redirect()->route('expense-claims.reimbursements');
                 })->name('administration.expense-claims');
 
-                // VISTAS PRINCIPALES
+                     // VISTAS PRINCIPALES
                 Route::controller(ReimbursementController::class)->group(function () {
                     Route::get('/reimbursements', 'index')->name('expense-claims.reimbursements');
                 });
 
-                // GUARDADO DEL FORMULARIO DE REEMBOLSOS
+                // ── NUEVO: CONSULTA PARA VER/EDITAR ──
+                Route::controller(ReimbursementQueryController::class)->group(function () {
+                    Route::get('/reimbursements/{id}', 'show')->name('expense-claims.show');
+                });
+
+                // GUARDADO Y ACTUALIZACIÓN
                 Route::controller(ReimbursementStoreController::class)->group(function () {
                     Route::post('/reimbursements/store', 'store')->name('expense-claims.store');
+                    Route::post('/reimbursements/{id}/update', 'update')->name('expense-claims.update'); // NUEVA
+                });
+
+                // DICTAMEN DE ESTADOS (VALIDAR/RECHAZAR/APROBAR)
+                Route::controller(ReimbursementStatusController::class)->group(function () {
+                    Route::post('/reimbursements/{id}/status', 'updateStatus')->name('expense-claims.status');
                 });
 
                 // ── BÚSQUEDA Y CARGA MANUAL DE CFDI (XML) ──
                 Route::controller(CfdiController::class)->group(function () {
                     Route::get('/cfdi/search', 'searchByUuid')->name('expense-claims.cfdi.search');
-                    // 👇 AGREGA ESTA LÍNEA 👇
                     Route::get('/cfdi/autocomplete', 'autocomplete')->name('expense-claims.cfdi.autocomplete');
                     Route::post('/cfdi/upload', 'uploadXml')->name('expense-claims.cfdi.upload');
                 });

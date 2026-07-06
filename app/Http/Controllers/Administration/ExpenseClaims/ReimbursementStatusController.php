@@ -40,7 +40,7 @@ class ReimbursementStatusController extends Controller
                 'action'           => 'Dictamen de Revisión',
                 'previous_status'  => $oldStatus,
                 'new_status'       => $newStatus,
-                'comments'         => $request->comments ?? 'Cambio de estado procesado por el sistema.',
+                'comments'         => $request->comments ?? 'Cambio de estado procesado por el sistema.', // Aquí se guarda el motivo
             ]);
 
             DB::commit();
