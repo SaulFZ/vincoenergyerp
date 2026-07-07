@@ -7,16 +7,23 @@ use App\Jobs\Administration\ExpenseClaims\RequestFiscalDownloadJob;
 use App\Jobs\Administration\ExpenseClaims\VerifyFiscalDownloadJob;
 use Carbon\Carbon;
 
+// ── 0. LIMPIEZA DE TICKETS FANTASMA DEL SAT ──
+// El SAT descarta los tickets a las 72 horas. Nosotros los marcaremos como fallidos a las 48hrs
+// para evitar que bloqueen las nuevas peticiones.
+Schedule::call(function () {
+    SatRequest::where('status', 'pending')
+        ->where('created_at', '<', Carbon::now()->subHours(48))
+        ->update(['status' => 'failed']);
+})->dailyAt('00:30');
+
 // ── 1. PROCESO DIARIO: SOLO EL DÍA ANTERIOR (SIN TRASLAPES) ──
 Schedule::call(function () {
-    // Evitar accionar si hay peticiones pendientes masivas
     if (SatRequest::where('status', 'pending')->count() > 3) {
         return;
     }
 
-    // Forzamos la zona horaria para precisión exacta
     $hoy = Carbon::now('America/Mexico_City');
-    $ayer = $hoy->copy()->subDay(); // Solo tomamos ayer
+    $ayer = $hoy->copy()->subDay();
 
     $fechaRegistro = $hoy->format('Y-m-d');
 
@@ -36,16 +43,15 @@ Schedule::call(function () {
         if ($node) {
             RequestFiscalDownloadJob::dispatch(
                 $node->g_id,
-                $ayer->format('Y-m-d') . 'T00:00:00', // EXACTAMENTE desde las 00:00 de ayer
-                $ayer->format('Y-m-d') . 'T23:59:59', // HASTA las 23:59 de ayer (0 traslapes)
+                $ayer->format('Y-m-d') . 'T00:00:00',
+                $ayer->format('Y-m-d') . 'T23:59:59',
                 $satRequest->id
             );
         }
     }
-})->dailyAt('01:30'); // Lo movemos a la 1:30 AM para asegurar que los servidores del SAT ya cerraron el día previo
+})->dailyAt('01:30');
 
 // ── 2. PROCESO MENSUAL: BARRIDO COMPLETO DEL MES ANTERIOR ──
-// Corre el día 3 de cada mes para atrapar facturas desfasadas
 Schedule::call(function () {
     $mesAnteriorInicio = Carbon::now()->subMonth()->startOfMonth();
     $mesAnteriorFin    = Carbon::now()->subMonth()->endOfMonth();
@@ -69,10 +75,8 @@ Schedule::call(function () {
     }
 })->monthlyOn(3, '02:00');
 
-
 // ── 3. PROCESO CONTINUO: VERIFICADOR MULTI-TICKET (Cada 30 min) ──
 Schedule::call(function () {
-    // Extraemos TODOS los pendientes (no solo el ->first) para evitar cuellos de botella
     $pendingDownloads = SatRequest::where('status', 'pending')
         ->whereNotNull('ticket_id')
         ->orderBy('created_at', 'asc')
