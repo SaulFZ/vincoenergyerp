@@ -14,15 +14,22 @@ return new class extends Migration
             // ── FOLIOS Y FECHA ──
             $table->string('folio_system')->unique()->comment('Folio principal, ej: SIS1206-01');
             $table->string('folio_user')->nullable()->comment('Folio interno del usuario');
-            $table->date('claim_date')->comment('Fecha del Documento (modal-fecha-hoy)');
+            $table->date('claim_date')->comment('Fecha del Documento');
+
+            // ── TIPOS Y CATEGORÍAS ──
+            $table->string('request_type')->nullable()->comment('Reembolso, Comprobacion Electronica, Comprobacion Directa');
             $table->string('category')->index()->comment('Viaje, Operacion, Otros');
 
-            // ── CAMPO NUEVO: CONTROL FISCAL ──
+            // ── CONTROL FISCAL ──
             $table->boolean('is_deductible')->default(true)->comment('Flag para control fiscal global del reembolso');
 
-            // ── TRAZABILIDAD Y UBICACIÓN ──
+            // ── TRAZABILIDAD, UBICACIÓN Y RELACIONES ──
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete()->comment('Beneficiario');
             $table->foreignId('created_by_id')->constrained('users')->cascadeOnDelete()->comment('Capturista en sesión');
+
+            // 👇 AQUÍ ESTÁ LA RELACIÓN A LA NUEVA TABLA DE ANTICIPOS 👇
+            $table->foreignId('expense_advance_id')->nullable()->constrained('expense_advances')->nullOnDelete()->comment('Si es una comprobación, se liga al anticipo original');
+
             $table->string('area')->nullable()->comment('Área de adscripción');
             $table->string('cost_center')->index()->comment('Centro de Costos (Imputación)');
             $table->string('emission_place')->default('VHSA, TAB.')->comment('Lugar de Emisión');

@@ -5,6 +5,7 @@ use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStatusController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryController;
+use App\Http\Controllers\Administration\ExpenseClaims\ExpenseAdvanceController;
 
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
 use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
@@ -121,6 +122,13 @@ Route::middleware(['web', 'auth'])->group(function () {
                     return redirect()->route('expense-claims.reimbursements');
                 })->name('administration.expense-claims');
 
+                  // ── ANTICIPOS (NUEVO) ──
+                Route::controller(ExpenseAdvanceController::class)->group(function () {
+                    Route::post('/advances/store', 'store')->name('expense-claims.advances.store');
+                    Route::get('/advances/user/{userId}', 'getActiveByUser')->name('expense-claims.advances.by-user');
+                    Route::get('/advances/{id}', 'show')->name('expense-claims.advances.show');
+                });
+
                      // VISTAS PRINCIPALES
                 Route::controller(ReimbursementController::class)->group(function () {
                     Route::get('/reimbursements', 'index')->name('expense-claims.reimbursements');
@@ -161,6 +169,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/sat-requests/force', 'forceSync')->name('expense-claims.sat-sync.force');
                 });
             });
+
+
         });
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS SISTEMAS

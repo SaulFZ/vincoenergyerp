@@ -12,8 +12,8 @@ class ExpenseClaim extends Model
     protected $table = 'expense_claims';
 
     protected $fillable = [
-        'folio_system', 'folio_user', 'claim_date', 'category', 'is_deductible',
-        'user_id', 'created_by_id', 'area', 'cost_center',
+        'folio_system', 'folio_user', 'claim_date', 'request_type', 'category', 'is_deductible',
+        'user_id', 'created_by_id', 'expense_advance_id', 'area', 'cost_center',
         'emission_place', 'motive', 'total_subtotal',
         'total_iva', 'total_ish', 'total_amount',
         'evidence_documents', 'status_review', 'status_payment'
@@ -27,7 +27,7 @@ class ExpenseClaim extends Model
             'total_iva'          => 'decimal:2',
             'total_ish'          => 'decimal:2',
             'total_amount'       => 'decimal:2',
-            'evidence_documents' => 'array', // Crucial para que el JSON funcione como arreglo en PHP
+            'evidence_documents' => 'array',
         ];
     }
 
@@ -39,6 +39,11 @@ class ExpenseClaim extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_id');
+    }
+
+    public function expenseAdvance(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseAdvance::class, 'expense_advance_id');
     }
 
     public function lines(): HasMany

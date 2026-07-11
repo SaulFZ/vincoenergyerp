@@ -60,31 +60,38 @@
                         <button class="filter-tab" data-filter="Aprobado">Aprobado</button>
                         <button class="filter-tab" data-filter="Rechazado">Rechazado</button>
                     </div>
-                    <button class="btn btn-primary" style="padding: 0.45rem 1.2rem; font-size: 0.8rem;" onclick="openModalForCreate()" aria-label="Crear un nuevo reembolso">
-                        <i class="bx bx-plus-circle"></i> Nuevo Reembolso
+
+                    {{-- BOTÓN EMITIR ANTICIPO --}}
+                    <button class="btn btn-secondary btn-new-request" onclick="openAdvanceModalForCreate()" aria-label="Pedir Anticipo Operativo">
+                        <i class="bx bx-money-withdraw"></i> Solicitar Anticipo
+                    </button>
+
+                    {{-- BOTÓN NUEVA SOLICITUD --}}
+                    <button class="btn btn-primary btn-new-request" onclick="openModalForCreate()" aria-label="Crear un nuevo trámite">
+                        <i class="bx bx-plus-circle"></i> Nueva Solicitud
                     </button>
                 </div>
             </div>
 
             <div class="table-scroll">
-                <table class="data-table">
+                <table class="data-table table-animated" id="main-data-table">
                     <thead>
                         <tr>
-                            <th class="th-w-42">#</th>
-                            <th>Folio Principal</th>
+                            <th>Folio</th>
                             <th>Folio Usuario</th>
-                            <th>Fecha</th>
-                            <th>Solicitante</th>
-                            <th>Motivo</th>
                             <th>Departamento</th>
-                            <th>Monto Total</th>
-                            <th>Estado de Revisión</th>
-                            <th>Estado de Pago</th>
+                            <th>Solicitante</th>
+                            <th>Fecha</th>
+                            <th>Motivo</th>
+                            <th>Monto</th>
+                            <th>Anticipo</th>
+                            <th>Revisión</th>
+                            <th>Pago</th>
                             <th class="text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="dashboard-list">
-                        {{-- Las filas se inyectan dinámicamente vía JavaScript --}}
+                        {{-- Las filas se inyectan dinámicamente vía JavaScript con animación en cascada --}}
                     </tbody>
                 </table>
             </div>
@@ -93,28 +100,46 @@
             <div id="empty-state" class="empty-state hidden">
                 <i class="bx bx-file-blank empty-icon"></i>
                 <p class="empty-title">Sin resultados encontrados</p>
-                <p class="empty-desc">No hay solicitudes que coincidan con los criterios de búsqueda o filtro aplicados en
-                    este momento.</p>
+                <p class="empty-desc">No hay solicitudes que coincidan con los criterios de búsqueda o filtro aplicados en este momento.</p>
             </div>
 
             <div class="table-footer">
-                <span id="table-count" class="table-count-label">0 solicitudes registradas</span>
+                <div class="table-footer-left">
+                    <span id="table-count" class="table-count-label">0 solicitudes registradas</span>
+                </div>
+
+                {{-- PAGINACIÓN CONTROLES CENTRALES --}}
+                <div id="pagination-controls" class="pagination-controls table-footer-center"></div>
+
+                {{-- SELECTOR DE PÁGINAS DERECHA --}}
+                <div class="table-footer-right">
+                    <div class="page-size-wrap">
+                        <span>Mostrar:</span>
+                        <select id="page-size-select" class="page-size-select" onchange="changePageSize()">
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
 
     </div>
 
     {{-- ════════════════════════════════════════════════════════════════════════
-         MODAL FLOTANTE: REGISTRO Y EVALUACIÓN DE REEMBOLSO
+         MODAL FLOTANTE: REGISTRO Y EVALUACIÓN DE COMPROBACIONES
          ════════════════════════════════════════════════════════════════════════ --}}
     <div id="reimbursement-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
-        <div class="modal-box">
+        <div class="modal-box large">
 
             {{-- Cabecera del Modal --}}
             <div class="modal-header">
                 <h2 class="modal-title" id="main-modal-title">
                     <i class="bx bx-receipt"></i>
-                    Formato de <strong>Reembolso</strong>
+                    Formato de <strong>Comprobación</strong>
                 </h2>
                 <div class="modal-header-actions">
                     <button type="button" class="btn btn-secondary" onclick="toggleSatPanel()"
@@ -129,7 +154,7 @@
 
             <div class="modal-body" id="modal-body-scroll">
 
-                {{-- NUEVO: PANEL DE ALERTA DE RECHAZO --}}
+                {{-- PANEL DE ALERTA DE RECHAZO --}}
                 <div id="rejection-container" class="rejection-alert hidden">
                     <i class="bx bxs-error-circle"></i>
                     <div class="rejection-alert-content">
@@ -170,31 +195,54 @@
                     </div>
 
                     <div class="fh-body">
-                        <div class="fh-row-pills">
+
+                        {{-- CONTROLES ESTRUCTURALES GRIDS --}}
+                        <div class="fh-grid-controls">
+
+                            {{-- SELECT 1: Tipo de Trámite --}}
                             <div>
-                                <label class="input-label">Categoría del Gasto Asignado</label>
-                                <div class="radio-pill-group">
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="tipo_gasto" value="viaje" class="modal-focusable"
-                                            checked>
-                                        <i class="bx bxs-plane-alt"></i> Viáticos y Viaje
-                                    </label>
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="tipo_gasto" value="operacion"
-                                            class="modal-focusable">
-                                        <i class="bx bx-briefcase"></i> Operaciones y Campo
-                                    </label>
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="tipo_gasto" value="otros" class="modal-focusable">
-                                        <i class="bx bx-dots-horizontal-rounded"></i> Diversos / Otros
-                                    </label>
+                                <label class="input-label">Tipo de Trámite</label>
+                                <div class="input-group">
+                                    <i class="bx bx-layer field-icon"></i>
+                                    <select id="modal-tipo-solicitud" class="input-field modal-focusable">
+                                        <option value="Reembolso" selected>Reembolso</option>
+                                        <option value="Comprobacion Electronica">Comprobación Electrónica</option>
+                                        <option value="Comprobacion Directa">Comprobación Directa</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            {{-- NUEVO: TOGGLE DE GASTO DEDUCIBLE COMO PÍLDORAS SI/NO --}}
+                            {{-- SELECT 2: Categoría de Gasto --}}
+                            <div>
+                                <label class="input-label">Categoría del Gasto</label>
+                                <div class="input-group">
+                                    <i class="bx bx-purchase-tag field-icon"></i>
+                                    <select id="modal-tipo-gasto" class="input-field modal-focusable">
+                                        <option value="viaje" selected>Viáticos y Viaje</option>
+                                        <option value="operacion">Operaciones y Campo</option>
+                                        <option value="otros">Diversos / Otros</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {{-- SELECT 3: ANTICIPO RELACIONADO --}}
+                            <div>
+                                <label class="input-label">Anticipo a Comprobar</label>
+                                <div class="input-group">
+                                    <i class="bx bx-link field-icon"></i>
+                                    <select id="modal-advance-id" class="input-field modal-focusable" onchange="toggleAdvanceViewButton()">
+                                        <option value="">Ninguno (Gasto Independiente)</option>
+                                    </select>
+                                    <button type="button" id="btn-view-advance" class="btn-input-action hidden" onclick="openAdvanceFromSelect()">
+                                        <i class="bx bx-show"></i> <span>Ver</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- PILL: Deducible --}}
                             <div>
                                 <label class="input-label">¿Es Gasto Deducible?</label>
-                                <div class="radio-pill-group" style="gap: 0.25rem;">
+                                <div class="radio-pill-group">
                                     <label class="radio-pill-label">
                                         <input type="radio" name="is_deductible" value="1" class="modal-focusable" checked>
                                         <i class="bx bx-check"></i> Sí
@@ -206,19 +254,24 @@
                                 </div>
                             </div>
 
-                            {{-- TOGGLE DE CAPTURA DELEGADA --}}
-                            <div class="delegation-wrapper" id="delegation-container">
-                                <div class="delegation-toggle-wrap">
-                                    <label class="switch">
-                                        <input type="checkbox" id="toggle-delegation"
-                                            onchange="handleDelegationToggle()">
-                                        <span class="slider round"></span>
+                            {{-- PILL: Capturar Otro Beneficiario --}}
+                            <div>
+                                <label class="input-label">Capturar Otro Beneficiario</label>
+                                <div class="radio-pill-group">
+                                    <label class="radio-pill-label">
+                                        <input type="radio" name="is_delegated" value="1" class="modal-focusable" onchange="handleDelegationToggle()">
+                                        <i class="bx bx-check"></i> Sí
                                     </label>
-                                    <span class="delegation-text">Capturar Otro Beneficiario</span>
+                                    <label class="radio-pill-label">
+                                        <input type="radio" name="is_delegated" value="0" class="modal-focusable" onchange="handleDelegationToggle()" checked>
+                                        <i class="bx bx-x"></i> No
+                                    </label>
                                 </div>
                             </div>
+
                         </div>
 
+                        {{-- INFORMACIÓN DE TRAZABILIDAD --}}
                         <div class="fh-grid-4">
                             {{-- BUSCADOR DE USUARIO INTEGRADO --}}
                             <div>
@@ -226,9 +279,7 @@
                                 <div class="input-group reimburse-dropdown-container">
                                     <i class="bx bx-user field-icon" id="icon-solicitante"></i>
                                     <input type="hidden" id="modal-beneficiary-id" value="{{ Auth::id() ?? 1 }}">
-                                    <input type="text" id="modal-nombre"
-                                        value="{{ Auth::user()->name ?? 'Saul Falcon Perez' }}" class="input-field"
-                                        readonly autocomplete="off">
+                                    <input type="text" id="modal-nombre" value="{{ Auth::user()->name ?? 'Usuario No Definido' }}" class="input-field" readonly autocomplete="off">
                                     <div id="employee-dropdown" class="reimburse-custom-dropdown hidden"></div>
                                 </div>
                             </div>
@@ -237,8 +288,7 @@
                                 <label class="input-label">Área de Adscripción</label>
                                 <div class="input-group">
                                     <i class="bx bx-buildings field-icon"></i>
-                                    <input type="text" id="modal-depto" value="Desarrollo de Software"
-                                        class="input-field" readonly>
+                                    <input type="text" id="modal-depto" value="Desarrollo de Software" class="input-field" readonly>
                                 </div>
                             </div>
                             <div>
@@ -258,8 +308,7 @@
                                 <label class="input-label">Motivo de la Erogación</label>
                                 <div class="input-group">
                                     <i class="bx bx-text field-icon"></i>
-                                    <input type="text" id="modal-motivo" class="input-field modal-focusable"
-                                        placeholder="Ej. Viáticos técnicos a pozo foráneo">
+                                    <input type="text" id="modal-motivo" class="input-field modal-focusable" placeholder="Ej. Viáticos técnicos a pozo foráneo">
                                 </div>
                             </div>
                         </div>
@@ -271,33 +320,24 @@
                     <div class="sat-panel-header">
                         <h4 class="sat-panel-title"><i class="bx bx-link-external"></i> Vinculación SAT</h4>
                         <div class="sat-tabs">
-                            <button type="button" class="sat-tab active" data-target="sat-tab-uuid"><i
-                                    class="bx bx-search-alt"></i> Buscar UUID</button>
-                            <button type="button" class="sat-tab" data-target="sat-tab-xml"><i
-                                    class="bx bx-upload"></i> Cargar XML</button>
+                            <button type="button" class="sat-tab active" data-target="sat-tab-uuid"><i class="bx bx-search-alt"></i> Buscar UUID</button>
+                            <button type="button" class="sat-tab" data-target="sat-tab-xml"><i class="bx bx-upload"></i> Cargar XML</button>
                         </div>
                     </div>
 
                     <div class="sat-panel-body">
-                        {{-- Pestaña 1: Búsqueda Manual en BD --}}
                         <div id="sat-tab-uuid" class="sat-content active">
                             <label class="sat-label">Folio Fiscal (UUID) del comprobante SAT</label>
                             <div class="sat-search-group">
-                                <div class="sat-input-wrap" style="position: relative;">
+                                <div class="sat-input-wrap">
                                     <i class="bx bx-barcode"></i>
-                                    <input type="text" id="search-uuid" class="sat-input modal-focusable"
-                                        placeholder="Buscar por últimos dígitos, Folio o Proveedor..." autocomplete="off">
-
+                                    <input type="text" id="search-uuid" class="sat-input modal-focusable" placeholder="Buscar por últimos dígitos, Folio o Proveedor..." autocomplete="off">
                                     <div id="uuid-dropdown" class="sat-dropdown hidden"></div>
                                 </div>
-                                <button type="button" id="btn-buscar" class="btn btn-primary"
-                                    onclick="buscarFactura()">
-                                    <i class="bx bx-search"></i> Buscar
-                                </button>
+                                <button type="button" id="btn-buscar" class="btn btn-primary" onclick="buscarFactura()"><i class="bx bx-search"></i> Buscar</button>
                             </div>
                         </div>
 
-                        {{-- Pestaña 2: Carga de Archivo (Manual) --}}
                         <div id="sat-tab-xml" class="sat-content hidden">
                             <div id="drop-zone" class="sat-drop-zone">
                                 <i class="bx bx-cloud-upload"></i>
@@ -307,7 +347,6 @@
                             </div>
                         </div>
 
-                        {{-- ÁREA DE RESULTADO Y ASIGNACIÓN --}}
                         <div id="sat-result-container" class="sat-result-box hidden">
                             <div class="sat-result-success">
                                 <i class="bx bx-check-circle"></i>
@@ -320,29 +359,23 @@
                                 <div class="input-group">
                                     <i class="bx bx-purchase-tag-alt field-icon"></i>
                                     <select id="sat-category" class="input-field">
-                                        <option value="" disabled selected>¿A qué categoría pertenece esta factura?
-                                        </option>
+                                        <option value="" disabled selected>¿A qué categoría pertenece esta factura?</option>
                                         <option value="cat-vuelos">Transportación, Vuelos y Peajes</option>
                                         <option value="cat-restaurantes">Consumo de Alimentos y Restaurantes</option>
                                         <option value="cat-combustible">Abastecimiento de Combustible</option>
                                         <option value="cat-otros">Cargos Varios / Misceláneos</option>
                                     </select>
                                 </div>
-                                <button type="button" class="btn btn-primary" onclick="agregarFilaDesdeSAT()">
-                                    <i class="bx bx-plus"></i> Integrar Gasto a Matriz
-                                </button>
+                                <button type="button" class="btn btn-primary" onclick="agregarFilaDesdeSAT()"><i class="bx bx-plus"></i> Integrar Gasto a Matriz</button>
                             </div>
                         </div>
-
                     </div>
                 </div>
 
-                {{-- MATRIZ DE DESGLOSE FINANCIERO --}}
+                {{-- MATRIZ DINÁMICA DE GASTOS --}}
                 <div class="expense-card">
                     <div class="expense-card-header">
-                        <span class="expense-card-title">
-                            <i class="bx bx-table"></i> Desglose y Análisis Analítico de Gastos
-                        </span>
+                        <span class="expense-card-title"><i class="bx bx-table"></i> Desglose y Análisis Analítico de Gastos</span>
                     </div>
                     <div class="table-scroll">
                         <table class="expense-table">
@@ -365,58 +398,42 @@
                                     <th class="th-w-75">I.V.A.</th>
                                 </tr>
                             </thead>
-
-                            {{-- SECCIÓN: VUELOS Y/O TRANSPORTE --}}
                             <tbody id="cat-vuelos">
                                 <tr class="cat-row">
                                     <td colspan="10">
                                         <div class="cat-row-content">
-                                            <span><i class="bx bxs-plane-alt"></i> I. Transportación, Vuelos y
-                                                Peajes</span>
-                                            <button type="button" class="btn-add-row" onclick="addRow('cat-vuelos')"
-                                                title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
+                                            <span><i class="bx bxs-plane-alt"></i> I. Transportación, Vuelos y Peajes</span>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-vuelos')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
                                 </tr>
                             </tbody>
-
-                            {{-- SECCIÓN: RESTAURANTES --}}
                             <tbody id="cat-restaurantes">
                                 <tr class="cat-row">
                                     <td colspan="10">
                                         <div class="cat-row-content">
-                                            <span><i class="bx bx-restaurant"></i> II. Consumo de Alimentos y
-                                                Restaurantes</span>
-                                            <button type="button" class="btn-add-row"
-                                                onclick="addRow('cat-restaurantes')" title="Agregar Fila de Gasto"><i
-                                                    class="bx bx-plus"></i></button>
+                                            <span><i class="bx bx-restaurant"></i> II. Consumo de Alimentos y Restaurantes</span>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-restaurantes')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
                                 </tr>
                             </tbody>
-
-                            {{-- SECCIÓN: COMBUSTIBLE --}}
                             <tbody id="cat-combustible">
                                 <tr class="cat-row">
                                     <td colspan="10">
                                         <div class="cat-row-content">
                                             <span><i class="bx bxs-gas-pump"></i> III. Abastecimiento de Combustible</span>
-                                            <button type="button" class="btn-add-row"
-                                                onclick="addRow('cat-combustible')" title="Agregar Fila de Gasto"><i
-                                                    class="bx bx-plus"></i></button>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-combustible')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
                                 </tr>
                             </tbody>
-
-                            {{-- SECCIÓN: OTROS --}}
                             <tbody id="cat-otros">
                                 <tr class="cat-row">
                                     <td colspan="10">
                                         <div class="cat-row-content">
                                             <span><i class="bx bx-package"></i> IV. Cargos Varios / Misceláneos</span>
-                                            <button type="button" class="btn-add-row" onclick="addRow('cat-otros')"
-                                                title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
+                                            <button type="button" class="btn-add-row" onclick="addRow('cat-otros')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -425,17 +442,13 @@
                     </div>
                 </div>
 
-                {{-- PANEL INFERIOR: GESTOR DOCUMENTAL Y RESUMEN FINANCIERO --}}
+                {{-- PANEL INFERIOR --}}
                 <div class="bottom-section">
-
-                    <div class="evidence-panel" id="evidence-panel"
-                        onclick="document.getElementById('evidence-upload').click()">
+                    <div class="evidence-panel" id="evidence-panel" onclick="document.getElementById('evidence-upload').click()">
                         <i class="bx bxs-file-pdf evidence-icon"></i>
                         <h4 class="evidence-title">Gestor Documental (PDF)</h4>
-                        <p class="evidence-desc">Arrastra y suelta tus facturas, tickets y documentación probatoria
-                            aquí.<br>Carga máxima de 10MB por archivo unitario.</p>
-                        <button type="button" class="btn btn-secondary"
-                            onclick="event.stopPropagation(); document.getElementById('evidence-upload').click()">
+                        <p class="evidence-desc">Arrastra y suelta tus facturas, tickets y documentación probatoria aquí.<br>Carga máxima de 10MB por archivo unitario.</p>
+                        <button type="button" class="btn btn-secondary" onclick="event.stopPropagation(); document.getElementById('evidence-upload').click()">
                             <i class="bx bx-folder-plus"></i> Examinar archivos locales
                         </button>
                         <input type="file" id="evidence-upload" accept=".pdf" multiple class="hidden">
@@ -448,64 +461,122 @@
                             <span>Consolidado Financiero</span>
                         </div>
                         <div class="summary-body">
-                            <div class="summary-row"><span class="sum-lbl">Gastos Fiscales (XML+PDF):</span><span
-                                    id="sum-fiscal" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Gastos No Fiscales (Notas):</span><span
-                                    id="sum-simple" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Sin Comprobante / Propinas:</span><span
-                                    id="sum-propinas" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva"
-                                    class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">I.S.H. y Retenciones:</span><span
-                                    id="sum-ish" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Gastos Fiscales (XML+PDF):</span><span id="sum-fiscal" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Gastos No Fiscales (Notas):</span><span id="sum-simple" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Sin Comprobante / Propinas:</span><span id="sum-propinas" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva" class="sum-val">$0.00</span></div>
+                            <div class="summary-row"><span class="sum-lbl">I.S.H. y Retenciones:</span><span id="sum-ish" class="sum-val">$0.00</span></div>
                             <div class="sum-total-row">
                                 <span class="sum-total-lbl">TOTAL A REEMBOLSAR</span>
                                 <span id="sum-total" class="sum-total-val" data-value="0">$0.00</span>
                             </div>
                         </div>
                     </div>
-
                 </div>
-            </div>{{-- /modal-body --}}
+            </div>
 
             <div class="modal-footer">
-                <div>
-                    <span class="modal-footer-note">
-                        <i class="bx bx-info-circle"></i> Para garantizar una autorización rápida, asegúrate de adjuntar el
-                        PDF de soporte.
-                    </span>
-                </div>
-
-                {{-- MODO DE CREACIÓN --}}
+                <div><span class="modal-footer-note"><i class="bx bx-info-circle"></i> Para garantizar una autorización rápida, asegúrate de adjuntar el PDF de soporte.</span></div>
                 <div class="modal-footer-right" id="footer-create">
                     <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
-                    <button type="button" id="btn-borrador" class="btn btn-secondary" onclick="saveDraft()">
-                        <i class="bx bx-save"></i> Guardar Borrador
-                    </button>
-                    <button type="button" id="btn-enviar" class="btn btn-primary" onclick="verifyAndSubmit()">
-                        <i class="bx bx-send"></i> Emitir Solicitud a Revisión
-                    </button>
+                    <button type="button" id="btn-borrador" class="btn btn-secondary" onclick="saveDraft()"><i class="bx bx-save"></i> Guardar Borrador</button>
+                    <button type="button" id="btn-enviar" class="btn btn-primary" onclick="verifyAndSubmit()"><i class="bx bx-send"></i> Emitir Solicitud a Revisión</button>
                 </div>
-
-                {{-- MODO DE VISUALIZACIÓN --}}
                 <div class="modal-footer-right hidden" id="footer-view">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
                 </div>
-
-                {{-- MODO DE EVALUACIÓN --}}
                 <div class="modal-footer-right hidden" id="footer-evaluate">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
-                    <button type="button" class="btn btn-fail-solid" onclick="processEvaluation('Rechazado')">
-                        <i class="bx bx-x"></i> Rechazar
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-validate-special" id="btn-eval-validate"
-                        onclick="processEvaluation('Validado')">
-                        <i class="bx bx-list-check"></i> Validar
-                    </button>
-                    <button type="button" class="btn btn-ok-solid" id="btn-eval-approve"
-                        onclick="processEvaluation('Aprobado')">
-                        <i class="bx bx-check-double"></i> Aprobar
-                    </button>
+                    <button type="button" class="btn btn-fail-solid" onclick="processEvaluation('Rechazado')"><i class="bx bx-x"></i> Rechazar</button>
+                    <button type="button" class="btn btn-secondary btn-validate-special" id="btn-eval-validate" onclick="processEvaluation('Validado')"><i class="bx bx-list-check"></i> Validar</button>
+                    <button type="button" class="btn btn-ok-solid" id="btn-eval-approve" onclick="processEvaluation('Aprobado')"><i class="bx bx-check-double"></i> Aprobar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ════════════════════════════════════════════════════════════════════════
+         NUEVO MODAL: SOLICITAR / VER ANTICIPO DE GASTO OPERATIVO
+         ════════════════════════════════════════════════════════════════════════ --}}
+    <div id="advance-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
+        <div class="modal-box medium">
+            <div class="modal-header">
+                <h2 class="modal-title" id="adv-modal-title"><i class="bx bx-money-withdraw"></i> Solicitud de <strong>Anticipo</strong></h2>
+                <div class="modal-header-actions">
+                    <button class="btn-close" onclick="closeAdvanceModal()" aria-label="Cerrar ventana"><i class="bx bx-x"></i></button>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-header-card m-bottom-125">
+                    <div class="fh-info-strip">
+                        <div class="fh-info-item folio">
+                            <span>Folio del Anticipo</span>
+                            <strong id="adv-modal-folio">Nuevo Trámite</strong>
+                        </div>
+                        <div class="fh-info-item text-right">
+                            <span>Estado de Autorización</span>
+                            <strong id="adv-modal-status">Generando...</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fh-body-no-pad">
+                    <div class="fh-grid-2">
+                        <div>
+                            <label class="input-label">Nombre del Solicitante</label>
+                            <div class="input-group">
+                                <i class="bx bx-user field-icon"></i>
+                                <input type="text" id="adv-user-name" class="input-field" readonly>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="input-label">Fecha de Solicitud</label>
+                            <div class="input-group">
+                                <i class="bx bx-calendar field-icon"></i>
+                                <input type="text" id="adv-date-text" class="input-field" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fh-grid-2">
+                        <div>
+                            <label class="input-label">Tipo de Anticipo</label>
+                            <div class="input-group">
+                                <i class="bx bx-briefcase field-icon"></i>
+                                <select id="adv-type" class="input-field adv-focusable">
+                                    <option value="Viaticos" selected>Viáticos y Hospedaje</option>
+                                    <option value="Operativos">Gastos Operativos (Campo)</option>
+                                    <option value="Caja Chica">Fondo de Caja Chica</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="input-label">Monto Solicitado (MXN)</label>
+                            <div class="input-group">
+                                <i class="bx bx-dollar field-icon"></i>
+                                <input type="number" id="adv-amount" class="input-field adv-focusable" placeholder="Ej. 5000.00" min="1" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="input-label">Descripción / Justificación Operativa</label>
+                        <div class="input-group">
+                            <textarea id="adv-desc" class="input-field adv-focusable" placeholder="Explique para qué se destinarán los fondos solicitados..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span class="modal-footer-note" id="adv-modal-note"><i class="bx bx-info-circle"></i> Los anticipos requieren validación de la gerencia financiera.</span>
+                <div class="modal-footer-right" id="adv-footer-create">
+                    <button type="button" class="btn btn-cancel" onclick="closeAdvanceModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAdvance()"><i class="bx bx-send"></i> Emitir Solicitud</button>
+                </div>
+                <div class="modal-footer-right hidden" id="adv-footer-view">
+                    <button type="button" class="btn btn-secondary" onclick="closeAdvanceModal()">Cerrar Vista</button>
                 </div>
             </div>
         </div>
@@ -534,15 +605,20 @@
 
         document.getElementById('company-rfc').textContent = rfcEmpresa;
 
+        /* ── ELEMENTOS DEL DOM PARA BENEFICIARIOS ── */
+        const modalNombre = document.getElementById('modal-nombre');
+        const modalDepto = document.getElementById('modal-depto');
+        const beneficiaryId = document.getElementById('modal-beneficiary-id');
+        const dropdown = document.getElementById('employee-dropdown');
+        const iconSolicitante = document.getElementById('icon-solicitante');
+
+        /* ── FECHAS GLOBALES FORMATO TEXTO ── */
+        const todayText = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        document.getElementById('modal-fecha-hoy').textContent = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
         /* ── ALERTA CENTRALIZADA NORMAL (SWEETALERT2) ── */
         function showAlert(msg, type = 'success') {
-            const titles = {
-                'success': '¡Operación Exitosa!',
-                'error': 'Error de Validación',
-                'warning': 'Atención Requerida',
-                'info': 'Información'
-            };
-
+            const titles = { 'success': '¡Operación Exitosa!', 'error': 'Error de Validación', 'warning': 'Atención Requerida', 'info': 'Información' };
             Swal.fire({
                 title: `<span style="font-family:'Poppins', sans-serif;">${titles[type]}</span>`,
                 html: `<span style="font-family:'Poppins', sans-serif; font-size:14px; color:#64748b;">${msg}</span>`,
@@ -552,33 +628,191 @@
             });
         }
 
-        /* ── NAVEGACIÓN Y ACCESIBILIDAD ── */
+        /* ── COLA DE EVENTOS DE NAVEGACIÓN ── */
         document.getElementById('reimbursement-modal').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const focusableElements = Array.from(this.querySelectorAll('.modal-focusable'));
                 const currentIndex = focusableElements.indexOf(document.activeElement);
-                if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
-                    focusableElements[currentIndex + 1].focus();
-                }
+                if (currentIndex > -1 && currentIndex < focusableElements.length - 1) { focusableElements[currentIndex + 1].focus(); }
             }
         });
 
-        /* ── CONTROL DE DELEGACIÓN ── */
-        const modalNombre = document.getElementById('modal-nombre');
-        const modalDepto = document.getElementById('modal-depto');
-        const beneficiaryId = document.getElementById('modal-beneficiary-id');
-        const dropdown = document.getElementById('employee-dropdown');
-        const iconSolicitante = document.getElementById('icon-solicitante');
+        /* ── FUNCIÓN DE ANIMACIÓN EN CASCADA ── */
+        function animateTableRows(tableSelector, delayPerRow = 0.04, initialDelay = 0) {
+            const table = document.querySelector(tableSelector);
+            if (!table) return;
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach((row, index) => {
+                const delay = initialDelay + index * delayPerRow;
+                row.style.animationDelay = `${delay}s`;
+                row.style.animation = 'none';
+                row.offsetHeight; /* Reflow */
+                row.style.animation = '';
+            });
+        }
 
+        /* ── GESTIÓN DE ANTICIPOS (AJAX Y LOGICA ASÍNCRONA) ── */
+        async function fetchUserAdvances(userId, selectedAdvanceId = null) {
+            try {
+                const fetchUrl = `{{ url('administration/expense-claims/advances/user') }}/${userId}`;
+                const response = await fetch(fetchUrl);
+                const data = await response.json();
+
+                const select = document.getElementById('modal-advance-id');
+                select.innerHTML = '<option value="">Ninguno (Gasto Independiente)</option>';
+
+                data.forEach(adv => {
+                    const opt = document.createElement('option');
+                    opt.value = adv.id;
+                    opt.textContent = adv.folio_system;
+                    select.appendChild(opt);
+                });
+                if (selectedAdvanceId) select.value = selectedAdvanceId;
+                toggleAdvanceViewButton();
+            } catch (error) { console.error("No se pudieron cargar los anticipos.", error); }
+        }
+
+        function toggleAdvanceViewButton() {
+            const selectVal = document.getElementById('modal-advance-id').value;
+            const viewBtn = document.getElementById('btn-view-advance');
+            if (selectVal) { viewBtn.classList.remove('hidden'); } else { viewBtn.classList.add('hidden'); }
+        }
+
+        function openAdvanceModalForCreate() {
+            document.getElementById('adv-modal-title').innerHTML = '<i class="bx bx-money-withdraw"></i> Solicitud de <strong>Anticipo</strong>';
+            document.getElementById('adv-modal-folio').textContent = 'Asignación Automática';
+            document.getElementById('adv-modal-status').textContent = 'Borrador / Pendiente';
+
+            document.getElementById('adv-user-name').value = sessionUser.nombre;
+            document.getElementById('adv-date-text').value = todayText;
+            document.getElementById('adv-amount').value = '';
+            document.getElementById('adv-desc').value = '';
+
+            document.querySelectorAll('.adv-focusable').forEach(el => el.removeAttribute('disabled'));
+            document.getElementById('adv-footer-create').classList.remove('hidden');
+            document.getElementById('adv-footer-view').classList.add('hidden');
+
+            document.getElementById('advance-modal').classList.remove('hidden');
+        }
+
+        async function verDetalleAnticipo(advanceId) {
+            if (!advanceId) return;
+            Swal.fire({ title: 'Cargando Detalles...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const fetchUrl = `{{ url('administration/expense-claims/advances') }}/${advanceId}`;
+                const response = await fetch(fetchUrl);
+                const res = await response.json();
+
+                if (res.success) {
+                    const adv = res.data;
+                    document.getElementById('adv-modal-title').innerHTML = `<i class="bx bx-search-alt"></i> Inspección de <strong>Anticipo</strong>`;
+                    document.getElementById('adv-modal-folio').textContent = adv.folio_system;
+                    document.getElementById('adv-modal-status').textContent = adv.status;
+
+                    document.getElementById('adv-user-name').value = adv.user.name;
+                    document.getElementById('adv-date-text').value = new Date(adv.advance_date).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    document.getElementById('adv-type').value = adv.advance_type;
+                    document.getElementById('adv-amount').value = adv.amount;
+                    document.getElementById('adv-desc').value = adv.description;
+
+                    document.querySelectorAll('.adv-focusable').forEach(el => el.setAttribute('disabled', 'true'));
+                    document.getElementById('adv-footer-create').classList.add('hidden');
+                    document.getElementById('adv-footer-view').classList.remove('hidden');
+
+                    Swal.close();
+                    document.getElementById('advance-modal').classList.remove('hidden');
+                } else { showAlert('No se encontró el anticipo.', 'error'); }
+            } catch (error) { showAlert('Error al cargar la información del anticipo.', 'error'); }
+        }
+
+        function closeAdvanceModal() { document.getElementById('advance-modal').classList.add('hidden'); }
+
+        async function submitAdvance() {
+            const tipo = document.getElementById('adv-type').value;
+            const fecha = document.getElementById('adv-date-text').value;
+            const monto = document.getElementById('adv-amount').value;
+            const desc = document.getElementById('adv-desc').value.trim();
+
+            if (!monto || !desc) { showAlert('Todos los campos son obligatorios para generar el anticipo.', 'warning'); return; }
+
+            let formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
+            formData.append('advance_type', tipo);
+            formData.append('advance_date', fecha);
+            formData.append('amount', monto);
+            formData.append('description', desc);
+
+            try {
+                Swal.fire({ title: 'Procesando...', text: 'Registrando la solicitud de fondos operativos.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const response = await fetch('{{ route('expense-claims.advances.store') }}', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({ title: '¡Anticipo Solicitado!', text: data.message + ' Folio: ' + data.folio, icon: 'success', confirmButtonColor: 'var(--teal-dark)' });
+                    closeAdvanceModal();
+                    fetchUserAdvances(sessionUser.id);
+                } else { showAlert(data.message, 'error'); }
+            } catch (error) { showAlert('Error al conectar con el servidor.', 'error'); }
+        }
+
+        function openAdvanceFromSelect() {
+            const selectId = document.getElementById('modal-advance-id').value;
+            if (selectId) verDetalleAnticipo(selectId);
+        }
+
+        /* ── GESTIÓN INTEGRADA DEL BUSCADOR (CON FEEDBACK VISUAL) ── */
+        modalNombre.addEventListener('input', function() {
+            if (modalNombre.hasAttribute('readonly') || modalNombre.disabled) return;
+            const query = this.value.toLowerCase().trim();
+
+            if (query.length < 2) {
+                dropdown.innerHTML = '';
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = '<div class="reimburse-dropdown-searching"><i class="bx bx-loader-alt bx-spin"></i> Buscando en el personal...</div>';
+            dropdown.classList.remove('hidden');
+
+            const results = companyEmployees.filter(emp => emp.nombre.toLowerCase().includes(query));
+
+            setTimeout(() => {
+                dropdown.innerHTML = '';
+                if (results.length > 0) {
+                    results.forEach(emp => {
+                        const item = document.createElement('div');
+                        item.className = 'reimburse-dropdown-item';
+                        item.innerHTML = `<strong>${emp.nombre}</strong><small>${emp.depto}</small>`;
+                        item.onclick = () => selectEmployee(emp);
+                        dropdown.appendChild(item);
+                    });
+                } else {
+                    dropdown.innerHTML = '<div class="reimburse-dropdown-empty"><i class="bx bx-search-alt"></i> No se encontraron coincidencias</div>';
+                }
+            }, 180);
+        });
+
+        function selectEmployee(emp) {
+            modalNombre.value = emp.nombre;
+            modalDepto.value = emp.depto;
+            beneficiaryId.value = emp.id;
+            dropdown.classList.add('hidden');
+            fetchUserAdvances(emp.id);
+            showAlert(`El beneficiario ha sido actualizado a: <strong>${emp.nombre}</strong>`, 'info');
+        }
+
+        document.addEventListener('click', function(e) { if (!modalNombre.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden'); });
+
+        /* ── GESTIÓN DE INTERRUPTORES DE FORMULARIO ── */
         function handleDelegationToggle() {
-            const isDelegated = document.getElementById('toggle-delegation').checked;
+            const isDelegated = document.querySelector('input[name="is_delegated"]:checked').value === "1";
+            const radioPills = document.querySelectorAll('input[name="is_delegated"]');
 
             if (isDelegated) {
-                // Solo si el campo no está bloqueado por el sistema
-                if(!document.getElementById('toggle-delegation').disabled) {
+                if (!radioPills[0].disabled) {
                     modalNombre.removeAttribute('readonly');
-                    modalNombre.value = ''; // Se limpia para que busque uno nuevo
+                    modalNombre.value = '';
                     modalNombre.focus();
                 }
                 modalNombre.placeholder = 'Buscar empleado por nombre...';
@@ -594,42 +828,9 @@
                 iconSolicitante.className = 'bx bx-user field-icon';
                 iconSolicitante.style.color = '#94a3b8';
                 dropdown.classList.add('hidden');
+                fetchUserAdvances(sessionUser.id);
             }
         }
-
-        modalNombre.addEventListener('input', function() {
-            if (modalNombre.hasAttribute('readonly') || modalNombre.disabled) return;
-            const query = this.value.toLowerCase();
-            dropdown.innerHTML = '';
-            if (query.length < 2) { dropdown.classList.add('hidden'); return; }
-
-            const results = companyEmployees.filter(emp => emp.nombre.toLowerCase().includes(query));
-            if (results.length > 0) {
-                results.forEach(emp => {
-                    const item = document.createElement('div');
-                    item.className = 'reimburse-dropdown-item';
-                    item.innerHTML = `<strong>${emp.nombre}</strong><small style="color:#64748b; font-size:11px;">${emp.depto}</small>`;
-                    item.onclick = () => selectEmployee(emp);
-                    dropdown.appendChild(item);
-                });
-                dropdown.classList.remove('hidden');
-            } else {
-                dropdown.innerHTML = '<div class="reimburse-dropdown-empty">No se encontraron coincidencias</div>';
-                dropdown.classList.remove('hidden');
-            }
-        });
-
-        function selectEmployee(emp) {
-            modalNombre.value = emp.nombre;
-            modalDepto.value = emp.depto;
-            beneficiaryId.value = emp.id;
-            dropdown.classList.add('hidden');
-            showAlert(`El beneficiario del reembolso ha sido actualizado a: <strong>${emp.nombre}</strong>`, 'info');
-        }
-
-        document.addEventListener('click', function(e) {
-            if (!modalNombre.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden');
-        });
 
         /* ── CONTROL DE PESTAÑAS DEL PANEL SAT ── */
         function toggleSatPanel() { document.getElementById('sat-panel').classList.toggle('hidden'); }
@@ -642,25 +843,35 @@
             });
         });
 
-        /* ── VARIABLES TABLA MAESTRA ── */
+        /* ── VARIABLES TABLA MAESTRA Y PAGINACIÓN ── */
         let requests = {!! json_encode($requestsData) !!};
         let currentEvaluateId = null;
 
+        let currentPage = 1;
+        let itemsPerPage = 5;
+
         const fmt = n => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
-        document.getElementById('modal-fecha-hoy').textContent = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
         let activeFilter = 'all';
         let searchQuery = '';
 
-        document.getElementById('table-search').addEventListener('input', function() { searchQuery = this.value.toLowerCase().trim(); renderDashboard(); });
+        document.getElementById('table-search').addEventListener('input', function() { searchQuery = this.value.toLowerCase().trim(); currentPage = 1; renderDashboard(); });
         document.querySelectorAll('.filter-tab').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 activeFilter = this.dataset.filter;
+                currentPage = 1;
                 renderDashboard();
             });
         });
+
+        function changePageSize() {
+            const val = document.getElementById('page-size-select').value;
+            itemsPerPage = val === 'all' ? 999999 : parseInt(val);
+            currentPage = 1;
+            renderDashboard();
+        }
 
         function renderDashboard() {
             const list = document.getElementById('dashboard-list');
@@ -691,13 +902,23 @@
                 return matchFilter && matchSearch;
             });
 
-            tableCount.textContent = `${filtered.length} solicitud${filtered.length !== 1 ? 'es' : ''} registrada(s)`;
-            if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
+            tableCount.textContent = `${filtered.length} solicitud(es) registrada(s)`;
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                document.getElementById('pagination-controls').innerHTML = '';
+                return;
+            }
             emptyState.classList.add('hidden');
 
-            filtered.forEach((req) => {
-                const globalIdx = requests.findIndex(r => r.id === req.id);
-                let badge = '', badgePago = '';
+            const totalPages = Math.ceil(filtered.length / itemsPerPage);
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const paginatedData = filtered.slice(startIdx, startIdx + itemsPerPage);
+
+            paginatedData.forEach((req) => {
+                let badge = '', badgePago = '', advanceBadge = '';
 
                 if (req.status === 'Aprobado') badge = `<span class="status-badge badge-ok"><i class="bx bx-check-circle"></i> Aprobado</span>`;
                 else if (req.status === 'Rechazado') badge = `<span class="status-badge badge-fail"><i class="bx bx-x-circle"></i> Rechazado</span>`;
@@ -712,19 +933,37 @@
                 else if (req.pago === 'No procede') badgePago = `<span class="status-badge badge-payment-void"><i class="bx bx-block"></i> No procede</span>`;
                 else badgePago = `<span class="status-badge badge-disabled"><i class="bx bx-minus"></i> ${req.pago || 'N/A'}</span>`;
 
+                // LLENADO DINÁMICO DEL COLOR DEL ANTICIPO
+                if (req.advance_folio && req.advance_id) {
+                    let advClass = '';
+                    if (req.advance_status === 'Pendiente') advClass = 'advance-folio-pending';
+                    else if (['Aprobado', 'Entregado', 'Comprobado'].includes(req.advance_status)) advClass = 'advance-folio-approved';
+                    else if (req.advance_status === 'Rechazado') advClass = 'advance-folio-rejected';
+
+                    advanceBadge = `<span class="row-folio advance-folio ${advClass}" onclick="verDetalleAnticipo(${req.advance_id})" title="Clic para ver detalle de este anticipo"><i class="bx bx-link"></i> ${req.advance_folio}</span>`;
+                } else { advanceBadge = `<span class="row-text-empty">Independiente</span>`; }
+
                 const evaluateBtn = (req.status === 'Pendiente' || req.status === 'Validado') ?
                     `<button class="btn-icon btn-icon-evaluate" onclick="evaluarSolicitud(${req.id})" title="Gestionar Resolución"><i class="bx bx-check-shield"></i></button>` : '';
 
+                // Truncado Inteligente del Nombre
+                let shortName = req.nombre.length > 15 ? req.nombre.substring(0, 15) + '...' : req.nombre;
+
+                // Truncado Inteligente del Motivo (3 palabras)
+                let fullMotive = req.motivo || '';
+                let words = fullMotive.split(' ');
+                let shortMotive = words.length > 3 ? words.slice(0, 3).join(' ') + '...' : fullMotive;
+
                 list.innerHTML += `
                 <tr>
-                    <td class="row-index">${globalIdx + 1}</td>
                     <td><span class="row-folio"><i class="bx bx-hash"></i> ${req.folioP}</span></td>
                     <td><span class="row-folio user-folio">${req.folioU}</span></td>
-                    <td><span class="row-date">${req.fecha}</span></td>
-                    <td><span class="row-name">${req.nombre}</span></td>
-                    <td><span class="row-motive">${req.motivo}</span></td>
                     <td><span class="row-depto">${req.depto}</span></td>
+                    <td><span class="row-name" title="${req.nombre}">${shortName}</span></td>
+                    <td><span class="row-date">${req.fecha}</span></td>
+                    <td><span class="row-motive" title="${fullMotive}">${shortMotive}</span></td>
                     <td><div class="row-amount-wrap"><span class="row-amount">${fmt(req.amount)}</span><span class="row-amount-label">MXN</span></div></td>
+                    <td>${advanceBadge}</td>
                     <td>${badge}</td>
                     <td>${badgePago}</td>
                     <td class="cell-actions">
@@ -735,6 +974,37 @@
                     </td>
                 </tr>`;
             });
+
+            renderPagination(totalPages);
+            animateTableRows('#main-data-table');
+        }
+
+        function renderPagination(totalPages) {
+            const container = document.getElementById('pagination-controls');
+            container.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            const btnPrev = document.createElement('button');
+            btnPrev.className = 'page-btn';
+            btnPrev.innerHTML = '<i class="bx bx-chevron-left"></i>';
+            btnPrev.disabled = currentPage === 1;
+            btnPrev.onclick = () => { currentPage--; renderDashboard(); };
+            container.appendChild(btnPrev);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                btn.textContent = i;
+                btn.onclick = () => { currentPage = i; renderDashboard(); };
+                container.appendChild(btn);
+            }
+
+            const btnNext = document.createElement('button');
+            btnNext.className = 'page-btn';
+            btnNext.innerHTML = '<i class="bx bx-chevron-right"></i>';
+            btnNext.disabled = currentPage === totalPages;
+            btnNext.onclick = () => { currentPage++; renderDashboard(); };
+            container.appendChild(btnNext);
         }
 
         /* ── INYECCIÓN EN HTML DEL TEMPLATE ── */
@@ -763,46 +1033,36 @@
 
         function removeRow(btn) {
             const tbody = btn.closest('tbody');
-            if (tbody.querySelectorAll('.data-row').length > 1) {
-                btn.closest('tr').remove();
-                calcTotal();
-            } else {
-                showAlert('Se requiere de manera obligatoria mantener al menos una fila de captura en la categoría.', 'warning');
-            }
+            if (tbody.querySelectorAll('.data-row').length > 1) { btn.closest('tr').remove(); calcTotal(); }
+            else { showAlert('Se requiere de manera obligatoria mantener al menos una fila de captura.', 'warning'); }
         }
 
-        /* ── BLOQUEO / DESBLOQUEO DE FORMULARIO ── */
+        /* ── REASIGNACIÓN DE BLOQUEOS ── */
         function lockForm() {
-            // Bloqueamos los inputs generales
             document.querySelectorAll('#reimbursement-modal .modal-focusable, #reimbursement-modal .cell-input').forEach(el => el.setAttribute('disabled', 'true'));
-            document.querySelectorAll('input[name="is_deductible"]').forEach(el => el.disabled = true);
+            document.querySelectorAll('input[name="is_deductible"], input[name="is_delegated"]').forEach(el => el.disabled = true);
             document.querySelectorAll('.btn-add-row, .btn-remove-row').forEach(el => el.classList.add('hidden'));
-
             document.getElementById('evidence-panel').style.pointerEvents = 'none';
             document.querySelector('.modal-header-actions .btn-secondary').classList.add('hidden');
-
-            // Bloqueamos el Switch y el campo de nombre para que no sean editables en modo Vista
-            document.getElementById('toggle-delegation').disabled = true;
             document.getElementById('modal-nombre').setAttribute('readonly', 'true');
             document.getElementById('modal-nombre').disabled = true;
+            document.getElementById('modal-advance-id').disabled = true;
+            toggleAdvanceViewButton();
         }
 
         function unlockForm() {
             document.querySelectorAll('#reimbursement-modal .modal-focusable, #reimbursement-modal .cell-input').forEach(el => el.removeAttribute('disabled'));
-            document.querySelectorAll('input[name="is_deductible"]').forEach(el => el.disabled = false);
+            document.querySelectorAll('input[name="is_deductible"], input[name="is_delegated"]').forEach(el => el.disabled = false);
             document.querySelectorAll('.btn-add-row, .btn-remove-row').forEach(el => el.classList.remove('hidden'));
             document.getElementById('evidence-panel').style.pointerEvents = 'auto';
             document.querySelector('.modal-header-actions .btn-secondary').classList.remove('hidden');
-
-            document.getElementById('toggle-delegation').disabled = false;
             document.getElementById('modal-nombre').disabled = false;
+            document.getElementById('modal-advance-id').disabled = false;
+            document.getElementById('btn-view-advance').classList.add('hidden');
 
-            // Si el toggle está activado, quitamos el readonly para permitir búsqueda
-            if (document.getElementById('toggle-delegation').checked) {
-                document.getElementById('modal-nombre').removeAttribute('readonly');
-            } else {
-                document.getElementById('modal-nombre').setAttribute('readonly', 'true');
-            }
+            const isDelegated = document.querySelector('input[name="is_delegated"]:checked').value === "1";
+            if (isDelegated) { document.getElementById('modal-nombre').removeAttribute('readonly'); }
+            else { document.getElementById('modal-nombre').setAttribute('readonly', 'true'); }
         }
 
         function resetModalForm() {
@@ -815,33 +1075,32 @@
 
             document.getElementById('modal-motivo').value = '';
             document.getElementById('modal-centro-costos').value = '';
+            document.getElementById('modal-tipo-solicitud').value = 'Reembolso';
+            document.getElementById('modal-tipo-gasto').value = 'viaje';
+
             document.getElementById('sat-panel').classList.add('hidden');
             document.getElementById('sat-result-container').classList.add('hidden');
             document.getElementById('rejection-container').classList.add('hidden');
 
             tempSatData = null; currentActiveClaimId = null; isEditMode = false;
+            document.querySelector('input[name="is_delegated"][value="0"]').checked = true;
+            handleDelegationToggle();
 
-            const toggleDel = document.getElementById('toggle-delegation');
-            if (toggleDel) { toggleDel.checked = false; handleDelegationToggle(); }
-            document.getElementById('delegation-container').classList.remove('hidden');
-
-            evidenciasFiles = []; renderFileList(); actualizarInputFiles(); calcTotal();
-            unlockForm();
+            evidenciasFiles = []; renderFileList(); actualizarInputFiles(); calcTotal(); unlockForm();
         }
 
-        /* ── MODOS DEL MODAL ── */
+        /* ── MODOS DE ACCIÓN PRINCIPALES ── */
         function openModalForCreate() {
             resetModalForm();
-            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-receipt"></i> Generación de <strong>Reembolso Múltiple</strong>';
-            document.getElementById('modal-folio-p').innerHTML = '<span class="status-badge badge-draft" style="border:none; padding: 2px 6px;">Asignación Automática</span>';
-            document.getElementById('modal-folio-u').innerHTML = '<span class="status-badge badge-draft" style="border:none; padding: 2px 6px;">Automático</span>';
+            fetchUserAdvances(sessionUser.id);
 
-            document.querySelector('input[name="tipo_gasto"][value="viaje"]').checked = true;
+            document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-receipt"></i> Generación de <strong>Comprobación</strong>';
+            document.getElementById('modal-folio-p').innerHTML = '<span class="status-badge badge-draft badge-draft-auto">Asignación Automática</span>';
+            document.getElementById('modal-folio-u').innerHTML = '<span class="status-badge badge-draft badge-draft-auto">Automático</span>';
             document.querySelector('input[name="is_deductible"][value="1"]').checked = true;
 
             document.getElementById('btn-enviar').innerHTML = '<i class="bx bx-send"></i> Emitir Solicitud a Revisión';
             document.getElementById('btn-borrador').classList.remove('hidden');
-
             document.getElementById('footer-create').classList.remove('hidden');
             document.getElementById('footer-view').classList.add('hidden');
             document.getElementById('footer-evaluate').classList.add('hidden');
@@ -876,28 +1135,20 @@
                     document.getElementById('modal-folio-u').textContent = claim.folio_user || 'N/A';
                     document.getElementById('modal-lugar').value = claim.emission_place;
 
-                    // Ajuste estético delegado sin borrar el valor cargado de la BD
-                    if (claim.user_id !== sessionUser.id) {
-                        document.getElementById('toggle-delegation').checked = true;
-                        iconSolicitante.className = 'bx bx-search field-icon';
-                        iconSolicitante.style.color = 'var(--teal-dark)';
-                        modalNombre.classList.add('reimburse-input-active-search');
-                    } else {
-                        document.getElementById('toggle-delegation').checked = false;
-                        iconSolicitante.className = 'bx bx-user field-icon';
-                        iconSolicitante.style.color = '#94a3b8';
-                        modalNombre.classList.remove('reimburse-input-active-search');
-                    }
+                    if (claim.user_id !== sessionUser.id) { document.querySelector('input[name="is_delegated"][value="1"]').checked = true; }
+                    else { document.querySelector('input[name="is_delegated"][value="0"]').checked = true; }
+                    handleDelegationToggle();
 
-                    // Asignar los valores inyectados de la consulta
                     document.getElementById('modal-nombre').value = claim.beneficiary.name;
                     document.getElementById('modal-depto').value = claim.beneficiary.employee?.area?.name || 'Sin asignar';
                     document.getElementById('modal-beneficiary-id').value = claim.user_id;
-
                     document.getElementById('modal-centro-costos').value = claim.cost_center;
                     document.getElementById('modal-motivo').value = claim.motive;
-                    document.querySelector(`input[name="tipo_gasto"][value="${claim.category}"]`).checked = true;
+                    document.getElementById('modal-tipo-solicitud').value = claim.request_type || 'Reembolso';
+                    document.getElementById('modal-tipo-gasto').value = claim.category;
                     document.querySelector(`input[name="is_deductible"][value="${claim.is_deductible ? '1' : '0'}"]`).checked = true;
+
+                    await fetchUserAdvances(claim.user_id, claim.expense_advance_id);
 
                     ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
                         document.getElementById(cat).querySelectorAll('.data-row').forEach(r => r.remove());
@@ -906,10 +1157,8 @@
                     claim.lines.forEach(line => {
                         const cat = line.concept_group;
                         addRow(cat, line.expense_cfdi_id || '');
-
                         const targetRow = document.getElementById(cat).lastElementChild;
                         const inputs = targetRow.querySelectorAll('.cell-input');
-
                         const dateOnly = line.expense_date.substring(0, 10);
                         const [y, m, d] = dateOnly.split('-');
 
@@ -929,24 +1178,18 @@
                         if (document.getElementById(cat).querySelectorAll('.data-row').length === 0) { addRow(cat); }
                     });
 
-                    calcTotal();
-                    Swal.close();
-                    return claim;
+                    calcTotal(); Swal.close(); return claim;
                 }
-            } catch (error) {
-                console.error(error);
-                showAlert('Error del servidor: No se pudo cargar la información.', 'error');
-            }
+            } catch (error) { showAlert('Error del servidor: No se pudo cargar la información.', 'error'); }
         }
 
         async function verDetalles(id) {
             resetModalForm();
             const claim = await fetchAndPopulateClaim(id);
-            if(!claim) return;
+            if (!claim) return;
 
             document.getElementById('main-modal-title').innerHTML = `<i class="bx bx-search-alt"></i> Inspección del <strong>Folio: ${claim.folio_system}</strong>`;
-
-            lockForm(); // ── BLOQUEAMOS EDICIÓN EN MODO VISTA ──
+            lockForm();
 
             document.getElementById('footer-create').classList.add('hidden');
             document.getElementById('footer-view').classList.remove('hidden');
@@ -955,24 +1198,19 @@
             const viewFooter = document.getElementById('footer-view');
             viewFooter.innerHTML = '<button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button>';
 
-            // Si es Borrador o fue Rechazado, damos opción de corregir
             if (claim.status_review === 'Borrador' || claim.status_review === 'Rechazado') {
                 const btnEdit = document.createElement('button');
-                btnEdit.type = 'button';
-                btnEdit.className = 'btn btn-primary';
+                btnEdit.type = 'button'; btnEdit.className = 'btn btn-primary';
                 btnEdit.innerHTML = '<i class="bx bx-edit"></i> ' + (claim.status_review === 'Rechazado' ? 'Corregir y Reenviar' : 'Continuar Borrador');
                 btnEdit.onclick = () => habilitarEdicion(claim.status_review);
                 viewFooter.appendChild(btnEdit);
             }
-
             document.getElementById('reimbursement-modal').classList.remove('hidden');
         }
 
         function habilitarEdicion(status) {
-            isEditMode = true;
-            unlockForm();
+            isEditMode = true; unlockForm();
             document.getElementById('main-modal-title').innerHTML = `<i class="bx bx-edit"></i> Edición del <strong>Folio: ${document.getElementById('modal-folio-p').textContent}</strong>`;
-
             document.getElementById('footer-view').classList.add('hidden');
             document.getElementById('footer-create').classList.remove('hidden');
 
@@ -989,12 +1227,10 @@
         async function evaluarSolicitud(id) {
             resetModalForm();
             const claim = await fetchAndPopulateClaim(id);
-            if(!claim) return;
+            if (!claim) return;
 
             document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-check-shield"></i> Ejecución de Dictamen Administrativo';
-            currentEvaluateId = id;
-
-            lockForm(); // ── EN EVALUACIÓN NADIE EDITA LOS CAMPOS ──
+            currentEvaluateId = id; lockForm();
 
             const btnValidate = document.getElementById('btn-eval-validate');
             const btnApprove = document.getElementById('btn-eval-approve');
@@ -1019,38 +1255,22 @@
                 Swal.fire({
                     title: `<span style="font-family:'Poppins', sans-serif;">Motivo de Rechazo</span>`,
                     html: `<span style="font-family:'Poppins', sans-serif; color:#64748b; font-size: 0.85rem;">Explica por qué no procede esta solicitud. El usuario podrá ver el comentario y corregirlo.</span>`,
-                    input: 'textarea',
-                    inputPlaceholder: 'Ej. Montos incorrectos, falta factura de hotel...',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: confirmColor,
-                    cancelButtonColor: '#94a3b8',
-                    confirmButtonText: `Rechazar Folio`,
-                    cancelButtonText: `Cancelar`,
+                    input: 'textarea', inputPlaceholder: 'Ej. Montos incorrectos...', icon: 'warning', showCancelButton: true,
+                    confirmButtonColor: confirmColor, cancelButtonColor: '#94a3b8', confirmButtonText: `Rechazar Folio`, cancelButtonText: `Cancelar`,
                     inputValidator: (value) => { if (!value.trim()) return '¡Es obligatorio justificar el rechazo para auditoría!'; }
-                }).then((result) => {
-                    if (result.isConfirmed) { updateStatus(currentEvaluateId, status, result.value); closeModal(); currentEvaluateId = null; }
-                });
+                }).then((result) => { if (result.isConfirmed) { updateStatus(currentEvaluateId, status, result.value); closeModal(); currentEvaluateId = null; } });
             } else {
                 Swal.fire({
                     title: `<span style="font-family:'Poppins', sans-serif;">¿Emisión de Dictamen Final?</span>`,
                     html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Desea <strong>${actionText}</strong> este folio?</span>`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: confirmColor,
-                    cancelButtonColor: '#94a3b8',
-                    confirmButtonText: `Autorizar Movimiento`,
-                    cancelButtonText: `Cancelar Acción`
-                }).then((result) => {
-                    if (result.isConfirmed) { updateStatus(currentEvaluateId, status, null); closeModal(); currentEvaluateId = null; }
-                });
+                    icon: 'question', showCancelButton: true, confirmButtonColor: confirmColor, cancelButtonColor: '#94a3b8', confirmButtonText: `Autorizar Movimiento`, cancelButtonText: `Cancelar Acción`
+                }).then((result) => { if (result.isConfirmed) { updateStatus(currentEvaluateId, status, null); closeModal(); currentEvaluateId = null; } });
             }
         }
 
         async function updateStatus(id, status, comments) {
             try {
                 Swal.fire({ title: 'Dictaminando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
                 let formData = new FormData();
                 formData.append('_token', '{{ csrf_token() }}');
                 formData.append('new_status', status);
@@ -1060,14 +1280,12 @@
                 const response = await fetch(statusUrl, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await response.json();
 
-                if (data.success) {
-                    Swal.fire('Completado', data.message, 'success');
-                    setTimeout(() => window.location.reload(), 1500);
-                } else { showAlert(data.message, 'error'); }
+                if (data.success) { Swal.fire('Completado', data.message, 'success'); setTimeout(() => window.location.reload(), 1500); }
+                else { showAlert(data.message, 'error'); }
             } catch (error) { showAlert('No se pudo comunicar con el servidor.', 'error'); }
         }
 
-        /* ── GESTOR PDF ── */
+        /* ── INTERACCIÓN DOCUMENTAL SAT ── */
         let evidenciasFiles = [];
         const maxFileSize = 10 * 1024 * 1024;
         const evidenciaInput = document.getElementById('evidence-upload');
@@ -1095,39 +1313,27 @@
         function formatBytes(bytes, decimals = 2) { if (!+bytes) return '0 Bytes'; const k = 1024, dm = decimals < 0 ? 0 : decimals, sizes = ['Bytes', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k)); return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`; }
         function renderFileList() { const listDiv = document.getElementById('evidence-list'); listDiv.innerHTML = evidenciasFiles.length > 0 ? `<div class="file-grid">${evidenciasFiles.map((f, i) => `<div class="file-card"><i class="bx bxs-file-pdf file-icon-lg"></i><div class="file-info"><span class="file-name" title="${f.name}">${f.name}</span><span class="file-size">${formatBytes(f.size)}</span></div><button type="button" class="btn-remove-file" onclick="event.stopPropagation(); removeFile(${i})"><i class="bx bx-x"></i></button></div>`).join('')}</div>` : ''; }
 
-        /* ── INTERACCIÓN SAT & BÚSQUEDA ── */
-        let tempSatData = null;
-
         async function buscarFactura() {
             const uuid = document.getElementById('search-uuid').value.trim();
             const btnB = document.getElementById('btn-buscar');
             if (uuid.length !== 36) { showAlert('Revisión requerida: El código UUID ingresado debe contener exactamente 36 caracteres.', 'warning'); return; }
             btnB.innerHTML = '<span class="spinner"></span> Consultando...'; btnB.disabled = true;
-
             try {
                 const response = await fetch(`{{ route('expense-claims.cfdi.search') }}?uuid=${uuid}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await response.json();
-
                 if (response.ok && data.success) {
-                    const cfdi = data.data;
-                    let serieFolio = '';
+                    const cfdi = data.data; let serieFolio = '';
                     if (cfdi.serie) serieFolio += cfdi.serie + '-';
                     if (cfdi.folio) serieFolio += cfdi.folio;
                     if (!serieFolio) serieFolio = cfdi.uuid.substring(0, 8);
 
                     tempSatData = {
-                        id: cfdi.id,
-                        fecha_iso: cfdi.issue_date.split(' ')[0],
-                        folio: serieFolio,
-                        desc: cfdi.concept_summary || 'Servicios amparados por UUID',
-                        sub: parseFloat(cfdi.subtotal) || 0, iva: parseFloat(cfdi.tax_iva) || 0,
-                        ish: (parseFloat(cfdi.tax_ish) || 0) - (parseFloat(cfdi.tax_retenciones) || 0)
+                        id: cfdi.id, fecha_iso: cfdi.issue_date.split(' ')[0], folio: serieFolio, desc: cfdi.concept_summary || 'Servicios amparados por UUID',
+                        sub: parseFloat(cfdi.subtotal) || 0, iva: parseFloat(cfdi.tax_iva) || 0, ish: (parseFloat(cfdi.tax_ish) || 0) - (parseFloat(cfdi.tax_retenciones) || 0)
                     };
-
                     document.getElementById('sat-result-uuid').textContent = cfdi.uuid;
                     document.getElementById('sat-result-container').classList.remove('hidden');
-
-                    showAlert('El comprobante fiscal se ha localizado exitosamente en la bóveda.', 'success');
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Comprobante localizado en la bóveda fiscal.', showConfirmButton: false, timer: 3000 });
                 } else { showAlert(data.message, 'warning'); }
             } catch (error) { showAlert('Falla de Red: Imposible contactar con la bóveda satelital.', 'error'); }
             finally { btnB.innerHTML = '<i class="bx bx-search"></i> Buscar'; btnB.disabled = false; }
@@ -1144,36 +1350,20 @@
         async function leerXML(file) {
             if (!file || file.type !== 'text/xml') { showAlert('Por favor, asegúrese de seleccionar un archivo con extensión .xml válido.', 'error'); return; }
             Swal.fire({ title: 'Procesando XML...', text: 'Validando ante la Bóveda del Sistema.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            let formData = new FormData();
-            formData.append('xml_file', file);
-            formData.append('_token', '{{ csrf_token() }}');
-
+            let formData = new FormData(); formData.append('xml_file', file); formData.append('_token', '{{ csrf_token() }}');
             try {
                 const response = await fetch('{{ route('expense-claims.cfdi.upload') }}', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await response.json();
-
                 if (response.ok && data.success) {
-                    Swal.close(); const cfdi = data.data;
-                    document.getElementById('search-uuid').value = cfdi.uuid;
-
-                    let serieFolio = '';
-                    if (cfdi.serie) serieFolio += cfdi.serie + '-';
-                    if (cfdi.folio) serieFolio += cfdi.folio;
-                    if (!serieFolio) serieFolio = cfdi.uuid.substring(0, 8);
-
+                    Swal.close(); const cfdi = data.data; document.getElementById('search-uuid').value = cfdi.uuid;
+                    let serieFolio = ''; if (cfdi.serie) serieFolio += cfdi.serie + '-'; if (cfdi.folio) serieFolio += cfdi.folio; if (!serieFolio) serieFolio = cfdi.uuid.substring(0, 8);
                     tempSatData = {
-                        id: cfdi.id,
-                        fecha_iso: cfdi.issue_date.split(' ')[0],
-                        folio: serieFolio, desc: cfdi.concept_summary || 'Gasto importado (XML)',
-                        sub: parseFloat(cfdi.subtotal) || 0, iva: parseFloat(cfdi.tax_iva) || 0,
-                        ish: (parseFloat(cfdi.tax_ish) || 0) - (parseFloat(cfdi.tax_retenciones) || 0)
+                        id: cfdi.id, fecha_iso: cfdi.issue_date.split(' ')[0], folio: serieFolio, desc: cfdi.concept_summary || 'Gasto importado (XML)',
+                        sub: parseFloat(cfdi.subtotal) || 0, iva: parseFloat(cfdi.tax_iva) || 0, ish: (parseFloat(cfdi.tax_ish) || 0) - (parseFloat(cfdi.tax_retenciones) || 0)
                     };
-
                     document.getElementById('sat-result-uuid').textContent = cfdi.uuid;
                     document.getElementById('sat-result-container').classList.remove('hidden');
-
-                    showAlert(data.message, 'success');
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 3000 });
                 } else { showAlert(data.message || 'El XML proporcionado presenta inconsistencias fiscales.', 'error'); }
             } catch (error) { showAlert('No se pudo establecer conexión con el servidor de análisis.', 'error'); }
         }
@@ -1182,238 +1372,105 @@
             const cat = document.getElementById('sat-category').value;
             if (!cat) { showAlert('Debe indicar en qué categoría se contabilizará este gasto antes de integrarlo.', 'warning'); return; }
             if (!tempSatData) return;
-
-            const tbody = document.getElementById(cat);
-            const dataRows = tbody.querySelectorAll('.data-row');
-            let targetRow = null;
-
-            if (dataRows.length > 0) {
-                const lastRow = dataRows[dataRows.length - 1];
-                const inputs = lastRow.querySelectorAll('.cell-input');
-                if (!inputs[1].value.trim() && !inputs[2].value.trim()) targetRow = lastRow;
-            }
-
+            const tbody = document.getElementById(cat); const dataRows = tbody.querySelectorAll('.data-row'); let targetRow = null;
+            if (dataRows.length > 0) { const lastRow = dataRows[dataRows.length - 1]; const inputs = lastRow.querySelectorAll('.cell-input'); if (!inputs[1].value.trim() && !inputs[2].value.trim()) targetRow = lastRow; }
             if (!targetRow) { addRow(cat, tempSatData.id); targetRow = tbody.lastElementChild; }
-
-            let hiddenCfdiInput = targetRow.querySelector('.c-cfdi-id');
-            if (hiddenCfdiInput) hiddenCfdiInput.value = tempSatData.id || '';
-
+            let hiddenCfdiInput = targetRow.querySelector('.c-cfdi-id'); if (hiddenCfdiInput) hiddenCfdiInput.value = tempSatData.id || '';
             const inputs = targetRow.querySelectorAll('.cell-input');
             if (inputs[0]._flatpickr && tempSatData.fecha_iso) { inputs[0]._flatpickr.setDate(tempSatData.fecha_iso, true, "Y-m-d"); }
             else if (tempSatData.fecha_iso) { const [y, m, d] = tempSatData.fecha_iso.split('-'); inputs[0].value = `${d}/${m}/${y}`; }
-
-            inputs[1].value = tempSatData.folio;
-            inputs[2].value = tempSatData.desc;
-            inputs[3].value = tempSatData.sub;
-            inputs[4].value = ''; inputs[5].value = '';
-            inputs[6].value = tempSatData.ish;
-            inputs[7].value = tempSatData.iva;
-
-            calcTotal();
-            document.getElementById('sat-result-container').classList.add('hidden');
-            document.getElementById('sat-category').value = '';
-            tempSatData = null;
-
-            // Reemplazo del Toast por Alerta Normal
-            showAlert('El comprobante fiscal ha sido inyectado correctamente en la matriz de gastos.', 'success');
+            inputs[1].value = tempSatData.folio; inputs[2].value = tempSatData.desc; inputs[3].value = tempSatData.sub; inputs[4].value = ''; inputs[5].value = ''; inputs[6].value = tempSatData.ish; inputs[7].value = tempSatData.iva;
+            calcTotal(); document.getElementById('sat-result-container').classList.add('hidden'); document.getElementById('sat-category').value = ''; tempSatData = null;
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'El comprobante fiscal ha sido inyectado correctamente en la matriz de gastos.', showConfirmButton: false, timer: 3000 });
         }
 
         function calcTotal() {
             let gFiscal = 0, gSimple = 0, gPropina = 0, gIva = 0, gIsh = 0;
-
             document.querySelectorAll('.data-row').forEach(row => {
                 const inputs = row.querySelectorAll('.cell-input');
-                const rFiscal = parseFloat(inputs[3].value) || 0;
-                const rSimple = parseFloat(inputs[4].value) || 0;
-                const rPropina = parseFloat(inputs[5].value) || 0;
-                const rIsh = parseFloat(inputs[6].value) || 0;
-                const rIva = parseFloat(inputs[7].value) || 0;
-
-                const rowTotal = rFiscal + rSimple + rPropina + rIsh + rIva;
-                const rowTotalCell = row.querySelector('.cell-row-total');
+                const rFiscal = parseFloat(inputs[3].value) || 0; const rSimple = parseFloat(inputs[4].value) || 0; const rPropina = parseFloat(inputs[5].value) || 0; const rIsh = parseFloat(inputs[6].value) || 0; const rIva = parseFloat(inputs[7].value) || 0;
+                const rowTotal = rFiscal + rSimple + rPropina + rIsh + rIva; const rowTotalCell = row.querySelector('.cell-row-total');
                 if (rowTotalCell) rowTotalCell.textContent = rowTotal > 0 ? fmt(rowTotal) : '-';
-
                 gFiscal += rFiscal; gSimple += rSimple; gPropina += rPropina; gIsh += rIsh; gIva += rIva;
             });
-
             const gTotal = gFiscal + gSimple + gPropina + gIva + gIsh;
-
-            document.getElementById('sum-fiscal').textContent = fmt(gFiscal);
-            document.getElementById('sum-simple').textContent = fmt(gSimple);
-            document.getElementById('sum-propinas').textContent = fmt(gPropina);
-            document.getElementById('sum-iva').textContent = fmt(gIva);
-            document.getElementById('sum-ish').textContent = fmt(gIsh);
-            document.getElementById('sum-total').textContent = fmt(gTotal);
-            document.getElementById('sum-total').setAttribute('data-value', gTotal);
+            document.getElementById('sum-fiscal').textContent = fmt(gFiscal); document.getElementById('sum-simple').textContent = fmt(gSimple); document.getElementById('sum-propinas').textContent = fmt(gPropina); document.getElementById('sum-iva').textContent = fmt(gIva); document.getElementById('sum-ish').textContent = fmt(gIsh); document.getElementById('sum-total').textContent = fmt(gTotal); document.getElementById('sum-total').setAttribute('data-value', gTotal);
         }
 
-        /* ── VALIDACIONES ORDENADAS PARA GUARDAR Y ENVIAR ── */
+        /* ── ENVÍOS SEGUROS ── */
         function verifyAndSubmit() {
-            const nombreBen = document.getElementById('modal-nombre').value.trim();
-            const motivo = document.getElementById('modal-motivo').value.trim();
-            const centroCosto = document.getElementById('modal-centro-costos').value;
-            const total = parseFloat(document.getElementById('sum-total').getAttribute('data-value'));
-
-            if (!nombreBen) {
-                showAlert('Debe asignar o buscar el nombre del beneficiario.', 'warning');
-                return;
-            }
-            if (!centroCosto) {
-                showAlert('Debe asignar el Centro de Costos correspondiente al departamento responsable.', 'warning');
-                return;
-            }
-            if (!motivo) {
-                showAlert('Es obligatorio detallar la justificación o motivo de la erogación para auditoría.', 'warning');
-                return;
-            }
-
-            let hasValidRows = false;
-            document.querySelectorAll('.data-row').forEach(row => {
-                const dateVal = row.querySelector('.cell-input').value;
-                if (dateVal) hasValidRows = true;
-            });
-
-            if (!hasValidRows) {
-                showAlert('El comprobante no tiene información válida. Registre al menos un concepto de gasto en la matriz.', 'error');
-                return;
-            }
-
-            if (total <= 0) {
-                showAlert('La sumatoria contable debe ser mayor a cero. Verifique los importes desglosados en las filas.', 'error');
-                return;
-            }
+            const nombreBen = document.getElementById('modal-nombre').value.trim(); const motivo = document.getElementById('modal-motivo').value.trim(); const centroCosto = document.getElementById('modal-centro-costos').value; const total = parseFloat(document.getElementById('sum-total').getAttribute('data-value'));
+            if (!nombreBen) { showAlert('Debe asignar o buscar el nombre del beneficiario.', 'warning'); return; }
+            if (!centroCosto) { showAlert('Debe asignar el Centro de Costos correspondiente al departamento responsable.', 'warning'); return; }
+            if (!motivo) { showAlert('Es obligatorio detallar la justificación o motivo de la erogación para auditoría.', 'warning'); return; }
+            let hasValidRows = false; document.querySelectorAll('.data-row').forEach(row => { const dateVal = row.querySelector('.cell-input').value; if (dateVal) hasValidRows = true; });
+            if (!hasValidRows) { showAlert('El comprobante no tiene información válida. Registre al menos un concepto de gasto en la matriz.', 'error'); return; }
+            if (total <= 0) { showAlert('La sumatoria contable debe ser mayor a cero. Verifique los importes desglosados en las filas.', 'error'); return; }
 
             Swal.fire({
                 title: `<span style="font-family:'Poppins', sans-serif;">¿Confirmar Revisión Gerencial?</span>`,
                 html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">Los datos por un valor de <strong>${fmt(total)}</strong> quedarán temporalmente inmutables y la solicitud será procesada.</span>`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: 'var(--teal-dark)',
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: `Emitir Responsiva`,
-                cancelButtonText: `Cancelar`
+                icon: 'question', showCancelButton: true, confirmButtonColor: 'var(--teal-dark)', cancelButtonColor: '#94a3b8', confirmButtonText: `Emitir Responsiva`, cancelButtonText: `Cancelar`
             }).then((result) => { if (result.isConfirmed) procesarEnvio('Pendiente', 'En espera'); });
         }
 
         function saveDraft() {
-            const nombreBen = document.getElementById('modal-nombre').value.trim();
-            const motivo = document.getElementById('modal-motivo').value.trim();
-
-            if (!nombreBen) {
-                showAlert('Para salvaguardar un borrador, debe existir un nombre de beneficiario.', 'warning');
-                return;
-            }
-            if (!motivo) {
-                showAlert('Para salvaguardar su información parcial, requerimos al menos capturar el Motivo de la Erogación.', 'warning');
-                return;
-            }
+            const nombreBen = document.getElementById('modal-nombre').value.trim(); const motivo = document.getElementById('modal-motivo').value.trim();
+            if (!nombreBen) { showAlert('Para salvaguardar un borrador, debe existir un nombre de beneficiario.', 'warning'); return; }
+            if (!motivo) { showAlert('Para salvaguardar su información parcial, requerimos al menos capturar el Motivo de la Erogación.', 'warning'); return; }
             procesarEnvio('Borrador', 'N/A');
         }
 
-        /* ── EMPAQUETADO FINAL (POST) ── */
         async function procesarEnvio(estadoRevision, estadoPago) {
             let lineasArray = [];
             ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
                 const rows = document.getElementById(cat).querySelectorAll('.data-row');
                 rows.forEach(row => {
-                    const cfdiIdInput = row.querySelector('.c-cfdi-id');
-                    const inputs = row.querySelectorAll('.cell-input');
+                    const cfdiIdInput = row.querySelector('.c-cfdi-id'); const inputs = row.querySelectorAll('.cell-input');
                     if (inputs[0].value) {
                         lineasArray.push({
-                            categoria: cat,
-                            cfdi_id: cfdiIdInput ? cfdiIdInput.value : null,
+                            categoria: cat, cfdi_id: cfdiIdInput ? cfdiIdInput.value : null,
                             fecha: inputs[0].value, folio: inputs[1].value, descripcion: inputs[2].value,
-                            monto_fiscal: parseFloat(inputs[3].value) || 0, monto_simple: parseFloat(inputs[4].value) || 0, monto_sin: parseFloat(inputs[5].value) || 0,
-                            ish: parseFloat(inputs[6].value) || 0, iva: parseFloat(inputs[7].value) || 0,
+                            monto_fiscal: parseFloat(inputs[3].value) || 0, monto_simple: parseFloat(inputs[4].value) || 0,
+                            monto_sin: parseFloat(inputs[5].value) || 0, ish: parseFloat(inputs[6].value) || 0, iva: parseFloat(inputs[7].value) || 0,
                             total_linea: parseFloat(row.querySelector('.cell-row-total').textContent.replace(/[^0-9.-]+/g, "")) || 0
                         });
                     }
                 });
             });
 
-            if (lineasArray.length === 0 && estadoRevision !== 'Borrador') {
-                showAlert('El sistema ha detectado una matriz vacía. Debe agregar conceptos contables.', 'error');
-                return;
-            }
-
-            let totalSubtotal = 0;
-            ['sum-fiscal', 'sum-simple', 'sum-propinas'].forEach(id => { totalSubtotal += parseFloat(document.getElementById(id).textContent.replace(/[^0-9.-]+/g, "")) || 0; });
+            if (lineasArray.length === 0 && estadoRevision !== 'Borrador') { showAlert('El sistema ha detectado una matriz vacía. Debe agregar conceptos contables.', 'error'); return; }
+            let totalSubtotal = 0; ['sum-fiscal', 'sum-simple', 'sum-propinas'].forEach(id => { totalSubtotal += parseFloat(document.getElementById(id).textContent.replace(/[^0-9.-]+/g, "")) || 0; });
 
             let formData = new FormData();
             formData.append('_token', '{{ csrf_token() }}');
             formData.append('motivo', document.getElementById('modal-motivo').value.trim());
+            formData.append('tipo_solicitud', document.getElementById('modal-tipo-solicitud').value);
+            formData.append('tipo_gasto', document.getElementById('modal-tipo-gasto').value);
             formData.append('is_deductible', document.querySelector('input[name="is_deductible"]:checked').value);
+            formData.append('advance_id', document.getElementById('modal-advance-id').value);
             formData.append('centro_costo', document.getElementById('modal-centro-costos').value);
-            formData.append('tipo_gasto', document.querySelector('input[name="tipo_gasto"]:checked').value);
             formData.append('beneficiary_id', document.getElementById('modal-beneficiary-id').value);
             formData.append('depto', document.getElementById('modal-depto').value);
             formData.append('lugar_emision', document.getElementById('modal-lugar').value);
             formData.append('is_draft', estadoRevision === 'Borrador');
-
             formData.append('total_subtotal', totalSubtotal);
             formData.append('total_iva', document.getElementById('sum-iva').textContent.replace(/[^0-9.-]+/g, ""));
             formData.append('total_ish', document.getElementById('sum-ish').textContent.replace(/[^0-9.-]+/g, ""));
             formData.append('total_amount', document.getElementById('sum-total').getAttribute('data-value'));
-
             formData.append('lineas', JSON.stringify(lineasArray));
             evidenciasFiles.forEach((file, index) => { formData.append(`evidencias[${index}]`, file); });
 
             try {
                 Swal.fire({ title: 'Sincronizando Base de Datos...', text: 'Registrando matrices y empaquetando evidencias documentales.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                let fetchUrl = '{{ route('expense-claims.store') }}';
-                if (isEditMode) { fetchUrl = `{{ url('administration/expense-claims/reimbursements') }}/${currentActiveClaimId}/update`; }
-
+                let fetchUrl = '{{ route('expense-claims.store') }}'; if (isEditMode) { fetchUrl = `{{ url('administration/expense-claims/reimbursements') }}/${currentActiveClaimId}/update`; }
                 const response = await fetch(fetchUrl, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await response.json();
-
-                if (data.success) {
-                    Swal.fire({ title: 'Trámite Procesado', html: data.message + '<br><strong>Folio Asignado: ' + data.folio + '</strong>', icon: 'success', confirmButtonColor: 'var(--teal-dark)' });
-                    closeModal(); setTimeout(() => window.location.reload(), 1800);
-                } else { showAlert(data.message || 'Error del servidor en la sincronización de datos.', 'error'); }
+                if (data.success) { Swal.fire({ title: 'Trámite Procesado', html: data.message + '<br><strong>Folio Asignado: ' + data.folio + '</strong>', icon: 'success', confirmButtonColor: 'var(--teal-dark)' }); closeModal(); setTimeout(() => window.location.reload(), 1800); }
+                else { showAlert(data.message || 'Error del servidor en la sincronización de datos.', 'error'); }
             } catch (error) { showAlert('No se pudo establecer el enlace seguro con los servidores internos.', 'error'); }
         }
 
-        const searchUuidInput = document.getElementById('search-uuid');
-        const uuidDropdown = document.getElementById('uuid-dropdown');
-        let uuidTimeout = null;
-
-        searchUuidInput.addEventListener('input', function() {
-            clearTimeout(uuidTimeout); const term = this.value.trim();
-            if (term.length < 2) { uuidDropdown.classList.add('hidden'); return; }
-
-            uuidTimeout = setTimeout(async () => {
-                try {
-                    const response = await fetch(`{{ route('expense-claims.cfdi.autocomplete') }}?term=${term}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
-                    const data = await response.json(); uuidDropdown.innerHTML = '';
-
-                    if (data.length > 0) {
-                        data.forEach(cfdi => {
-                            const item = document.createElement('div'); item.className = 'sat-dropdown-item';
-                            let serieFolio = '';
-                            if (cfdi.serie) serieFolio += cfdi.serie + '-';
-                            if (cfdi.folio) serieFolio += cfdi.folio;
-                            const folioBadge = serieFolio ? `<span style="background: var(--teal-dark); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">Folio: ${serieFolio}</span>` : '';
-
-                            item.innerHTML = `
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                    <strong style="color: var(--teal-light); font-family: monospace; font-size: 0.85rem;">${cfdi.uuid.substring(0, 13)}...</strong>
-                                    ${folioBadge}
-                                </div>
-                                <span style="display: block; color: #cbd5e1; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    <i class="bx bx-store-alt"></i> ${cfdi.issuer_name} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${fmt(cfdi.total)}</strong>
-                                </span>`;
-                            item.onclick = () => { searchUuidInput.value = cfdi.uuid; uuidDropdown.classList.add('hidden'); buscarFactura(); };
-                            uuidDropdown.appendChild(item);
-                        });
-                    } else { uuidDropdown.innerHTML = '<div class="sat-dropdown-empty">El código introducido no existe en nuestra base receptora.</div>'; }
-                    uuidDropdown.classList.remove('hidden');
-                } catch (error) { console.error("Error al autocompletar UUID:", error); }
-            }, 300);
-        });
-
-        document.addEventListener('click', function(e) { if (!searchUuidInput.contains(e.target) && !uuidDropdown.contains(e.target)) uuidDropdown.classList.add('hidden'); });
-
-        renderDashboard();
+        document.addEventListener('DOMContentLoaded', function() { renderDashboard(); });
     </script>
 @endpush

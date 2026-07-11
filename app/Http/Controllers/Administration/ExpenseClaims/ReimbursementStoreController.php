@@ -57,8 +57,10 @@ class ReimbursementStoreController extends Controller
                 'folio_system'   => $folioSystem,
                 'folio_user'     => $folioUser,
                 'claim_date'     => Carbon::now()->toDateString(),
+                'request_type'   => $request->tipo_solicitud,
                 'category'       => $request->tipo_gasto,
                 'is_deductible'  => $request->boolean('is_deductible'),
+                'expense_advance_id' => $request->advance_id ?: null,
                 'user_id'        => $beneficiaryId,
                 'created_by_id'  => $creatorId,
                 'area'           => $request->depto,
@@ -157,8 +159,10 @@ class ReimbursementStoreController extends Controller
             }
 
             $claim->update([
+                'request_type'   => $request->tipo_solicitud,
                 'category'       => $request->tipo_gasto,
                 'is_deductible'  => $request->boolean('is_deductible'),
+                'expense_advance_id' => $request->advance_id ?: null,
                 'cost_center'    => $request->centro_costo,
                 'emission_place' => $request->lugar_emision ?? 'VHSA, TAB.',
                 'motive'         => $request->motivo,
