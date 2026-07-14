@@ -2080,15 +2080,22 @@ enableDragToScroll('.table-container');
 function checkPendingVacationsAlert() {
     const periodKey = `${currentMonth}-${currentYear}`;
 
+    // Previene múltiples alertas repetitivas en la misma sesión
     if (hasAlertedVacations.has(periodKey)) return;
 
     let pendingCount = 0;
     let employeesWithPending = new Set();
 
-    workLogsData.forEach(log => {
-        const assignment = loadChartAssignments.find(a => a.employee_id === log.employee_id);
+    // Forzamos que currentUserId sea número para evitar fallos de === en producción
+    const safeCurrentUserId = parseInt(currentUserId, 10);
 
-        if (assignment && assignment.approver_id === currentUserId) {
+    workLogsData.forEach(log => {
+        // Buscamos la asignación asegurándonos de parsear los IDs a enteros
+        const assignment = loadChartAssignments.find(a =>
+            parseInt(a.employee_id, 10) === parseInt(log.employee_id, 10)
+        );
+
+        if (assignment && parseInt(assignment.approver_id, 10) === safeCurrentUserId) {
             if (log.daily_activities) {
                 log.daily_activities.forEach(act => {
                     const actType = act.activity_type || 'N';
@@ -2096,6 +2103,7 @@ function checkPendingVacationsAlert() {
                     const status = (act.activity_status || 'under_review').toLowerCase();
                     const vStatus = (act.activity_status_vespertina || 'under_review').toLowerCase();
 
+                    // Cuenta solo si el día es vacación y no está aprobado o rechazado
                     if ((actType === 'VAC' && (status === 'under_review' || status === 'reviewed')) ||
                         (vType === 'VAC' && (vStatus === 'under_review' || vStatus === 'reviewed'))) {
                         pendingCount++;
@@ -2113,7 +2121,7 @@ function checkPendingVacationsAlert() {
             icon: 'info',
             confirmButtonText: 'Entendido, voy a revisar',
             confirmButtonColor: '#3085d6',
-            backdrop: `rgba(148, 148, 201, 0.4)`
+            backdrop: `rgba(143, 143, 177, 0.4)`
         });
 
         hasAlertedVacations.add(periodKey);
