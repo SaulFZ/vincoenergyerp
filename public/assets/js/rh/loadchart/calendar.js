@@ -1791,275 +1791,293 @@ function resetAdditionalForms() {
         });
     }
 
-    saveBtn.addEventListener('click', function () {
-        let isValid = true;
-        document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+saveBtn.addEventListener('click', function () {
+    let isValid = true;
+    document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
 
-        const formData = {
-            employee_id: currentEmployeeId,
-            date: currentSelectedDate,
-            displayed_month: document.querySelector('.month-navigation span').getAttribute('data-month'),
-            displayed_year: document.querySelector('.month-navigation span').getAttribute('data-year'),
-        };
+    const formData = {
+        employee_id: currentEmployeeId,
+        date: currentSelectedDate,
+        displayed_month: document.querySelector('.month-navigation span').getAttribute('data-month'),
+        displayed_year: document.querySelector('.month-navigation span').getAttribute('data-year'),
+    };
 
-        const activityStatus = getFieldStatus(currentActivity, 'activity');
+    const activityStatus = getFieldStatus(currentActivity, 'activity');
 
-        if (isGuardia) {
-            if (!statusesToBlockField.includes(activityStatus)) {
-                formData.activity_type = matutinaSelect.value || 'N';
-                formData.activity_type_vespertina = vespertinaSelect.value || 'N';
+    if (isGuardia) {
+        if (!statusesToBlockField.includes(activityStatus)) {
+            formData.activity_type = matutinaSelect.value || 'N';
+            formData.activity_type_vespertina = vespertinaSelect.value || 'N';
 
-                formData.field_bonus_identifier = guardiaBonusInput ? guardiaBonusInput.value || null : null;
-                formData.guardia_bonus_quantity = guardiaBonusQuantityInput ? (parseInt(guardiaBonusQuantityInput.value) || 1) : 1;
-                formData.has_service_bonus = 'no';
+            formData.field_bonus_identifier = guardiaBonusInput ? guardiaBonusInput.value || null : null;
+            formData.guardia_bonus_quantity = guardiaBonusQuantityInput ? (parseInt(guardiaBonusQuantityInput.value) || 1) : 1;
+            formData.has_service_bonus = 'no';
 
-                if (formData.activity_type === 'VAC' || formData.activity_type_vespertina === 'VAC') {
-                    if (vacationDaysAvailable <= 0) {
-                        document.getElementById('vacation-balance-error').style.display = 'block';
-                        isValid = false;
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Límite alcanzado',
-                            text: `El límite de tus vacaciones ha sido alcanzado.`,
-                            confirmButtonText: 'Aceptar'
-                        });
-                        return;
-                    }
-                }
-            }
-        } else {
-            if (!statusesToBlockField.includes(activityStatus)) {
-                const activityType = document.getElementById('activity-type').value;
-                formData.activity_type = activityType || 'N';
-                formData.commissioned_to = activityType === 'C' ? document.getElementById('commissioned-select').value : null;
-                formData.commissioned_activity_type = activityType === 'C' ? commissionedActivityTypeSelect.value : null; // 🆕 Nuevo campo
-                formData.well_name = activityType === 'P' ? document.getElementById('well-name').value : null;
-
-                // ---> SECCIÓN DE VIAJE ACTUALIZADA
-                formData.travel_destination = activityType === 'V' ? document.getElementById('travel-destination').value.trim() : null;
-                formData.travel_reason = activityType === 'V' ? document.getElementById('travel-reason').value.trim() : null;
-                formData.is_continuation = activityType === 'V' ? isContinuationCheckbox.checked : false;
-
-                if (isSuministro && activityType === 'V') {
-                    formData.contract_number = contractNumberInput.value.trim();
-                    formData.travel_service_type = travelServiceTypeInput.value;
-
-                    if (!formData.contract_number) {
-                        document.getElementById('contract-number-error').style.display = 'block';
-                        isValid = false;
-                    }
-                    if (!formData.travel_service_type) {
-                        document.getElementById('travel-service-type-error').style.display = 'block';
-                        isValid = false;
-                    }
-                } else {
-                    formData.contract_number = null;
-                    formData.travel_service_type = null;
-                }
-                // <--- FIN SECCIÓN ACTUALIZADA
-
-                if (activityType === 'B' && requiresBaseDesc) {
-                    formData.base_activity_description = baseDescSelect.value;
-                    if (!formData.base_activity_description) {
-                        document.getElementById('base-activity-description-error').style.display = 'block';
-                        isValid = false;
+            // Validación de vacaciones para Guardia
+            if (formData.activity_type === 'VAC' || formData.activity_type_vespertina === 'VAC') {
+                // Verificar si este día YA tenía vacaciones antes
+                let wasAlreadyVacation = false;
+                if (currentActivity) {
+                    if (currentActivity.activity_type === 'VAC' || currentActivity.activity_type_vespertina === 'VAC') {
+                        wasAlreadyVacation = true;
                     }
                 }
 
-                const isActivityP = activityType === 'P';
-                const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
-                formData.has_service_bonus = isActivityP ? hasServiceBonus : 'no';
-
-                if (activityType === 'VAC') {
-                    let currentVacationDaysInMonth = 0;
-                    document.querySelectorAll('.calendar td[data-date]').forEach(cell => {
-                        const activity = monthlyActivities[cell.getAttribute('data-date')];
-                        if (activity && activity.activity_type === 'VAC') {
-                            currentVacationDaysInMonth++;
-                        }
-                    });
-
-                    const isNewVacationDay = !(currentActivity && currentActivity.activity_type === 'VAC' && currentActivity.date === currentSelectedDate);
-
-                    if (isNewVacationDay || (currentActivity && currentActivity.activity_type !== 'VAC')) {
-                        if (!currentActivity || currentActivity.activity_type !== 'VAC') {
-                            currentVacationDaysInMonth++;
-                        }
-                    }
-
-                    const daysAvailable = vacationDaysAvailable;
-
-                    if (currentVacationDaysInMonth > daysAvailable) {
-                        document.getElementById('vacation-balance-error').style.display = 'block';
-                        isValid = false;
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Límite alcanzado',
-                            text: `El límite de tus vacaciones ha sido alcanzado. Saldo disponible: ${daysAvailable} día(s).`,
-                            confirmButtonText: 'Aceptar'
-                        });
-                        return;
-                    }
-                }
-
-                if (!activityType) {
-                    document.getElementById('activity-type-error').style.display = 'block';
+                // Si NO estaba ya en vacaciones, verificar el saldo
+                if (!wasAlreadyVacation && vacationDaysAvailable <= 0) {
+                    document.getElementById('vacation-balance-error').style.display = 'block';
                     isValid = false;
-                }
-                if (activityType === 'C' && !formData.commissioned_to) {
-                    document.getElementById('commissioned-error').style.display = 'block';
-                    isValid = false;
-                }
-                // 🆕 Validación para tipo de actividad en comisionado
-                if (activityType === 'C' && !formData.commissioned_activity_type) {
-                    document.getElementById('commissioned-activity-type-error').style.display = 'block';
-                    isValid = false;
-                }
-                if (activityType === 'P' && !formData.well_name.trim()) {
-                    document.getElementById('well-name-error').style.display = 'block';
-                    isValid = false;
-                }
-                if (activityType === 'V' && !formData.travel_destination) {
-                    document.getElementById('travel-destination-error').style.display = 'block';
-                    isValid = false;
-                }
-                if (activityType === 'V' && !formData.travel_reason) {
-                    document.getElementById('travel-reason-error').style.display = 'block';
-                    isValid = false;
-                }
-            }
-
-            const currentActivityType = document.getElementById('activity-type').value;
-
-            if (['P', 'N', 'B'].includes(currentActivityType) || !currentActivityType) {
-                const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
-                if (!statusesToBlockField.includes(foodBonusStatus)) {
-                    formData.food_bonus_number = document.getElementById('food-bonus').value || null;
-                }
-            }
-
-            if (['P', 'N', 'C', 'V', 'B'].includes(currentActivityType) || !currentActivityType) {
-                const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
-                if (!statusesToBlockField.includes(fieldBonusStatus)) {
-                    formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;
-                }
-            }
-
-            const serviceStatus = getFieldStatus(currentActivity, 'service');
-            const wantsService = document.querySelector('input[name="has_service_bonus"]:checked')?.value === 'si';
-            const isActivityP = document.getElementById('activity-type').value === 'P';
-
-            const realDate = serviceRealDateInput.value;
-
-            if (wantsService && isActivityP && !statusesToBlockField.includes(serviceStatus)) {
-                const workTypeSelected = document.querySelector('.work-type-option.selected');
-                const serviceValue = document.getElementById('service').value;
-
-                formData.service_identifier = serviceValue || null;
-                formData.service_real_date = realDate;
-
-                if (!workTypeSelected) {
-                    document.getElementById('work-type-error').style.display = 'block';
-                    isValid = false;
-                    document.querySelector('.tab-btn[data-tab="service"]').click();
-                }
-                if (!document.getElementById('service-type').value) {
-                    document.getElementById('service-type-error').style.display = 'block';
-                    isValid = false;
-                    document.querySelector('.tab-btn[data-tab="service"]').click();
-                }
-                if (!document.getElementById('service-performed').value) {
-                    document.getElementById('service-performed-error').style.display = 'block';
-                    isValid = false;
-                    document.querySelector('.tab-btn[data-tab="service"]').click();
-                }
-                if (!serviceValue) {
-                    document.getElementById('service-error').style.display = 'block';
-                    isValid = false;
-                    document.querySelector('.tab-btn[data-tab="service"]').click();
-                }
-                if (!formData.service_real_date) {
-                    document.getElementById('service-real-date-error').style.display = 'block';
-                    isValid = false;
-                    document.querySelector('.tab-btn[data-tab="service"]').click();
-                }
-            } else if (wantsService && isActivityP && statusesToBlockField.includes(serviceStatus)) {
-                formData.service_identifier = currentActivity?.services_list[0]?.service_identifier;
-                formData.service_real_date = currentActivity?.services_list[0]?.service_real_date;
-            } else {
-                if (!statusesToBlockField.includes(serviceStatus)) {
-                    formData.service_identifier = null;
-                    formData.service_real_date = null;
-                }
-            }
-        }
-
-        if (!isValid) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Campos incompletos',
-                text: 'Por favor, rellene todos los campos requeridos en las secciones que no están bloqueadas.',
-                confirmButtonText: 'Aceptar'
-            });
-            return;
-        }
-
-        const originalBtnHTML = '<i class="fas fa-save"></i> Guardar';
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-        saveBtn.style.opacity = '0.7';
-        saveBtn.style.cursor = 'wait';
-        if (loadingSpinner) loadingSpinner.style.display = 'none';
-
-        fetch('/rh/loadchart/save-activity', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            },
-            body: JSON.stringify(formData)
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
                     Swal.fire({
-                        icon: 'success',
-                        title: '¡Guardado!',
-                        text: data.message || 'El registro se ha guardado exitosamente.',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    closeModal();
-                    const monthSpan = document.querySelector('.month-navigation span');
-                    const currentMonth = parseInt(monthSpan.getAttribute('data-month'));
-                    const currentYear = parseInt(monthSpan.getAttribute('data-year'));
-                    updateCalendar(currentMonth, currentYear);
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al guardar',
-                        text: data.message || 'Error desconocido.',
+                        icon: 'warning',
+                        title: 'Límite alcanzado',
+                        text: `No tienes días de vacaciones disponibles.`,
                         confirmButtonText: 'Aceptar'
                     });
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+            }
+        }
+    } else {
+        if (!statusesToBlockField.includes(activityStatus)) {
+            const activityType = document.getElementById('activity-type').value;
+            formData.activity_type = activityType || 'N';
+            formData.commissioned_to = activityType === 'C' ? document.getElementById('commissioned-select').value : null;
+            formData.commissioned_activity_type = activityType === 'C' ? commissionedActivityTypeSelect.value : null;
+            formData.well_name = activityType === 'P' ? document.getElementById('well-name').value : null;
+
+            // ---> SECCIÓN DE VIAJE
+            formData.travel_destination = activityType === 'V' ? document.getElementById('travel-destination').value.trim() : null;
+            formData.travel_reason = activityType === 'V' ? document.getElementById('travel-reason').value.trim() : null;
+            formData.is_continuation = activityType === 'V' ? isContinuationCheckbox.checked : false;
+
+            if (isSuministro && activityType === 'V') {
+                formData.contract_number = contractNumberInput.value.trim();
+                formData.travel_service_type = travelServiceTypeInput.value;
+
+                if (!formData.contract_number) {
+                    document.getElementById('contract-number-error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.travel_service_type) {
+                    document.getElementById('travel-service-type-error').style.display = 'block';
+                    isValid = false;
+                }
+            } else {
+                formData.contract_number = null;
+                formData.travel_service_type = null;
+            }
+            // <--- FIN SECCIÓN
+
+            if (activityType === 'B' && requiresBaseDesc) {
+                formData.base_activity_description = baseDescSelect.value;
+                if (!formData.base_activity_description) {
+                    document.getElementById('base-activity-description-error').style.display = 'block';
+                    isValid = false;
+                }
+            }
+
+            const isActivityP = activityType === 'P';
+            const hasServiceBonus = document.querySelector('input[name="has_service_bonus"]:checked')?.value;
+            formData.has_service_bonus = isActivityP ? hasServiceBonus : 'no';
+
+            // =====================================================
+            // ✅ VALIDACIÓN DE VACACIONES CORREGIDA (fix real aquí)
+            // -----------------------------------------------------
+            // ANTES: se recontaban TODOS los días VAC del mes visible
+            // (incluyendo aprobados/rechazados que YA estaban
+            // reflejados en vacationDaysAvailable) y se comparaban
+            // contra el saldo actual -> doble conteo -> falso
+            // "límite alcanzado" aunque sí hubiera saldo.
+            //
+            // AHORA: igual que en la rama de Guardia. Solo importa
+            // si ESTE día en particular ya era VAC (y no rechazado).
+            // Si no lo era, y no queda saldo, se bloquea. El backend
+            // ya se encarga de la resta/validación real (daysDiff).
+            // =====================================================
+            if (activityType === 'VAC') {
+                const wasAlreadyVacation = currentActivity
+                    && currentActivity.activity_type === 'VAC'
+                    && activityStatus !== 'rejected';
+
+                if (!wasAlreadyVacation && vacationDaysAvailable <= 0) {
+                    document.getElementById('vacation-balance-error').style.display = 'block';
+                    isValid = false;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Límite alcanzado',
+                        text: `No tienes días de vacaciones disponibles. Saldo actual: ${vacationDaysAvailable} día(s).`,
+                        confirmButtonText: 'Aceptar'
+                    });
+                    return;
+                }
+            }
+            // ===================== FIN DEL FIX =====================
+
+            if (!activityType) {
+                document.getElementById('activity-type-error').style.display = 'block';
+                isValid = false;
+            }
+            if (activityType === 'C' && !formData.commissioned_to) {
+                document.getElementById('commissioned-error').style.display = 'block';
+                isValid = false;
+            }
+            if (activityType === 'C' && !formData.commissioned_activity_type) {
+                document.getElementById('commissioned-activity-type-error').style.display = 'block';
+                isValid = false;
+            }
+            if (activityType === 'P' && !formData.well_name.trim()) {
+                document.getElementById('well-name-error').style.display = 'block';
+                isValid = false;
+            }
+            if (activityType === 'V' && !formData.travel_destination) {
+                document.getElementById('travel-destination-error').style.display = 'block';
+                isValid = false;
+            }
+            if (activityType === 'V' && !formData.travel_reason) {
+                document.getElementById('travel-reason-error').style.display = 'block';
+                isValid = false;
+            }
+        }
+
+        const currentActivityType = document.getElementById('activity-type').value;
+
+        if (['P', 'N', 'B'].includes(currentActivityType) || !currentActivityType) {
+            const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
+            if (!statusesToBlockField.includes(foodBonusStatus)) {
+                formData.food_bonus_number = document.getElementById('food-bonus').value || null;
+            }
+        }
+
+        if (['P', 'N', 'C', 'V', 'B'].includes(currentActivityType) || !currentActivityType) {
+            const fieldBonusStatus = getFieldStatus(currentActivity, 'field_bonus');
+            if (!statusesToBlockField.includes(fieldBonusStatus)) {
+                formData.field_bonus_identifier = document.getElementById('field-bonus').value || null;
+            }
+        }
+
+        const serviceStatus = getFieldStatus(currentActivity, 'service');
+        const wantsService = document.querySelector('input[name="has_service_bonus"]:checked')?.value === 'si';
+        const isActivityP = document.getElementById('activity-type').value === 'P';
+
+        const realDate = serviceRealDateInput.value;
+
+        if (wantsService && isActivityP && !statusesToBlockField.includes(serviceStatus)) {
+            const workTypeSelected = document.querySelector('.work-type-option.selected');
+            const serviceValue = document.getElementById('service').value;
+
+            formData.service_identifier = serviceValue || null;
+            formData.service_real_date = realDate;
+
+            if (!workTypeSelected) {
+                document.getElementById('work-type-error').style.display = 'block';
+                isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
+            }
+            if (!document.getElementById('service-type').value) {
+                document.getElementById('service-type-error').style.display = 'block';
+                isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
+            }
+            if (!document.getElementById('service-performed').value) {
+                document.getElementById('service-performed-error').style.display = 'block';
+                isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
+            }
+            if (!serviceValue) {
+                document.getElementById('service-error').style.display = 'block';
+                isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
+            }
+            if (!formData.service_real_date) {
+                document.getElementById('service-real-date-error').style.display = 'block';
+                isValid = false;
+                document.querySelector('.tab-btn[data-tab="service"]').click();
+            }
+        } else if (wantsService && isActivityP && statusesToBlockField.includes(serviceStatus)) {
+            formData.service_identifier = currentActivity?.services_list[0]?.service_identifier;
+            formData.service_real_date = currentActivity?.services_list[0]?.service_real_date;
+        } else {
+            if (!statusesToBlockField.includes(serviceStatus)) {
+                formData.service_identifier = null;
+                formData.service_real_date = null;
+            }
+        }
+    }
+
+    if (!isValid) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Campos incompletos',
+            text: 'Por favor, rellene todos los campos requeridos en las secciones que no están bloqueadas.',
+            confirmButtonText: 'Aceptar'
+        });
+        return;
+    }
+
+    const originalBtnHTML = '<i class="fas fa-save"></i> Guardar';
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    saveBtn.style.opacity = '0.7';
+    saveBtn.style.cursor = 'wait';
+    if (loadingSpinner) loadingSpinner.style.display = 'none';
+
+    fetch('/rh/loadchart/save-activity', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify(formData)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.new_vacation_balance !== undefined) {
+                    vacationDaysAvailable = parseInt(data.new_vacation_balance);
+                    if (vacationDaysElement) {
+                        vacationDaysElement.textContent = `${vacationDaysAvailable} día(s)`;
+                    }
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Guardado!',
+                    text: data.message || 'El registro se ha guardado exitosamente.',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+                closeModal();
+                const monthSpan = document.querySelector('.month-navigation span');
+                const currentMonth = parseInt(monthSpan.getAttribute('data-month'));
+                const currentYear = parseInt(monthSpan.getAttribute('data-year'));
+                updateCalendar(currentMonth, currentYear);
+            } else {
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error de Servidor',
-                    text: 'Se produjo un error al procesar la solicitud. Revisa la consola o los logs.',
+                    title: 'Error al guardar',
+                    text: data.message || 'Error desconocido.',
                     confirmButtonText: 'Aceptar'
                 });
-            })
-            .finally(() => {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalBtnHTML;
-                saveBtn.style.opacity = '1';
-                saveBtn.style.cursor = 'pointer';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de Servidor',
+                text: 'Se produjo un error al procesar la solicitud. Revisa la consola o los logs.',
+                confirmButtonText: 'Aceptar'
             });
-    });
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnHTML;
+            saveBtn.style.opacity = '1';
+            saveBtn.style.cursor = 'pointer';
+        });
+});
+
 
     function isDayInPayrollPeriod(dateStr) {
         if (!currentPayrollDates.q1_start && !currentPayrollDates.q2_start) {
