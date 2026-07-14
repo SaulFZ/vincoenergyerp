@@ -32,7 +32,6 @@ class CalendarController extends Controller
         $employeeId = $request->input('employee_id') ?? Auth::user()->employee_id;
         $isForModal = $request->has('employee_id') || $request->ajax();
 
-        // Cargamos el empleado junto con el usuario y el área
         $employee = Employee::with(['user', 'area'])->find($employeeId);
 
         if (! $employee) {
@@ -79,7 +78,6 @@ class CalendarController extends Controller
             if (str_starts_with($employee->photo, 'assets/')) {
                 $photo = asset($employee->photo);
             } else {
-                // SOLUCIÓN: Usamos la ruta global y segura que ya creamos en Core
                 $photo = route('media.file', ['path' => $employee->photo]);
             }
         }
@@ -157,8 +155,6 @@ class CalendarController extends Controller
                 ->get();
         }
 
-        // Extraemos los nombres de Área y Departamento de forma segura usando la relación
-        // CORRECCIÓN: Quitamos strtolower para no afectar a stripos, solo limpiamos espacios.
         $areaName = $employee->area ? trim($employee->area->name) : '';
 
         $departamentoObj = $employee->department()->first();
@@ -167,9 +163,6 @@ class CalendarController extends Controller
         $isSuministro    = false;
         $supplyContracts = collect();
         if ($employee) {
-            // CORRECCIÓN A PRUEBA DE BALAS: Usamos stripos para buscar "suministro" sin importar
-            // mayúsculas, minúsculas o si el nombre en la BD cambia a "Área de Suministros".
-            // No requerimos hardcodear la ID 6.
             if (stripos($areaName, 'suministro') !== false || stripos($deptName, 'suministro') !== false) {
                 $isSuministro    = true;
                 $supplyContracts = SupplyContract::orderBy('number')->get();
@@ -182,8 +175,6 @@ class CalendarController extends Controller
             'Auxiliar Mecanico', 'Auxiliar General', 'Mecánico General',
         ];
 
-        // Validamos operativamente también usando stripos para ser consistentes si es necesario
-        // pero con un match estricto para "operaciones" puede bastar. Usaremos el mismo método de stripos para estar seguros.
         $requiresBaseDescription = (
             $employee &&
             (stripos($areaName, 'operaciones') !== false || stripos($deptName, 'operaciones') !== false) &&
@@ -201,8 +192,6 @@ class CalendarController extends Controller
         }
 
         $showServiceBonusOption = $currentUserHasServicePermission || ($isForModal && $employeeHasServicePermission);
-
-        // Obtenemos la lista de áreas activas para el combo de "Comisionado"
         $areasList = Area::where('is_active', 1)->orderBy('name')->pluck('name');
 
         $viewData = [
@@ -427,9 +416,6 @@ class CalendarController extends Controller
         return false;
     }
 
-    /**
-     * Envía notificaciones cuando un empleado es comisionado a un área.
-     */
     private function sendCommissionNotifications(Employee $employee, $date, $areaName, $commissionActivityType)
     {
         Log::info("=== INICIANDO NOTIFICACIÓN DE COMISIÓN ===");
@@ -523,7 +509,6 @@ class CalendarController extends Controller
         DB::beginTransaction();
         try {
             $user = Auth::user();
-
             $targetEmployeeId = $request->input('employee_id') ?? $user->employee_id;
 
             if ($targetEmployeeId != $user->employee_id) {
@@ -552,6 +537,12 @@ class CalendarController extends Controller
 
             $activityData = $monthlyLog->getDailyActivity($request->date) ?? [];
 
+            // Guardamos el estado anterior para la lógica de vacaciones
+            $oldActivityType = $activityData['activity_type'] ?? 'N';
+            $oldVespertinaType = $activityData['activity_type_vespertina'] ?? 'N';
+            $oldActivityStatus = strtolower($activityData['activity_status'] ?? 'under_review');
+            $oldVespertinaStatus = strtolower($activityData['activity_status_vespertina'] ?? 'under_review');
+
             $existingFoodBonus  = $activityData['food_bonuses'][0] ?? null;
             $existingFieldBonus = $activityData['field_bonuses'][0] ?? null;
             $existingService    = $activityData['services_list'][0] ?? null;
@@ -563,7 +554,8 @@ class CalendarController extends Controller
             if ($request->has('activity_type')) {
                 $activityType = $request->activity_type ?? 'N';
 
-                if (($activityData['activity_type'] ?? '') !== $activityType) {
+                // Si cambió de actividad o fue rechazada antes, vuelve a estar en revisión
+                if (($activityData['activity_type'] ?? '') !== $activityType || $oldActivityStatus === 'rejected') {
                     $activityData['activity_status']  = 'under_review';
                     $activityData['rejection_reason'] = null;
                 }
@@ -590,19 +582,21 @@ class CalendarController extends Controller
                 $activityData['has_service_bonus']  = $request->has_service_bonus;
                 $activityData['travel_destination'] = $request->travel_destination;
                 $activityData['travel_reason']      = $request->travel_reason;
-
                 $activityData['contract_number']     = $activityType === 'V' ? $request->contract_number : null;
                 $activityData['travel_service_type'] = $activityType === 'V' ? $request->travel_service_type : null;
                 $activityData['is_continuation']     = $activityType === 'V' ? ($request->is_continuation ?? false) : false;
-
                 $activityData['base_activity_description'] = $activityType === 'B' ? $request->base_activity_description : null;
-
-                // Capturamos el nuevo campo de actividad en comisionado
                 $activityData['commissioned_activity_type'] = $activityType === 'C' ? $request->commissioned_activity_type : null;
 
                 if ($request->has('activity_type_vespertina')) {
-                    $activityData['activity_type_vespertina']        = $request->activity_type_vespertina;
-                    $activityData['activity_description_vespertina'] = $this->getActivityDescription($request->activity_type_vespertina);
+                    $vespertinaType = $request->activity_type_vespertina ?? 'N';
+
+                    if (($activityData['activity_type_vespertina'] ?? '') !== $vespertinaType || $oldVespertinaStatus === 'rejected') {
+                        $activityData['activity_status_vespertina']  = 'under_review';
+                        $activityData['rejection_reason_vespertina'] = null;
+                    }
+                    $activityData['activity_type_vespertina']        = $vespertinaType;
+                    $activityData['activity_description_vespertina'] = $this->getActivityDescription($vespertinaType);
                 }
 
                 $isWellActivity        = ($activityType === 'P');
@@ -752,17 +746,67 @@ class CalendarController extends Controller
                 }
             }
 
-            $isAnythingLeft = ($activityData['activity_type'] ?? 'N') !== 'N' ||
-            (! empty($activityData['activity_type_vespertina']) && $activityData['activity_type_vespertina'] !== 'N') ||
-            ! empty($activityData['food_bonuses']) ||
-            ! empty($activityData['field_bonuses']) ||
-            ! empty($activityData['services_list']);
+            // --- INICIO CÁLCULO Y DESCUENTO DE VACACIONES ---
+            $oldVacationDays = 0;
+            $newVacationDays = 0;
+
+            $isGuardia = (stripos($employee->job_title, 'AUXILIAR PAL') !== false);
+
+            $newType = $activityData['activity_type'] ?? 'N';
+            $newTypeVes = $activityData['activity_type_vespertina'] ?? 'N';
+            $newStatus = strtolower($activityData['activity_status'] ?? 'under_review');
+            $newVesStatus = strtolower($activityData['activity_status_vespertina'] ?? 'under_review');
+
+            $isAnythingLeft = ($newType !== 'N') ||
+                (! empty($newTypeVes) && $newTypeVes !== 'N') ||
+                ! empty($activityData['food_bonuses']) ||
+                ! empty($activityData['field_bonuses']) ||
+                ! empty($activityData['services_list']);
+
+            if (! $isAnythingLeft) {
+                $newType = 'N';
+                $newTypeVes = 'N';
+                $newStatus = 'under_review';
+                $newVesStatus = 'under_review';
+            }
+
+            if ($isGuardia) {
+                // Solo cuenta como restado si estaba como VAC y NO había sido rechazado por el aprobador
+                if ($oldActivityType === 'VAC' && $oldActivityStatus !== 'rejected') $oldVacationDays += 0.5;
+                if ($oldVespertinaType === 'VAC' && $oldVespertinaStatus !== 'rejected') $oldVacationDays += 0.5;
+
+                // La nueva actividad siempre intentará descontar (al mandarse es under_review)
+                if ($newType === 'VAC' && $newStatus !== 'rejected') $newVacationDays += 0.5;
+                if ($newTypeVes === 'VAC' && $newVesStatus !== 'rejected') $newVacationDays += 0.5;
+            } else {
+                if ($oldActivityType === 'VAC' && $oldActivityStatus !== 'rejected') $oldVacationDays += 1;
+                if ($newType === 'VAC' && $newStatus !== 'rejected') $newVacationDays += 1;
+            }
+
+            $daysDiff = $newVacationDays - $oldVacationDays;
+
+            if ($daysDiff != 0) {
+                $vacationBalance = EmployeeVacationBalance::where('employee_id', $employee->id)->first();
+                if (!$vacationBalance) {
+                     DB::rollback();
+                     return response()->json(['success' => false, 'message' => 'No se encontró el balance de vacaciones del empleado.'], 404);
+                }
+
+                if ($daysDiff > 0 && $vacationBalance->vacation_days_available < $daysDiff) {
+                     DB::rollback();
+                     return response()->json(['success' => false, 'message' => 'No tienes suficientes días de vacaciones disponibles.'], 422);
+                }
+
+                $vacationBalance->vacation_days_available -= $daysDiff;
+                $vacationBalance->save();
+            }
+            // --- FIN CÁLCULO DE VACACIONES ---
 
             if (! $isAnythingLeft) {
                 $monthlyLog->removeDailyActivity($request->date);
                 $monthlyLog->save();
                 DB::commit();
-                return response()->json(['success' => true, 'message' => 'Actividad eliminada.']);
+                return response()->json(['success' => true, 'message' => 'Actividad eliminada y saldos actualizados.']);
             }
 
             if (empty($monthlyLog->getDailyActivity($request->date))) {
@@ -776,7 +820,6 @@ class CalendarController extends Controller
             $monthlyLog->save();
             DB::commit();
 
-            // INICIO - NOTIFICACIÓN DE COMISIÓN (Después del commit exitoso)
             if (($activityData['activity_type'] ?? '') === 'C') {
                 try {
                     $this->sendCommissionNotifications(
@@ -786,11 +829,9 @@ class CalendarController extends Controller
                         $request->commissioned_activity_type
                     );
                 } catch (\Throwable $e) {
-                    // Solo registramos el error, no detenemos el proceso ya que la DB se actualizó bien
                     Log::error('Error al enviar correos de comisión: ' . $e->getMessage());
                 }
             }
-            // FIN - NOTIFICACIÓN DE COMISIÓN
 
             return response()->json([
                 'success' => true,

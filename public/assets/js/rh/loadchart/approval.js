@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
     setupModalEventListeners();
 });
 
-// Asegurarse de limpiar el intervalo cuando la página se cierre
 window.addEventListener('beforeunload', function () {
     stopAutoRefresh();
 });
@@ -22,13 +21,14 @@ let autoRefreshInterval = null;
 let lastUpdateTime = new Date();
 let monthlyDays = [];
 let employees = [];
-// 🆕 Nuevas variables globales
 allEmployeeRows = [];
 allSquadRows = [];
 let isFiltersOpen = false;
 let auxiliarPalState = 'inactive';
 
-// Detener el sistema de actualización automática
+// Set para evitar múltiples alertas consecutivas
+let hasAlertedVacations = new Set();
+
 function stopAutoRefresh() {
     if (autoRefreshInterval) {
         clearInterval(autoRefreshInterval);
@@ -37,7 +37,6 @@ function stopAutoRefresh() {
     document.removeEventListener('visibilitychange', handleVisibilityChange);
 }
 
-// Manejar cambios de visibilidad de la pestaña
 function handleVisibilityChange() {
     if (!document.hidden) {
         checkForUpdates();
@@ -84,7 +83,6 @@ function initializeApprovalTable() {
         });
     }
 
-    // ✅ Inicializar Event Listeners de Filtro usando 'area-filter'
     if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
         document.getElementById('toggle-filters-btn').addEventListener('click', toggleFilters);
         document.getElementById('assignment-filter').addEventListener('change', applyFilters);
@@ -99,7 +97,6 @@ function initializeApprovalTable() {
     }
 }
 
-// Variables globales para el modal de empleado
 let currentEmployeeModal = null;
 
 function initializeEmployeeNameClickListeners() {
@@ -195,7 +192,6 @@ function initializeEmployeeModalListeners() {
 }
 
 // 🆕 LÓGICA DE FILTROS
-
 function toggleFilters() {
     const filtersContainer = document.getElementById('filters-container');
     const toggleButton = document.getElementById('toggle-filters-btn');
@@ -210,10 +206,6 @@ function toggleFilters() {
     isFiltersOpen = !isFiltersOpen;
 }
 
-
-/**
- * ✅ NUEVA FUNCIÓN: Llena el select de cargos basándose en el área
- */
 function populatePositionFilter() {
     const areaFilter = document.getElementById('area-filter');
     const positionFilter = document.getElementById('position-filter');
@@ -226,7 +218,6 @@ function populatePositionFilter() {
     const uniquePositions = new Set();
 
     employees.forEach(employee => {
-        // Leemos desde el array de objetos traídos por AJAX/Blade
         const empArea = employee.area ? employee.area.name : '';
 
         if (!selectedArea || empArea === selectedArea) {
@@ -253,9 +244,6 @@ function populatePositionFilter() {
     }
 }
 
-/**
- * ✅ Aplica los filtros usando ÁREA, CARGO, asignación y búsqueda.
- */
 function applyFilters() {
     const assignmentFilterElem = document.getElementById('assignment-filter');
     const areaFilterElem = document.getElementById('area-filter');
@@ -275,7 +263,7 @@ function applyFilters() {
     );
 
     allEmployeeRows.forEach(row => {
-        const area = row.getAttribute('data-area'); // Usamos data-area
+        const area = row.getAttribute('data-area');
         const employeeId = row.getAttribute('data-employee-id');
 
         const employeeData = employees.find(e => e.id.toString() === employeeId);
@@ -292,7 +280,6 @@ function applyFilters() {
         const isApproverForEmployee = employeeAssignment && employeeAssignment.approver_id === currentUserId;
         const isAssigned = isReviewerForEmployee || isApproverForEmployee;
 
-        // --- APLICACIÓN DE REGLAS ---
         const matchesArea = !areaFilter || area === areaFilter;
         const matchesPosition = !positionFilter || employeePosition === positionFilter;
         const matchesSearch = !searchFilter || employeeName.includes(searchFilter) || employeeNumber.includes(searchFilter);
@@ -311,7 +298,6 @@ function applyFilters() {
             }
         }
 
-        // --- RESULTADO FINAL ---
         const isVisible = matchesArea && matchesPosition && matchesSearch && matchesAssignment && matchesAuxiliar;
 
         row.style.display = isVisible ? '' : 'none';
@@ -444,28 +430,24 @@ function setupEventListeners() {
     });
 
     document.getElementById("quincena2").addEventListener("click", () => {
-        showLoadingState(); // Mostramos el overlay
+        showLoadingState();
 
         setTimeout(() => {
-            showQuincena(2); // Trabajo pesado
+            showQuincena(2);
             setActiveButton("quincena2");
-            hideLoadingState(); // Ocultamos el overlay
+            hideLoadingState();
         }, 50);
     });
 
     document.getElementById("full-month").addEventListener("click", () => {
-    // 1. Mostramos el overlay inmediatamente
-    showLoadingState();
+        showLoadingState();
 
-    // 2. Usamos el setTimeout para ceder el control al hilo de UI
-    setTimeout(() => {
-        showFullMonth();
-        setActiveButton("full-month");
-
-        // 3. Ocultamos el overlay cuando los cambios ya estén dibujados
-        hideLoadingState();
-    }, 50);
-});
+        setTimeout(() => {
+            showFullMonth();
+            setActiveButton("full-month");
+            hideLoadingState();
+        }, 50);
+    });
 
     const backToCalendarBtn = document.getElementById("back-to-calendar");
     if (backToCalendarBtn) {
@@ -589,30 +571,6 @@ async function saveModalChanges() {
     } else {
         showSwalNotification('Información', 'No hay cambios para guardar.', 'info');
     }
-}
-
-function getItemFromActivity(dailyActivity, itemType, itemIndex) {
-    if (itemType === 'activity') {
-        return {
-            status: dailyActivity.activity_status,
-            rejection_reason: dailyActivity.rejection_reason
-        };
-    }
-    if (itemType === 'activity_vespertina') {
-        return {
-            status: dailyActivity.activity_status_vespertina || 'under_review',
-            rejection_reason: dailyActivity.rejection_reason_vespertina || ''
-        };
-    }
-    const listMap = {
-        food_bonuses: dailyActivity.food_bonuses,
-        field_bonuses: dailyActivity.field_bonuses,
-        services_list: dailyActivity.services_list
-    };
-    if (listMap[itemType] && listMap[itemType][itemIndex]) {
-        return listMap[itemType][itemIndex];
-    }
-    return null;
 }
 
 function getCardTypeClass(itemType) {
@@ -995,179 +953,6 @@ function openApprovalModal(employeeData, dailyActivity) {
     modal.style.display = 'flex';
 }
 
-function addRowToModalTable(concept, details, identifier, additionalDetails, itemType, itemIndex, status, rejectionReason, amount, isReviewer, isApprover) {
-    const tableBody = document.getElementById('modal-table-body');
-    const row = document.createElement('tr');
-    row.setAttribute('data-item-type', itemType);
-    row.setAttribute('data-item-index', itemIndex === null ? 'null' : itemIndex);
-
-    const safeStatus = status || 'under_review';
-    const currentStatusLower = safeStatus.toLowerCase();
-    const approvalSelector = getModalApprovalSelectorHtml(currentStatusLower, isReviewer, isApprover, itemType, itemIndex);
-
-    const isSelectorDisabled = approvalSelector.startsWith('<span') || approvalSelector.includes('disabled');
-    let isLocked = false;
-
-    if (isSelectorDisabled || (!isReviewer && !isApprover)) {
-        isLocked = true;
-    }
-    if (currentStatusLower === 'approved' && !isApprover) {
-        isLocked = true;
-    }
-    if (currentStatusLower === 'rejected' && isReviewer && !isApprover) {
-        isLocked = true;
-    }
-    if (isReviewer || isApprover) {
-        isLocked = false;
-    }
-    if (approvalSelector.startsWith('<span')) {
-        isLocked = true;
-    }
-
-    const commentValue = rejectionReason || '';
-    const amountCellContent = amount !== null ? `${amount}` : (canSeeAmounts ? 'N/A' : '');
-
-    row.innerHTML = `
-        <td>${concept}</td>
-        <td>${details}</td>
-        <td>${identifier}</td>
-        <td>${additionalDetails}</td>
-        <td class="amount-cell">${amountCellContent}</td>
-        <td>
-            ${approvalSelector}
-        </td>
-        <td>
-            <textarea class="form-control modal-comment" placeholder="Motivo de rechazo..." ${isLocked ? 'disabled' : ''}>${commentValue}</textarea>
-        </td>
-    `;
-    tableBody.appendChild(row);
-
-    const selectElement = row.querySelector('.item-approval-selector');
-    const textareaElement = row.querySelector('.modal-comment');
-
-    if (selectElement && textareaElement) {
-        if (isLocked) {
-            textareaElement.disabled = true;
-        } else {
-            if (selectElement.value !== 'rejected') {
-                textareaElement.disabled = true;
-            }
-            selectElement.addEventListener('change', function () {
-                if (this.value === 'rejected') {
-                    textareaElement.disabled = false;
-                    textareaElement.focus();
-                } else {
-                    textareaElement.disabled = true;
-                }
-            });
-        }
-    }
-}
-
-function getModalApprovalSelectorHtml(currentStatus, isReviewer, isApprover, itemType, itemIndex) {
-    let options = [];
-
-    const isItemApproved = currentStatus === 'approved';
-    const isItemRejected = currentStatus === 'rejected';
-    const isItemReviewed = currentStatus === 'reviewed';
-    const isItemUnderReview = currentStatus === 'under_review';
-
-    const baseOptions = [
-        { value: 'under_review', text: 'Bajo Revisión', disabled: false },
-        { value: 'reviewed', text: 'Revisado', disabled: false },
-        { value: 'approved', text: 'Aprobado', disabled: false },
-        { value: 'rejected', text: 'Rechazado', disabled: false }
-    ];
-
-    if (isApprover) {
-        options = baseOptions.map(option => ({ ...option, disabled: false }));
-
-        if (isItemApproved) {
-            options.find(o => o.value === 'reviewed').disabled = true;
-            options.find(o => o.value === 'under_review').disabled = true;
-            options.find(o => o.value === 'rejected').disabled = false;
-        } else if (isItemRejected) {
-            options.find(o => o.value === 'rejected').disabled = false;
-        } else {
-            options.find(o => o.value === 'under_review').disabled = (isItemReviewed);
-        }
-    } else if (isReviewer) {
-        if (isItemApproved) {
-            const approvedOption = baseOptions.find(o => o.value === 'approved');
-            return `<span class="badge badge-success">${approvedOption.text} (Bloqueado)</span>`;
-        } else if (isItemRejected) {
-            const rejectedOption = baseOptions.find(o => o.value === 'rejected');
-            return `<span class="badge badge-danger">${rejectedOption.text} (Esperando Corrección)</span>`;
-        } else {
-            options = [
-                { value: 'under_review', text: 'Bajo Revisión', disabled: false },
-                { value: 'reviewed', text: 'Revisado', disabled: false },
-                { value: 'rejected', text: 'Rechazado', disabled: false }
-            ];
-            options = options.filter(opt => opt.value !== 'approved');
-            if (isItemReviewed) {
-                options.find(o => o.value === 'under_review').disabled = true;
-            }
-        }
-    } else {
-        const statusClassMap = { 'approved': 'success', 'reviewed': 'primary', 'rejected': 'danger', 'under_review': 'info' };
-        const statusText = baseOptions.find(o => o.value === currentStatus)?.text || 'Desconocido';
-        const statusClass = statusClassMap[currentStatus] || 'info';
-        return `<span class="badge badge-${statusClass}">${statusText}</span>`;
-    }
-
-    let html = `<select class="form-control item-approval-selector">`;
-
-    const finalOptions = baseOptions.map(baseOpt => {
-        const currentOpt = options.find(o => o.value === baseOpt.value) || baseOpt;
-
-        let isDisabled = currentOpt.disabled;
-        let isSelected = baseOpt.value === currentStatus;
-
-        if (!isApprover && (isItemApproved || isItemRejected) && baseOpt.value !== currentStatus) {
-            isDisabled = true;
-        }
-
-        if ((isItemReviewed || isItemApproved) && baseOpt.value === 'under_review') {
-            isDisabled = true;
-        }
-
-        return {
-            value: baseOpt.value,
-            text: baseOpt.text,
-            disabled: isDisabled,
-            selected: isSelected
-        };
-    }).filter(opt => isApprover || isReviewer ? opt.value !== 'approved' || isApprover : true);
-
-    if (isApprover) {
-        finalOptions.forEach(option => {
-            let isDisabled = option.disabled;
-            if (isItemApproved && (option.value === 'reviewed' || option.value === 'under_review')) {
-                isDisabled = true;
-            }
-            html += `<option value="${option.value}" ${option.selected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}>${option.text}</option>`;
-        });
-    } else if (isReviewer) {
-        baseOptions.filter(opt => opt.value !== 'approved').forEach(option => {
-            const currentOpt = finalOptions.find(f => f.value === option.value);
-            if (currentOpt) {
-                let isDisabled = currentOpt.disabled;
-                if (isItemReviewed && option.value === 'under_review') {
-                    isDisabled = true;
-                }
-                if (isItemRejected && option.value !== 'rejected') {
-                    isDisabled = true;
-                }
-                html += `<option value="${option.value}" ${currentOpt.selected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}>${option.text}</option>`;
-            }
-        });
-    }
-
-    html += `</select>`;
-    return html;
-}
-
 async function updateDailyItemsStatus(employeeId, changes) {
     try {
         showLoadingState();
@@ -1490,32 +1275,6 @@ function showNotification(message, type = 'info') {
     }, 4000);
 }
 
-document.addEventListener('click', function (e) {
-    if (e.target.closest('.employee-info-cell')) {
-        const employeeRow = e.target.closest('.employee-row');
-        if (employeeRow) {
-            // toggleActivityRows(employeeRow);
-        }
-    }
-});
-
-function toggleActivityRows(employeeRow) {
-    const allRows = Array.from(employeeRow.parentElement.children);
-    const startIndex = allRows.indexOf(employeeRow);
-    let activityRowCount = 0;
-
-    for (let i = startIndex + 1; i < allRows.length; i++) {
-        if (allRows[i].classList.contains('activity-row') && allRows[i].getAttribute('data-employee-id') === employeeRow.getAttribute('data-employee-id')) {
-            if (allRows[i].style.display !== 'none') {
-                allRows[i].classList.toggle('hidden');
-                activityRowCount++;
-            }
-        } else if (allRows[i].classList.contains('employee-row') || allRows[i].classList.contains('squad-group-row')) {
-            break;
-        }
-    }
-}
-
 async function navigateToPreviousMonth() {
     if (currentMonth === 1) {
         currentMonth = 12;
@@ -1536,7 +1295,6 @@ async function navigateToNextMonth() {
     await loadMonthData();
 }
 
-// --- 3. REORDENAMOS LA FUNCIÓN PRINCIPAL DE CARGA ---
 async function loadMonthData(isRefresh = false) {
     try {
         if (!isRefresh) {
@@ -1558,7 +1316,6 @@ async function loadMonthData(isRefresh = false) {
         const data = await response.json();
         if (!data.success) throw new Error(data.error || 'Error al cargar los datos');
 
-        // Asignación de variables globales
         workLogsData = data.workLogsData;
         fortnightlyConfig = data.fortnightlyConfig;
         loadChartAssignments = data.loadChartAssignments;
@@ -1567,15 +1324,10 @@ async function loadMonthData(isRefresh = false) {
         monthlyDays = data.monthlyDays;
         employees = data.employees;
 
-        // ⭐ LA MAGIA SUCEDE AQUÍ ⭐
-        // Le damos 50ms al navegador para que procese visualmente el showLoadingState()
-        // ANTES de congelarse armando la tabla.
         setTimeout(() => {
-            // 1. Reconstrucción masiva del DOM
             updateTableStructure(data.monthlyDays, data.employees);
             updatePeriodInfo();
 
-            // 2. Aplicar vistas
             if (currentView === 'quincena1') showQuincena(1);
             else if (currentView === 'quincena2') showQuincena(2);
             else showFullMonth();
@@ -1583,7 +1335,6 @@ async function loadMonthData(isRefresh = false) {
             allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
             allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
 
-            // 3. Aplicar filtros
             if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
                 populatePositionFilter();
                 applyFilters();
@@ -1591,15 +1342,17 @@ async function loadMonthData(isRefresh = false) {
 
             setupEmployeeRowListeners();
 
-            // 4. Quitar el loader suavemente una vez que todo el renderizado finalizó
             if (!isRefresh) {
                 hideLoadingState();
             }
 
+            // ⭐ AQUÍ LLAMAMOS LA FUNCIÓN DE ALERTA DE VACACIONES AL CARGAR LA TABLA
+            checkPendingVacationsAlert();
+
             lastUpdateTime = new Date();
             initializeAutoRefresh();
 
-        }, 50); // 50 milisegundos de respiro para el motor de renderizado
+        }, 50);
 
     } catch (error) {
         console.error('Error loading month data:', error);
@@ -1609,7 +1362,6 @@ async function loadMonthData(isRefresh = false) {
     }
 }
 
-// --- 1. MODIFICAMOS EL ESTADO DE CARGA PARA USAR EL OVERLAY ---
 function showLoadingState() {
     const overlay = document.getElementById('table-loading-overlay');
     if (overlay) {
@@ -1622,7 +1374,6 @@ function showLoadingState() {
     if (nextBtn) nextBtn.disabled = true;
 }
 
-// --- 2. MODIFICAMOS EL OCULTAMIENTO PARA QUE SEA SUAVE ---
 function hideLoadingState() {
     const overlay = document.getElementById('table-loading-overlay');
     if (overlay) {
@@ -1634,6 +1385,7 @@ function hideLoadingState() {
     if (prevBtn) prevBtn.disabled = false;
     if (nextBtn) nextBtn.disabled = false;
 }
+
 function updatePeriodInfo() {
     const monthNames = [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -1688,9 +1440,6 @@ function updateDaysHeader(monthlyDays) {
     }
 }
 
-/**
- * ✅ CONSTRUCCIÓN DE LA TABLA DINÁMICA CON data-area
- */
 function updateTableBody(employeesData, monthlyDaysData) {
     const tbody = document.getElementById('approval-table-body');
     if (!tbody) return;
@@ -1738,13 +1487,12 @@ function updateTableBody(employeesData, monthlyDaysData) {
             const isReviewerForEmployee = assignment && assignment.reviewer_id === currentUserId;
             const isApproverForEmployee = assignment && assignment.approver_id === currentUserId;
 
-            // ✅ DEFINIR EL ÁREA AQUÍ PARA LOS DATA-ATTRIBUTES
             const empArea = employee.area ? employee.area.name : '';
 
             let mainRow = document.createElement('tr');
             mainRow.className = 'employee-row';
             mainRow.setAttribute('data-employee-id', employee.id);
-            mainRow.setAttribute('data-area', empArea); // ✅ PONEMOS data-area
+            mainRow.setAttribute('data-area', empArea);
 
             mainRow.innerHTML = `
                 <td rowspan="5" class="employee-info-cell" data-icon="bx bx-calendar" data-text="ver calendario">
@@ -1795,7 +1543,7 @@ function updateTableBody(employeesData, monthlyDaysData) {
                 let detailRow = document.createElement('tr');
                 detailRow.className = 'activity-row';
                 detailRow.setAttribute('data-employee-id', employee.id);
-                detailRow.setAttribute('data-area', empArea); // ✅ PONEMOS data-area
+                detailRow.setAttribute('data-area', empArea);
 
                 let cellsHtml = '';
                 if (rowType === 'Vespertina') {
@@ -1868,9 +1616,6 @@ function showQuincena(quincena) {
         if (shouldShow) visibleDays++;
 
         allRows.forEach((row) => {
-            const dataCells = row.querySelectorAll(".data-cell");
-            const dayIndexInRow = index + 2;
-
             if (row.classList.contains('activity-row') || row.classList.contains('employee-row')) {
                 const dayCell = Array.from(row.children).find(cell => cell.getAttribute('data-day') === header.getAttribute('data-day') && cell.getAttribute('data-date') === header.getAttribute('data-date'));
 
@@ -2270,64 +2015,6 @@ function renderEmployeeWorkLog() {
     calculateAndRenderTotals();
 }
 
-function getDailyStatusIndicator(dailyActivity) {
-    let hasRejected = false;
-    let hasUnderReview = false;
-    let hasReviewed = false;
-    let hasApproved = false;
-    let totalItems = 0;
-    let approvedItems = 0;
-    let reviewedItems = 0;
-
-    const activityStatus = dailyActivity.activity_status ? dailyActivity.activity_status.toLowerCase() : 'under_review';
-    const activityType = dailyActivity.activity_type ? dailyActivity.activity_type.toUpperCase() : 'N';
-    const activityIsRelevant = activityType !== 'N';
-
-    if (activityIsRelevant) {
-        totalItems++;
-        switch (activityStatus) {
-            case 'rejected': hasRejected = true; break;
-            case 'under_review': hasUnderReview = true; break;
-            case 'reviewed': hasReviewed = true; reviewedItems++; break;
-            case 'approved': hasApproved = true; approvedItems++; break;
-        }
-    }
-
-    const itemTypes = ['food_bonuses', 'field_bonuses', 'services_list'];
-    itemTypes.forEach(type => {
-        if (dailyActivity[type] && dailyActivity[type].length > 0) {
-            dailyActivity[type].forEach(item => {
-                totalItems++;
-                const itemStatus = item.status ? item.status.toLowerCase() : 'under_review';
-                switch (itemStatus) {
-                    case 'rejected': hasRejected = true; break;
-                    case 'under_review': hasUnderReview = true; break;
-                    case 'reviewed': hasReviewed = true; reviewedItems++; break;
-                    case 'approved': hasApproved = true; approvedItems++; break;
-                }
-            });
-        }
-    });
-
-    if (totalItems === 0) {
-        return 'under_review';
-    }
-    if (hasRejected) {
-        return 'rejected';
-    }
-    if (hasUnderReview) {
-        return 'under_review';
-    }
-    if (approvedItems === totalItems) {
-        return 'approved';
-    }
-    if (hasReviewed) {
-        return 'reviewed';
-    }
-
-    return 'under_review';
-}
-
 function enableDragToScroll(containerSelector) {
     const container = document.querySelector(containerSelector);
     if (!container) return;
@@ -2386,3 +2073,49 @@ function enableDragToScroll(containerSelector) {
 }
 
 enableDragToScroll('.table-container');
+
+// ==========================================================
+// ALERTA DE VACACIONES PENDIENTES PARA EL APROBADOR
+// ==========================================================
+function checkPendingVacationsAlert() {
+    const periodKey = `${currentMonth}-${currentYear}`;
+
+    if (hasAlertedVacations.has(periodKey)) return;
+
+    let pendingCount = 0;
+    let employeesWithPending = new Set();
+
+    workLogsData.forEach(log => {
+        const assignment = loadChartAssignments.find(a => a.employee_id === log.employee_id);
+
+        if (assignment && assignment.approver_id === currentUserId) {
+            if (log.daily_activities) {
+                log.daily_activities.forEach(act => {
+                    const actType = act.activity_type || 'N';
+                    const vType = act.activity_type_vespertina || 'N';
+                    const status = (act.activity_status || 'under_review').toLowerCase();
+                    const vStatus = (act.activity_status_vespertina || 'under_review').toLowerCase();
+
+                    if ((actType === 'VAC' && (status === 'under_review' || status === 'reviewed')) ||
+                        (vType === 'VAC' && (vStatus === 'under_review' || vStatus === 'reviewed'))) {
+                        pendingCount++;
+                        employeesWithPending.add(log.employee_id);
+                    }
+                });
+            }
+        }
+    });
+
+    if (pendingCount > 0) {
+        Swal.fire({
+            title: '¡Atención: Vacaciones Pendientes!',
+            text: `Tienes ${pendingCount} día(s) de vacaciones de ${employeesWithPending.size} empleado(s) esperando tu aprobación final. Por favor, revísalos.`,
+            icon: 'info',
+            confirmButtonText: 'Entendido, voy a revisar',
+            confirmButtonColor: '#3085d6',
+            backdrop: `rgba(148, 148, 201, 0.4)`
+        });
+
+        hasAlertedVacations.add(periodKey);
+    }
+}
