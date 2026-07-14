@@ -2073,57 +2073,61 @@ function enableDragToScroll(containerSelector) {
 }
 
 enableDragToScroll('.table-container');
-
-// ==========================================================
-// ALERTA DE VACACIONES PENDIENTES PARA EL APROBADOR
-// ==========================================================
 function checkPendingVacationsAlert() {
     const periodKey = `${currentMonth}-${currentYear}`;
 
-    // Previene múltiples alertas repetitivas en la misma sesión
     if (hasAlertedVacations.has(periodKey)) return;
 
     let pendingCount = 0;
     let employeesWithPending = new Set();
-
-    // Forzamos que currentUserId sea número para evitar fallos de === en producción
     const safeCurrentUserId = parseInt(currentUserId, 10);
 
-    workLogsData.forEach(log => {
-        // Buscamos la asignación asegurándonos de parsear los IDs a enteros
-        const assignment = loadChartAssignments.find(a =>
-            parseInt(a.employee_id, 10) === parseInt(log.employee_id, 10)
-        );
+    console.log("--- Iniciando chequeo de vacaciones. Usuario ID:", safeCurrentUserId);
 
-        if (assignment && parseInt(assignment.approver_id, 10) === safeCurrentUserId) {
-            if (log.daily_activities) {
-                log.daily_activities.forEach(act => {
-                    const actType = act.activity_type || 'N';
-                    const vType = act.activity_type_vespertina || 'N';
-                    const status = (act.activity_status || 'under_review').toLowerCase();
-                    const vStatus = (act.activity_status_vespertina || 'under_review').toLowerCase();
+    if (Array.isArray(workLogsData)) {
+        workLogsData.forEach(log => {
+            const assignment = loadChartAssignments.find(a =>
+                parseInt(a.employee_id, 10) === parseInt(log.employee_id, 10)
+            );
 
-                    // Cuenta solo si el día es vacación y no está aprobado o rechazado
-                    if ((actType === 'VAC' && (status === 'under_review' || status === 'reviewed')) ||
-                        (vType === 'VAC' && (vStatus === 'under_review' || vStatus === 'reviewed'))) {
-                        pendingCount++;
-                        employeesWithPending.add(log.employee_id);
-                    }
-                });
+            // Log para ver si encuentra asignaciones
+            if (assignment) {
+                console.log(`Empleado ${log.employee_id} tiene asignación con approver: ${assignment.approver_id}`);
             }
-        }
-    });
+
+            if (assignment && parseInt(assignment.approver_id, 10) === safeCurrentUserId) {
+                if (log.daily_activities) {
+                    log.daily_activities.forEach(act => {
+                        const actType = act.activity_type || 'N';
+                        const vType = act.activity_type_vespertina || 'N';
+                        const status = (act.activity_status || 'under_review').toLowerCase();
+                        const vStatus = (act.activity_status_vespertina || 'under_review').toLowerCase();
+
+                        // Comprobación de estado
+                        const isVacPending = (actType === 'VAC' && (status === 'under_review' || status === 'reviewed')) ||
+                                             (vType === 'VAC' && (vStatus === 'under_review' || vStatus === 'reviewed'));
+
+                        if (isVacPending) {
+                            pendingCount++;
+                            employeesWithPending.add(log.employee_id);
+                            console.log(`¡Vacación pendiente encontrada! Fecha: ${act.date}, Empleado: ${log.employee_id}`);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    console.log("--- Total vacaciones encontradas:", pendingCount);
 
     if (pendingCount > 0) {
         Swal.fire({
             title: '¡Atención: Vacaciones Pendientes!',
-            text: `Tienes ${pendingCount} día(s) de vacaciones de ${employeesWithPending.size} empleado(s) esperando tu aprobación final. Por favor, revísalos.`,
+            text: `Tienes ${pendingCount} día(s) de vacaciones de ${employeesWithPending.size} empleado(s) esperando tu aprobación final.`,
             icon: 'info',
-            confirmButtonText: 'Entendido, voy a revisar',
-            confirmButtonColor: '#3085d6',
-            backdrop: `rgba(143, 143, 177, 0.4)`
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#3085d6'
         });
-
         hasAlertedVacations.add(periodKey);
     }
 }
