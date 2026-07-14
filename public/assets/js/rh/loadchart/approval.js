@@ -2072,7 +2072,7 @@ function enableDragToScroll(containerSelector) {
     }, { passive: true });
 }
 
-enableDragToScroll('.table-container');
+
 function checkPendingVacationsAlert() {
     const periodKey = `${currentMonth}-${currentYear}`;
 
@@ -2131,3 +2131,4 @@ function checkPendingVacationsAlert() {
         hasAlertedVacations.add(periodKey);
     }
 }
+enableDragToScroll('.table-container');
