@@ -6,6 +6,8 @@ use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStatusController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryController;
 use App\Http\Controllers\Administration\ExpenseClaims\ExpenseAdvanceController;
+use App\Http\Controllers\Administration\ExpenseClaims\ExpenseStatisticsController;
+use App\Http\Controllers\Administration\ExpenseClaims\AccountsPayableController;
 
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
 use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
@@ -33,6 +35,11 @@ use App\Http\Controllers\RH\LoadChart\HistoryController;
 use App\Http\Controllers\RH\LoadChart\InfoServicesController;
 use App\Http\Controllers\RH\LoadChart\SquadController;
 use App\Http\Controllers\RH\LoadChart\StatsLoadController;
+
+use App\Http\Controllers\RH\OrgManagement\EmployeeController;
+use App\Http\Controllers\RH\OrgManagement\AreaController;
+use App\Http\Controllers\RH\OrgManagement\DepartmentController;
+
 
 /* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Systems\Tickets\TicketController;
@@ -111,67 +118,86 @@ Route::middleware(['web', 'auth'])->group(function () {
 // ===================================================
 // MÓDULO: ADMINISTRACIÓN
 // ===================================================
-    Route::prefix('administration')
-        ->middleware(['auth']) // Asegúrate de tener tus middlewares
-        ->group(function () {
+ Route::prefix('administration')
+    ->middleware(['auth'])
+    ->group(function () {
 
-            Route::prefix('expense-claims')->group(function () {
+        Route::prefix('expense-claims')->group(function () {
 
-                // Redirección
-                Route::get('/', function () {
-                    return redirect()->route('expense-claims.reimbursements');
-                })->name('administration.expense-claims');
+            // Redirección
+            Route::get('/', function () {
+                return redirect()->route('expense-claims.reimbursements');
+            })->name('administration.expense-claims');
 
-                  // ── ANTICIPOS (NUEVO) ──
-                Route::controller(ExpenseAdvanceController::class)->group(function () {
-                    Route::post('/advances/store', 'store')->name('expense-claims.advances.store');
-                    Route::get('/advances/user/{userId}', 'getActiveByUser')->name('expense-claims.advances.by-user');
-                    Route::get('/advances/{id}', 'show')->name('expense-claims.advances.show');
-                });
-
-                     // VISTAS PRINCIPALES
-                Route::controller(ReimbursementController::class)->group(function () {
-                    Route::get('/reimbursements', 'index')->name('expense-claims.reimbursements');
-                });
-
-                // ── NUEVO: CONSULTA PARA VER/EDITAR ──
-                Route::controller(ReimbursementQueryController::class)->group(function () {
-                    Route::get('/reimbursements/{id}', 'show')->name('expense-claims.show');
-                });
-
-                // GUARDADO Y ACTUALIZACIÓN
-                Route::controller(ReimbursementStoreController::class)->group(function () {
-                    Route::post('/reimbursements/store', 'store')->name('expense-claims.store');
-                    Route::post('/reimbursements/{id}/update', 'update')->name('expense-claims.update'); // NUEVA
-                });
-
-                // DICTAMEN DE ESTADOS (VALIDAR/RECHAZAR/APROBAR)
-                Route::controller(ReimbursementStatusController::class)->group(function () {
-                    Route::post('/reimbursements/{id}/status', 'updateStatus')->name('expense-claims.status');
-                });
-
-                // ── BÚSQUEDA Y CARGA MANUAL DE CFDI (XML) ──
-                Route::controller(CfdiController::class)->group(function () {
-                    Route::get('/cfdi/search', 'searchByUuid')->name('expense-claims.cfdi.search');
-                    Route::get('/cfdi/autocomplete', 'autocomplete')->name('expense-claims.cfdi.autocomplete');
-                    Route::post('/cfdi/upload', 'uploadXml')->name('expense-claims.cfdi.upload');
-                });
-
-                // BÓVEDA SAT (Credenciales y Nodos)
-                Route::controller(FslNodeController::class)->group(function () {
-                    Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
-                    Route::post('/sys-config-node', 'store')->name('expense-claims.node.store');
-                });
-
-                // BITÁCORA Y SINCRONIZACIÓN SAT (CRON / Manual)
-                Route::controller(SatRequestsController::class)->group(function () {
-                    Route::get('/sat-requests', 'index')->name('expense-claims.sat-sync.index');
-                    Route::post('/sat-requests/force', 'forceSync')->name('expense-claims.sat-sync.force');
-                });
+            // ============================
+            // REEMBOLSOS
+            // ============================
+            Route::controller(ReimbursementController::class)->group(function () {
+                Route::get('/reimbursements', 'index')->name('expense-claims.reimbursements');
             });
 
+            // ============================
+            // ESTADÍSTICAS
+            // ============================
+            Route::controller(ExpenseStatisticsController::class)->group(function () {
+                Route::get('/statistics', 'index')->name('expense-claims.stats-expense');
+            });
 
+            // ============================
+            // CUENTAS POR PAGAR
+            // ============================
+            Route::controller(AccountsPayableController::class)->group(function () {
+                Route::get('/accounts-payable', 'index')->name('expense-claims.accounts-payable');
+            });
+
+            // ============================
+            // ── GESTIÓN DE ANTICIPOS ──
+            // ============================
+            Route::controller(ExpenseAdvanceController::class)->group(function () {
+                Route::get('/advances', 'index')->name('expense-claims.accounts-payable'); // 👈 NUEVA VISTA
+                Route::post('/advances/store', 'store')->name('expense-claims.advances.store');
+                Route::get('/advances/user/{userId}', 'getActiveByUser')->name('expense-claims.advances.by-user');
+                Route::get('/advances/{id}', 'show')->name('expense-claims.advances.show');
+                Route::get('/advances/ledger/{userId}', 'ledger')->name('expense-claims.advances.ledger'); // 👈 NUEVA: ESTADO DE CUENTA
+            });
+
+            // CONSULTA
+            Route::controller(ReimbursementQueryController::class)->group(function () {
+                Route::get('/reimbursements/{id}', 'show')->name('expense-claims.show');
+            });
+
+            // GUARDADO
+            Route::controller(ReimbursementStoreController::class)->group(function () {
+                Route::post('/reimbursements/store', 'store')->name('expense-claims.store');
+                Route::post('/reimbursements/{id}/update', 'update')->name('expense-claims.update');
+            });
+
+            // ESTATUS
+            Route::controller(ReimbursementStatusController::class)->group(function () {
+                Route::post('/reimbursements/{id}/status', 'updateStatus')->name('expense-claims.status');
+            });
+
+            // CFDI
+            Route::controller(CfdiController::class)->group(function () {
+                Route::get('/cfdi/search', 'searchByUuid')->name('expense-claims.cfdi.search');
+                Route::get('/cfdi/autocomplete', 'autocomplete')->name('expense-claims.cfdi.autocomplete');
+                Route::post('/cfdi/upload', 'uploadXml')->name('expense-claims.cfdi.upload');
+            });
+
+            // NODOS
+            Route::controller(FslNodeController::class)->group(function () {
+                Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
+                Route::post('/sys-config-node', 'store')->name('expense-claims.node.store');
+            });
+
+            // SAT
+            Route::controller(SatRequestsController::class)->group(function () {
+                Route::get('/sat-requests', 'index')->name('expense-claims.sat-sync.index');
+                Route::post('/sat-requests/force', 'forceSync')->name('expense-claims.sat-sync.force');
+            });
         });
+    });
+
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS SISTEMAS
     // ===================================================
@@ -475,13 +501,58 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
             });
 
-            // Subsistemas de RRHH (Rutas que no son de LoadChart)
-            Route::get('/orgmanagement', function () {
-                return view('modules.rh.orgmanagement.employees');
-            })
-                ->middleware('check.permission:rh,orgmanagement')
-                ->name('rh.orgmanagement');
-        });
+         // ===================================================
+        // MÓDULO: ORGMANAGEMENT
+        // ===================================================
+  Route::prefix('orgmanagement')->group(function () {
+
+    // Vista principal
+    Route::get('/', function () {
+        return view('modules.rh.orgmanagement.employees');
+    })
+    ->middleware('check.permission:rh,orgmanagement')
+    ->name('rh.orgmanagement');
+
+    // --- RUTAS GESTIONADAS POR EmployeeController ---
+    Route::controller(EmployeeController::class)->group(function () {
+
+        // Obtener datos para la tabla
+        Route::get('/employees/data', 'getData')
+            ->name('orgmanagement.employees.data');
+
+        // Obtener catálogos para el formulario (áreas, departamentos, jefes)
+        Route::get('/employees/create-data', 'getCreateData')
+            ->name('orgmanagement.employees.create_data');
+
+        // Guardar el nuevo empleado (Alta)
+        Route::post('/employees', 'store')
+            ->name('orgmanagement.employees.store');
+
+        // Ver empleado específico
+        Route::get('/employees/{id}', 'show')
+            ->name('orgmanagement.employees.show');
+
+        // Actualizar empleado (edición)
+        Route::put('/employees/{id}', 'update')
+            ->name('orgmanagement.employees.update');
+
+        // Método POST que actúa como PUT (para formularios sin soporte)
+        Route::post('/employees/{id}', 'update')
+            ->name('orgmanagement.employees.update.post');
+
+        // Desactivar empleado
+        Route::delete('/employees/{id}', 'destroy')
+            ->name('orgmanagement.employees.destroy');
+    });
+
+});
+    });
+
+
+
+
+
+
 
     // ===================================================
     // MÓDULO: VENTAS Y SUBSISTEMAS

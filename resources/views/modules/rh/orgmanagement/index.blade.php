@@ -32,25 +32,11 @@
         </div>
 
         <nav class="nav-main">
-            <a href="#" class="nav-link active" data-route="employee_registration">
+            <a href="#" class="nav-link active" data-route="">
                 <i class="fas fa-user-plus"></i> Altas Empleados
             </a>
 
-            <a href="#" class="nav-link" data-route="history">
-                <i class="fas fa-history"></i> Historial
-            </a>
 
-            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_estadisticas'))
-                <a href="#" class="nav-link" data-route="stats">
-                    <i class="fas fa-chart-bar"></i> Estadísticas
-                </a>
-            @endif
-
-            @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_gestion_vacaciones'))
-                <a href="#" class="nav-link" data-route="employee_vacation_balance">
-                    <i class="fas fa-suitcase-rolling"></i> Vacaciones
-                </a>
-            @endif
         </nav>
 
         @include('components.layouts._user-profile')
