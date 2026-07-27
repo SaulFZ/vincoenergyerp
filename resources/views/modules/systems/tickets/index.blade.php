@@ -54,8 +54,8 @@
 
     <footer class="footer-main">
         <p>
-            <i class="fas fa-headset"></i>
-            Centro de Soporte Técnico - Vinco Energy © 2026 | Eficiencia y Tecnología
+
+             Vinco Energy © <span id="current-year"></span> | Todos los derechos reservados
         </p>
     </footer>
 
