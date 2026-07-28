@@ -184,11 +184,11 @@
                     <div class="field-row">
                         <div class="field-group">
                             <label for="gender">Género <span class="req">*</span></label>
-                            <select id="gender" name="gender" required>
-                                <option value="">Selecciona...</option>
-                                <option value="F">Femenino</option>
-                                <option value="M">Masculino</option>
-                            </select>
+                           <select id="gender" name="gender" required>
+    <option value="">Selecciona...</option>
+    <option value="Masculino">Masculino</option>  <!-- CORREGIDO: valor textual -->
+    <option value="Femenino">Femenino</option>    <!-- CORREGIDO: valor textual -->
+</select>
                         </div>
                         <div class="field-group">
                             <label for="birthDate">Fecha de nacimiento <span class="req">*</span></label>
@@ -339,166 +339,162 @@
 
 
     <script>
-        /* ==========================================================================
-       Altas de Empleados — Lógica real conectada al backend de Vinco ERP.
-    ========================================================================== */
-        (function() {
-            'use strict';
+     /* ==========================================================================
+   Altas de Empleados — Lógica real conectada al backend de Vinco ERP.
+========================================================================== */
+(function() {
+    'use strict';
 
-            /* ---- VARIABLES GLOBALES Y ESTADO ---- */
-            const DEFAULT_PHOTO_SRC = '/assets/img/default-avatar.png';
-            let employees = [];
-            let areas = [];
-            let managers = [];
-            let currentEditingId = null;
+    /* ---- VARIABLES GLOBALES Y ESTADO ---- */
+    const DEFAULT_PHOTO_SRC = '/assets/img/default-avatar.png';
+    let employees = [];
+    let areas = [];
+    let managers = [];
+    let currentEditingId = null;
 
-            const NATIONALITIES = [{
-                    code: 'MX',
-                    m: 'Mexicano',
-                    f: 'Mexicana'
-                },
-                {
-                    code: 'VE',
-                    m: 'Venezolano',
-                    f: 'Venezolana'
-                },
-                {
-                    code: 'CO',
-                    m: 'Colombiano',
-                    f: 'Colombiana'
-                },
-                {
-                    code: 'AR',
-                    m: 'Argentino',
-                    f: 'Argentina'
-                },
-                {
-                    code: 'CL',
-                    m: 'Chileno',
-                    f: 'Chilena'
-                },
-                {
-                    code: 'GT',
-                    m: 'Guatemalteco',
-                    f: 'Guatemalteca'
-                },
-                {
-                    code: 'SV',
-                    m: 'Salvadoreño',
-                    f: 'Salvadoreña'
-                },
-                {
-                    code: 'DO',
-                    m: 'Dominicano',
-                    f: 'Dominicana'
-                },
-                {
-                    code: 'ES',
-                    m: 'Español',
-                    f: 'Española'
-                },
-                {
-                    code: 'US',
-                    m: 'Estadounidense',
-                    f: 'Estadounidense'
-                },
-            ];
+    const NATIONALITIES = [{
+            code: 'MX',
+            m: 'Mexicano',
+            f: 'Mexicana'
+        },
+        {
+            code: 'VE',
+            m: 'Venezolano',
+            f: 'Venezolana'
+        },
+        {
+            code: 'CO',
+            m: 'Colombiano',
+            f: 'Colombiana'
+        },
+        {
+            code: 'AR',
+            m: 'Argentino',
+            f: 'Argentina'
+        },
+        {
+            code: 'CL',
+            m: 'Chileno',
+            f: 'Chilena'
+        },
+        {
+            code: 'GT',
+            m: 'Guatemalteco',
+            f: 'Guatemalteca'
+        },
+        {
+            code: 'SV',
+            m: 'Salvadoreño',
+            f: 'Salvadoreña'
+        },
+        {
+            code: 'DO',
+            m: 'Dominicano',
+            f: 'Dominicana'
+        },
+        {
+            code: 'ES',
+            m: 'Español',
+            f: 'Española'
+        },
+        {
+            code: 'US',
+            m: 'Estadounidense',
+            f: 'Estadounidense'
+        },
+    ];
 
-            const STATUS_LABEL = {
-                active: 'Activo',
-                inactive: 'Inactivo'
-            };
-            const STATUS_BADGE_CLASS = {
-                active: 'badge-active',
-                inactive: 'badge-inactive'
-            };
+    const STATUS_LABEL = {
+        active: 'Activo',
+        inactive: 'Inactivo'
+    };
+    const STATUS_BADGE_CLASS = {
+        active: 'badge-active',
+        inactive: 'badge-inactive'
+    };
 
-            const state = {
-                search: '',
-                filterArea: '',
-                filterStatus: '',
-                page: 1,
-                perPage: 6,
-                currentStep: 1,
-                totalSteps: 5,
-            };
+    const state = {
+        search: '',
+        filterArea: '',
+        filterStatus: '',
+        page: 1,
+        perPage: 6,
+        currentStep: 1,
+        totalSteps: 5,
+    };
 
-            /* ---- HELPERS ---- */
-            function $(id) {
-                return document.getElementById(id);
-            }
+    /* ---- HELPERS ---- */
+    function $(id) {
+        return document.getElementById(id);
+    }
 
-            function getInitials(name) {
-                if (!name) return '';
-                const parts = name.trim().split(/\s+/);
-                return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
-            }
+    function getInitials(name) {
+        if (!name) return '';
+        const parts = name.trim().split(/\s+/);
+        return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+    }
 
-            function formatDate(isoDate) {
-                if (!isoDate) return '—';
-                const [y, m, d] = isoDate.split('-');
-                return `${d}/${m}/${y}`;
-            }
+    function formatDate(isoDate) {
+        if (!isoDate) return '—';
+        const [y, m, d] = isoDate.split('-');
+        return `${d}/${m}/${y}`;
+    }
 
-            function getImageUrl(path) {
-                if (!path) return DEFAULT_PHOTO_SRC;
-                let cleanPath = path.replace('/storage/', '').replace('storage/', '');
-                if (cleanPath.startsWith('data:') || cleanPath.startsWith('http')) return cleanPath;
-                if (cleanPath.startsWith('assets/')) return `/${cleanPath}`;
-                if (cleanPath.startsWith('rh/')) return `/systems/user-management/photo/${cleanPath}`;
-                return `/${cleanPath}`;
-            }
+    function getImageUrl(path) {
+        if (!path) return DEFAULT_PHOTO_SRC;
+        let cleanPath = path.replace('/storage/', '').replace('storage/', '');
+        if (cleanPath.startsWith('data:') || cleanPath.startsWith('http')) return cleanPath;
+        if (cleanPath.startsWith('assets/')) return `/${cleanPath}`;
+        if (cleanPath.startsWith('rh/')) return `/systems/user-management/photo/${cleanPath}`;
+        return `/${cleanPath}`;
+    }
 
-            function getCsrfToken() {
-                return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            }
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    }
 
-            /* ---- PETICIONES AL BACKEND (OPTIMIZADAS) ---- */
-            async function loadInitialData() {
-                try {
-                    showTableLoading();
+    /* ---- PETICIONES AL BACKEND ---- */
+    async function loadInitialData() {
+        try {
+            showTableLoading();
 
-                    // 🔥 OPTIMIZACIÓN: Ejecutamos ambas consultas al mismo tiempo en lugar de esperar una por una.
-                    const [resCreate, resEmployees] = await Promise.all([
-                        fetch('/rh/orgmanagement/employees/create-data'),
-                        fetch('/rh/orgmanagement/employees/data')
-                    ]);
+            const [resCreate, resEmployees] = await Promise.all([
+                fetch('/rh/orgmanagement/employees/create-data'),
+                fetch('/rh/orgmanagement/employees/data')
+            ]);
 
-                    const dataCreate = await resCreate.json();
-                    employees = await resEmployees.json();
+            const dataCreate = await resCreate.json();
+            employees = await resEmployees.json();
 
-                    areas = dataCreate.areas || [];
-                    managers = dataCreate.managers || [];
+            areas = dataCreate.areas || [];
+            managers = dataCreate.managers || [];
 
-                    renderFilterOptions();
-                    renderAreaOptions();
+            renderFilterOptions();
+            renderAreaOptions();
 
-                    // Renderizamos inmediatamente
-                    renderTable();
-                } catch (error) {
-                    console.error('Error cargando datos:', error);
-                    Swal.fire('Error', 'No se pudieron cargar los datos del servidor.', 'error');
-                }
-            }
+            renderTable();
+        } catch (error) {
+            console.error('Error cargando datos:', error);
+            Swal.fire('Error', 'No se pudieron cargar los datos del servidor.', 'error');
+        }
+    }
 
-            // Esta función la dejamos solo para cuando guardes o edites a alguien,
-            // así no recarga los catálogos enteros, solo la tabla.
-            async function loadEmployees() {
-                try {
-                    showTableLoading();
-                    const res = await fetch('/rh/orgmanagement/employees/data');
-                    employees = await res.json();
-                    renderTable();
-                } catch (error) {
-                    console.error('Error cargando empleados:', error);
-                }
-            }
+    async function loadEmployees() {
+        try {
+            showTableLoading();
+            const res = await fetch('/rh/orgmanagement/employees/data');
+            employees = await res.json();
+            renderTable();
+        } catch (error) {
+            console.error('Error cargando empleados:', error);
+        }
+    }
 
-            /* ---- TABLA: LOADER SPINNER ---- */
-            function showTableLoading() {
-                const tbody = $('employeesTableBody');
-                $('emptyState').hidden = true;
-                tbody.innerHTML = `
+    /* ---- TABLA: LOADER SPINNER ---- */
+    function showTableLoading() {
+        const tbody = $('employeesTableBody');
+        $('emptyState').hidden = true;
+        tbody.innerHTML = `
             <tr>
                 <td colspan="7">
                     <div class="loader-container">
@@ -508,66 +504,66 @@
                 </td>
             </tr>
         `;
-            }
+    }
 
-            /* ---- RENDERIZADO TABLA Y FILTROS ---- */
-            function renderFilterOptions() {
-                const areaSelect = $('filterArea');
-                areaSelect.innerHTML = '<option value="">Todas las áreas</option>';
-                areas.forEach(area => {
-                    const opt = document.createElement('option');
-                    opt.value = area.id;
-                    opt.textContent = area.name;
-                    areaSelect.appendChild(opt);
-                });
-            }
+    /* ---- RENDERIZADO TABLA Y FILTROS ---- */
+    function renderFilterOptions() {
+        const areaSelect = $('filterArea');
+        areaSelect.innerHTML = '<option value="">Todas las áreas</option>';
+        areas.forEach(area => {
+            const opt = document.createElement('option');
+            opt.value = area.id;
+            opt.textContent = area.name;
+            areaSelect.appendChild(opt);
+        });
+    }
 
-            function getFilteredEmployees() {
-                return employees.filter(emp => {
-                    const matchesSearch = state.search === '' ||
-                        emp.full_name?.toLowerCase().includes(state.search) ||
-                        emp.employee_number?.toLowerCase().includes(state.search);
-                    const matchesArea = state.filterArea === '' || emp.area_id === Number(state.filterArea);
-                    const matchesStatus = state.filterStatus === '' || emp.employment_status === state
-                        .filterStatus;
-                    return matchesSearch && matchesArea && matchesStatus;
-                });
-            }
+    function getFilteredEmployees() {
+        return employees.filter(emp => {
+            const matchesSearch = state.search === '' ||
+                emp.full_name?.toLowerCase().includes(state.search) ||
+                emp.employee_number?.toLowerCase().includes(state.search);
+            const matchesArea = state.filterArea === '' || emp.area_id === Number(state.filterArea);
+            const matchesStatus = state.filterStatus === '' || emp.employment_status === state
+                .filterStatus;
+            return matchesSearch && matchesArea && matchesStatus;
+        });
+    }
 
-            function renderTable() {
-                const filtered = getFilteredEmployees();
-                const totalPages = Math.max(1, Math.ceil(filtered.length / state.perPage));
-                state.page = Math.min(state.page, totalPages);
-                const start = (state.page - 1) * state.perPage;
-                const pageItems = filtered.slice(start, start + state.perPage);
+    function renderTable() {
+        const filtered = getFilteredEmployees();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / state.perPage));
+        state.page = Math.min(state.page, totalPages);
+        const start = (state.page - 1) * state.perPage;
+        const pageItems = filtered.slice(start, start + state.perPage);
 
-                const tbody = $('employeesTableBody');
-                const emptyState = $('emptyState');
-                tbody.innerHTML = '';
+        const tbody = $('employeesTableBody');
+        const emptyState = $('emptyState');
+        tbody.innerHTML = '';
 
-                if (pageItems.length === 0) {
-                    emptyState.hidden = false;
-                } else {
-                    emptyState.hidden = true;
-                    pageItems.forEach((emp, i) => tbody.appendChild(buildRow(emp, i)));
-                }
+        if (pageItems.length === 0) {
+            emptyState.hidden = false;
+        } else {
+            emptyState.hidden = true;
+            pageItems.forEach((emp, i) => tbody.appendChild(buildRow(emp, i)));
+        }
 
-                $('resultsSummary').textContent = `Mostrando ${pageItems.length} de ${filtered.length} empleados`;
-                renderPagination(totalPages);
-            }
+        $('resultsSummary').textContent = `Mostrando ${pageItems.length} de ${filtered.length} empleados`;
+        renderPagination(totalPages);
+    }
 
-            function buildRow(emp, index) {
-                const tr = document.createElement('tr');
-                tr.className = 'row-animate';
-                tr.style.animationDelay = `${index * 0.04}s`;
+    function buildRow(emp, index) {
+        const tr = document.createElement('tr');
+        tr.className = 'row-animate';
+        tr.style.animationDelay = `${index * 0.04}s`;
 
-                const photoHtml = emp.photo ?
-                    `<img src="${getImageUrl(emp.photo)}" alt="${emp.full_name}">` :
-                    getInitials(emp.full_name);
+        const photoHtml = emp.photo ?
+            `<img src="${getImageUrl(emp.photo)}" alt="${emp.full_name}">` :
+            getInitials(emp.full_name);
 
-                const areaName = emp.area ? emp.area.name : '—';
+        const areaName = emp.area ? emp.area.name : '—';
 
-                tr.innerHTML = `
+        tr.innerHTML = `
             <td class="col-photo"><div class="avatar">${photoHtml}</div></td>
             <td>
                 <div class="cell-employee">
@@ -589,46 +585,49 @@
             </td>
         `;
 
-                tr.querySelector('.view-btn').addEventListener('click', () => viewEmployee(emp.id));
-                tr.querySelector('.edit-btn').addEventListener('click', () => editEmployee(emp.id));
-                return tr;
-            }
+        tr.querySelector('.view-btn').addEventListener('click', () => viewEmployee(emp.id));
+        tr.querySelector('.edit-btn').addEventListener('click', () => editEmployee(emp.id));
+        return tr;
+    }
 
-            function renderPagination(totalPages) {
-                const container = $('pagination');
-                container.innerHTML = '';
-                for (let i = 1; i <= totalPages; i++) {
-                    const btn = document.createElement('button');
-                    btn.textContent = i;
-                    btn.type = 'button';
-                    if (i === state.page) btn.classList.add('active');
-                    btn.addEventListener('click', () => {
-                        state.page = i;
-                        renderTable();
-                    });
-                    container.appendChild(btn);
-                }
-            }
+    function renderPagination(totalPages) {
+        const container = $('pagination');
+        container.innerHTML = '';
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.type = 'button';
+            if (i === state.page) btn.classList.add('active');
+            btn.addEventListener('click', () => {
+                state.page = i;
+                renderTable();
+            });
+            container.appendChild(btn);
+        }
+    }
 
-            /* ---- MODAL: VER DETALLES ---- */
-            function viewEmployee(id) {
-                const emp = employees.find(e => e.id === id);
-                if (!emp) return;
+    /* ---- MODAL: VER DETALLES ---- */
+    function viewEmployee(id) {
+        const emp = employees.find(e => e.id === id);
+        if (!emp) return;
 
-                const photoHtml = emp.photo ?
-                    `<img src="${getImageUrl(emp.photo)}" alt="${emp.full_name}">` :
-                    `<div class="avatar" style="width: 120px; height: 120px; font-size: 45px; margin: 0 auto; border: 4px solid var(--teal-light);">${getInitials(emp.full_name)}</div>`;
+        const photoHtml = emp.photo ?
+            `<img src="${getImageUrl(emp.photo)}" alt="${emp.full_name}">` :
+            `<div class="avatar" style="width: 120px; height: 120px; font-size: 45px; margin: 0 auto; border: 4px solid var(--teal-light);">${getInitials(emp.full_name)}</div>`;
 
-                const areaName = emp.area ? emp.area.name : '—';
-                const deptName = emp.department ? emp.department.name : '—';
-                const managerName = emp.manager ? emp.manager.full_name : '—';
-                const genderLabel = {
-                    M: 'Masculino',
-                    F: 'Femenino'
-                } [emp.gender] || '—';
-                const statusLabel = STATUS_LABEL[emp.employment_status] || '—';
+        const areaName = emp.area ? emp.area.name : '—';
+        const deptName = emp.department ? emp.department.name : '—';
+        const managerName = emp.manager ? emp.manager.full_name : '—';
 
-                const html = `
+        // CORREGIDO: Mapeo de género con valores textuales
+        const genderLabel = {
+            'Masculino': 'Masculino',
+            'Femenino': 'Femenino'
+        } [emp.gender] || '—';
+
+        const statusLabel = STATUS_LABEL[emp.employment_status] || '—';
+
+        const html = `
             <div class="view-profile-header">
                 ${emp.photo ? `<img src="${getImageUrl(emp.photo)}" alt="${emp.full_name}">` : photoHtml}
                 <h3>${emp.full_name}</h3>
@@ -667,472 +666,477 @@
             </div>
         `;
 
-                $('viewContent').innerHTML = html;
-                $('btnEditEmployee').onclick = () => {
-                    closeViewModal();
-                    editEmployee(id);
-                };
-                $('viewModalOverlay').hidden = false;
-            }
+        $('viewContent').innerHTML = html;
+        $('btnEditEmployee').onclick = () => {
+            closeViewModal();
+            editEmployee(id);
+        };
+        $('viewModalOverlay').hidden = false;
+    }
 
-            function closeViewModal() {
-                $('viewModalOverlay').hidden = true;
-            }
+    function closeViewModal() {
+        $('viewModalOverlay').hidden = true;
+    }
 
-            /* ---- MODAL: EDITAR EMPLEADO ---- */
-            function editEmployee(id) {
-                const emp = employees.find(e => e.id === id);
-                if (!emp) return;
+    /* ---- MODAL: EDITAR EMPLEADO ---- */
+    function editEmployee(id) {
+        const emp = employees.find(e => e.id === id);
+        if (!emp) return;
 
-                currentEditingId = id;
+        currentEditingId = id;
 
-                $('employeeNumber').value = emp.employee_number;
-                $('firstName').value = emp.first_name || '';
-                $('secondName').value = emp.second_name || '';
-                $('firstSurname').value = emp.first_surname || '';
-                $('secondSurname').value = emp.second_surname || '';
-                $('fullName').value = emp.full_name || '';
-                $('gender').value = emp.gender || '';
-                renderNationalityOptions(emp.gender);
+        $('employeeNumber').value = emp.employee_number;
+        $('firstName').value = emp.first_name || '';
+        $('secondName').value = emp.second_name || '';
+        $('firstSurname').value = emp.first_surname || '';
+        $('secondSurname').value = emp.second_surname || '';
+        $('fullName').value = emp.full_name || '';
 
-                if (emp.nationality) {
-                    const nats = emp.nationality.split(', ');
-                    $('nationality').value = nats[0] || '';
-                    if ($('secondNationality')) $('secondNationality').value = nats[1] || '';
-                } else {
-                    $('nationality').value = '';
-                    if ($('secondNationality')) $('secondNationality').value = '';
-                }
+        // CORREGIDO: Asignar el valor textual del género
+        $('gender').value = emp.gender || '';
 
-                if (emp.birth_date && typeof $('birthDate')._flatpickr !== 'undefined') {
-                    $('birthDate')._flatpickr.setDate(formatDate(emp.birth_date), true, "d/m/Y");
-                }
+        renderNationalityOptions(emp.gender);
 
-                $('position').value = emp.position || '';
-                $('jobTitle').value = emp.job_title || '';
+        if (emp.nationality) {
+            const nats = emp.nationality.split(', ');
+            $('nationality').value = nats[0] || '';
+            if ($('secondNationality')) $('secondNationality').value = nats[1] || '';
+        } else {
+            $('nationality').value = '';
+            if ($('secondNationality')) $('secondNationality').value = '';
+        }
 
-                if (emp.hire_date && typeof $('hireDate')._flatpickr !== 'undefined') {
-                    $('hireDate')._flatpickr.setDate(formatDate(emp.hire_date), true, "d/m/Y");
-                }
+        if (emp.birth_date && typeof $('birthDate')._flatpickr !== 'undefined') {
+            $('birthDate')._flatpickr.setDate(formatDate(emp.birth_date), true, "d/m/Y");
+        }
 
-                $('employmentStatus').value = emp.employment_status || 'active';
+        $('position').value = emp.position || '';
+        $('jobTitle').value = emp.job_title || '';
 
-                $('area').value = emp.area_id || '';
-                const deptSelect = $('department');
-                if (emp.area_id) {
-                    const areaObj = areas.find(a => a.id === emp.area_id);
-                    if (areaObj && areaObj.departments) {
-                        deptSelect.innerHTML = '<option value="">Selecciona...</option>';
-                        areaObj.departments.forEach(dept => {
-                            const opt = document.createElement('option');
-                            opt.value = dept.id;
-                            opt.textContent = dept.name;
-                            deptSelect.appendChild(opt);
-                        });
-                        deptSelect.disabled = false;
-                        deptSelect.value = emp.department_id || '';
-                    }
-                } else {
-                    deptSelect.innerHTML = '<option value="">Selecciona un área primero...</option>';
-                    deptSelect.disabled = true;
-                }
+        if (emp.hire_date && typeof $('hireDate')._flatpickr !== 'undefined') {
+            $('hireDate')._flatpickr.setDate(formatDate(emp.hire_date), true, "d/m/Y");
+        }
 
-                $('managerSearch').value = emp.manager ? emp.manager.full_name : '';
-                $('manager').value = emp.manager_id || '';
-                $('phone').value = emp.phone || '';
-                $('personalEmail').value = emp.personal_email || '';
-                $('rfc').value = emp.rfc || '';
-                $('curp').value = emp.unique_population_code || '';
-                $('nss').value = emp.social_security_number || '';
-                $('bloodType').value = emp.blood_type || '';
-                $('medicalHistory').value = emp.medical_history || '';
+        $('employmentStatus').value = emp.employment_status || 'active';
 
-                $('employeeNumber').disabled = true;
-
-                if (emp.photo) {
-                    const img = document.createElement('img');
-                    img.src = getImageUrl(emp.photo);
-                    $('photoPreview').innerHTML = '';
-                    $('photoPreview').appendChild(img);
-                    $('btnRemovePhoto').hidden = false;
-                } else {
-                    $('photoPreview').innerHTML = '<i class="fas fa-user"></i>';
-                    $('btnRemovePhoto').hidden = true;
-                }
-
-                $('altaModalTitle').innerHTML = '<i class="fas fa-pen"></i> Editar Empleado';
-                $('btnSubmitAlta').innerHTML = '<i class="fas fa-save"></i> Actualizar empleado';
-
-                goToStep(1);
-                $('altaModalOverlay').hidden = false;
-            }
-
-            /* ---- MODAL ALTA NUEVA Y NAVEGACIÓN ---- */
-            function openModal() {
-                currentEditingId = null;
-                $('employeeNumber').disabled = false;
-                $('altaModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Nueva Alta de Empleado';
-                $('btnSubmitAlta').innerHTML = '<i class="fas fa-check"></i> Guardar empleado';
-                resetForm();
-                goToStep(1);
-                $('altaModalOverlay').hidden = false;
-            }
-
-            function closeModal() {
-                $('altaModalOverlay').hidden = true;
-                resetForm();
-                currentEditingId = null;
-            }
-
-            function confirmClose() {
-                Swal.fire({
-                    title: currentEditingId ? '¿Cancelar edición?' : '¿Cancelar el alta?',
-                    text: 'Se perderá la información capturada.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, cancelar',
-                    cancelButtonText: 'Seguir capturando',
-                    confirmButtonColor: '#35506b',
-                    cancelButtonColor: '#64748b',
-                }).then(result => {
-                    if (result.isConfirmed) closeModal();
-                });
-            }
-
-            function goToStep(step) {
-                state.currentStep = step;
-                document.querySelectorAll('.form-step').forEach(section => {
-                    section.classList.toggle('active', Number(section.dataset.step) === step);
-                });
-                document.querySelectorAll('.step-item').forEach(item => {
-                    const itemStep = Number(item.dataset.step);
-                    item.classList.toggle('active', itemStep === step);
-                    item.classList.toggle('completed', itemStep < step);
-                });
-                $('btnPrevStep').hidden = step === 1;
-                $('btnNextStep').hidden = step === state.totalSteps;
-                $('btnSubmitAlta').hidden = step !== state.totalSteps;
-                if (step === state.totalSteps) buildSummary();
-            }
-
-            function validateStep(step) {
-                const section = document.querySelector(`.form-step[data-step="${step}"]`);
-                let valid = true;
-                section.querySelectorAll('[required]').forEach(field => {
-                    const group = field.closest('.field-group');
-                    if (!field.value || !field.value.trim()) {
-                        valid = false;
-                        group?.classList.add('invalid');
-                    } else {
-                        group?.classList.remove('invalid');
-                    }
-                });
-                if (!valid) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Faltan datos obligatorios',
-                        text: 'Revisa los campos marcados en rojo antes de continuar.',
-                        confirmButtonColor: '#35506b',
-                    });
-                }
-                return valid;
-            }
-
-            /* ---- LÓGICA DEL FORMULARIO ---- */
-            function updateFullName() {
-                const parts = ['firstName', 'secondName', 'firstSurname', 'secondSurname']
-                    .map(id => $(id).value.trim()).filter(Boolean);
-                $('fullName').value = parts.join(' ');
-            }
-
-            function renderNationalityOptions(genderValue) {
-                const select1 = $('nationality');
-                const select2 = $('secondNationality');
-                const val1 = select1.value;
-                const val2 = select2 ? select2.value : '';
-
-                select1.innerHTML = '<option value="">Selecciona...</option>';
-                if (select2) select2.innerHTML = '<option value="">Ninguna</option>';
-
-                NATIONALITIES.forEach(nat => {
-                    const text = (genderValue === 'M') ? nat.m : (genderValue === 'F' ? nat.f :
-                        `${nat.m} / ${nat.f}`);
-                    const opt1 = document.createElement('option');
-                    opt1.value = text;
-                    opt1.textContent = text;
-                    select1.appendChild(opt1);
-                    if (select2) {
-                        const opt2 = document.createElement('option');
-                        opt2.value = text;
-                        opt2.textContent = text;
-                        select2.appendChild(opt2);
-                    }
-                });
-                select1.value = val1;
-                if (select2) select2.value = val2;
-            }
-
-            function renderAreaOptions() {
-                const select = $('area');
-                select.innerHTML = '<option value="">Selecciona un área...</option>';
-                areas.forEach(area => {
+        $('area').value = emp.area_id || '';
+        const deptSelect = $('department');
+        if (emp.area_id) {
+            const areaObj = areas.find(a => a.id === emp.area_id);
+            if (areaObj && areaObj.departments) {
+                deptSelect.innerHTML = '<option value="">Selecciona...</option>';
+                areaObj.departments.forEach(dept => {
                     const opt = document.createElement('option');
-                    opt.value = area.id;
-                    opt.textContent = area.name;
-                    select.appendChild(opt);
+                    opt.value = dept.id;
+                    opt.textContent = dept.name;
+                    deptSelect.appendChild(opt);
                 });
+                deptSelect.disabled = false;
+                deptSelect.value = emp.department_id || '';
             }
+        } else {
+            deptSelect.innerHTML = '<option value="">Selecciona un área primero...</option>';
+            deptSelect.disabled = true;
+        }
 
-            function bindAreaToDepartment() {
-                $('area').addEventListener('change', (e) => {
-                    const deptSelect = $('department');
-                    const area = areas.find(a => a.id === Number(e.target.value));
-                    if (!area || !area.departments || area.departments.length === 0) {
-                        deptSelect.innerHTML = '<option value="">No hay departamentos</option>';
-                        deptSelect.disabled = true;
-                        return;
-                    }
-                    deptSelect.disabled = false;
-                    deptSelect.innerHTML = '<option value="">Selecciona...</option>';
-                    area.departments.forEach(dept => {
-                        const opt = document.createElement('option');
-                        opt.value = dept.id;
-                        opt.textContent = dept.name;
-                        deptSelect.appendChild(opt);
-                    });
-                });
+        $('managerSearch').value = emp.manager ? emp.manager.full_name : '';
+        $('manager').value = emp.manager_id || '';
+        $('phone').value = emp.phone || '';
+        $('personalEmail').value = emp.personal_email || '';
+        $('rfc').value = emp.rfc || '';
+        $('curp').value = emp.unique_population_code || '';
+        $('nss').value = emp.social_security_number || '';
+        $('bloodType').value = emp.blood_type || '';
+        $('medicalHistory').value = emp.medical_history || '';
+
+        $('employeeNumber').disabled = true;
+
+        if (emp.photo) {
+            const img = document.createElement('img');
+            img.src = getImageUrl(emp.photo);
+            $('photoPreview').innerHTML = '';
+            $('photoPreview').appendChild(img);
+            $('btnRemovePhoto').hidden = false;
+        } else {
+            $('photoPreview').innerHTML = '<i class="fas fa-user"></i>';
+            $('btnRemovePhoto').hidden = true;
+        }
+
+        $('altaModalTitle').innerHTML = '<i class="fas fa-pen"></i> Editar Empleado';
+        $('btnSubmitAlta').innerHTML = '<i class="fas fa-save"></i> Actualizar empleado';
+
+        goToStep(1);
+        $('altaModalOverlay').hidden = false;
+    }
+
+    /* ---- MODAL ALTA NUEVA Y NAVEGACIÓN ---- */
+    function openModal() {
+        currentEditingId = null;
+        $('employeeNumber').disabled = false;
+        $('altaModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Nueva Alta de Empleado';
+        $('btnSubmitAlta').innerHTML = '<i class="fas fa-check"></i> Guardar empleado';
+        resetForm();
+        goToStep(1);
+        $('altaModalOverlay').hidden = false;
+    }
+
+    function closeModal() {
+        $('altaModalOverlay').hidden = true;
+        resetForm();
+        currentEditingId = null;
+    }
+
+    function confirmClose() {
+        Swal.fire({
+            title: currentEditingId ? '¿Cancelar edición?' : '¿Cancelar el alta?',
+            text: 'Se perderá la información capturada.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cancelar',
+            cancelButtonText: 'Seguir capturando',
+            confirmButtonColor: '#35506b',
+            cancelButtonColor: '#64748b',
+        }).then(result => {
+            if (result.isConfirmed) closeModal();
+        });
+    }
+
+    function goToStep(step) {
+        state.currentStep = step;
+        document.querySelectorAll('.form-step').forEach(section => {
+            section.classList.toggle('active', Number(section.dataset.step) === step);
+        });
+        document.querySelectorAll('.step-item').forEach(item => {
+            const itemStep = Number(item.dataset.step);
+            item.classList.toggle('active', itemStep === step);
+            item.classList.toggle('completed', itemStep < step);
+        });
+        $('btnPrevStep').hidden = step === 1;
+        $('btnNextStep').hidden = step === state.totalSteps;
+        $('btnSubmitAlta').hidden = step !== state.totalSteps;
+        if (step === state.totalSteps) buildSummary();
+    }
+
+    function validateStep(step) {
+        const section = document.querySelector(`.form-step[data-step="${step}"]`);
+        let valid = true;
+        section.querySelectorAll('[required]').forEach(field => {
+            const group = field.closest('.field-group');
+            if (!field.value || !field.value.trim()) {
+                valid = false;
+                group?.classList.add('invalid');
+            } else {
+                group?.classList.remove('invalid');
             }
+        });
+        if (!valid) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Faltan datos obligatorios',
+                text: 'Revisa los campos marcados en rojo antes de continuar.',
+                confirmButtonColor: '#35506b',
+            });
+        }
+        return valid;
+    }
 
-            function bindManagerAutocomplete() {
-                const input = $('managerSearch');
-                const list = $('managerList');
-                input.addEventListener('input', () => {
-                    const term = input.value.trim().toLowerCase();
-                    list.innerHTML = '';
-                    if (term.length < 2) {
-                        list.hidden = true;
-                        return;
-                    }
-                    const matches = managers.filter(emp => emp.full_name.toLowerCase().includes(term)).slice(0,
-                        6);
-                    if (matches.length === 0) {
-                        list.hidden = true;
-                        return;
-                    }
-                    matches.forEach(emp => {
-                        const item = document.createElement('div');
-                        item.textContent = `${emp.full_name} — ${emp.position || 'Sin puesto'}`;
-                        item.addEventListener('click', () => {
-                            input.value = emp.full_name;
-                            $('manager').value = emp.id;
-                            list.hidden = true;
-                        });
-                        list.appendChild(item);
-                    });
-                    list.hidden = false;
-                });
-                document.addEventListener('click', (e) => {
-                    if (e.target !== input) list.hidden = true;
-                });
+    /* ---- LÓGICA DEL FORMULARIO ---- */
+    function updateFullName() {
+        const parts = ['firstName', 'secondName', 'firstSurname', 'secondSurname']
+            .map(id => $(id).value.trim()).filter(Boolean);
+        $('fullName').value = parts.join(' ');
+    }
+
+    function renderNationalityOptions(genderValue) {
+        const select1 = $('nationality');
+        const select2 = $('secondNationality');
+        const val1 = select1.value;
+        const val2 = select2 ? select2.value : '';
+
+        select1.innerHTML = '<option value="">Selecciona...</option>';
+        if (select2) select2.innerHTML = '<option value="">Ninguna</option>';
+
+        NATIONALITIES.forEach(nat => {
+            const text = (genderValue === 'Masculino') ? nat.m : (genderValue === 'Femenino' ? nat.f :
+                `${nat.m} / ${nat.f}`);
+            const opt1 = document.createElement('option');
+            opt1.value = text;
+            opt1.textContent = text;
+            select1.appendChild(opt1);
+            if (select2) {
+                const opt2 = document.createElement('option');
+                opt2.value = text;
+                opt2.textContent = text;
+                select2.appendChild(opt2);
             }
+        });
+        select1.value = val1;
+        if (select2) select2.value = val2;
+    }
 
-            function bindPhotoUpload() {
-                const input = $('photoInput');
-                const preview = $('photoPreview');
-                const removeBtn = $('btnRemovePhoto');
-                input.addEventListener('change', () => {
-                    const file = input.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-                        removeBtn.hidden = false;
-                    };
-                    reader.readAsDataURL(file);
-                });
-                removeBtn.addEventListener('click', () => {
-                    input.value = '';
-                    preview.innerHTML = '<i class="fas fa-user"></i>';
-                    removeBtn.hidden = true;
-                });
+    function renderAreaOptions() {
+        const select = $('area');
+        select.innerHTML = '<option value="">Selecciona un área...</option>';
+        areas.forEach(area => {
+            const opt = document.createElement('option');
+            opt.value = area.id;
+            opt.textContent = area.name;
+            select.appendChild(opt);
+        });
+    }
+
+    function bindAreaToDepartment() {
+        $('area').addEventListener('change', (e) => {
+            const deptSelect = $('department');
+            const area = areas.find(a => a.id === Number(e.target.value));
+            if (!area || !area.departments || area.departments.length === 0) {
+                deptSelect.innerHTML = '<option value="">No hay departamentos</option>';
+                deptSelect.disabled = true;
+                return;
             }
+            deptSelect.disabled = false;
+            deptSelect.innerHTML = '<option value="">Selecciona...</option>';
+            area.departments.forEach(dept => {
+                const opt = document.createElement('option');
+                opt.value = dept.id;
+                opt.textContent = dept.name;
+                deptSelect.appendChild(opt);
+            });
+        });
+    }
 
-            function initDatePickers() {
-                if (typeof flatpickr !== 'undefined') {
-                    flatpickr('#birthDate', {
-                        dateFormat: 'd/m/Y',
-                        maxDate: 'today',
-                        locale: {
-                            firstDayOfWeek: 1
-                        }
-                    });
-                    flatpickr('#hireDate', {
-                        dateFormat: 'd/m/Y',
-                        maxDate: 'today',
-                        locale: {
-                            firstDayOfWeek: 1
-                        }
-                    });
+    function bindManagerAutocomplete() {
+        const input = $('managerSearch');
+        const list = $('managerList');
+        input.addEventListener('input', () => {
+            const term = input.value.trim().toLowerCase();
+            list.innerHTML = '';
+            if (term.length < 2) {
+                list.hidden = true;
+                return;
+            }
+            const matches = managers.filter(emp => emp.full_name.toLowerCase().includes(term)).slice(0,
+                6);
+            if (matches.length === 0) {
+                list.hidden = true;
+                return;
+            }
+            matches.forEach(emp => {
+                const item = document.createElement('div');
+                item.textContent = `${emp.full_name} — ${emp.position || 'Sin puesto'}`;
+                item.addEventListener('click', () => {
+                    input.value = emp.full_name;
+                    $('manager').value = emp.id;
+                    list.hidden = true;
+                });
+                list.appendChild(item);
+            });
+            list.hidden = false;
+        });
+        document.addEventListener('click', (e) => {
+            if (e.target !== input) list.hidden = true;
+        });
+    }
+
+    function bindPhotoUpload() {
+        const input = $('photoInput');
+        const preview = $('photoPreview');
+        const removeBtn = $('btnRemovePhoto');
+        input.addEventListener('change', () => {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                removeBtn.hidden = false;
+            };
+            reader.readAsDataURL(file);
+        });
+        removeBtn.addEventListener('click', () => {
+            input.value = '';
+            preview.innerHTML = '<i class="fas fa-user"></i>';
+            removeBtn.hidden = true;
+        });
+    }
+
+    function initDatePickers() {
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr('#birthDate', {
+                dateFormat: 'd/m/Y',
+                maxDate: 'today',
+                locale: {
+                    firstDayOfWeek: 1
                 }
-            }
+            });
+            flatpickr('#hireDate', {
+                dateFormat: 'd/m/Y',
+                maxDate: 'today',
+                locale: {
+                    firstDayOfWeek: 1
+                }
+            });
+        }
+    }
 
-            /* ---- RESUMEN Y GUARDADO ---- */
-            function buildSummary() {
-                const genderLabel = {
-                    M: 'Masculino',
-                    F: 'Femenino'
-                } [$('gender').value] || '—';
-                const nat1 = $('nationality').value || '—';
-                const nat2Select = $('secondNationality');
-                const nat2 = nat2Select ? nat2Select.value : '';
-                const combinedNat = nat2 ? `${nat1}, ${nat2}` : nat1;
-                const areaOpt = $('area').selectedOptions[0];
-                const deptOpt = $('department').selectedOptions[0];
-                const items = [
-                    ['No. de empleado', $('employeeNumber').value || '—'],
-                    ['Nombre completo', $('fullName').value || '—'],
-                    ['Género', genderLabel],
-                    ['Nacionalidad(es)', combinedNat],
-                    ['Fecha Nac.', $('birthDate').value || '—'],
-                    ['Puesto', $('position').value || '—'],
-                    ['Área', areaOpt?.textContent || '—'],
-                    ['Departamento', deptOpt?.textContent || '—'],
-                    ['Ingreso', $('hireDate').value || '—'],
-                    ['Estado', STATUS_LABEL[$('employmentStatus').value] || '—'],
-                    ['Jefe directo', $('managerSearch').value || 'Sin asignar'],
-                    ['Contacto', ($('phone').value || '—') + ' / ' + ($('personalEmail').value || '—')],
-                ];
-                $('summaryGrid').innerHTML = items.map(([label, value]) => `
+    /* ---- RESUMEN Y GUARDADO ---- */
+    function buildSummary() {
+        // CORREGIDO: Mapeo de género con valores textuales
+        const genderLabel = {
+            'Masculino': 'Masculino',
+            'Femenino': 'Femenino'
+        } [$('gender').value] || '—';
+
+        const nat1 = $('nationality').value || '—';
+        const nat2Select = $('secondNationality');
+        const nat2 = nat2Select ? nat2Select.value : '';
+        const combinedNat = nat2 ? `${nat1}, ${nat2}` : nat1;
+        const areaOpt = $('area').selectedOptions[0];
+        const deptOpt = $('department').selectedOptions[0];
+        const items = [
+            ['No. de empleado', $('employeeNumber').value || '—'],
+            ['Nombre completo', $('fullName').value || '—'],
+            ['Género', genderLabel],
+            ['Nacionalidad(es)', combinedNat],
+            ['Fecha Nac.', $('birthDate').value || '—'],
+            ['Puesto', $('position').value || '—'],
+            ['Área', areaOpt?.textContent || '—'],
+            ['Departamento', deptOpt?.textContent || '—'],
+            ['Ingreso', $('hireDate').value || '—'],
+            ['Estado', STATUS_LABEL[$('employmentStatus').value] || '—'],
+            ['Jefe directo', $('managerSearch').value || 'Sin asignar'],
+            ['Contacto', ($('phone').value || '—') + ' / ' + ($('personalEmail').value || '—')],
+        ];
+        $('summaryGrid').innerHTML = items.map(([label, value]) => `
             <div class="summary-item"><span>${label}</span><strong>${value}</strong></div>
         `).join('');
-            }
+    }
 
-            async function submitAlta() {
-                $('btnSubmitAlta').disabled = true;
-                const form = $('formAlta');
-                const formData = new FormData(form);
-                if (currentEditingId) {
-                    formData.append('_method', 'PUT');
+    async function submitAlta() {
+        $('btnSubmitAlta').disabled = true;
+        const form = $('formAlta');
+        const formData = new FormData(form);
+        if (currentEditingId) {
+            formData.append('_method', 'PUT');
+        }
+        try {
+            const url = currentEditingId ? `/rh/orgmanagement/employees/${currentEditingId}` :
+                '/rh/orgmanagement/employees';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                let errorMsg = result.message || 'Ocurrió un error al guardar.';
+                if (result.errors) {
+                    errorMsg = Object.values(result.errors).flat().join('<br>');
                 }
-                try {
-                    const url = currentEditingId ? `/rh/orgmanagement/employees/${currentEditingId}` :
-                        '/rh/orgmanagement/employees';
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': getCsrfToken(),
-                            'Accept': 'application/json'
-                        },
-                        body: formData
-                    });
-                    const result = await response.json();
-                    if (!response.ok) {
-                        let errorMsg = result.message || 'Ocurrió un error al guardar.';
-                        if (result.errors) {
-                            errorMsg = Object.values(result.errors).flat().join('<br>');
-                        }
-                        throw new Error(errorMsg);
-                    }
-                    Swal.fire({
-                        icon: 'success',
-                        title: currentEditingId ? 'Empleado actualizado' : 'Empleado registrado',
-                        text: currentEditingId ? 'Los cambios se guardaron correctamente.' :
-                            'El empleado fue dado de alta correctamente.',
-                        confirmButtonColor: '#35506b',
-                    });
-                    closeModal();
-                    await loadEmployees();
-                } catch (error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        html: error.message,
-                        confirmButtonColor: '#35506b',
-                    });
-                } finally {
-                    $('btnSubmitAlta').disabled = false;
-                }
+                throw new Error(errorMsg);
             }
+            Swal.fire({
+                icon: 'success',
+                title: currentEditingId ? 'Empleado actualizado' : 'Empleado registrado',
+                text: currentEditingId ? 'Los cambios se guardaron correctamente.' :
+                    'El empleado fue dado de alta correctamente.',
+                confirmButtonColor: '#35506b',
+            });
+            closeModal();
+            await loadEmployees();
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                html: error.message,
+                confirmButtonColor: '#35506b',
+            });
+        } finally {
+            $('btnSubmitAlta').disabled = false;
+        }
+    }
 
-            function resetForm() {
-                $('formAlta').reset();
-                $('fullName').value = '';
-                $('photoPreview').innerHTML = '<i class="fas fa-user"></i>';
-                $('btnRemovePhoto').hidden = true;
-                $('department').innerHTML = '<option value="">Selecciona un área primero...</option>';
-                $('department').disabled = true;
-                $('manager').value = '';
-                $('managerSearch').value = '';
-                if ($('secondNationality')) $('secondNationality').innerHTML = '<option value="">Ninguna</option>';
-                renderNationalityOptions('');
-                document.querySelectorAll('.field-group.invalid').forEach(g => g.classList.remove('invalid'));
-                $('photoInput').value = '';
-                if ($('birthDate')._flatpickr) $('birthDate')._flatpickr.clear();
-                if ($('hireDate')._flatpickr) $('hireDate')._flatpickr.clear();
-                goToStep(1);
-            }
+    function resetForm() {
+        $('formAlta').reset();
+        $('fullName').value = '';
+        $('photoPreview').innerHTML = '<i class="fas fa-user"></i>';
+        $('btnRemovePhoto').hidden = true;
+        $('department').innerHTML = '<option value="">Selecciona un área primero...</option>';
+        $('department').disabled = true;
+        $('manager').value = '';
+        $('managerSearch').value = '';
+        if ($('secondNationality')) $('secondNationality').innerHTML = '<option value="">Ninguna</option>';
+        renderNationalityOptions('');
+        document.querySelectorAll('.field-group.invalid').forEach(g => g.classList.remove('invalid'));
+        $('photoInput').value = '';
+        if ($('birthDate')._flatpickr) $('birthDate')._flatpickr.clear();
+        if ($('hireDate')._flatpickr) $('hireDate')._flatpickr.clear();
+        goToStep(1);
+    }
 
-            /* ---- INICIALIZACIÓN Y EVENTOS ---- */
-            function bindEvents() {
-                $('searchInput').addEventListener('input', (e) => {
-                    state.search = e.target.value.toLowerCase();
-                    state.page = 1;
-                    renderTable();
-                });
-                $('filterArea').addEventListener('change', (e) => {
-                    state.filterArea = e.target.value;
-                    state.page = 1;
-                    renderTable();
-                });
-                $('filterStatus').addEventListener('change', (e) => {
-                    state.filterStatus = e.target.value;
-                    state.page = 1;
-                    renderTable();
-                });
-                $('perPageSelect').addEventListener('change', (e) => {
-                    state.perPage = Number(e.target.value);
-                    state.page = 1;
-                    renderTable();
-                });
+    /* ---- INICIALIZACIÓN Y EVENTOS ---- */
+    function bindEvents() {
+        $('searchInput').addEventListener('input', (e) => {
+            state.search = e.target.value.toLowerCase();
+            state.page = 1;
+            renderTable();
+        });
+        $('filterArea').addEventListener('change', (e) => {
+            state.filterArea = e.target.value;
+            state.page = 1;
+            renderTable();
+        });
+        $('filterStatus').addEventListener('change', (e) => {
+            state.filterStatus = e.target.value;
+            state.page = 1;
+            renderTable();
+        });
+        $('perPageSelect').addEventListener('change', (e) => {
+            state.perPage = Number(e.target.value);
+            state.page = 1;
+            renderTable();
+        });
 
-                $('btnNuevaAlta').addEventListener('click', openModal);
-                $('btnCloseModal').addEventListener('click', confirmClose);
-                $('btnCancelAlta').addEventListener('click', confirmClose);
-                $('altaModalOverlay').addEventListener('click', (e) => {
-                    if (e.target.id === 'altaModalOverlay') confirmClose();
-                });
+        $('btnNuevaAlta').addEventListener('click', openModal);
+        $('btnCloseModal').addEventListener('click', confirmClose);
+        $('btnCancelAlta').addEventListener('click', confirmClose);
+        $('altaModalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'altaModalOverlay') confirmClose();
+        });
 
-                $('btnCloseViewModal').addEventListener('click', closeViewModal);
-                $('btnCloseViewBtn').addEventListener('click', closeViewModal);
-                $('viewModalOverlay').addEventListener('click', (e) => {
-                    if (e.target.id === 'viewModalOverlay') closeViewModal();
-                });
+        $('btnCloseViewModal').addEventListener('click', closeViewModal);
+        $('btnCloseViewBtn').addEventListener('click', closeViewModal);
+        $('viewModalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'viewModalOverlay') closeViewModal();
+        });
 
-                $('btnNextStep').addEventListener('click', () => {
-                    if (validateStep(state.currentStep) && state.currentStep < state.totalSteps) goToStep(state
-                        .currentStep + 1);
-                });
-                $('btnPrevStep').addEventListener('click', () => {
-                    if (state.currentStep > 1) goToStep(state.currentStep - 1);
-                });
-                $('btnSubmitAlta').addEventListener('click', submitAlta);
+        $('btnNextStep').addEventListener('click', () => {
+            if (validateStep(state.currentStep) && state.currentStep < state.totalSteps) goToStep(state
+                .currentStep + 1);
+        });
+        $('btnPrevStep').addEventListener('click', () => {
+            if (state.currentStep > 1) goToStep(state.currentStep - 1);
+        });
+        $('btnSubmitAlta').addEventListener('click', submitAlta);
 
-                ['firstName', 'secondName', 'firstSurname', 'secondSurname'].forEach(id => $(id).addEventListener(
-                    'input', updateFullName));
-                $('gender').addEventListener('change', (e) => renderNationalityOptions(e.target.value));
-                bindAreaToDepartment();
-                bindManagerAutocomplete();
-                bindPhotoUpload();
-            }
+        ['firstName', 'secondName', 'firstSurname', 'secondSurname'].forEach(id => $(id).addEventListener(
+            'input', updateFullName));
+        $('gender').addEventListener('change', (e) => renderNationalityOptions(e.target.value));
+        bindAreaToDepartment();
+        bindManagerAutocomplete();
+        bindPhotoUpload();
+    }
 
-            function init() {
-                bindEvents();
-                initDatePickers();
-                renderNationalityOptions('');
-                loadInitialData(); // <-- AQUÍ SE DISPARAN AMBAS PETICIONES AL MISMO TIEMPO
-            }
+    function init() {
+        bindEvents();
+        initDatePickers();
+        renderNationalityOptions('');
+        loadInitialData();
+    }
 
-            document.addEventListener('DOMContentLoaded', init);
-        })();
+    document.addEventListener('DOMContentLoaded', init);
+})();
     </script>
 @endsection
