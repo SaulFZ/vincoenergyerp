@@ -50,10 +50,10 @@ class EmployeeController extends Controller
             'employee_number'    => 'required|unique:employees,employee_number',
             'first_name'         => 'required|string|max:255',
             'first_surname'      => 'required|string|max:255',
-            'gender'             => 'required|in:M,F',
+            'gender'             => 'required|in:Masculino,Femenino,M,F', // ACEPTA AMBOS FORMATOS
             'birth_date'         => 'required|date_format:d/m/Y',
             'nationality'        => 'required|string',
-            'second_nationality' => 'nullable|string', // NUEVO CAMPO
+            'second_nationality' => 'nullable|string',
             'position'           => 'required|string|max:255',
             'hire_date'          => 'required|date_format:d/m/Y',
             'employment_status'  => 'required|in:active,inactive',
@@ -69,6 +69,14 @@ class EmployeeController extends Controller
             DB::beginTransaction();
 
             $data = $request->except(['photo', 'birth_date', 'hire_date', 'second_nationality']);
+
+            // Normalizar género a texto completo
+            if ($request->gender === 'M') {
+                $data['gender'] = 'Masculino';
+            } elseif ($request->gender === 'F') {
+                $data['gender'] = 'Femenino';
+            }
+            // Si ya viene como texto completo, se mantiene
 
             // Unir nacionalidades
             $nats                = array_filter([$request->nationality, $request->second_nationality]);
@@ -132,10 +140,10 @@ class EmployeeController extends Controller
             $request->validate([
                 'first_name'         => 'sometimes|required|string|max:255',
                 'first_surname'      => 'sometimes|required|string|max:255',
-                'gender'             => 'sometimes|required|in:M,F',
+                'gender'             => 'sometimes|required|in:Masculino,Femenino,M,F', // ACEPTA AMBOS FORMATOS
                 'birth_date'         => 'sometimes|required|date_format:d/m/Y',
                 'nationality'        => 'sometimes|required|string',
-                'second_nationality' => 'nullable|string', // NUEVO CAMPO
+                'second_nationality' => 'nullable|string',
                 'position'           => 'sometimes|required|string|max:255',
                 'hire_date'          => 'sometimes|required|date_format:d/m/Y',
                 'employment_status'  => 'sometimes|required|in:active,inactive',
@@ -146,6 +154,16 @@ class EmployeeController extends Controller
             DB::beginTransaction();
 
             $data = $request->except(['photo', '_method', 'second_nationality']);
+
+            // Normalizar género a texto completo si se envió
+            if (isset($data['gender'])) {
+                if ($data['gender'] === 'M') {
+                    $data['gender'] = 'Masculino';
+                } elseif ($data['gender'] === 'F') {
+                    $data['gender'] = 'Femenino';
+                }
+                // Si ya viene como texto completo, se mantiene
+            }
 
             // Unir nacionalidades si se enviaron
             if ($request->has('nationality')) {
