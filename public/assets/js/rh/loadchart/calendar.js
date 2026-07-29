@@ -343,35 +343,42 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
-    function handleBaseDescriptionChange() {
-        if (!requiresBaseDesc || document.getElementById('activity-type').value !== 'B') return;
+function handleBaseDescriptionChange() {
+    if (!requiresBaseDesc || document.getElementById('activity-type').value !== 'B') return;
 
-        const val = baseDescSelect.value;
-        const foodBonusContainer = document.getElementById('food-bonus') ? document.getElementById('food-bonus').closest('.form-group') : null;
-        const fieldBonusContainer = document.getElementById('field-bonus') ? document.getElementById('field-bonus').closest('.form-group') : null;
-        const foodBonusSelect = document.getElementById('food-bonus');
+    const val = baseDescSelect.value;
+    const foodBonusContainer = document.getElementById('food-bonus') ? document.getElementById('food-bonus').closest('.form-group') : null;
+    const fieldBonusContainer = document.getElementById('field-bonus') ? document.getElementById('field-bonus').closest('.form-group') : null;
+    const foodBonusSelect = document.getElementById('food-bonus');
 
-        if (['Movimiento o eventos con gerencias', 'Mantenimiento a polvorin Vinco'].includes(val)) {
-            if (foodBonusContainer) foodBonusContainer.style.display = 'block';
-            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
-        } else if (['Paso de cable', 'Pruebas de presion para los ECP', 'Pintura y soldaduras en area de taller'].includes(val)) {
-            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
-            if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
-            if (foodBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'food_bonus'))) {
-                foodBonusSelect.selectedIndex = 0;
-            }
-        } else {
-            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
-            if (fieldBonusContainer) fieldBonusContainer.style.display = 'none';
-            if (foodBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'food_bonus'))) {
-                foodBonusSelect.selectedIndex = 0;
-            }
-            const fieldBonusSelect = document.getElementById('field-bonus');
-            if (fieldBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'field_bonus'))) {
-                fieldBonusSelect.selectedIndex = 0;
-            }
+    if (['Movimiento o eventos con gerencias', 'Mantenimiento a polvorin Vinco'].includes(val)) {
+        // ✅ Muestra AMBOS bonos (Comida y Campo)
+        if (foodBonusContainer) foodBonusContainer.style.display = 'block';
+        if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+    } else if (['Paso de cable', 'Pruebas de presion para los ECP', 'Pintura y soldaduras en area de taller', 'Mantenimiento de ECP'].includes(val)) {
+        // ✅ Muestra SOLO Bono de Campo (Nueva actividad agregada aquí)
+        if (foodBonusContainer) foodBonusContainer.style.display = 'none';
+        if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
+
+        // Resetea el bono de comida si estaba seleccionado
+        if (foodBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'food_bonus'))) {
+            foodBonusSelect.selectedIndex = 0;
+        }
+    } else {
+        // ❌ Oculta TODOS los bonos (cualquier otra opción)
+        if (foodBonusContainer) foodBonusContainer.style.display = 'none';
+        if (fieldBonusContainer) fieldBonusContainer.style.display = 'none';
+
+        // Resetea ambos selectores
+        if (foodBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'food_bonus'))) {
+            foodBonusSelect.selectedIndex = 0;
+        }
+        const fieldBonusSelect = document.getElementById('field-bonus');
+        if (fieldBonusSelect && !statusesToBlockField.includes(getFieldStatus(currentActivity, 'field_bonus'))) {
+            fieldBonusSelect.selectedIndex = 0;
         }
     }
+}
 
     if (baseDescSelect) {
         baseDescSelect.addEventListener('change', handleBaseDescriptionChange);
