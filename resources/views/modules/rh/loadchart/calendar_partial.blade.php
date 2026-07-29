@@ -33,7 +33,7 @@
 
                 {{-- Mostramos el departamento SOLO si existe y tiene un nombre válido (ej. evitamos ID 5 que viene en blanco) --}}
                 @php $deptoObj = $employee->department()->first(); @endphp
-                @if($deptoObj && !empty(trim($deptoObj->name)))
+                @if ($deptoObj && !empty(trim($deptoObj->name)))
                     <div class="info-group">
                         <h3>Departamento</h3>
                         <p>{{ $deptoObj->name }}</p>
@@ -445,14 +445,17 @@
                 <div class="form-group" id="base-activity-description-group" style="display: none;">
                     <label for="base-activity-description">Descripción de Actividad en Base</label>
                     <select id="base-activity-description" name="base_activity_description" class="select-custom">
-                        <option value="Actividad en base">Actividad en base</option>
                         <option value="">Seleccionar actividad específica...</option>
+                        <option value="Actividad en base">Actividad en base</option>
+
                         <option value="Paso de cable">Paso de cable</option>
                         <option value="Pruebas de presion para los ECP">Pruebas de presión para los ECP</option>
                         <option value="Pintura y soldaduras en area de taller">Pintura y soldaduras en área de taller
                         </option>
                         <option value="Movimiento o eventos con gerencias">Movimiento o eventos con gerencias</option>
                         <option value="Mantenimiento a polvorin Vinco">Mantenimiento a polvorín Vinco</option>
+                        <option value="Mantenimiento de ECP">Mantenimiento de ECP</option>
+
                     </select>
                     <div class="error-message" id="base-activity-description-error">Debes seleccionar una descripción
                         de la actividad</div>
@@ -925,4 +928,3 @@
         </div>
     </div>
 </div>
-
