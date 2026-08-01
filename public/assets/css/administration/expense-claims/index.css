@@ -2,16 +2,24 @@
 /* 1. ESTILOS GENERALES Y RESETS */
 /* ======================================================= */
 
-/* Nuevas Variables de Color */
 :root {
-    --slate-dark: #0f172a;
-    --slate-mid: #1e293b;
-    --slate-light: #f1f5f9;
+    /* ── TONOS PRINCIPALES ── */
+    --primary-darker: #0c182b;
+    --primary-dark: #152845;
+    --primary-mid: #20406d;
+    --primary-light: #e6edf7;
+
+    /* ── TONOS SECUNDARIOS / NEUTROS ── */
+    --secondary-dark: #111827;
+    --secondary-medium: #1f2937;
+    --secondary-light: #374151;
+    --secondary-lighter: #4b5563;
+
+    /* ── SUPERFICIES ── */
     --surface: #ffffff;
     --surface-alt: #f8fafc;
-    --teal-dark: #662222;
-    --teal-medium: #842A3B;
-    --teal-light: #A3485A;
+    --surface-muted: #f1f5f9;
+    --surface-dark: #0c182b;
 }
 
 * {
@@ -22,8 +30,8 @@
 }
 
 body {
-    background-color: var(--slate-light);
-    color: var(--slate-dark);
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -40,7 +48,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--teal-medium);
+    background-color: var(--secondary-medium);
     border-radius: 5px;
 }
 
@@ -62,7 +70,7 @@ body {
 /* 2. HEADER Y NAVEGACIÓN (NUEVO DISEÑO) */
 /* ======================================================= */
 .header-main {
-    background: var(--slate-dark);
+    background: var(--primary-dark);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -128,7 +136,7 @@ body {
 
 .nav-link.active {
     background: var(--surface);
-    color: var(--slate-dark);
+    color: var(--primary-dark);
     font-weight: 600;
     border: 1px solid var(--surface);
 }
@@ -138,12 +146,12 @@ body {
 /* ======================================================= */
 .footer-main {
     background-color: var(--surface);
-    color: var(--slate-medium);
+    color: var(--primary-mid);
     text-align: center;
     padding: 12px 20px;
     font-size: 0.82rem;
     font-family: 'Poppins', sans-serif;
-    border-top: 1px solid var(--teal-dark);
+    border-top: 1px solid var(--secondary-dark);
     margin-top: auto;
     display: flex;
     justify-content: center;
@@ -156,12 +164,12 @@ body {
     font-weight: 400;
     letter-spacing: 0.5px;
     opacity: 0.85;
-    color: var(--slate-medium);
+    color: var(--primary-mid);
 }
 
 #current-year {
     font-weight: 600;
-    color: var(--slate-dark);
+    color: var(--primary-dark);
 }
 
 /* ==========================================================================

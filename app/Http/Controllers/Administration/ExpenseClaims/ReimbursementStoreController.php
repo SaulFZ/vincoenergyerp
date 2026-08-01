@@ -86,12 +86,13 @@ class ReimbursementStoreController extends Controller
                 $claim->update(['evidence_documents' => $rutasPdf]);
             }
 
-            // Guardado de Líneas (AQUÍ CORREGIMOS EL CFDI_ID)
+            // Guardado de Líneas (AQUÍ GUARDAMOS EL LOAD METHOD)
             $lineas = json_decode($request->input('lineas'), true);
             foreach ($lineas as $linea) {
                 ExpenseClaimLine::create([
                     'expense_claim_id' => $claim->id,
-                    'expense_cfdi_id'  => !empty($linea['cfdi_id']) ? $linea['cfdi_id'] : null, // Se vincula al XML validado
+                    'expense_cfdi_id'  => !empty($linea['cfdi_id']) ? $linea['cfdi_id'] : null,
+                    'load_method'      => $linea['load_method'] ?? 'captura_manual', // 👈 Se guarda en BD
                     'concept_group'    => $linea['categoria'],
                     'expense_date'     => Carbon::createFromFormat('d/m/Y', $linea['fecha'])->toDateString(),
                     'document_number'  => $linea['folio'],
@@ -122,7 +123,6 @@ class ReimbursementStoreController extends Controller
         }
     }
 
-    // ── NUEVO: EDICIÓN (Borradores y Reenvíos de Rechazados) ──
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -142,7 +142,6 @@ class ReimbursementStoreController extends Controller
             $newStatus = $isDraft ? 'Borrador' : 'Pendiente';
             $newPayment = $isDraft ? 'N/A' : 'En espera';
 
-            // Si es un borrador que por fin se enviará a revisión, asignamos los folios reales
             if ($oldStatus === 'Borrador' && !$isDraft) {
                 $beneficiary = User::find($claim->user_id);
                 $lastSys = ExpenseClaim::where('folio_system', 'like', 'VES-%')->orderByRaw('CAST(SUBSTRING(folio_system, 5) AS UNSIGNED) DESC')->first();
@@ -174,7 +173,6 @@ class ReimbursementStoreController extends Controller
                 'status_payment' => $newPayment,
             ]);
 
-            // Borramos las líneas viejas y creamos las nuevas (Arquitectura más segura para matrices dinámicas)
             ExpenseClaimLine::where('expense_claim_id', $claim->id)->delete();
 
             $lineas = json_decode($request->input('lineas'), true);
@@ -182,6 +180,7 @@ class ReimbursementStoreController extends Controller
                 ExpenseClaimLine::create([
                     'expense_claim_id' => $claim->id,
                     'expense_cfdi_id'  => !empty($linea['cfdi_id']) ? $linea['cfdi_id'] : null,
+                    'load_method'      => $linea['load_method'] ?? 'captura_manual', // 👈 Se guarda en BD
                     'concept_group'    => $linea['categoria'],
                     'expense_date'     => Carbon::createFromFormat('d/m/Y', $linea['fecha'])->toDateString(),
                     'document_number'  => $linea['folio'],

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vinco Energy - Acceso</title>
+    <title>VesCore</title>
     <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
 
     <link href="{{ asset('assets/css/login/login.css') }}" rel="stylesheet">

@@ -10,7 +10,7 @@ class ExpenseClaimLine extends Model
     protected $table = 'expense_claim_lines';
 
     protected $fillable = [
-        'expense_claim_id', 'expense_cfdi_id', 'concept_group',
+        'expense_claim_id', 'expense_cfdi_id','load_method', 'concept_group',
         'expense_date', 'document_number', 'description',
         'amount_fiscal', 'amount_simple', 'amount_none',
         'tax_ish', 'tax_iva', 'line_total',

@@ -13,8 +13,14 @@ return new class extends Migration
 
             // ── LLAVES FORÁNEAS ──
             $table->foreignId('expense_claim_id')->constrained('expense_claims')->cascadeOnDelete();
-            // Aquí es donde enlazamos el XML (si es que la fila proviene de una factura válida)
+
+            // Enlace con la bóveda fiscal (si la fila proviene de una factura válida)
             $table->foreignId('expense_cfdi_id')->nullable()->constrained('expense_cfdis')->nullOnDelete();
+
+            // ── ORIGEN DE DATOS Y AUDITORÍA ──
+            $table->string('load_method', 50)
+                  ->index()
+                  ->comment('Origen de los datos: manual, boveda_uuid (búsqueda en SAT), boveda_xml (arrastre de archivo)');
 
             // ── AGRUPACIÓN Y FECHA ──
             $table->string('concept_group')->index()->comment('cat-vuelos, cat-restaurantes, cat-combustible, cat-otros');

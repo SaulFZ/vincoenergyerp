@@ -21,6 +21,9 @@
 
     <link href="{{ asset('assets/css/administration/expense-claims/index.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/administration/expense-claims/reimbursements.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/administration/expense-claims/advance.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/administration/expense-claims/accounts-payable.css') }}" rel="stylesheet">
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @stack('styles')
 </head>
@@ -35,25 +38,35 @@
             </div>
         </div>
         <nav class="nav-main">
+            {{-- Reembolsos --}}
             <a href="{{ route('expense-claims.reimbursements') }}" class="nav-link" data-route="reimbursements">
                 <i class="fas fa-home"></i> Reembolsos
+            </a>
+
+            {{-- Cuentas por Pagar (Estado de Cuenta) --}}
+            <a href="{{ route('expense-claims.accounts-payable') }}" class="nav-link" data-route="accounts-payable">
+                <i class="fas fa-hand-holding-usd"></i> Cuentas por Pagar
+            </a>
+
+            {{-- Gestión de Anticipos (Solicitudes) --}}
+            <a href="{{ route('expense-claims.advances') }}" class="nav-link" data-route="advances">
+                <i class="fas fa-money-bill-wave"></i> Anticipos Solicitados
             </a>
 
             <a href="#" class="nav-link" data-route="stats">
                 <i class="fas fa-chart-pie"></i> Estadísticas
             </a>
 
-            {{-- ── NUEVO ENLACE: BITÁCORA DE SINCRONIZACIÓN SAT ── --}}
+            {{-- Bitácora SAT --}}
             <a href="{{ route('expense-claims.sat-sync.index') }}" class="nav-link" data-route="sat-requests">
-                <i class="fas fa-sync-alt"></i> Sincronización SAT
+                <i class="fas fa-sync-alt"></i> XML
             </a>
 
-            {{-- ── ENLACE: NODOS DE SEGURIDAD (BÓVEDA SAT CAMUFLADA) ── --}}
+            {{-- Seguridad --}}
             <a href="{{ route('expense-claims.node.index') }}" class="nav-link" data-route="sys-config-node">
-                <i class="fas fa-shield-alt"></i> Nodos de Seguridad
+                <i class="fas fa-shield-alt"></i> Seguridad
             </a>
         </nav>
-
         @include('components.layouts._user-profile')
     </header>
 

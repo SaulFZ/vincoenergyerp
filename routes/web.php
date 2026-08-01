@@ -154,11 +154,10 @@ Route::middleware(['web', 'auth'])->group(function () {
             // ── GESTIÓN DE ANTICIPOS ──
             // ============================
             Route::controller(ExpenseAdvanceController::class)->group(function () {
-                Route::get('/advances', 'index')->name('expense-claims.accounts-payable'); // 👈 NUEVA VISTA
+                Route::get('/advances', 'index')->name('expense-claims.advances');
                 Route::post('/advances/store', 'store')->name('expense-claims.advances.store');
                 Route::get('/advances/user/{userId}', 'getActiveByUser')->name('expense-claims.advances.by-user');
                 Route::get('/advances/{id}', 'show')->name('expense-claims.advances.show');
-                Route::get('/advances/ledger/{userId}', 'ledger')->name('expense-claims.advances.ledger'); // 👈 NUEVA: ESTADO DE CUENTA
             });
 
             // CONSULTA
