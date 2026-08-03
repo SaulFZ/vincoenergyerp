@@ -1,6 +1,7 @@
 // ====================================================================
 // VARIABLES Y CONFIGURACIÓN GLOBAL
 // ====================================================================
+let cacheEstadoViajes = {};
 let codigoViaje = 1;
 let contadorUnidades = 0;
 const MAX_UNIDADES = 5;
@@ -49,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         cargarConductoresDesdeBD(),
         obtenerDestinosBackend(),
     ]);
-
+solicitarPermisoNotificaciones();
     configurarEventosAnomalias();
     inicializarFlatpickr();
     inicializarInputsFotos();
@@ -62,6 +63,15 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     mostrarFechaActual();
 });
+
+// Función para pedir permiso al navegador
+function solicitarPermisoNotificaciones() {
+    if ("Notification" in window) {
+        if (Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }
+}
 
 // ====================================================================
 // VARIABLES GLOBALES PARA PAGINACIÓN Y FILTROS
@@ -132,6 +142,7 @@ async function cargarViajes(page = 1, isSilent = false) {
         }
 
         if (result.success) {
+            verificarNotificacionesNuevas(result.data);
             if (result.data.length === 0) {
                 container.innerHTML = document.getElementById("emptyTemplate").innerHTML;
                 paginationContainer.innerHTML = "";
@@ -6179,9 +6190,6 @@ function guardarEvaluacion() {
                     ${iconoBadge} ${nivelRiesgoTexto}
                 </div>
                 <div class="resultado-mensaje">${mensajeAdicional}</div>
-                <div class="resultado-puntaje">
-                    Puntaje total: <strong>${totalPuntos}</strong>
-                </div>
             </div>
         `,
         icon: iconoSwal,
@@ -8626,49 +8634,82 @@ function ejecutarRelevo() {
 }
 
 // ====================================================================
-// SMART POLLING: AUTO-RECARGA INTELIGENTE (Optimizado para el Servidor)
+// SMART POLLING: AUTO-RECARGA INTELIGENTE (Optimizado)
 // ====================================================================
 let pollingTimer = null;
 
 function iniciarPolling() {
     if (!pollingTimer) {
-        // Aumentamos a 30 segundos para darle más respiro al servidor
+        // Consultamos cada 30 segundos, sin importar si está en otra pestaña
         pollingTimer = setInterval(() => {
-            // 1. Si la pestaña NO está visible, no hacemos nada
-            if (document.visibilityState !== 'visible') return;
-
-            // 2. Si el usuario está buscando algo, no interrumpimos
             const searchInput = document.getElementById("searchViajes");
             if (searchInput && document.activeElement === searchInput) return;
 
-            // 3. Si tiene abierto el modal de crear un viaje (y está editando), no recargamos
             const modalForm = document.getElementById("modalFormulario");
             if (modalForm && modalForm.classList.contains("active") && !modoLectura) return;
 
-            // Si pasa las pruebas, actualizamos silenciosamente
+            // Actualizamos silenciosamente
             cargarViajes(currentPage, true);
         }, 30000);
     }
 }
 
-function detenerPolling() {
-    if (pollingTimer) {
-        clearInterval(pollingTimer);
-        pollingTimer = null;
-    }
-}
-
-// Escuchar cuando el usuario cambia de pestaña en su navegador
+// Escuchar cuando el usuario cambia de pestaña para forzar una recarga inmediata al volver
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'visible') {
-        // El usuario regresó a la pestaña de Vinco ERP: Recargamos de inmediato y retomamos el ciclo
+        // El usuario regresó a la pestaña: Recargamos de inmediato para tener lo más fresco
         cargarViajes(currentPage, true);
-        iniciarPolling();
-    } else {
-        // El usuario se fue a otra pestaña: Apagamos el motor para no gastar servidor
-        detenerPolling();
     }
+    // Ya NO detenemos el polling cuando se va a otra pestaña.
 });
+
+// Arrancamos el motor
+iniciarPolling();
+// ====================================================================
+// NOTIFICACIONES PUSH EN EL NAVEGADOR
+// ====================================================================
+function verificarNotificacionesNuevas(viajes) {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    viajes.forEach(viaje => {
+        const id = viaje.id;
+        const estadoActual = viaje.estado_gv.texto; // "Aprobado", "Rechazado", "Pendiente", etc.
+
+        // Si ya teníamos registrado este viaje en caché
+        if (cacheEstadoViajes[id]) {
+            const estadoAnterior = cacheEstadoViajes[id];
+
+            // Comparamos si cambió de Pendiente a Aprobado o Rechazado
+            if (estadoAnterior === "Pendiente" && (estadoActual === "Aprobado" || estadoActual === "Rechazado")) {
+                // Solo notificar si el usuario actual es el CREADOR de la solicitud
+                if (viaje.is_creator) {
+                    enviarNotificacionPush(
+                        `Actualización de GV: ${viaje.folio}`,
+                        `Tu solicitud ha sido ${estadoActual.toUpperCase()} por el autorizador.`
+                    );
+                }
+            }
+        }
+
+        // Actualizamos el caché con el estado actual para la próxima recarga
+        cacheEstadoViajes[id] = estadoActual;
+    });
+}
+
+function enviarNotificacionPush(titulo, mensaje) {
+    const options = {
+        body: mensaje,
+        icon: 'https://cdn-icons-png.flaticon.com/512/1055/1055644.png', // Opcional: Cambia esto por la URL del logo de Vinco ERP
+        requireInteraction: true // Hace que la notificación no desaparezca sola rápido
+    };
+
+    const notif = new Notification(titulo, options);
+
+    notif.onclick = () => {
+        window.focus(); // Trae la pestaña de Vinco ERP al frente si le dan clic
+        notif.close();
+    };
+}
 
 // Arrancamos el motor por primera vez
 iniciarPolling();
