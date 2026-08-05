@@ -31,13 +31,13 @@
             </div>
         </div>
 
-        <nav class="nav-main">
-            <a href="{{ route('systems.tickets.index') }}" class="nav-link" data-route="management-tickets">
+      <nav class="nav-main">
+            <a href="#" class="nav-link active" data-route="management-tickets">
                 <i class="fas fa-ticket-alt"></i> Gestión de Tickets
             </a>
 
             @if ($canSeeFiltersAndStats ?? false)
-                <a href="{{ route('systems.tickets.stats') }}" class="nav-link" data-route="stats">
+                <a href="#" class="nav-link" data-route="stats">
                     <i class="fas fa-chart-bar"></i> Estadísticas
                 </a>
             @endif

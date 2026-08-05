@@ -644,7 +644,7 @@
                     <div class="sd-card-title">
                         <i class="fas fa-table"></i> Detalle Operativo por Departamento
                     </div>
-                    <div class="sd-card-desc">Análisis exhaustivo del desempeño y flujo de trabajo por área corporativa
+                    <div class="sd-card-desc">Análisis exhaustivo del desempeño y flujo de trabajo por área de VINCO ERP
                     </div>
                 </div>
 
@@ -724,8 +724,7 @@
             <div class="chart-card">
                 <div class="chart-card-header">
                     <div class="sd-card-title"><i class="fas fa-chart-pie"></i> Distribución por Tipo de Incidencia</div>
-                    <div class="sd-card-desc" style="margin-top:4px;">Proporción de tickets por categoría: soporte, acceso,
-                        hardware, software y red</div>
+                    <div class="sd-card-desc" style="margin-top:4px;">Proporción de tickets por categoría / departamento</div>
                 </div>
                 <div class="chart-wrap" style="display:flex;align-items:center;gap:16px;">
                     <div id="chartPie" style="flex:1;height:100%;min-width:0;"></div>
@@ -857,9 +856,12 @@
                     headers: H
                 });
                 if (!r.ok) throw new Error('HTTP ' + r.status);
-                renderAll(await r.json());
+
+                const responseData = await r.json();
+                renderAll(responseData);
+
             } catch (e) {
-                console.warn('Datos simulados.', e);
+                console.error('Error cargando datos reales, mostrando DEMO.', e);
                 renderAll(buildDemoData());
             } finally {
                 setTimeout(() => overlay.classList.add('hide'), 400);
@@ -867,113 +869,18 @@
         }
 
         /* ══════════════════════════════════════════════
-           DATOS SIMULADOS
+           DATOS SIMULADOS (En caso de fallo de red)
         ══════════════════════════════════════════════ */
         function buildDemoData() {
-            const depts = ['Geociencias', 'Sistemas', 'Operaciones', 'Mantenimiento', 'Recursos Humanos', 'Contabilidad',
-                'Dirección'
-            ];
-
-            const detail = depts.map(name => {
-                const t = Math.round(40 + Math.random() * 150);
-                return {
-                    name,
-                    total: t,
-                    nuevo: Math.round(t * .10),
-                    abierto: Math.round(t * .15),
-                    espera: Math.round(t * .08),
-                    concluir: Math.round(t * .12),
-                    realizado: Math.round(t * .50),
-                    cancelado: Math.round(t * .05),
-                    alta: Math.round(t * .20),
-                    media: Math.round(t * .50),
-                    baja: Math.round(t * .30),
-                };
-            }).sort((a, b) => b.total - a.total);
-
-            /* Agentes */
-            const agentes = ['Carlos M.', 'Laura R.', 'Miguel S.', 'Ana T.', 'José F.', 'Diana C.', 'Pedro V.'].map(
-                nombre => {
-                    const asignados = Math.round(40 + Math.random() * 90);
-                    return {
-                        nombre,
-                        asignados,
-                        resueltos: Math.round(asignados * (.60 + Math.random() * .35))
-                    };
-                });
-
-            /* Tipos de incidencia */
-            const tiposIncidencia = {
-                labels: ['Soporte Técnico', 'Acceso / Permisos', 'Hardware', 'Software', 'Red / Conectividad', 'Otros'],
-                values: [
-                    Math.round(200 + Math.random() * 100),
-                    Math.round(100 + Math.random() * 80),
-                    Math.round(60 + Math.random() * 50),
-                    Math.round(140 + Math.random() * 70),
-                    Math.round(55 + Math.random() * 40),
-                    Math.round(25 + Math.random() * 30),
-                ],
-            };
-
-            /* Tendencia semanal */
-            const semanas = Array.from({
-                length: 12
-            }, (_, i) => `Sem ${i + 1}`);
-            const tendencia = {
-                semanas,
-                volumen: semanas.map(() => Math.round(55 + Math.random() * 90)),
-                tiempo_promedio: semanas.map(() => parseFloat((18 + Math.random() * 38).toFixed(1))),
-            };
-
-            /* Histograma */
-            const histograma = {
-                rangos: ['< 4 h', '4–12 h', '12–24 h', '1–2 días', '2–3 días', '3–5 días', '> 5 días'],
-                conteo: [
-                    Math.round(75 + Math.random() * 60),
-                    Math.round(130 + Math.random() * 80),
-                    Math.round(190 + Math.random() * 100),
-                    Math.round(150 + Math.random() * 70),
-                    Math.round(80 + Math.random() * 50),
-                    Math.round(40 + Math.random() * 30),
-                    Math.round(15 + Math.random() * 20),
-                ],
-            };
-
-            /* Burndown (sprint 20 días) */
-            const sprintDays = 20,
-                startBacklog = 300;
-            let rem = startBacklog;
-            const burndown = {
-                dias: ['Inicio', ...Array.from({
-                    length: sprintDays
-                }, (_, i) => `Día ${i + 1}`)],
-                ideal: Array.from({
-                    length: sprintDays + 1
-                }, (_, i) => Math.round(startBacklog * (1 - i / sprintDays))),
-                real: Array.from({
-                    length: sprintDays + 1
-                }, (_, i) => {
-                    if (i === 0) return startBacklog;
-                    rem = Math.max(0, rem - Math.round((startBacklog / sprintDays) * (.5 + Math.random())));
-                    return rem;
-                }),
-            };
-
+            // ... (Se mantiene como respaldo de UI si falla la conexión)
             return {
-                kpis: {
-                    nuevo: detail.reduce((s, d) => s + d.nuevo, 0),
-                    abierto: detail.reduce((s, d) => s + d.abierto, 0),
-                    espera: detail.reduce((s, d) => s + d.espera, 0),
-                    concluir: detail.reduce((s, d) => s + d.concluir, 0),
-                    realizado: detail.reduce((s, d) => s + d.realizado, 0),
-                    cancelado: detail.reduce((s, d) => s + d.cancelado, 0),
-                },
-                departments_detail: detail,
-                agentes,
-                tiposIncidencia,
-                tendencia,
-                histograma,
-                burndown,
+                kpis: { nuevo: 0, abierto: 0, espera: 0, concluir: 0, realizado: 0, cancelado: 0 },
+                departments_detail: [],
+                agentes: [],
+                tiposIncidencia: { labels: [], values: [] },
+                tendencia: { semanas: [], volumen: [], tiempo_promedio: [] },
+                histograma: { rangos: [], conteo: [] },
+                burndown: { dias: [], ideal: [], real: [] }
             };
         }
 
@@ -981,6 +888,7 @@
            ORQUESTADOR
         ══════════════════════════════════════════════ */
         function renderAll(data) {
+            if(!data || !data.kpis) return;
             fillKPIs(data.kpis);
             renderTabla(data.departments_detail);
             chartAgentes(data.agentes);
@@ -1022,14 +930,13 @@
 
         /* ══════════════════════════════════════════════
            GRÁFICA 1 — BARRAS HORIZONTALES AGRUPADAS
-           Tickets asignados vs. resueltos por agente
         ══════════════════════════════════════════════ */
         function chartAgentes(agentes) {
             if (!agentes?.length) return;
-            const sorted = [...agentes].sort((a, b) => b.asignados - a.asignados);
-            const names = sorted.map(a => a.nombre).reverse();
-            const assigned = sorted.map(a => a.asignados).reverse();
-            const resolved = sorted.map(a => a.resueltos).reverse();
+            const sorted = [...agentes].sort((a, b) => a.asignados - b.asignados);
+            const names = sorted.map(a => a.nombre);
+            const assigned = sorted.map(a => a.asignados);
+            const resolved = sorted.map(a => a.resueltos);
 
             Plotly.newPlot('chartAgentes', [{
                     y: names,
@@ -1037,10 +944,7 @@
                     name: 'Asignados',
                     type: 'bar',
                     orientation: 'h',
-                    marker: {
-                        color: '#94a3b8',
-                        opacity: .80
-                    },
+                    marker: { color: '#94a3b8', opacity: .80 },
                     hovertemplate: '<b>%{y}</b><br>Asignados: %{x}<extra></extra>',
                 },
                 {
@@ -1049,46 +953,31 @@
                     name: 'Resueltos',
                     type: 'bar',
                     orientation: 'h',
-                    marker: {
-                        color: '#1a8c38',
-                        opacity: .95
-                    },
+                    marker: { color: '#1a8c38', opacity: .95 },
                     hovertemplate: '<b>%{y}</b><br>Resueltos: %{x}<extra></extra>',
                 },
             ], {
                 ...PLT_BASE,
                 barmode: 'group',
-                margin: {
-                    t: 8,
-                    r: 40,
-                    b: 36,
-                    l: 100
-                },
+                margin: { t: 8, r: 40, b: 36, l: 100 },
                 xaxis: ax(),
                 yaxis: ax({
                     automargin: true,
-                    tickfont: {
-                        size: 11,
-                        color: '#0f172a'
-                    }
+                    tickfont: { size: 11, color: '#0f172a' }
                 }),
                 legend: {
                     orientation: 'h',
                     y: -0.14,
-                    font: {
-                        size: 11,
-                        color: '#475569'
-                    }
+                    font: { size: 11, color: '#475569' }
                 },
             }, PLT_CFG);
         }
 
         /* ══════════════════════════════════════════════
            GRÁFICA 2 — DONUT + LEYENDA HTML
-           Distribución por tipo de incidencia
         ══════════════════════════════════════════════ */
         function chartPie(tipos) {
-            if (!tipos) return;
+            if (!tipos || !tipos.values.length) return;
             const total = tipos.values.reduce((s, v) => s + v, 0);
 
             Plotly.newPlot('chartPie', [{
@@ -1098,10 +987,7 @@
                 hole: 0.52,
                 marker: {
                     colors: PAL_PIE,
-                    line: {
-                        color: '#fff',
-                        width: 2.5
-                    }
+                    line: { color: '#fff', width: 2.5 }
                 },
                 textinfo: 'none',
                 hovertemplate: '<b>%{label}</b><br>%{value} tickets (%{percent})<extra></extra>',
@@ -1109,29 +995,17 @@
                 sort: false,
             }], {
                 ...PLT_BASE,
-                margin: {
-                    t: 8,
-                    r: 8,
-                    b: 8,
-                    l: 8
-                },
+                margin: { t: 8, r: 8, b: 8, l: 8 },
                 showlegend: false,
                 annotations: [{
                     text: `<b>${total}</b>`,
-                    font: {
-                        family: 'IBM Plex Mono, monospace',
-                        size: 22,
-                        color: '#0f172a'
-                    },
+                    font: { family: 'IBM Plex Mono, monospace', size: 22, color: '#0f172a' },
                     showarrow: false,
-                    x: 0.5,
-                    y: 0.5,
-                    xanchor: 'center',
-                    yanchor: 'middle',
+                    x: 0.5, y: 0.5,
+                    xanchor: 'center', yanchor: 'middle',
                 }],
             }, PLT_CFG);
 
-            /* Leyenda construida en HTML para control total del layout */
             const el = document.getElementById('pieLegend');
             if (el) {
                 el.innerHTML = tipos.labels.map((label, i) => {
@@ -1147,7 +1021,6 @@
 
         /* ══════════════════════════════════════════════
            GRÁFICA 3 — LÍNEAS CON DOBLE EJE Y
-           Volumen semanal (barras) + Tiempo prom. resolución (línea)
         ══════════════════════════════════════════════ */
         function chartTendencia(t) {
             if (!t) return;
@@ -1156,10 +1029,7 @@
                     y: t.volumen,
                     name: 'Volumen de Tickets',
                     type: 'bar',
-                    marker: {
-                        color: '#0f766e',
-                        opacity: .85
-                    },
+                    marker: { color: '#0f766e', opacity: .85 },
                     hovertemplate: '<b>%{x}</b><br>Volumen: %{y} tickets<extra></extra>',
                 },
                 {
@@ -1168,76 +1038,33 @@
                     name: 'Tiempo Prom. Resolución (h)',
                     type: 'scatter',
                     mode: 'lines+markers',
-                    line: {
-                        color: '#c15a00',
-                        width: 2.5,
-                        shape: 'spline'
-                    },
-                    marker: {
-                        size: 7,
-                        color: '#c15a00',
-                        symbol: 'diamond'
-                    },
+                    line: { color: '#c15a00', width: 2.5, shape: 'spline' },
+                    marker: { size: 7, color: '#c15a00', symbol: 'diamond' },
                     yaxis: 'y2',
                     hovertemplate: '<b>%{x}</b><br>Tiempo prom.: %{y} h<extra></extra>',
                 },
             ], {
                 ...PLT_BASE,
-                margin: {
-                    t: 16,
-                    r: 62,
-                    b: 48,
-                    l: 48
-                },
-                xaxis: ax({
-                    tickfont: {
-                        size: 11
-                    }
-                }),
+                margin: { t: 16, r: 62, b: 48, l: 48 },
+                xaxis: ax({ tickfont: { size: 11 } }),
                 yaxis: ax({
-                    title: {
-                        text: 'Tickets',
-                        font: {
-                            size: 11,
-                            color: '#0f766e'
-                        }
-                    },
-                    tickfont: {
-                        size: 10,
-                        color: '#0f766e'
-                    }
+                    title: { text: 'Tickets', font: { size: 11, color: '#0f766e' } },
+                    tickfont: { size: 10, color: '#0f766e' }
                 }),
                 yaxis2: ax({
-                    title: {
-                        text: 'Horas',
-                        font: {
-                            size: 11,
-                            color: '#c15a00'
-                        }
-                    },
-                    tickfont: {
-                        size: 10,
-                        color: '#c15a00'
-                    },
-                    overlaying: 'y',
-                    side: 'right',
-                    showgrid: false
+                    title: { text: 'Horas', font: { size: 11, color: '#c15a00' } },
+                    tickfont: { size: 10, color: '#c15a00' },
+                    overlaying: 'y', side: 'right', showgrid: false
                 }),
                 legend: {
-                    orientation: 'h',
-                    y: -0.18,
-                    font: {
-                        size: 11,
-                        color: '#475569'
-                    }
+                    orientation: 'h', y: -0.18,
+                    font: { size: 11, color: '#475569' }
                 },
             }, PLT_CFG);
         }
 
         /* ══════════════════════════════════════════════
            GRÁFICA 4 — HISTOGRAMA DE TIEMPOS
-           Gradiente verde → teal → naranja → rojo
-           (resolución rápida → lenta)
         ══════════════════════════════════════════════ */
         function chartHistograma(h) {
             if (!h) return;
@@ -1248,33 +1075,17 @@
                 y: h.conteo,
                 type: 'bar',
                 marker: {
-                    color: COLORS,
-                    opacity: .92,
-                    line: {
-                        color: 'transparent'
-                    }
+                    color: COLORS, opacity: .92,
+                    line: { color: 'transparent' }
                 },
                 text: h.conteo.map(String),
                 textposition: 'outside',
-                textfont: {
-                    size: 11,
-                    color: '#475569',
-                    family: 'IBM Plex Mono, monospace'
-                },
+                textfont: { size: 11, color: '#475569', family: 'IBM Plex Mono, monospace' },
                 hovertemplate: '<b>%{x}</b><br>%{y} tickets<extra></extra>',
             }], {
                 ...PLT_BASE,
-                margin: {
-                    t: 24,
-                    r: 10,
-                    b: 52,
-                    l: 42
-                },
-                xaxis: ax({
-                    tickfont: {
-                        size: 10.5
-                    }
-                }),
+                margin: { t: 24, r: 10, b: 52, l: 42 },
+                xaxis: ax({ tickfont: { size: 10.5 } }),
                 yaxis: ax(),
                 bargap: 0.12,
             }, PLT_CFG);
@@ -1282,8 +1093,6 @@
 
         /* ══════════════════════════════════════════════
            GRÁFICA 5 — BURNDOWN CHART
-           Línea ideal (punteada) vs. backlog real (teal)
-           El relleno entre ambas curvas muestra la desviación
         ══════════════════════════════════════════════ */
         function chartBurndown(b) {
             if (!b) return;
@@ -1293,11 +1102,7 @@
                     name: 'Quema Ideal',
                     type: 'scatter',
                     mode: 'lines',
-                    line: {
-                        color: '#cbd5e1',
-                        width: 2,
-                        dash: 'dash'
-                    },
+                    line: { color: '#cbd5e1', width: 2, dash: 'dash' },
                     hovertemplate: 'Ideal — %{x}: %{y} pendientes<extra></extra>',
                 },
                 {
@@ -1308,47 +1113,23 @@
                     mode: 'lines+markers',
                     fill: 'tonexty',
                     fillcolor: 'rgba(15,118,110,.09)',
-                    line: {
-                        color: '#0f766e',
-                        width: 2.5,
-                        shape: 'spline'
-                    },
-                    marker: {
-                        size: 5,
-                        color: '#0f766e'
-                    },
+                    line: { color: '#0f766e', width: 2.5, shape: 'spline' },
+                    marker: { size: 5, color: '#0f766e' },
                     hovertemplate: 'Real — %{x}: %{y} pendientes<extra></extra>',
                 },
             ], {
                 ...PLT_BASE,
-                margin: {
-                    t: 16,
-                    r: 16,
-                    b: 60,
-                    l: 52
-                },
+                margin: { t: 16, r: 16, b: 60, l: 52 },
                 xaxis: ax({
                     tickangle: -40,
-                    tickfont: {
-                        size: 9
-                    }
+                    tickfont: { size: 9 }
                 }),
                 yaxis: ax({
-                    title: {
-                        text: 'Tickets Pendientes',
-                        font: {
-                            size: 10,
-                            color: '#64748b'
-                        }
-                    }
+                    title: { text: 'Tickets Pendientes', font: { size: 10, color: '#64748b' } }
                 }),
                 legend: {
-                    orientation: 'h',
-                    y: -0.30,
-                    font: {
-                        size: 11,
-                        color: '#475569'
-                    }
+                    orientation: 'h', y: -0.30,
+                    font: { size: 11, color: '#475569' }
                 },
             }, PLT_CFG);
         }
