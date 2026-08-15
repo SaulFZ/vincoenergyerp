@@ -145,34 +145,17 @@ class CfdiController extends Controller
         ]);
     }
 
-    public function searchByUuid(Request $request)
-    {
-        $request->validate([
-            'uuid' => 'required|string|size:36',
-        ]);
-
-        $cfdi = ExpenseCfdi::where('uuid', strtoupper($request->uuid))->first();
-
-        if ($cfdi) {
-            return response()->json([
-                'success' => true,
-                'data'    => $cfdi,
-            ]);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'No se encontró ningún comprobante con este UUID en la bóveda fiscal del sistema.',
-        ], 404);
-    }
     public function autocomplete(Request $request)
     {
-        // Limpiamos y convertimos a mayúsculas
-        $term = strtoupper(trim($request->query('term', '')));
+        // Acepta tanto 'term' como 'q' para evitar errores de compatibilidad
+        $queryParam = $request->query('term') ?? $request->query('q', '');
+        $term = strtoupper(trim($queryParam));
 
-        // Reducimos el límite a 2 caracteres para que responda más rápido a folios cortos
         if (strlen($term) < 2) {
-            return response()->json([]);
+            return response()->json([
+                'success' => true,
+                'data' => []
+            ]);
         }
 
         // Búsqueda inteligente: UUID parcial, Folio, Serie o Razón Social
@@ -180,11 +163,15 @@ class CfdiController extends Controller
             ->orWhere('folio', 'like', "%{$term}%")
             ->orWhere('serie', 'like', "%{$term}%")
             ->orWhere('issuer_name', 'like', "%{$term}%")
-            ->select('uuid', 'serie', 'folio', 'issuer_name', 'total')
+            ->select('uuid', 'serie', 'folio', 'issuer_name', 'total', 'concept_summary', 'subtotal')
             ->limit(10)
             ->get();
 
-        return response()->json($results);
+        // DEBEMOS devolverlo con 'success' y 'data' para que el JS lo entienda
+        return response()->json([
+            'success' => true,
+            'data' => $results
+        ]);
     }
 
 }

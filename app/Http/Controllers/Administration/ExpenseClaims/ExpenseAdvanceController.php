@@ -7,24 +7,46 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Administration\ExpenseClaims\ExpenseAdvance;
+use App\Models\Administration\ExpenseClaims\ExpenseClaim;
+use App\Models\Auth\User;
 use Carbon\Carbon;
 
 class ExpenseAdvanceController extends Controller
 {
-    // Obtener los anticipos activos/pendientes de un usuario para el Dropdown
+    public function index()
+    {
+        $advances = ExpenseAdvance::with(['user.employee.area'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($adv) {
+                return [
+                    'id'     => $adv->id,
+                    'folio'  => $adv->folio_system,
+                    'fecha'  => Carbon::parse($adv->advance_date)->format('d/m/Y'),
+                    'nombre' => $adv->user->name ?? 'Usuario Desconocido',
+                    'depto'  => ($adv->user && $adv->user->employee && $adv->user->employee->area) ? $adv->user->employee->area->name : 'Sin Asignar',
+                    'tipo'   => $adv->advance_type,
+                    'motivo' => $adv->description,
+                    'monto'  => (float) $adv->amount,
+                    'saldo'  => (float) $adv->balance,
+                    'status' => $adv->status
+                ];
+            });
+
+        return view('modules.administration.expense-claims.advances', compact('advances'));
+    }
+
     public function getActiveByUser($userId)
     {
-        // Traemos los anticipos del usuario que aún tienen saldo por comprobar
         $advances = ExpenseAdvance::where('user_id', $userId)
             ->where('balance', '>', 0)
-            ->whereIn('status', ['Pendiente', 'Aprobado', 'Entregado']) // Ajusta según tu lógica de negocio
+            ->whereIn('status', ['Pendiente', 'Aprobado', 'Entregado'])
             ->orderBy('created_at', 'desc')
             ->get(['id', 'folio_system', 'advance_type', 'balance']);
 
         return response()->json($advances);
     }
 
-    // Guardar un nuevo anticipo
     public function store(Request $request)
     {
         $request->validate([
@@ -39,7 +61,6 @@ class ExpenseAdvanceController extends Controller
 
             $creatorId = Auth::id();
 
-            // Generación de Folio (ej. ANT-2607-01)
             $lastAdv = ExpenseAdvance::orderBy('id', 'desc')->first();
             $sysNum = $lastAdv ? $lastAdv->id + 1 : 1;
             $folioSystem = 'ANT-' . Carbon::now()->format('ym') . '-' . str_pad($sysNum, 3, '0', STR_PAD_LEFT);
@@ -51,7 +72,7 @@ class ExpenseAdvanceController extends Controller
                 'advance_type' => $request->advance_type,
                 'description'  => $request->description,
                 'amount'       => $request->amount,
-                'balance'      => $request->amount, // Al inicio, el saldo por comprobar es el monto total
+                'balance'      => $request->amount,
                 'status'       => 'Pendiente'
             ]);
 
@@ -60,7 +81,7 @@ class ExpenseAdvanceController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Solicitud de anticipo generada con éxito.',
-                'folio' => $folioSystem
+                'folio'   => $folioSystem
             ]);
 
         } catch (\Exception $e) {
@@ -69,10 +90,53 @@ class ExpenseAdvanceController extends Controller
         }
     }
 
-    // Ver detalles de un anticipo específico (Para el botón de la tabla en el futuro)
     public function show($id)
     {
-        $advance = ExpenseAdvance::with('user.employee.area')->findOrFail($id);
+        $advance = ExpenseAdvance::with(['user.employee.area', 'expenseClaims'])
+            ->findOrFail($id);
         return response()->json(['success' => true, 'data' => $advance]);
+    }
+
+    public function ledger($userId)
+    {
+        $user = User::findOrFail($userId);
+
+        $advances = ExpenseAdvance::where('user_id', $userId)
+            ->whereIn('status', ['Entregado', 'Comprobado'])
+            ->get()->map(function($item) {
+                return [
+                    'concepto' => 'Anticipo: ' . $item->folio_system,
+                    'fecha'    => Carbon::parse($item->advance_date)->format('d/m/y'),
+                    'monto'    => (float) $item->amount,
+                    'tipo'     => 'cargo',
+                    'orden'    => Carbon::parse($item->advance_date)->timestamp
+                ];
+            });
+
+        $claims = ExpenseClaim::where('user_id', $userId)
+            ->whereNotNull('expense_advance_id')
+            ->whereIn('status_review', ['Validado', 'Aprobado'])
+            ->get()->map(function($item) {
+                return [
+                    'concepto' => 'Comprobación: ' . $item->folio_system,
+                    'fecha'    => Carbon::parse($item->claim_date)->format('d/m/y'),
+                    'monto'    => -((float) $item->total_amount),
+                    'tipo'     => 'abono',
+                    'orden'    => Carbon::parse($item->claim_date)->timestamp
+                ];
+            });
+
+        $ledger = $advances->concat($claims)->sortBy('orden')->values()->toArray();
+
+        $saldoTotal = array_reduce($ledger, function($carry, $item) {
+            return $carry + $item['monto'];
+        }, 0);
+
+        return response()->json([
+            'success' => true,
+            'user'    => $user->name,
+            'saldo'   => $saldoTotal,
+            'ledger'  => $ledger
+        ]);
     }
 }
