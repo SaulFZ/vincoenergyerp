@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
-    /**
-     * Devuelve los empleados para poblar la tabla (con relaciones).
-     */
     public function getData(Request $request)
     {
         $employees = Employee::with(['area', 'department', 'manager'])
@@ -22,9 +19,6 @@ class EmployeeController extends Controller
         return response()->json($employees);
     }
 
-    /**
-     * Devuelve los catálogos necesarios para el formulario de alta.
-     */
     public function getCreateData()
     {
         $areas = Area::with('departments')
@@ -35,26 +29,30 @@ class EmployeeController extends Controller
             ->where('employment_status', 'active')
             ->get();
 
+        // Obtener listas de puestos y títulos únicos para los buscadores
+        $positions = Employee::select('position')->whereNotNull('position')->where('position', '!=', '')->distinct()->pluck('position');
+        $jobTitles = Employee::select('job_title')->whereNotNull('job_title')->where('job_title', '!=', '')->distinct()->pluck('job_title');
+
         return response()->json([
-            'areas'    => $areas,
-            'managers' => $managers,
+            'areas'      => $areas,
+            'managers'   => $managers,
+            'positions'  => $positions,
+            'job_titles' => $jobTitles,
         ]);
     }
 
-    /**
-     * Guarda un nuevo empleado y procesa su fotografía.
-     */
     public function store(Request $request)
     {
         $request->validate([
             'employee_number'    => 'required|unique:employees,employee_number',
             'first_name'         => 'required|string|max:255',
             'first_surname'      => 'required|string|max:255',
-            'gender'             => 'required|in:Masculino,Femenino,M,F', // ACEPTA AMBOS FORMATOS
+            'gender'             => 'required|in:Masculino,Femenino,M,F',
             'birth_date'         => 'required|date_format:d/m/Y',
             'nationality'        => 'required|string',
             'second_nationality' => 'nullable|string',
             'position'           => 'required|string|max:255',
+            'job_title'          => 'nullable|string|max:255',
             'hire_date'          => 'required|date_format:d/m/Y',
             'employment_status'  => 'required|in:active,inactive',
             'area_id'            => 'required|exists:areas,id',
@@ -70,19 +68,15 @@ class EmployeeController extends Controller
 
             $data = $request->except(['photo', 'birth_date', 'hire_date', 'second_nationality']);
 
-            // Normalizar género a texto completo
             if ($request->gender === 'M') {
                 $data['gender'] = 'Masculino';
             } elseif ($request->gender === 'F') {
                 $data['gender'] = 'Femenino';
             }
-            // Si ya viene como texto completo, se mantiene
 
-            // Unir nacionalidades
             $nats                = array_filter([$request->nationality, $request->second_nationality]);
             $data['nationality'] = implode(', ', $nats);
 
-            // Construir nombre completo
             $parts = array_filter([
                 $request->first_name, $request->second_name,
                 $request->first_surname, $request->second_surname,
@@ -92,7 +86,6 @@ class EmployeeController extends Controller
             $data['birth_date'] = \Carbon\Carbon::createFromFormat('d/m/Y', $request->birth_date)->format('Y-m-d');
             $data['hire_date']  = \Carbon\Carbon::createFromFormat('d/m/Y', $request->hire_date)->format('Y-m-d');
 
-            // Procesar foto
             if ($request->hasFile('photo')) {
                 $file          = $request->file('photo');
                 $extension     = $file->getClientOriginalExtension();
@@ -116,9 +109,6 @@ class EmployeeController extends Controller
         }
     }
 
-    /**
-     * Obtiene un empleado específico.
-     */
     public function show($id)
     {
         try {
@@ -129,9 +119,6 @@ class EmployeeController extends Controller
         }
     }
 
-    /**
-     * Actualiza los datos de un empleado existente.
-     */
     public function update(Request $request, $id)
     {
         try {
@@ -140,11 +127,12 @@ class EmployeeController extends Controller
             $request->validate([
                 'first_name'         => 'sometimes|required|string|max:255',
                 'first_surname'      => 'sometimes|required|string|max:255',
-                'gender'             => 'sometimes|required|in:Masculino,Femenino,M,F', // ACEPTA AMBOS FORMATOS
+                'gender'             => 'sometimes|required|in:Masculino,Femenino,M,F',
                 'birth_date'         => 'sometimes|required|date_format:d/m/Y',
                 'nationality'        => 'sometimes|required|string',
                 'second_nationality' => 'nullable|string',
                 'position'           => 'sometimes|required|string|max:255',
+                'job_title'          => 'nullable|string|max:255',
                 'hire_date'          => 'sometimes|required|date_format:d/m/Y',
                 'employment_status'  => 'sometimes|required|in:active,inactive',
                 'area_id'            => 'sometimes|required|exists:areas,id',
@@ -155,17 +143,14 @@ class EmployeeController extends Controller
 
             $data = $request->except(['photo', '_method', 'second_nationality']);
 
-            // Normalizar género a texto completo si se envió
             if (isset($data['gender'])) {
                 if ($data['gender'] === 'M') {
                     $data['gender'] = 'Masculino';
                 } elseif ($data['gender'] === 'F') {
                     $data['gender'] = 'Femenino';
                 }
-                // Si ya viene como texto completo, se mantiene
             }
 
-            // Unir nacionalidades si se enviaron
             if ($request->has('nationality')) {
                 $nats                = array_filter([$request->nationality, $request->second_nationality]);
                 $data['nationality'] = implode(', ', $nats);
@@ -189,7 +174,6 @@ class EmployeeController extends Controller
                 $data['full_name'] = implode(' ', $parts);
             }
 
-            // Procesar foto (elimina la física anterior si subes una nueva)
             if ($request->hasFile('photo')) {
                 if ($employee->photo && Storage::disk('public')->exists($employee->photo)) {
                     Storage::disk('public')->delete($employee->photo);
@@ -217,22 +201,16 @@ class EmployeeController extends Controller
         }
     }
 
-    /**
-     * Elimina un empleado (soft delete si es aplicable).
-     */
     public function destroy($id)
     {
         try {
             $employee = Employee::findOrFail($id);
-
-            // Cambiar estado a inactivo en lugar de eliminar
             $employee->update(['employment_status' => 'inactive']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Empleado desactivado correctamente.',
             ]);
-
         } catch (\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -248,3 +226,18 @@ class EmployeeController extends Controller
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

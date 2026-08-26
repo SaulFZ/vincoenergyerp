@@ -1,432 +1,379 @@
 @extends('modules.rh.orgmanagement.index')
 
 @section('content')
-    <div class="employees-page">
+<div class="employees-page">
+    <div class="page-toolbar">
+        <div class="toolbar-heading">
+            <h1>Altas de Empleados</h1>
+            <p>Consulta el personal registrado o da de alta un nuevo empleado.</p>
+        </div>
 
-        {{-- =========================================================
-             TOOLBAR: título, búsqueda, filtros y botón de alta
-        ========================================================== --}}
-        <div class="page-toolbar">
-            <div class="toolbar-heading">
-                <h1>Altas de Empleados</h1>
-                <p>Consulta el personal registrado o da de alta un nuevo empleado.</p>
+        <div class="toolbar-actions">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Buscar por nombre o número de empleado...">
             </div>
 
-            <div class="toolbar-actions">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Buscar por nombre o número de empleado...">
-                </div>
+            <select id="filterArea" class="filter-select">
+                <option value="">Todas las áreas</option>
+            </select>
 
-                <select id="filterArea" class="filter-select">
-                    <option value="">Todas las áreas</option>
+            <select id="filterStatus" class="filter-select">
+                <option value="">Todos los estados</option>
+                <option value="active">Activo</option>
+                <option value="inactive">Inactivo</option>
+            </select>
+
+            <button type="button" class="btn btn-primary" id="btnNuevaAlta">
+                <i class="fas fa-user-plus"></i> Nueva Alta
+            </button>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-wrapper">
+            <table class="employees-table" id="employeesTable">
+                <thead>
+                    <tr>
+                        <th class="col-photo"></th>
+                        <th>Empleado</th>
+                        <th>Puesto</th>
+                        <th>Área</th>
+                        <th>Estado</th>
+                        <th>Fecha de ingreso</th>
+                        <th class="col-actions">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="employeesTableBody">
+                </tbody>
+            </table>
+
+            <div class="empty-state" id="emptyState" hidden>
+                <i class="fas fa-users-slash"></i>
+                <h3>No se encontraron empleados</h3>
+                <p>Ajusta la búsqueda o los filtros, o da de alta un nuevo empleado.</p>
+            </div>
+        </div>
+
+        <!-- DISEÑO ACTUALIZADO PARA CENTRAR LA PAGINACIÓN -->
+        <div class="table-footer">
+            <!-- Bloque izquierdo -->
+            <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
+                <span id="resultsSummary">Mostrando 0 de 0 empleados</span>
+                <select id="perPageSelect" class="filter-select"
+                    style="padding: 4px 8px; font-size: 12px; border-radius: 6px;">
+                    <option value="6" selected>6 por página</option>
+                    <option value="12">12 por página</option>
+                    <option value="999999">Todos</option>
                 </select>
-
-                <select id="filterStatus" class="filter-select">
-                    <option value="">Todos los estados</option>
-                    <option value="active">Activo</option>
-                    <option value="inactive">Inactivo</option>
-                </select>
-
-                <button type="button" class="btn btn-primary" id="btnNuevaAlta">
-                    <i class="fas fa-user-plus"></i> Nueva Alta
-                </button>
-            </div>
-        </div>
-
-        {{-- =========================================================
-             TABLA DE EMPLEADOS
-        ========================================================== --}}
-        <div class="table-card">
-            <div class="table-wrapper">
-                <table class="employees-table" id="employeesTable">
-                    <thead>
-                        <tr>
-                            <th class="col-photo"></th>
-                            <th>Empleado</th>
-                            <th>Puesto</th>
-                            <th>Área</th>
-                            <th>Estado</th>
-                            <th>Fecha de ingreso</th>
-                            <th class="col-actions">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="employeesTableBody">
-                        {{-- Spinner de carga inicial y filas inyectadas por JS --}}
-                    </tbody>
-                </table>
-
-                <div class="empty-state" id="emptyState" hidden>
-                    <i class="fas fa-users-slash"></i>
-                    <h3>No se encontraron empleados</h3>
-                    <p>Ajusta la búsqueda o los filtros, o da de alta un nuevo empleado.</p>
-                </div>
             </div>
 
-            <div class="table-footer">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span id="resultsSummary">Mostrando 0 de 0 empleados</span>
-                    <select id="perPageSelect" class="filter-select"
-                        style="padding: 4px 8px; font-size: 12px; border-radius: 6px;">
-                        <option value="6" selected>6 por página</option>
-                        <option value="12">12 por página</option>
-                        <option value="999999">Todos</option>
-                    </select>
-                </div>
-                <div class="pagination" id="pagination"></div>
-            </div>
+            <!-- Bloque Central: Paginación -->
+            <div class="pagination" id="pagination" style="flex: 1; justify-content: center;"></div>
+
+            <!-- Bloque derecho invisible para balancear y mantener centrado -->
+            <div style="flex: 1;"></div>
         </div>
     </div>
+</div>
 
-    {{-- =========================================================
-         MODAL: VER DETALLES DEL EMPLEADO (DISEÑO MEJORADO)
-    ========================================================== --}}
-    <div class="modal-overlay" id="viewModalOverlay" hidden>
-        <div class="modal-view" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
-            <div class="modal-header">
-                <h2 id="viewModalTitle"><i class="fas fa-user-circle"></i> Ficha del Empleado</h2>
-                <button type="button" class="btn-icon" id="btnCloseViewModal" aria-label="Cerrar">
-                    <i class="fas fa-xmark"></i>
-                </button>
-            </div>
+<div class="modal-overlay" id="viewModalOverlay" hidden>
+    <div class="modal-view" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
+        <div class="modal-header">
+            <h2 id="viewModalTitle"><i class="fas fa-user-circle"></i> Ficha del Empleado</h2>
+            <button type="button" class="btn-icon" id="btnCloseViewModal" aria-label="Cerrar">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
 
-            <div class="modal-body" style="background: var(--surface-alt);">
-                <div class="view-content" id="viewContent">
-                    {{-- Tarjetas generadas dinámicamente --}}
+        <div class="modal-body" style="background: var(--surface-alt);">
+            <div class="view-content" id="viewContent"></div>
+        </div>
+
+        <div class="modal-footer">
+            <div class="footer-spacer"></div>
+            <button type="button" class="btn btn-secondary" id="btnCloseViewBtn">Cerrar</button>
+            <button type="button" class="btn btn-primary" id="btnEditEmployee">
+                <i class="fas fa-pen"></i> Editar Datos
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="altaModalOverlay" hidden>
+    <div class="modal-alta" role="dialog" aria-modal="true" aria-labelledby="altaModalTitle">
+        <div class="modal-header">
+            <h2 id="altaModalTitle"><i class="fas fa-user-plus"></i> Nueva Alta de Empleado</h2>
+            <button type="button" class="btn-icon" id="btnCloseModal" aria-label="Cerrar">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="steps-indicator" id="stepsIndicator">
+            <div class="step-item active" data-step="1"><span class="step-circle">1</span><span
+                    class="step-label">Identificación</span></div>
+            <div class="step-item" data-step="2"><span class="step-circle">2</span><span class="step-label">Datos
+                    personales</span></div>
+            <div class="step-item" data-step="3"><span class="step-circle">3</span><span class="step-label">Puesto /
+                    Estructura</span></div>
+            <div class="step-item" data-step="4"><span class="step-circle">4</span><span class="step-label">Contacto /
+                    Legal</span></div>
+            <div class="step-item" data-step="5"><span class="step-circle">5</span><span
+                    class="step-label">Confirmar</span></div>
+        </div>
+
+        <form id="formAlta" class="form-alta" novalidate>
+            {{-- PASO 1 --}}
+            <section class="form-step active" data-step="1">
+                <h3 class="step-title" style="text-align: center;">Identificación y foto</h3>
+                <div class="photo-upload">
+                    <div class="photo-preview" id="photoPreview"><i class="fas fa-user"></i></div>
+                    <div class="photo-actions">
+                        <label for="photoInput" class="btn btn-secondary btn-sm"><i class="fas fa-camera"></i> Subir
+                            foto</label>
+                        <input type="file" id="photoInput" name="photo" accept="image/*" hidden>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btnRemovePhoto" hidden>Quitar
+                            foto</button>
+                    </div>
                 </div>
-            </div>
+                <div class="field-group">
+                    <label for="employeeNumber">Número de empleado <span class="req">*</span></label>
+                    <input type="text" id="employeeNumber" name="employee_number" placeholder="Ej. VIN-001" required>
+                </div>
+            </section>
 
-            <div class="modal-footer">
-                <div class="footer-spacer"></div>
-                <button type="button" class="btn btn-secondary" id="btnCloseViewBtn">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="btnEditEmployee">
-                    <i class="fas fa-pen"></i> Editar Datos
-                </button>
-            </div>
+            {{-- PASO 2 --}}
+            <section class="form-step" data-step="2">
+                <h3 class="step-title">Datos personales</h3>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="firstName">Primer nombre <span class="req">*</span></label>
+                        <input type="text" id="firstName" name="first_name" placeholder="Ej. Juan" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="secondName">Segundo nombre</label>
+                        <input type="text" id="secondName" name="second_name" placeholder="Ej. Carlos">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="firstSurname">Primer apellido <span class="req">*</span></label>
+                        <input type="text" id="firstSurname" name="first_surname" placeholder="Ej. Pérez" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="secondSurname">Segundo apellido</label>
+                        <input type="text" id="secondSurname" name="second_surname" placeholder="Ej. López">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label for="fullName">Nombre completo</label>
+                    <input type="text" id="fullName" name="full_name" placeholder="Se genera automáticamente" disabled>
+                </div>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="gender">Género <span class="req">*</span></label>
+                        <select id="gender" name="gender" required>
+                            <option value="">Selecciona...</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label for="birthDate">Fecha de nacimiento <span class="req">*</span></label>
+                        <input type="text" id="birthDate" name="birth_date" placeholder="dd/mm/aaaa" required>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="nationality">Nacionalidad <span class="req">*</span></label>
+                        <select id="nationality" name="nationality" required>
+                            <option value="">Selecciona...</option>
+                        </select>
+                        <p class="field-hint">El texto se ajusta según el género.</p>
+                    </div>
+                    <div class="field-group">
+                        <label for="secondNationality">Segunda nacionalidad (Opcional)</label>
+                        <select id="secondNationality" name="second_nationality">
+                            <option value="">Ninguna</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            {{-- PASO 3 --}}
+            <section class="form-step" data-step="3">
+                <h3 class="step-title">Datos laborales y estructura</h3>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="position">Puesto <span class="req">*</span></label>
+                        <div class="input-group">
+                            <input type="text" id="position" name="position" placeholder="Buscar puesto..." required autocomplete="off">
+                            <button type="button" class="btn-icon" id="btnNewPosition" title="Alternar entre buscar o escribir uno nuevo"><i class="fas fa-edit"></i></button>
+                        </div>
+                        <div class="autocomplete-list" id="positionList" hidden></div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="jobTitle">Título del puesto</label>
+                        <div class="input-group">
+                            <input type="text" id="jobTitle" name="job_title" placeholder="Buscar título..." autocomplete="off">
+                            <button type="button" class="btn-icon" id="btnNewJobTitle" title="Alternar entre buscar o escribir uno nuevo"><i class="fas fa-edit"></i></button>
+                        </div>
+                        <div class="autocomplete-list" id="jobTitleList" hidden></div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="hireDate">Fecha de ingreso <span class="req">*</span></label>
+                        <input type="text" id="hireDate" name="hire_date" placeholder="dd/mm/aaaa" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="employmentStatus">Estado <span class="req">*</span></label>
+                        <select id="employmentStatus" name="employment_status" required>
+                            <option value="active" selected>Activo</option>
+                            <option value="inactive">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="area">Área <span class="req">*</span></label>
+                        <select id="area" name="area_id" required>
+                            <option value="">Selecciona un área...</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label for="department">Departamento</label>
+                        <select id="department" name="department_id" disabled>
+                            <option value="">Selecciona un área primero...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label for="manager">Jefe directo</label>
+                    <input type="text" id="managerSearch" placeholder="Buscar empleado por nombre..."
+                        autocomplete="off">
+                    <input type="hidden" id="manager" name="manager_id">
+                    <div class="autocomplete-list" id="managerList" hidden></div>
+                </div>
+            </section>
+
+            {{-- PASO 4 --}}
+            <section class="form-step" data-step="4">
+                <h3 class="step-title">Contacto, documentación y salud</h3>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="phone">Teléfono</label>
+                        <input type="tel" id="phone" name="phone" placeholder="Ej. 55 1234 5678">
+                    </div>
+                    <div class="field-group">
+                        <label for="personalEmail">Correo personal</label>
+                        <input type="email" id="personalEmail" name="personal_email"
+                            placeholder="Ej. juan.perez@correo.com">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="rfc">RFC</label>
+                        <input type="text" id="rfc" name="rfc" maxlength="13" placeholder="Ej. XAXX010101000">
+                    </div>
+                    <div class="field-group">
+                        <label for="curp">CURP</label>
+                        <input type="text" id="curp" name="unique_population_code" maxlength="18"
+                            placeholder="Ej. ABC12345678901234">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="nss">NSS</label>
+                        <input type="text" id="nss" name="social_security_number" maxlength="11"
+                            placeholder="Ej. 12345678901">
+                    </div>
+                    <div class="field-group">
+                        <label for="bloodType">Tipo de sangre</label>
+                        <select id="bloodType" name="blood_type">
+                            <option value="">Selecciona...</option>
+                            <option>O+</option>
+                            <option>O-</option>
+                            <option>A+</option>
+                            <option>A-</option>
+                            <option>B+</option>
+                            <option>B-</option>
+                            <option>AB+</option>
+                            <option>AB-</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label for="medicalHistory">Antecedentes médicos relevantes</label>
+                    <textarea id="medicalHistory" name="medical_history" rows="3"
+                        placeholder="Alergias, padecimientos crónicos, etc. (opcional)"></textarea>
+                </div>
+            </section>
+
+            {{-- PASO 5 --}}
+            <section class="form-step" data-step="5">
+                <h3 class="step-title">Confirma los datos antes de guardar</h3>
+                <div class="summary-grid" id="summaryGrid"></div>
+            </section>
+        </form>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="btnPrevStep" hidden><i class="fas fa-arrow-left"></i>
+                Atrás</button>
+            <div class="footer-spacer"></div>
+            <button type="button" class="btn btn-secondary" id="btnCancelAlta">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="btnNextStep">Siguiente <i
+                    class="fas fa-arrow-right"></i></button>
+            <button type="button" class="btn btn-primary" id="btnSubmitAlta" hidden><i class="fas fa-check"></i>
+                Guardar
+                empleado</button>
         </div>
     </div>
+</div>
 
-    {{-- =========================================================
-         MODAL: FORMULARIO DE ALTA/EDICIÓN (WIZARD DE PASOS)
-    ========================================================== --}}
-    <div class="modal-overlay" id="altaModalOverlay" hidden>
-        <div class="modal-alta" role="dialog" aria-modal="true" aria-labelledby="altaModalTitle">
-            <div class="modal-header">
-                <h2 id="altaModalTitle"><i class="fas fa-user-plus"></i> Nueva Alta de Empleado</h2>
-                <button type="button" class="btn-icon" id="btnCloseModal" aria-label="Cerrar">
-                    <i class="fas fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="steps-indicator" id="stepsIndicator">
-                <div class="step-item active" data-step="1"><span class="step-circle">1</span><span
-                        class="step-label">Identificación</span></div>
-                <div class="step-item" data-step="2"><span class="step-circle">2</span><span class="step-label">Datos
-                        personales</span></div>
-                <div class="step-item" data-step="3"><span class="step-circle">3</span><span class="step-label">Puesto /
-                        Estructura</span></div>
-                <div class="step-item" data-step="4"><span class="step-circle">4</span><span class="step-label">Contacto /
-                        Legal</span></div>
-                <div class="step-item" data-step="5"><span class="step-circle">5</span><span
-                        class="step-label">Confirmar</span></div>
-            </div>
-
-            <form id="formAlta" class="form-alta" novalidate>
-                {{-- PASO 1: IDENTIFICACIÓN Y FOTO --}}
-                <section class="form-step active" data-step="1">
-                    <h3 class="step-title" style="text-align: center;">Identificación y foto</h3>
-                    <div class="photo-upload">
-                        <div class="photo-preview" id="photoPreview"><i class="fas fa-user"></i></div>
-                        <div class="photo-actions">
-                            <label for="photoInput" class="btn btn-secondary btn-sm"><i class="fas fa-camera"></i> Subir
-                                foto</label>
-                            <input type="file" id="photoInput" name="photo" accept="image/*" hidden>
-                            <button type="button" class="btn btn-ghost btn-sm" id="btnRemovePhoto" hidden>Quitar
-                                foto</button>
-                        </div>
-                    </div>
-                    <div class="field-group">
-                        <label for="employeeNumber">Número de empleado <span class="req">*</span></label>
-                        <input type="text" id="employeeNumber" name="employee_number" placeholder="Ej. VIN-001"
-                            required>
-                    </div>
-                </section>
-
-                {{-- PASO 2: DATOS PERSONALES --}}
-                <section class="form-step" data-step="2">
-                    <h3 class="step-title">Datos personales</h3>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="firstName">Primer nombre <span class="req">*</span></label>
-                            <input type="text" id="firstName" name="first_name" placeholder="Ej. Juan" required>
-                        </div>
-                        <div class="field-group">
-                            <label for="secondName">Segundo nombre</label>
-                            <input type="text" id="secondName" name="second_name" placeholder="Ej. Carlos">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="firstSurname">Primer apellido <span class="req">*</span></label>
-                            <input type="text" id="firstSurname" name="first_surname" placeholder="Ej. Pérez"
-                                required>
-                        </div>
-                        <div class="field-group">
-                            <label for="secondSurname">Segundo apellido</label>
-                            <input type="text" id="secondSurname" name="second_surname" placeholder="Ej. López">
-                        </div>
-                    </div>
-                    <div class="field-group">
-                        <label for="fullName">Nombre completo</label>
-                        <input type="text" id="fullName" name="full_name" placeholder="Se genera automáticamente"
-                            disabled>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="gender">Género <span class="req">*</span></label>
-                           <select id="gender" name="gender" required>
-    <option value="">Selecciona...</option>
-    <option value="Masculino">Masculino</option>  <!-- CORREGIDO: valor textual -->
-    <option value="Femenino">Femenino</option>    <!-- CORREGIDO: valor textual -->
-</select>
-                        </div>
-                        <div class="field-group">
-                            <label for="birthDate">Fecha de nacimiento <span class="req">*</span></label>
-                            <input type="text" id="birthDate" name="birth_date" placeholder="dd/mm/aaaa" required>
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="nationality">Nacionalidad <span class="req">*</span></label>
-                            <select id="nationality" name="nationality" required>
-                                <option value="">Selecciona...</option>
-                            </select>
-                            <p class="field-hint">El texto se ajusta según el género.</p>
-                        </div>
-                        <div class="field-group">
-                            <label for="secondNationality">Segunda nacionalidad (Opcional)</label>
-                            <select id="secondNationality" name="second_nationality">
-                                <option value="">Ninguna</option>
-                            </select>
-                        </div>
-                    </div>
-                </section>
-
-                {{-- PASO 3: PUESTO Y ESTRUCTURA --}}
-                <section class="form-step" data-step="3">
-                    <h3 class="step-title">Datos laborales y estructura</h3>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="position">Puesto <span class="req">*</span></label>
-                            <input type="text" id="position" name="position"
-                                placeholder="Ej. Desarrollador Frontend" required>
-                        </div>
-                        <div class="field-group">
-                            <label for="jobTitle">Título del puesto</label>
-                            <input type="text" id="jobTitle" name="job_title" placeholder="Ej. Ing. en Sistemas">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="hireDate">Fecha de ingreso <span class="req">*</span></label>
-                            <input type="text" id="hireDate" name="hire_date" placeholder="dd/mm/aaaa" required>
-                        </div>
-                        <div class="field-group">
-                            <label for="employmentStatus">Estado <span class="req">*</span></label>
-                            <select id="employmentStatus" name="employment_status" required>
-                                <option value="active" selected>Activo</option>
-                                <option value="inactive">Inactivo</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="area">Área <span class="req">*</span></label>
-                            <select id="area" name="area_id" required>
-                                <option value="">Selecciona un área...</option>
-                            </select>
-                        </div>
-                        <div class="field-group">
-                            <label for="department">Departamento</label>
-                            <select id="department" name="department_id" disabled>
-                                <option value="">Selecciona un área primero...</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="field-group">
-                        <label for="manager">Jefe directo</label>
-                        <input type="text" id="managerSearch" placeholder="Buscar empleado por nombre..."
-                            autocomplete="off">
-                        <input type="hidden" id="manager" name="manager_id">
-                        <div class="autocomplete-list" id="managerList" hidden></div>
-                    </div>
-                </section>
-
-                {{-- PASO 4: CONTACTO Y LEGAL/SALUD --}}
-                <section class="form-step" data-step="4">
-                    <h3 class="step-title">Contacto, documentación y salud</h3>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="phone">Teléfono</label>
-                            <input type="tel" id="phone" name="phone" placeholder="Ej. 55 1234 5678">
-                        </div>
-                        <div class="field-group">
-                            <label for="personalEmail">Correo personal</label>
-                            <input type="email" id="personalEmail" name="personal_email"
-                                placeholder="Ej. juan.perez@correo.com">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="rfc">RFC</label>
-                            <input type="text" id="rfc" name="rfc" maxlength="13"
-                                placeholder="Ej. XAXX010101000">
-                        </div>
-                        <div class="field-group">
-                            <label for="curp">CURP</label>
-                            <input type="text" id="curp" name="unique_population_code" maxlength="18"
-                                placeholder="Ej. ABC12345678901234">
-                        </div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field-group">
-                            <label for="nss">NSS</label>
-                            <input type="text" id="nss" name="social_security_number" maxlength="11"
-                                placeholder="Ej. 12345678901">
-                        </div>
-                        <div class="field-group">
-                            <label for="bloodType">Tipo de sangre</label>
-                            <select id="bloodType" name="blood_type">
-                                <option value="">Selecciona...</option>
-                                <option>O+</option>
-                                <option>O-</option>
-                                <option>A+</option>
-                                <option>A-</option>
-                                <option>B+</option>
-                                <option>B-</option>
-                                <option>AB+</option>
-                                <option>AB-</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="field-group">
-                        <label for="medicalHistory">Antecedentes médicos relevantes</label>
-                        <textarea id="medicalHistory" name="medical_history" rows="3"
-                            placeholder="Alergias, padecimientos crónicos, etc. (opcional)"></textarea>
-                    </div>
-                </section>
-
-                {{-- PASO 5: CONFIRMACIÓN --}}
-                <section class="form-step" data-step="5">
-                    <h3 class="step-title">Confirma los datos antes de guardar</h3>
-                    <div class="summary-grid" id="summaryGrid"></div>
-                </section>
-            </form>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-ghost" id="btnPrevStep" hidden><i class="fas fa-arrow-left"></i>
-                    Atrás</button>
-                <div class="footer-spacer"></div>
-                <button type="button" class="btn btn-secondary" id="btnCancelAlta">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btnNextStep">Siguiente <i
-                        class="fas fa-arrow-right"></i></button>
-                <button type="button" class="btn btn-primary" id="btnSubmitAlta" hidden><i class="fas fa-check"></i>
-                    Guardar
-                    empleado</button>
-            </div>
-        </div>
-    </div>
-
-
-    <script>
-     /* ==========================================================================
-   Altas de Empleados — Lógica real conectada al backend de Vinco ERP.
-========================================================================== */
+<script>
 (function() {
     'use strict';
 
-    /* ---- VARIABLES GLOBALES Y ESTADO ---- */
+    /* ==========================================================================
+       1. VARIABLES GLOBALES Y ESTADO DE LA APLICACIÓN
+    ========================================================================== */
     const DEFAULT_PHOTO_SRC = '/assets/img/default-avatar.png';
+
+    // Contenedores de memoria para catálogos
     let employees = [];
     let areas = [];
     let managers = [];
+    let positionList = [];
+    let jobTitleList = [];
     let currentEditingId = null;
 
-    const NATIONALITIES = [{
-            code: 'MX',
-            m: 'Mexicano',
-            f: 'Mexicana'
-        },
-        {
-            code: 'VE',
-            m: 'Venezolano',
-            f: 'Venezolana'
-        },
-        {
-            code: 'CO',
-            m: 'Colombiano',
-            f: 'Colombiana'
-        },
-        {
-            code: 'AR',
-            m: 'Argentino',
-            f: 'Argentina'
-        },
-        {
-            code: 'CL',
-            m: 'Chileno',
-            f: 'Chilena'
-        },
-        {
-            code: 'GT',
-            m: 'Guatemalteco',
-            f: 'Guatemalteca'
-        },
-        {
-            code: 'SV',
-            m: 'Salvadoreño',
-            f: 'Salvadoreña'
-        },
-        {
-            code: 'DO',
-            m: 'Dominicano',
-            f: 'Dominicana'
-        },
-        {
-            code: 'ES',
-            m: 'Español',
-            f: 'Española'
-        },
-        {
-            code: 'US',
-            m: 'Estadounidense',
-            f: 'Estadounidense'
-        },
+    const NATIONALITIES = [
+        { code: 'MX', m: 'Mexicano', f: 'Mexicana' },
+        { code: 'VE', m: 'Venezolano', f: 'Venezolana' },
+        { code: 'CO', m: 'Colombiano', f: 'Colombiana' },
+        { code: 'AR', m: 'Argentino', f: 'Argentina' },
+        { code: 'CL', m: 'Chileno', f: 'Chilena' },
+        { code: 'GT', m: 'Guatemalteco', f: 'Guatemalteca' },
+        { code: 'SV', m: 'Salvadoreño', f: 'Salvadoreña' },
+        { code: 'DO', m: 'Dominicano', f: 'Dominicana' },
+        { code: 'ES', m: 'Español', f: 'Española' },
+        { code: 'US', m: 'Estadounidense', f: 'Estadounidense' }
     ];
 
-    const STATUS_LABEL = {
-        active: 'Activo',
-        inactive: 'Inactivo'
-    };
-    const STATUS_BADGE_CLASS = {
-        active: 'badge-active',
-        inactive: 'badge-inactive'
-    };
+    const STATUS_LABEL = { active: 'Activo', inactive: 'Inactivo' };
+    const STATUS_BADGE_CLASS = { active: 'badge-active', inactive: 'badge-inactive' };
 
     const state = {
-        search: '',
-        filterArea: '',
-        filterStatus: '',
-        page: 1,
-        perPage: 6,
-        currentStep: 1,
-        totalSteps: 5,
+        search: '', filterArea: '', filterStatus: '',
+        page: 1, perPage: 6, currentStep: 1, totalSteps: 5,
     };
 
-    /* ---- HELPERS ---- */
-    function $(id) {
-        return document.getElementById(id);
-    }
+    /* ==========================================================================
+       2. FUNCIONES DE UTILIDAD (HELPERS)
+    ========================================================================== */
+    function $(id) { return document.getElementById(id); }
 
     function getInitials(name) {
         if (!name) return '';
@@ -453,11 +400,12 @@
         return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     }
 
-    /* ---- PETICIONES AL BACKEND ---- */
+    /* ==========================================================================
+       3. NÚCLEO DE COMUNICACIÓN ASÍNCRONA (FETCH)
+    ========================================================================== */
     async function loadInitialData() {
         try {
             showTableLoading();
-
             const [resCreate, resEmployees] = await Promise.all([
                 fetch('/rh/orgmanagement/employees/create-data'),
                 fetch('/rh/orgmanagement/employees/data')
@@ -466,16 +414,18 @@
             const dataCreate = await resCreate.json();
             employees = await resEmployees.json();
 
+            // Sincronización de variables globales con la respuesta del servidor
             areas = dataCreate.areas || [];
             managers = dataCreate.managers || [];
+            positionList = dataCreate.positions || [];
+            jobTitleList = dataCreate.job_titles || [];
 
             renderFilterOptions();
             renderAreaOptions();
-
             renderTable();
         } catch (error) {
-            console.error('Error cargando datos:', error);
-            Swal.fire('Error', 'No se pudieron cargar los datos del servidor.', 'error');
+            console.error('Excepción crítica durante la carga de catálogos:', error);
+            Swal.fire('Error de Conexión', 'El sistema no pudo recuperar los catálogos del servidor. Refresque la página.', 'error');
         }
     }
 
@@ -486,11 +436,13 @@
             employees = await res.json();
             renderTable();
         } catch (error) {
-            console.error('Error cargando empleados:', error);
+            console.error('Excepción al recargar el listado de empleados:', error);
         }
     }
 
-    /* ---- TABLA: LOADER SPINNER ---- */
+    /* ==========================================================================
+       4. MOTOR DE RENDERIZADO DE TABLA Y PAGINACIÓN
+    ========================================================================== */
     function showTableLoading() {
         const tbody = $('employeesTableBody');
         $('emptyState').hidden = true;
@@ -499,14 +451,13 @@
                 <td colspan="7">
                     <div class="loader-container">
                         <div class="spinner"></div>
-                        <span>Cargando información del personal...</span>
+                        <span>Sincronizando expedientes con la base de datos...</span>
                     </div>
                 </td>
             </tr>
         `;
     }
 
-    /* ---- RENDERIZADO TABLA Y FILTROS ---- */
     function renderFilterOptions() {
         const areaSelect = $('filterArea');
         areaSelect.innerHTML = '<option value="">Todas las áreas</option>';
@@ -524,8 +475,7 @@
                 emp.full_name?.toLowerCase().includes(state.search) ||
                 emp.employee_number?.toLowerCase().includes(state.search);
             const matchesArea = state.filterArea === '' || emp.area_id === Number(state.filterArea);
-            const matchesStatus = state.filterStatus === '' || emp.employment_status === state
-                .filterStatus;
+            const matchesStatus = state.filterStatus === '' || emp.employment_status === state.filterStatus;
             return matchesSearch && matchesArea && matchesStatus;
         });
     }
@@ -533,7 +483,10 @@
     function renderTable() {
         const filtered = getFilteredEmployees();
         const totalPages = Math.max(1, Math.ceil(filtered.length / state.perPage));
+
+        // Ajustar la página si el filtro reduce el conjunto de datos por debajo de la página actual
         state.page = Math.min(state.page, totalPages);
+
         const start = (state.page - 1) * state.perPage;
         const pageItems = filtered.slice(start, start + state.perPage);
 
@@ -548,14 +501,14 @@
             pageItems.forEach((emp, i) => tbody.appendChild(buildRow(emp, i)));
         }
 
-        $('resultsSummary').textContent = `Mostrando ${pageItems.length} de ${filtered.length} empleados`;
+        $('resultsSummary').textContent = `Mostrando ${pageItems.length} de ${filtered.length} registros en total`;
         renderPagination(totalPages);
     }
 
     function buildRow(emp, index) {
         const tr = document.createElement('tr');
         tr.className = 'row-animate';
-        tr.style.animationDelay = `${index * 0.04}s`;
+        tr.style.animationDelay = `${index * 0.04}s`; // Efecto cascada calculable
 
         const photoHtml = emp.photo ?
             `<img src="${getImageUrl(emp.photo)}" alt="${emp.full_name}">` :
@@ -579,8 +532,8 @@
             <td>${formatDate(emp.hire_date)}</td>
             <td>
                 <div class="row-actions">
-                    <button type="button" class="btn-icon view-btn" title="Ver detalle"><i class="fas fa-eye"></i></button>
-                    <button type="button" class="btn-icon edit-btn" title="Editar"><i class="fas fa-pen"></i></button>
+                    <button type="button" class="btn-icon view-btn" title="Examinar expediente"><i class="fas fa-eye"></i></button>
+                    <button type="button" class="btn-icon edit-btn" title="Modificar datos"><i class="fas fa-pen"></i></button>
                 </div>
             </td>
         `;
@@ -593,7 +546,31 @@
     function renderPagination(totalPages) {
         const container = $('pagination');
         container.innerHTML = '';
-        for (let i = 1; i <= totalPages; i++) {
+
+        // Constante geométrica para ventana de paginación (5 botones máximos)
+        const maxVisible = 5;
+
+        // Botón Anterior
+        const prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        if (state.page === 1) prevBtn.disabled = true;
+        prevBtn.addEventListener('click', () => {
+            if (state.page > 1) { state.page--; renderTable(); }
+        });
+        container.appendChild(prevBtn);
+
+        // Algoritmo de desplazamiento de ventana (Sliding Window Algorithm)
+        let startPage = Math.max(1, state.page - Math.floor(maxVisible / 2));
+        let endPage = startPage + maxVisible - 1;
+
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        // Renderizado dinámico de la ventana de números
+        for (let i = startPage; i <= endPage; i++) {
             const btn = document.createElement('button');
             btn.textContent = i;
             btn.type = 'button';
@@ -604,9 +581,21 @@
             });
             container.appendChild(btn);
         }
+
+        // Botón Siguiente
+        const nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        if (state.page === totalPages || totalPages === 0) nextBtn.disabled = true;
+        nextBtn.addEventListener('click', () => {
+            if (state.page < totalPages) { state.page++; renderTable(); }
+        });
+        container.appendChild(nextBtn);
     }
 
-    /* ---- MODAL: VER DETALLES ---- */
+    /* ==========================================================================
+       5. LÓGICA DE INTERFAZ MODAL Y ASISTENTE (WIZARD)
+    ========================================================================== */
     function viewEmployee(id) {
         const emp = employees.find(e => e.id === id);
         if (!emp) return;
@@ -619,7 +608,6 @@
         const deptName = emp.department ? emp.department.name : '—';
         const managerName = emp.manager ? emp.manager.full_name : '—';
 
-        // CORREGIDO: Mapeo de género con valores textuales
         const genderLabel = {
             'Masculino': 'Masculino',
             'Femenino': 'Femenino'
@@ -642,26 +630,29 @@
                 </div>
                 <div class="view-card">
                     <div class="view-card-title"><i class="fas fa-briefcase"></i> Datos Laborales</div>
-                    <div class="view-info-group"><div class="view-label">Puesto</div><div class="view-value">${emp.position}</div></div>
-                    <div class="view-info-group"><div class="view-label">Área / Departamento</div><div class="view-value">${areaName} / ${deptName}</div></div>
-                    <div class="view-info-group"><div class="view-label">Jefe Directo</div><div class="view-value">${managerName}</div></div>
-                    <div class="view-info-group"><div class="view-label">Fecha de Ingreso</div><div class="view-value">${formatDate(emp.hire_date)}</div></div>
+                    <div class="view-info-group"><div class="view-label">Puesto Estructural</div><div class="view-value">${emp.position}</div></div>
+                    <div class="view-info-group"><div class="view-label">Título Nominativo</div><div class="view-value">${emp.job_title || '—'}</div></div>
+                    <div class="view-info-group"><div class="view-label">Jerarquía (Área / Departamento)</div><div class="view-value">${areaName} / ${deptName}</div></div>
+                    <div class="view-info-group"><div class="view-label">Supervisor (Jefe Directo)</div><div class="view-value">${managerName}</div></div>
+                    <div class="view-info-group"><div class="view-label">Fecha de Antigüedad</div><div class="view-value">${formatDate(emp.hire_date)}</div></div>
                 </div>
                 <div class="view-card">
-                    <div class="view-card-title"><i class="fas fa-address-book"></i> Contacto</div>
-                    <div class="view-info-group"><div class="view-label">Teléfono</div><div class="view-value">${emp.phone || '—'}</div></div>
-                    <div class="view-info-group"><div class="view-label">Correo Electrónico</div><div class="view-value">${emp.personal_email || '—'}</div></div>
+                    <div class="view-card-title"><i class="fas fa-address-book"></i> Enlaces de Contacto</div>
+                    <div class="view-info-group"><div class="view-label">Línea Telefónica</div><div class="view-value">${emp.phone || '—'}</div></div>
+                    <div class="view-info-group"><div class="view-label">Casilla Electrónica</div><div class="view-value">${emp.personal_email || '—'}</div></div>
                 </div>
                 <div class="view-card">
-                    <div class="view-card-title"><i class="fas fa-file-contract"></i> Legal e Identidad</div>
-                    <div class="view-info-group"><div class="view-label">RFC</div><div class="view-value">${emp.rfc || '—'}</div></div>
-                    <div class="view-info-group"><div class="view-label">CURP</div><div class="view-value">${emp.unique_population_code || '—'}</div></div>
-                    <div class="view-info-group"><div class="view-label">NSS</div><div class="view-value">${emp.social_security_number || '—'}</div></div>
-                    <div class="view-info-group"><div class="view-label">Tipo de Sangre</div><div class="view-value">${emp.blood_type || '—'}</div></div>
+                    <div class="view-card-title"><i class="fas fa-file-contract"></i> Registros Legales e Identidad</div>
+                    <div class="view-info-group"><div class="view-label">Clave RFC</div><div class="view-value">${emp.rfc || '—'}</div></div>
+                    <div class="view-info-group"><div class="view-label">Registro CURP</div><div class="view-value">${emp.unique_population_code || '—'}</div></div>
+                    <div class="view-info-group"><div class="view-label">Afiliación NSS</div><div class="view-value">${emp.social_security_number || '—'}</div></div>
+                    <div class="view-info-group"><div class="view-label">Grupo Sanguíneo</div><div class="view-value">${emp.blood_type || '—'}</div></div>
                 </div>
                 <div class="view-card" style="grid-column: 1 / -1;">
-                    <div class="view-card-title"><i class="fas fa-notes-medical"></i> Antecedentes Médicos Relevantes</div>
-                    <div class="view-value" style="font-size: 13.5px; line-height: 1.5;">${emp.medical_history || 'Sin registros médicos capturados en el sistema.'}</div>
+                    <div class="view-card-title"><i class="fas fa-notes-medical"></i> Expediente de Salud y Antecedentes</div>
+                    <div class="view-value" style="font-size: 13.5px; line-height: 1.6; color: var(--slate-dark);">
+                        ${emp.medical_history || 'No existen anotaciones médicas registradas actualmente en el expediente del colaborador.'}
+                    </div>
                 </div>
             </div>
         `;
@@ -678,12 +669,14 @@
         $('viewModalOverlay').hidden = true;
     }
 
-    /* ---- MODAL: EDITAR EMPLEADO ---- */
     function editEmployee(id) {
         const emp = employees.find(e => e.id === id);
         if (!emp) return;
 
         currentEditingId = id;
+
+        // Purgar la interfaz visual de estados previos del buscador
+        resetSearchModes();
 
         $('employeeNumber').value = emp.employee_number;
         $('firstName').value = emp.first_name || '';
@@ -691,8 +684,6 @@
         $('firstSurname').value = emp.first_surname || '';
         $('secondSurname').value = emp.second_surname || '';
         $('fullName').value = emp.full_name || '';
-
-        // CORREGIDO: Asignar el valor textual del género
         $('gender').value = emp.gender || '';
 
         renderNationalityOptions(emp.gender);
@@ -718,8 +709,8 @@
         }
 
         $('employmentStatus').value = emp.employment_status || 'active';
-
         $('area').value = emp.area_id || '';
+
         const deptSelect = $('department');
         if (emp.area_id) {
             const areaObj = areas.find(a => a.id === emp.area_id);
@@ -735,7 +726,7 @@
                 deptSelect.value = emp.department_id || '';
             }
         } else {
-            deptSelect.innerHTML = '<option value="">Selecciona un área primero...</option>';
+            deptSelect.innerHTML = '<option value="">Selecciona un área jerárquica primero...</option>';
             deptSelect.disabled = true;
         }
 
@@ -762,19 +753,18 @@
             $('btnRemovePhoto').hidden = true;
         }
 
-        $('altaModalTitle').innerHTML = '<i class="fas fa-pen"></i> Editar Empleado';
-        $('btnSubmitAlta').innerHTML = '<i class="fas fa-save"></i> Actualizar empleado';
+        $('altaModalTitle').innerHTML = '<i class="fas fa-pen"></i> Edición de Expediente';
+        $('btnSubmitAlta').innerHTML = '<i class="fas fa-save"></i> Refrendar Cambios';
 
         goToStep(1);
         $('altaModalOverlay').hidden = false;
     }
 
-    /* ---- MODAL ALTA NUEVA Y NAVEGACIÓN ---- */
     function openModal() {
         currentEditingId = null;
         $('employeeNumber').disabled = false;
-        $('altaModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Nueva Alta de Empleado';
-        $('btnSubmitAlta').innerHTML = '<i class="fas fa-check"></i> Guardar empleado';
+        $('altaModalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Apertura de Nuevo Expediente';
+        $('btnSubmitAlta').innerHTML = '<i class="fas fa-check"></i> Finalizar Registro';
         resetForm();
         goToStep(1);
         $('altaModalOverlay').hidden = false;
@@ -788,14 +778,14 @@
 
     function confirmClose() {
         Swal.fire({
-            title: currentEditingId ? '¿Cancelar edición?' : '¿Cancelar el alta?',
-            text: 'Se perderá la información capturada.',
+            title: currentEditingId ? '¿Desea abortar la edición?' : '¿Desea cancelar el proceso de alta?',
+            text: 'Toda la información volátil capturada hasta el momento será destruida.',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Sí, cancelar',
-            cancelButtonText: 'Seguir capturando',
-            confirmButtonColor: '#35506b',
-            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Confirmar Cancelación',
+            cancelButtonText: 'Retomar Captura',
+            confirmButtonColor: '#e11d48', // Un tono más rojo para acciones destructivas
+            cancelButtonColor: '#35506b',
         }).then(result => {
             if (result.isConfirmed) closeModal();
         });
@@ -832,15 +822,17 @@
         if (!valid) {
             Swal.fire({
                 icon: 'warning',
-                title: 'Faltan datos obligatorios',
-                text: 'Revisa los campos marcados en rojo antes de continuar.',
+                title: 'Validación Rechazada',
+                text: 'El sistema ha detectado campos de llenado obligatorio que se encuentran vacíos. Por favor, revise las cajas remarcadas en rojo.',
                 confirmButtonColor: '#35506b',
             });
         }
         return valid;
     }
 
-    /* ---- LÓGICA DEL FORMULARIO ---- */
+    /* ==========================================================================
+       6. LÓGICA INTERNA DE FORMULARIOS Y MUTACIÓN DE DATOS
+    ========================================================================== */
     function updateFullName() {
         const parts = ['firstName', 'secondName', 'firstSurname', 'secondSurname']
             .map(id => $(id).value.trim()).filter(Boolean);
@@ -853,20 +845,17 @@
         const val1 = select1.value;
         const val2 = select2 ? select2.value : '';
 
-        select1.innerHTML = '<option value="">Selecciona...</option>';
-        if (select2) select2.innerHTML = '<option value="">Ninguna</option>';
+        select1.innerHTML = '<option value="">Seleccionar del catálogo...</option>';
+        if (select2) select2.innerHTML = '<option value="">Sin registro secundario</option>';
 
         NATIONALITIES.forEach(nat => {
-            const text = (genderValue === 'Masculino') ? nat.m : (genderValue === 'Femenino' ? nat.f :
-                `${nat.m} / ${nat.f}`);
+            const text = (genderValue === 'Masculino') ? nat.m : (genderValue === 'Femenino' ? nat.f : `${nat.m} / ${nat.f}`);
             const opt1 = document.createElement('option');
-            opt1.value = text;
-            opt1.textContent = text;
+            opt1.value = text; opt1.textContent = text;
             select1.appendChild(opt1);
             if (select2) {
                 const opt2 = document.createElement('option');
-                opt2.value = text;
-                opt2.textContent = text;
+                opt2.value = text; opt2.textContent = text;
                 select2.appendChild(opt2);
             }
         });
@@ -876,11 +865,10 @@
 
     function renderAreaOptions() {
         const select = $('area');
-        select.innerHTML = '<option value="">Selecciona un área...</option>';
+        select.innerHTML = '<option value="">Seleccionar una división funcional...</option>';
         areas.forEach(area => {
             const opt = document.createElement('option');
-            opt.value = area.id;
-            opt.textContent = area.name;
+            opt.value = area.id; opt.textContent = area.name;
             select.appendChild(opt);
         });
     }
@@ -890,18 +878,114 @@
             const deptSelect = $('department');
             const area = areas.find(a => a.id === Number(e.target.value));
             if (!area || !area.departments || area.departments.length === 0) {
-                deptSelect.innerHTML = '<option value="">No hay departamentos</option>';
+                deptSelect.innerHTML = '<option value="">Estructura sin dependencias</option>';
                 deptSelect.disabled = true;
                 return;
             }
             deptSelect.disabled = false;
-            deptSelect.innerHTML = '<option value="">Selecciona...</option>';
+            deptSelect.innerHTML = '<option value="">Seleccionar subdivisión...</option>';
             area.departments.forEach(dept => {
                 const opt = document.createElement('option');
-                opt.value = dept.id;
-                opt.textContent = dept.name;
+                opt.value = dept.id; opt.textContent = dept.name;
                 deptSelect.appendChild(opt);
             });
+        });
+    }
+
+    /* ==========================================================================
+       7. MÓDULO DE AUTOCOMPLETADO AVANZADO Y HEURÍSTICA DE BÚSQUEDA
+    ========================================================================== */
+    /**
+     * Motor principal que procesa la entrada de texto y evalúa las coincidencias
+     * lexicográficas contra los arreglos residentes en la memoria local.
+     */
+    function bindTextAutocomplete(inputId, listId, dataArrayIdentifier, btnNewId, placeholderSearch, placeholderWrite) {
+        const input = $(inputId);
+        const list = $(listId);
+        const btnNew = $(btnNewId);
+
+        // Imposición del estado inicial del placeholder
+        input.placeholder = placeholderSearch;
+
+        function showSuggestions() {
+            // Evaluador de Modo: Si la clase 'active-mode' está inyectada en el DOM,
+            // abortamos la rutina de sugerencias para permitir la digitación libre.
+            if (btnNew.classList.contains('active-mode')) return;
+
+            const term = input.value.trim().toLowerCase();
+            list.innerHTML = '';
+
+            // Resolución dinámica de la variable (Closure tardío):
+            // Determinamos a qué catálogo apuntar en el momento exacto de la pulsación
+            // garantizando que accederemos a los datos post-fetch.
+            const targetArray = dataArrayIdentifier === 'positions' ? positionList : jobTitleList;
+
+            const matches = term ?
+                targetArray.filter(item => item && item.toLowerCase().includes(term)).slice(0, 10) :
+                targetArray.slice(0, 10);
+
+            // Inyección de Interfaz de Fallback: Cuando el algoritmo no detecta subcadenas coincidentes
+            if (matches.length === 0) {
+                const emptyStateDiv = document.createElement('div');
+                emptyStateDiv.style.color = 'var(--slate-medium)';
+                emptyStateDiv.style.fontStyle = 'italic';
+                emptyStateDiv.style.cursor = 'default';
+                emptyStateDiv.style.textAlign = 'center';
+                emptyStateDiv.innerHTML = '<i class="fas fa-search-minus"></i> No existen registros previos en el sistema.';
+                list.appendChild(emptyStateDiv);
+                list.hidden = false;
+                return;
+            }
+
+            // Mapeo iterativo y renderizado de resultados con inyección de negritas para reconocimiento cognitivo rápido
+            matches.forEach(item => {
+                const div = document.createElement('div');
+
+                // Procesamiento de cadenas para generar resaltado (Highlighting)
+                if (term) {
+                    const regex = new RegExp(`(${term})`, 'gi');
+                    div.innerHTML = item.replace(regex, '<strong>$1</strong>');
+                } else {
+                    div.textContent = item;
+                }
+
+                div.addEventListener('click', () => {
+                    input.value = item;
+                    list.hidden = true;
+                });
+                list.appendChild(div);
+            });
+            list.hidden = false;
+        }
+
+        input.addEventListener('input', showSuggestions);
+        input.addEventListener('focus', showSuggestions);
+
+        if (btnNew) {
+            btnNew.addEventListener('click', () => {
+                // Mutación transaccional de la clase en el DOM
+                const isNowEditMode = btnNew.classList.toggle('active-mode');
+
+                if (isNowEditMode) {
+                    // Transición de Máquina de Estados: Modo Escritura Libre Activo
+                    input.value = '';
+                    input.placeholder = placeholderWrite;
+                    list.hidden = true;
+                    input.focus();
+                } else {
+                    // Retorno a Modo de Búsqueda Indexada
+                    input.placeholder = placeholderSearch;
+                    showSuggestions();
+                    input.focus();
+                }
+            });
+        }
+
+        // Delegación de eventos globales para la destrucción visual del panel contextual
+        document.addEventListener('click', (e) => {
+            if (e.target !== input && e.target !== list && e.target !== btnNew && !btnNew.contains(e.target)) {
+                list.hidden = true;
+            }
         });
     }
 
@@ -915,15 +999,17 @@
                 list.hidden = true;
                 return;
             }
-            const matches = managers.filter(emp => emp.full_name.toLowerCase().includes(term)).slice(0,
-                6);
+
+            // Acceso léxico a la variable global mutada tras el fetch
+            const matches = managers.filter(emp => emp.full_name.toLowerCase().includes(term)).slice(0, 6);
+
             if (matches.length === 0) {
                 list.hidden = true;
                 return;
             }
             matches.forEach(emp => {
                 const item = document.createElement('div');
-                item.textContent = `${emp.full_name} — ${emp.position || 'Sin puesto'}`;
+                item.textContent = `${emp.full_name} — ${emp.position || 'Estructura No Asignada'}`;
                 item.addEventListener('click', () => {
                     input.value = emp.full_name;
                     $('manager').value = emp.id;
@@ -933,6 +1019,7 @@
             });
             list.hidden = false;
         });
+
         document.addEventListener('click', (e) => {
             if (e.target !== input) list.hidden = true;
         });
@@ -942,16 +1029,19 @@
         const input = $('photoInput');
         const preview = $('photoPreview');
         const removeBtn = $('btnRemovePhoto');
+
         input.addEventListener('change', () => {
             const file = input.files[0];
             if (!file) return;
+
             const reader = new FileReader();
             reader.onload = (e) => {
-                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                preview.innerHTML = `<img src="${e.target.result}" alt="Visualización Previa del Activo">`;
                 removeBtn.hidden = false;
             };
             reader.readAsDataURL(file);
         });
+
         removeBtn.addEventListener('click', () => {
             input.value = '';
             preview.innerHTML = '<i class="fas fa-user"></i>';
@@ -961,66 +1051,63 @@
 
     function initDatePickers() {
         if (typeof flatpickr !== 'undefined') {
-            flatpickr('#birthDate', {
+            const baseConfig = {
                 dateFormat: 'd/m/Y',
                 maxDate: 'today',
-                locale: {
-                    firstDayOfWeek: 1
-                }
-            });
-            flatpickr('#hireDate', {
-                dateFormat: 'd/m/Y',
-                maxDate: 'today',
-                locale: {
-                    firstDayOfWeek: 1
-                }
-            });
+                locale: { firstDayOfWeek: 1 }
+            };
+            flatpickr('#birthDate', baseConfig);
+            flatpickr('#hireDate', baseConfig);
         }
     }
 
-    /* ---- RESUMEN Y GUARDADO ---- */
     function buildSummary() {
-        // CORREGIDO: Mapeo de género con valores textuales
-        const genderLabel = {
-            'Masculino': 'Masculino',
-            'Femenino': 'Femenino'
-        } [$('gender').value] || '—';
-
+        const genderLabel = { 'Masculino': 'Masculino', 'Femenino': 'Femenino' } [$('gender').value] || '—';
         const nat1 = $('nationality').value || '—';
         const nat2Select = $('secondNationality');
         const nat2 = nat2Select ? nat2Select.value : '';
         const combinedNat = nat2 ? `${nat1}, ${nat2}` : nat1;
         const areaOpt = $('area').selectedOptions[0];
         const deptOpt = $('department').selectedOptions[0];
+
         const items = [
-            ['No. de empleado', $('employeeNumber').value || '—'],
-            ['Nombre completo', $('fullName').value || '—'],
-            ['Género', genderLabel],
-            ['Nacionalidad(es)', combinedNat],
-            ['Fecha Nac.', $('birthDate').value || '—'],
-            ['Puesto', $('position').value || '—'],
-            ['Área', areaOpt?.textContent || '—'],
-            ['Departamento', deptOpt?.textContent || '—'],
-            ['Ingreso', $('hireDate').value || '—'],
-            ['Estado', STATUS_LABEL[$('employmentStatus').value] || '—'],
-            ['Jefe directo', $('managerSearch').value || 'Sin asignar'],
-            ['Contacto', ($('phone').value || '—') + ' / ' + ($('personalEmail').value || '—')],
+            ['Matrícula de Empleado', $('employeeNumber').value || '—'],
+            ['Denominación Completa', $('fullName').value || '—'],
+            ['Identidad de Género', genderLabel],
+            ['Afiliación Nacional', combinedNat],
+            ['Fecha de Nacimiento', $('birthDate').value || '—'],
+            ['Clasificación del Puesto', $('position').value || '—'],
+            ['Adscripción Divisional', areaOpt?.textContent || '—'],
+            ['Sección Departamental', deptOpt?.textContent || '—'],
+            ['Alta Corporativa', $('hireDate').value || '—'],
+            ['Estatus Contractual', STATUS_LABEL[$('employmentStatus').value] || '—'],
+            ['Supervisor Directo', $('managerSearch').value || 'Sin línea de reporte'],
+            ['Vías de Contacto', ($('phone').value || '—') + ' / ' + ($('personalEmail').value || '—')],
         ];
+
         $('summaryGrid').innerHTML = items.map(([label, value]) => `
             <div class="summary-item"><span>${label}</span><strong>${value}</strong></div>
         `).join('');
     }
 
+    /* ==========================================================================
+       8. GESTOR DE ENVÍO Y PROCESAMIENTO DE TRANSACCIONES REST (AJAX)
+    ========================================================================== */
     async function submitAlta() {
-        $('btnSubmitAlta').disabled = true;
+        const btn = $('btnSubmitAlta');
         const form = $('formAlta');
+
+        // Bloqueo preventivo de la interfaz para mitigar solicitudes por doble clic
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando transacción...';
+
         const formData = new FormData(form);
-        if (currentEditingId) {
-            formData.append('_method', 'PUT');
-        }
+        // Si el estado interno mantiene un ID, el controlador evalúa un requerimiento PUT
+        if (currentEditingId) formData.append('_method', 'PUT');
+
         try {
-            const url = currentEditingId ? `/rh/orgmanagement/employees/${currentEditingId}` :
-                '/rh/orgmanagement/employees';
+            const url = currentEditingId ? `/rh/orgmanagement/employees/${currentEditingId}` : '/rh/orgmanagement/employees';
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -1029,76 +1116,98 @@
                 },
                 body: formData
             });
+
             const result = await response.json();
+
             if (!response.ok) {
-                let errorMsg = result.message || 'Ocurrió un error al guardar.';
-                if (result.errors) {
-                    errorMsg = Object.values(result.errors).flat().join('<br>');
-                }
+                let errorMsg = result.message || 'Se desencadenó un error desconocido durante la serialización.';
+                // Análisis y aplanamiento de las validaciones de capa Laravel (Form Requests)
+                if (result.errors) errorMsg = Object.values(result.errors).flat().join('<br>');
                 throw new Error(errorMsg);
             }
+
             Swal.fire({
                 icon: 'success',
-                title: currentEditingId ? 'Empleado actualizado' : 'Empleado registrado',
-                text: currentEditingId ? 'Los cambios se guardaron correctamente.' :
-                    'El empleado fue dado de alta correctamente.',
+                title: currentEditingId ? 'Modificación Indexada' : 'Alta Procesada con Éxito',
+                text: currentEditingId ? 'El historial del colaborador fue sobrescrito en el esquema relacional de forma segura.' : 'El sistema central ha asimilado la integración de un nuevo expediente laboral en la base de datos.',
                 confirmButtonColor: '#35506b',
             });
+
             closeModal();
             await loadEmployees();
         } catch (error) {
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
+                title: 'Excepción de Procedimiento',
                 html: error.message,
-                confirmButtonColor: '#35506b',
+                confirmButtonColor: '#e11d48'
             });
         } finally {
-            $('btnSubmitAlta').disabled = false;
+            // Desbloqueo y restitución semántica del botón
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    function resetSearchModes() {
+        const btnP = $('btnNewPosition');
+        const btnJ = $('btnNewJobTitle');
+        if (btnP) {
+            btnP.classList.remove('active-mode');
+            $('position').placeholder = 'Buscar puesto en el catálogo general...';
+        }
+        if (btnJ) {
+            btnJ.classList.remove('active-mode');
+            $('jobTitle').placeholder = 'Buscar título nominativo previo...';
         }
     }
 
     function resetForm() {
         $('formAlta').reset();
+        resetSearchModes();
+
         $('fullName').value = '';
         $('photoPreview').innerHTML = '<i class="fas fa-user"></i>';
         $('btnRemovePhoto').hidden = true;
-        $('department').innerHTML = '<option value="">Selecciona un área primero...</option>';
+        $('department').innerHTML = '<option value="">Requiere selección divisional superior...</option>';
         $('department').disabled = true;
         $('manager').value = '';
         $('managerSearch').value = '';
-        if ($('secondNationality')) $('secondNationality').innerHTML = '<option value="">Ninguna</option>';
+
+        if ($('secondNationality')) $('secondNationality').innerHTML = '<option value="">Sin registro secundario</option>';
         renderNationalityOptions('');
+
         document.querySelectorAll('.field-group.invalid').forEach(g => g.classList.remove('invalid'));
         $('photoInput').value = '';
+
+        // Destrucción segura de instancias activas del calendario Flatpickr
         if ($('birthDate')._flatpickr) $('birthDate')._flatpickr.clear();
         if ($('hireDate')._flatpickr) $('hireDate')._flatpickr.clear();
+
         goToStep(1);
     }
 
-    /* ---- INICIALIZACIÓN Y EVENTOS ---- */
+    /* ==========================================================================
+       9. ENLACE GENERAL DE LA INTERFAZ DE USUARIO (EVENT BINDING)
+    ========================================================================== */
     function bindEvents() {
+        // Enlaces de la matriz principal (Filtros y Búsquedas Globales)
         $('searchInput').addEventListener('input', (e) => {
             state.search = e.target.value.toLowerCase();
             state.page = 1;
             renderTable();
         });
         $('filterArea').addEventListener('change', (e) => {
-            state.filterArea = e.target.value;
-            state.page = 1;
-            renderTable();
+            state.filterArea = e.target.value; state.page = 1; renderTable();
         });
         $('filterStatus').addEventListener('change', (e) => {
-            state.filterStatus = e.target.value;
-            state.page = 1;
-            renderTable();
+            state.filterStatus = e.target.value; state.page = 1; renderTable();
         });
         $('perPageSelect').addEventListener('change', (e) => {
-            state.perPage = Number(e.target.value);
-            state.page = 1;
-            renderTable();
+            state.perPage = Number(e.target.value); state.page = 1; renderTable();
         });
 
+        // Controles maestros de Apertura y Cierre de Capas Modales (Overlays)
         $('btnNuevaAlta').addEventListener('click', openModal);
         $('btnCloseModal').addEventListener('click', confirmClose);
         $('btnCancelAlta').addEventListener('click', confirmClose);
@@ -1112,31 +1221,80 @@
             if (e.target.id === 'viewModalOverlay') closeViewModal();
         });
 
+        // Navegación heurística a través del Wizard de Formularios
         $('btnNextStep').addEventListener('click', () => {
-            if (validateStep(state.currentStep) && state.currentStep < state.totalSteps) goToStep(state
-                .currentStep + 1);
+            if (validateStep(state.currentStep) && state.currentStep < state.totalSteps) goToStep(state.currentStep + 1);
         });
         $('btnPrevStep').addEventListener('click', () => {
             if (state.currentStep > 1) goToStep(state.currentStep - 1);
         });
         $('btnSubmitAlta').addEventListener('click', submitAlta);
 
-        ['firstName', 'secondName', 'firstSurname', 'secondSurname'].forEach(id => $(id).addEventListener(
-            'input', updateFullName));
+        // Dinámicas relacionales para autogeneración de cadenas de texto
+        ['firstName', 'secondName', 'firstSurname', 'secondSurname'].forEach(id => $(id).addEventListener('input', updateFullName));
         $('gender').addEventListener('change', (e) => renderNationalityOptions(e.target.value));
+
         bindAreaToDepartment();
         bindManagerAutocomplete();
         bindPhotoUpload();
+
+        // Inicialización del Autocompletado pasando cadenas que identifican el array global deseado
+        bindTextAutocomplete(
+            'position',
+            'positionList',
+            'positions',
+            'btnNewPosition',
+            'Buscar puesto en el catálogo general...',
+            'Estableciendo nuevo puesto en la base de datos...'
+        );
+        bindTextAutocomplete(
+            'jobTitle',
+            'jobTitleList',
+            'jobTitles',
+            'btnNewJobTitle',
+            'Buscar título nominativo previo...',
+            'Definir un nuevo título de manera estricta...'
+        );
     }
 
-    function init() {
-        bindEvents();
+    /* ==========================================================================
+       10. CONTROLADOR DE INICIALIZACIÓN SECUENCIAL (BOOTSTRAPPING)
+    ========================================================================== */
+    async function init() {
+        // En primer lugar, se activa la capa de calendarios y configuraciones síncronas elementales
         initDatePickers();
         renderNationalityOptions('');
-        loadInitialData();
+
+        // Bloqueo estricto del hilo (await): Forzamos la descarga completa de toda
+        // la metadata desde el backend antes de permitir el mapeo de eventos.
+        await loadInitialData();
+
+        // El enlazador de eventos se activa con garantía absoluta de que la memoria
+        // ya cuenta con la topología relacional completa (arrays poblados).
+        bindEvents();
     }
 
+    // El ciclo de vida inicia inmediatamente tras el renderizado íntegro del HTML subyacente.
     document.addEventListener('DOMContentLoaded', init);
 })();
-    </script>
+</script>
 @endsection
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
