@@ -1245,15 +1245,15 @@
             'positions',
             'btnNewPosition',
             'Buscar puesto en el catálogo general...',
-            'Estableciendo nuevo puesto en la base de datos...'
+            'Estableciendo un nuevo puesto...'
         );
         bindTextAutocomplete(
             'jobTitle',
             'jobTitleList',
             'jobTitles',
             'btnNewJobTitle',
-            'Buscar título nominativo previo...',
-            'Definir un nuevo título de manera estricta...'
+            'Buscar título en el catálogo general...',
+            'Estableciendo un nuevo título...'
         );
     }
 
