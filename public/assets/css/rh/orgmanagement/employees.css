@@ -1,6 +1,6 @@
-/* ==========================================================================
+/* ======================================
    ESTILOS PRINCIPALES Y TOKENS (VesCore)
-========================================================================== */
+========================================= */
 .employees-page {
     font-family: 'Poppins', sans-serif;
     color: var(--slate-dark);
@@ -127,7 +127,6 @@
     color: var(--teal-dark);
     border-color: var(--teal-medium);
     box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
-    /* Efecto brillo sutil */
 }
 
 /* ------ BOTONES ------ */
