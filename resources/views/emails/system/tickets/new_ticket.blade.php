@@ -18,7 +18,7 @@
                             <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                                 <tr>
                                     <td width="60" style="vertical-align: middle; text-align: left;">
-                                        <img src="{{ asset('assets/img/logo.png') }}" 
+                                        <img src="{{ asset('assets/img/logovinco1.png') }}" 
                                              alt="VesCore" 
                                              style="display: inline-block; vertical-align: middle; max-height: 32px; width: auto;">
                                     </td>
@@ -39,10 +39,10 @@
                     <tr>
                         <td style="padding: 30px 25px;">
                             <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #344955; font-family: Arial, Helvetica, sans-serif;">
-                                Nuevo ticket de soporte
+                                Nuevo ticket
                             </h2>
                             <p style="margin: 0 0 25px 0; font-size: 15px; line-height: 1.6; color: #4A6572; font-family: Arial, Helvetica, sans-serif;">
-                                Se ha registrado un nuevo ticket en la plataforma. Requiere su revisión y asignación.
+                                Se ha registrado un ticket en el sistema. Requiere su revisión y atención.
                             </p>
 
                             <!-- Tabla de Datos (SIN la descripción) -->
@@ -95,7 +95,7 @@
                                             </tr>
                                         </table>
                                         <p style="margin: 12px 0 0 0; font-size: 12px; color: #4A6572; font-family: Arial, Helvetica, sans-serif;">
-                                            Serás redirigido a la plataforma para gestionar el ticket.
+                                            Serás redirigido al sistema para gestionar el ticket.
                                         </p>
                                     </td>
                                 </tr>
@@ -108,7 +108,7 @@
                     <tr>
                         <td align="center" style="background-color: #E9EEF0; padding: 20px; border-top: 1px solid #8EACB8;">
                             <p style="margin: 0 0 8px 0; font-size: 12px; color: #4A6572; font-family: Arial, Helvetica, sans-serif; line-height: 1.5;">
-                                Este es un mensaje automático generado por el módulo de <strong>Mis Tickets</strong> de la plataforma <strong>VesCore</strong>.
+                                Este es un mensaje automático generado por el módulo de <strong>Mis Tickets</strong> en el sistema <strong>VesCore</strong>.
                             </p>
                             <p style="margin: 0; font-size: 12px; color: #4A6572; font-family: Arial, Helvetica, sans-serif;">
                                 Por favor, no respondas a este correo.
