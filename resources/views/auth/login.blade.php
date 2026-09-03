@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,13 +14,10 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
 </head>
 
 <body>
-
-    <div id="preloader">
-        <div class="loader-logo"></div>
-    </div>
 
     <video autoplay muted loop playsinline id="video-bg">
         <source src="/assets/vid/fondov1.mp4" type="video/mp4">
@@ -31,7 +29,7 @@
             <img src="{{ asset('assets/img/logovinco2.png') }}" alt="Vinco Energy" class="logo-img">
         </div>
 
-        <h2 class="animate-text">Bienvenido</h2>
+        <h2 class="animate-text">Bienvenido a VesCore</h2>
         <p class="subtitle animate-text">Inicia sesión para continuar</p>
 
         <form id="loginForm" method="POST" action="{{ route('login') }}">
@@ -40,8 +38,8 @@
             <div class="input-group">
                 <label>Usuario</label>
                 <div class="field-wrapper">
-                    <input type="text" class="custom-input" name="username" id="username"
-                        value="{{ old('username') }}" placeholder="Ingresa tu usuario" required autocomplete="username">
+                    <input type="text" class="custom-input" name="username" id="username" value="{{ old('username') }}"
+                        placeholder="Ingresa tu usuario" required autocomplete="username">
                     <i class="fas fa-user input-icon"></i>
                 </div>
             </div>
@@ -75,67 +73,55 @@
     </div>
 
     <script>
-        // --- 7. ANIMACIONES GSAP (CONTROL DE CARGA) ---
-        // Usamos window.load para esperar a que el video y recursos carguen completamente
+        // --- 7. ANIMACIONES GSAP (CARGA MÁS RÁPIDA SIN PRELOADER) ---
         window.addEventListener("load", () => {
             const tl = gsap.timeline();
 
-            // 1. Desaparecer Preloader
-            tl.to("#preloader", {
-                    duration: 0.6,
-                    opacity: 0,
-                    ease: "power2.inOut",
-                    onComplete: () => {
-                        document.querySelector("#preloader").style.display = "none";
-                    }
-                })
-                // 2. Aparecer Video suavemente (evita el glitch visual)
-                .to("#video-bg", {
-                    duration: 1.5,
+            // Animación directa y más veloz
+            tl.to("#video-bg", {
+                    duration: 1,
                     opacity: 1,
                     visibility: "visible",
                     ease: "power2.out"
-                }, "-=0.2")
-                // 3. Revelar el contenedor del login
+                })
                 .to(".login-wrapper", {
-                    duration: 1,
+                    duration: 0.8,
                     opacity: 1,
                     y: 0,
                     visibility: "visible",
                     ease: "power3.out"
-                }, "-=1")
-                // 4. Animación en cascada de los elementos internos
+                }, "-=0.6")
                 .from(".logo-img", {
-                    duration: 0.8,
+                    duration: 0.7,
                     scale: 0.8,
                     opacity: 0,
                     ease: "back.out(1.7)"
-                }, "-=0.6")
+                }, "-=0.5")
                 .from(".animate-text", {
-                    duration: 0.6,
+                    duration: 0.5,
                     y: 20,
                     opacity: 0,
                     stagger: 0.1,
                     ease: "power2.out"
                 }, "-=0.4")
                 .from(".input-group", {
-                    duration: 0.6,
+                    duration: 0.5,
                     x: -30,
                     opacity: 0,
                     stagger: 0.15,
                     ease: "power2.out"
-                }, "-=0.4")
+                }, "-=0.3")
                 .from(".btn-login", {
-                    duration: 0.6,
+                    duration: 0.5,
                     y: 20,
                     opacity: 0,
                     ease: "power2.out"
                 }, "-=0.2")
                 .from(".forgot-container, .footer-copyright", {
-                    duration: 0.6,
+                    duration: 0.5,
                     opacity: 0,
                     ease: "power2.out"
-                }, "-=0.4");
+                }, "-=0.3");
         });
 
         $(document).ready(function() {
@@ -143,7 +129,7 @@
             // --- 0. RECARGA AUTOMÁTICA (Cada 10 Minutos) ---
             setTimeout(function() {
                 window.location.reload();
-            }, 900000); // 15 minutos
+            }, 900000);
 
             // --- 1. AÑO AUTOMÁTICO ---
             $('#yearSpan').text(new Date().getFullYear());
@@ -162,8 +148,6 @@
             $('.custom-input').on('input change blur focus', checkInputs);
             setTimeout(checkInputs, 200);
 
-            // --- SE ELIMINÓ LA LÓGICA DE RECARGA AL CAMBIAR DE PESTAÑA (visibilitychange) ---
-
             // --- 4. VER / OCULTAR CONTRASEÑA ---
             $('#eyeIcon').on('click', function() {
                 let input = $('#password');
@@ -177,7 +161,7 @@
                 }
             });
 
-          // --- 5. LOGIN AJAX ---
+            // --- 5. LOGIN AJAX ---
             $('#loginForm').on('submit', function(e) {
                 e.preventDefault();
                 let btn = $('.btn-login');
@@ -189,7 +173,6 @@
                     data: $(this).serialize(),
                     dataType: 'json',
                     success: function(resp) {
-                        // Solo entra aquí si el código HTTP es 200 (Login exitoso)
                         if (resp.success) {
                             gsap.to(".login-wrapper", {
                                 duration: 0.5,
@@ -209,14 +192,11 @@
                         btn.removeClass('loading').prop('disabled', false);
 
                         if (xhr.status === 419) {
-                            // Expiración del token CSRF
                             window.location.reload();
                         } else if (xhr.status === 401) {
-                            // 401: Credenciales incorrectas (Devuelto por tu controlador)
                             let response = xhr.responseJSON;
                             showError(response && response.message ? response.message : 'Credenciales inválidas.');
                         } else if (xhr.status === 422) {
-                            // 422: Validaciones fallidas de Laravel (Ej. campos vacíos)
                             let errors = xhr.responseJSON.errors;
                             let errorMsg = '';
                             for (let field in errors) {
@@ -224,7 +204,6 @@
                             }
                             showError(errorMsg || 'Por favor, llena los campos requeridos.');
                         } else {
-                            // 500 u otros errores de servidor
                             console.error(error);
                             showError('Error de conexión al servidor.');
                         }
@@ -233,7 +212,6 @@
             });
 
             function showError(msg) {
-                // Pequeña animación de "shake" en el formulario si falla
                 gsap.fromTo(".login-wrapper", {
                     x: -10
                 }, {
@@ -349,3 +327,5 @@
         });
     </script>
 </body>
+
+</html>
