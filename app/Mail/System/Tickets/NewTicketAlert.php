@@ -28,7 +28,7 @@ class NewTicketAlert extends Mailable implements ShouldQueue
      */
     public function build()
     {
-        return $this->subject('Nuevo Ticket en Cola: ' . $this->ticket->folio)
+        return $this->subject('Nuevo Ticket Registrado: ' . $this->ticket->folio)
                     ->view('emails.system.tickets.new_ticket');
     }
 }
