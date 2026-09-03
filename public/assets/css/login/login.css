@@ -28,7 +28,7 @@ body {
     padding: 20px;
     position: relative;
     overflow: hidden;
-    background-color: #ffffff; /* Fondo negro mientras carga el video */
+    background-color: var(--blanco); /* Fondo mientras carga el video */
 }
 
 /* --- VIDEO BACKGROUND --- */
@@ -51,30 +51,6 @@ body {
         width: 100% !important;
         object-position: center center !important;
     }
-}
-
-/* --- PRELOADER (NUEVO) --- */
-#preloader {
-    position: fixed;
-    inset: 0;
-    background: var(--blanco);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.loader-logo {
-    width: 80px;
-    height: 80px;
-    border: 5px solid rgba(255, 255, 255, 0.2);
-    border-top-color: var(--azul-oscuro);
-    border-radius: 50%;
-    animation: spinLoader 13s linear infinite;
-}
-
-@keyframes spinLoader {
-    to { transform: rotate(360deg); }
 }
 
 /* --- WRAPPER DEL LOGIN --- */
@@ -125,7 +101,7 @@ p.subtitle {
     font-weight: 500;
 }
 
-/* --- INPUTS --- */
+/* --- INPUTS ESTILO DOS TONOS --- */
 .input-group {
     position: relative;
     margin-bottom: 20px;
@@ -135,7 +111,7 @@ p.subtitle {
 .input-group label {
     font-size: 12px;
     font-weight: 700;
-    color: var(--azul);
+    color: var(--azul-oscuro);
     margin-bottom: 8px;
     display: block;
     margin-left: 5px;
@@ -145,14 +121,25 @@ p.subtitle {
 
 .field-wrapper {
     position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--gris-input);
+    border: 1px solid var(--gris-borde);
+    transition: all 0.3s ease;
+}
+
+/* Efecto focus en AZUL */
+.field-wrapper:focus-within {
+    background-color: var(--blanco);
+    border-color: var(--azul);
+    box-shadow: 0 0 0 4px rgba(51, 76, 149, 0.15);
 }
 
 .custom-input {
     width: 100%;
-    padding: 15px 15px 15px 45px;
-    background-color: var(--gris-input);
-    border: 1px solid var(--gris-borde);
-    border-radius: 10px;
+    padding: 15px 45px 15px 70px;
+    background-color: transparent;
+    border: none;
     font-size: 14px;
     color: var(--texto);
     outline: none;
@@ -164,33 +151,33 @@ p.subtitle {
     color: #cbd5e1;
 }
 
-.custom-input:focus {
-    background-color: var(--blanco);
-    border-color: var(--naranja);
-    box-shadow: 0 0 0 4px rgba(214, 126, 41, 0.15);
-}
-
-.custom-input.has-content {
-    background-color: var(--blanco);
-}
-
-/* --- ÍCONOS --- */
+/* --- ÍCONOS (CORRECCIÓN DE CENTRADO APLICADA) --- */
 .input-icon {
     position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 55px;
+    background-color: rgba(0, 0, 0, 0.04);
+    border-right: 1px solid var(--gris-borde);
     font-size: 16px;
     color: var(--icono-color);
-    transition: all 0.2s ease;
+    /* Forzamos a FontAwesome a comportarse como un contenedor flex centrado */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease;
     pointer-events: none;
     z-index: 5;
 }
 
-.custom-input:focus+.input-icon,
-.custom-input.has-content+.input-icon,
-input:-webkit-autofill+.input-icon {
-    color: var(--naranja) !important;
+/* Iluminar el bloque del icono en AZUL */
+.custom-input:focus + .input-icon,
+.custom-input.has-content + .input-icon,
+input:-webkit-autofill + .input-icon {
+    background-color: var(--azul);
+    border-right-color: var(--azul);
+    color: var(--blanco) !important;
 }
 
 input:-webkit-autofill,
@@ -213,11 +200,12 @@ input:-webkit-autofill:active {
     z-index: 10;
 }
 
+/* Ojo en Naranja al hacer hover o focus */
 .toggle-pass:hover {
     color: var(--naranja);
 }
 
-.custom-input:focus~.toggle-pass {
+.field-wrapper:focus-within .toggle-pass {
     color: var(--naranja);
 }
 
