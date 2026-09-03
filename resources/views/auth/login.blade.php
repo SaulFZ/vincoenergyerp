@@ -7,14 +7,15 @@
     <title>VesCore</title>
     <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
 
+    <!-- Enlace al archivo CSS externo -->
     <link href="{{ asset('assets/css/login/login.css') }}" rel="stylesheet">
+
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-
 </head>
 
 <body>
@@ -73,11 +74,10 @@
     </div>
 
     <script>
-        // --- 7. ANIMACIONES GSAP (CARGA MÁS RÁPIDA SIN PRELOADER) ---
+        // --- 7. ANIMACIONES GSAP (CARGA MÁS RÁPIDA) ---
         window.addEventListener("load", () => {
             const tl = gsap.timeline();
 
-            // Animación directa y más veloz
             tl.to("#video-bg", {
                     duration: 1,
                     opacity: 1,
