@@ -14,6 +14,7 @@ use App\Models\Administration\ExpenseClaims\ExpenseCfdi;
 use App\Models\Administration\ExpenseClaims\SatRequest;
 use App\Models\Administration\ExpenseClaims\FslNode;
 use ZipArchive;
+use Carbon\Carbon; // <-- Importante añadir Carbon
 
 class VerifyFiscalDownloadJob implements ShouldQueue
 {
@@ -51,6 +52,7 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             $statusRequest = $verify->getStatusRequest();
             $codigoGeneral = $verify->getStatus()->getCode();
 
+            // 1. EL SAT TERMINÓ BIEN
             if ($statusRequest->isFinished()) {
                 Log::info("Job 2: El SAT terminó el procesamiento. Descargando paquetes ZIP.");
 
@@ -64,11 +66,38 @@ class VerifyFiscalDownloadJob implements ShouldQueue
                 $satRequest->update(['status' => 'completed']);
                 Log::info("Job 2: Descarga masiva finalizada con éxito.");
 
+            // 2. EL SAT SIGUE TRABAJANDO (Todo normal)
             } elseif ($statusRequest->isAccepted() || $statusRequest->isInProgress()) {
-                Log::info("Job 2: El ticket {$this->ticketId} sigue en proceso en el SAT. Esperaremos al próximo ciclo.");
+                Log::info("Job 2: El ticket {$this->ticketId} sigue en proceso en el SAT. Esperaremos al próximo ciclo de verificación.");
+
+            // 3. EL TICKET FALLÓ EN EL SAT -> ¡AQUÍ ESTÁ LA MAGIA DEL REINTENTO AUTOMÁTICO!
             } else {
-                $satRequest->update(['status' => 'failed']);
-                Log::error("Job 2: El paquete falló o fue rechazado (Código SOAP: {$codigoGeneral}).");
+                Log::error("Job 2: El paquete falló o fue rechazado por el SAT (Código SOAP: {$codigoGeneral}). Iniciando re-solicitud automática.");
+
+                // Limpiamos el ticket_id "malo" y regresamos el estatus a "pending"
+                // En tu tabla, el usuario verá que se borró el ID y volvió a estado Pendiente automáticamente.
+                $satRequest->update([
+                    'ticket_id' => null,
+                    'status' => 'pending'
+                ]);
+
+                // Reconstruimos las fechas exactas de la petición original
+                $requestDate = Carbon::parse($satRequest->request_date, 'America/Mexico_City');
+                $startDate = $requestDate->copy()->subDays(7)->format('Y-m-d\TH:i:s');
+
+                if ($requestDate->isToday()) {
+                    $endDate = Carbon::now('America/Mexico_City')->subMinutes(10)->format('Y-m-d\TH:i:s');
+                } else {
+                    $endDate = $requestDate->copy()->endOfDay()->format('Y-m-d\TH:i:s');
+                }
+
+                // Despachamos el Job 1 de nuevo para que el SAT nos dé un Ticket ID fresco.
+                // NOTA: Le pongo un delay de 5 minutos. Si el SAT falló el ticket anterior,
+                // pedirle uno nuevo en el milisegundo siguiente suele resultar en otro bloqueo.
+                RequestFiscalDownloadJob::dispatch($node->g_id, $startDate, $endDate, $satRequest->id)
+                    ->delay(now()->addMinutes(5));
+
+                Log::info("Job 2: Nuevo intento de solicitud (Job 1) despachado a la cola para ejecutarse en 5 minutos.");
             }
 
         } catch (\Throwable $e) {
@@ -110,7 +139,6 @@ class VerifyFiscalDownloadJob implements ShouldQueue
             $xpath->registerNamespace('cfdi', 'http://www.sat.gob.mx/cfd/4');
             $xpath->registerNamespace('tfd', 'http://www.sat.gob.mx/TimbreFiscalDigital');
             $xpath->registerNamespace('implocal', 'http://www.sat.gob.mx/implocal');
-            // ── NUEVO: Agregamos el namespace de Pagos 2.0 ──
             $xpath->registerNamespace('pago20', 'http://www.sat.gob.mx/Pagos20');
 
             $uuidElement = $xpath->query('//tfd:TimbreFiscalDigital')->item(0);
