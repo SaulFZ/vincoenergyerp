@@ -598,7 +598,7 @@
                 <div style="grid-column: 1 / -1; background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0.5rem; display: flex; gap: 1rem; align-items: flex-start;">
                     <i class="bx bx-info-circle" style="color: #d97706; font-size: 1.2rem; margin-top:0.1rem;"></i>
                     <p style="margin: 0; font-size: 0.8rem; color: #92400e; line-height:1.4;">
-                        <strong>Garantía de Aislamiento:</strong> El sistema procesa la información mediante algoritmos de cifrado de extremo a extremo en una bóveda aislada. Al actualizar un nodo, deje en blanco los archivos o la contraseña si no desea reemplazarlos.
+                            <strong>Garantía de Aislamiento:</strong> El sistema procesa la información mediante algoritmos de cifrado avanzado de extremo a extremo. Los archivos se depositan en una bóveda digital aislada y completamente inaccesible desde la red pública. Al autorizar un nuevo nodo, la iteración anterior quedará bloqueada en estado Histórico para auditoría interna. Si actualiza un nodo, deje en blanco los archivos/contraseña para conservar los actuales.
                     </p>
                 </div>
 
