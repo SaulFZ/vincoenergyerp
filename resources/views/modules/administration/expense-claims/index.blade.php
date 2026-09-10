@@ -62,10 +62,7 @@
                 <i class="fas fa-sync-alt"></i> XML
             </a>
 
-            {{-- Seguridad --}}
-            <a href="{{ route('expense-claims.node.index') }}" class="nav-link" data-route="sys-config-node">
-                <i class="fas fa-shield-alt"></i> Seguridad
-            </a>
+
 
             {{-- Configuraciones Generales y Catálogos --}}
             <a href="{{ route('expense-claims.settings.index') }}" class="nav-link" data-route="settings">
