@@ -50,7 +50,7 @@
 
             {{-- Gestión de Anticipos (Solicitudes) --}}
             <a href="{{ route('expense-claims.advances') }}" class="nav-link" data-route="advances">
-                <i class="fas fa-money-bill-wave"></i> Anticipos Solicitados
+                <i class="fas fa-money-bill-wave"></i> Anticipos
             </a>
 
             <a href="#" class="nav-link" data-route="stats">
@@ -66,6 +66,12 @@
             <a href="{{ route('expense-claims.node.index') }}" class="nav-link" data-route="sys-config-node">
                 <i class="fas fa-shield-alt"></i> Seguridad
             </a>
+
+            {{-- Configuraciones Generales y Catálogos --}}
+            <a href="{{ route('expense-claims.settings.index') }}" class="nav-link" data-route="settings">
+                <i class="fas fa-cog"></i> Configuración
+            </a>
+
         </nav>
         @include('components.layouts._user-profile')
     </header>

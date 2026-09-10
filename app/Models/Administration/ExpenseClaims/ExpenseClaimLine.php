@@ -10,10 +10,11 @@ class ExpenseClaimLine extends Model
     protected $table = 'expense_claim_lines';
 
     protected $fillable = [
-        'expense_claim_id', 'expense_cfdi_id','load_method', 'concept_group',
+        'expense_claim_id', 'expense_cfdi_id', 'load_method', 'concept_group',
         'expense_date', 'document_number', 'description',
         'amount_fiscal', 'amount_simple', 'amount_none',
         'tax_ish', 'tax_iva', 'line_total',
+        'cost_center_id', 'project_id', // 👈 Nuevos campos
         'is_deductible', 'accounting_account',
     ];
 
@@ -31,6 +32,8 @@ class ExpenseClaimLine extends Model
         ];
     }
 
+    // ── RELACIONES ──
+
     public function claim(): BelongsTo
     {
         return $this->belongsTo(ExpenseClaim::class, 'expense_claim_id');
@@ -39,5 +42,21 @@ class ExpenseClaimLine extends Model
     public function cfdi(): BelongsTo
     {
         return $this->belongsTo(ExpenseCfdi::class, 'expense_cfdi_id');
+    }
+
+    /**
+     * Relación con el Centro de Costos a nivel Partida (Línea)
+     */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class, 'cost_center_id');
+    }
+
+    /**
+     * Relación con el Proyecto a nivel Partida (Línea)
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'project_id');
     }
 }

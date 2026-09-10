@@ -12,6 +12,7 @@ use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryControll
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStatusController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
 use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
+use App\Http\Controllers\Administration\ExpenseClaims\ExpenseSettingsController;
 /* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Core\MediaController;
@@ -188,6 +189,21 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::controller(FslNodeController::class)->group(function () {
                     Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
                     Route::post('/sys-config-node', 'store')->name('expense-claims.node.store');
+                });
+                // ============================
+                // ⚙️ CONFIGURACIONES Y CATÁLOGOS (NUEVO)
+                // ============================
+                Route::controller(ExpenseSettingsController::class)->group(function () {
+                    // Vista principal de configuraciones (Por defecto carga Centros de Costo)
+                    Route::get('/settings', 'index')->name('expense-claims.settings.index');
+
+                    // CRUD Centros de Costo
+                    Route::post('/settings/cost-centers', 'storeCostCenter')->name('expense-claims.settings.cc.store');
+                    Route::post('/settings/cost-centers/{id}', 'updateCostCenter')->name('expense-claims.settings.cc.update');
+
+                    // CRUD Proyectos
+                    Route::post('/settings/projects', 'storeProject')->name('expense-claims.settings.prj.store');
+                    Route::post('/settings/projects/{id}', 'updateProject')->name('expense-claims.settings.prj.update');
                 });
 
                 // SAT

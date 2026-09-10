@@ -13,7 +13,8 @@ class ExpenseClaim extends Model
 
     protected $fillable = [
         'folio_system', 'folio_user', 'claim_date', 'request_type', 'category', 'is_deductible',
-        'user_id', 'created_by_id', 'expense_advance_id', 'area', 'cost_center',
+        'user_id', 'created_by_id', 'expense_advance_id', 'area',
+        'cost_center_id', 'project_id', // 👈 Nuevos campos
         'emission_place', 'motive', 'total_subtotal',
         'total_iva', 'total_ish', 'total_amount',
         'evidence_documents', 'status_review', 'status_payment'
@@ -31,6 +32,8 @@ class ExpenseClaim extends Model
         ];
     }
 
+    // ── RELACIONES ──
+
     public function beneficiary(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -44,6 +47,22 @@ class ExpenseClaim extends Model
     public function expenseAdvance(): BelongsTo
     {
         return $this->belongsTo(ExpenseAdvance::class, 'expense_advance_id');
+    }
+
+    /**
+     * Relación con el Centro de Costos a nivel Cabecera
+     */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class, 'cost_center_id');
+    }
+
+    /**
+     * Relación con el Proyecto a nivel Cabecera
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     public function lines(): HasMany
