@@ -26,13 +26,23 @@ return new class extends Migration
             // ── TRAZABILIDAD, UBICACIÓN Y RELACIONES ──
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete()->comment('Beneficiario');
             $table->foreignId('created_by_id')->constrained('users')->cascadeOnDelete()->comment('Capturista en sesión');
-
-            // 👇 AQUÍ ESTÁ LA RELACIÓN A LA NUEVA TABLA DE ANTICIPOS 👇
-            $table->foreignId('expense_advance_id')->nullable()->constrained('expense_advances')->nullOnDelete()->comment('Si es una comprobación, se liga al anticipo original');
+            $table->foreignId('expense_advance_id')->nullable()->constrained('expense_advances')->nullOnDelete()->comment('Liga al anticipo original');
 
             $table->string('area')->nullable()->comment('Área de adscripción');
-            $table->string('cost_center')->index()->comment('Centro de Costos (Imputación)');
             $table->string('emission_place')->default('VHSA, TAB.')->comment('Lugar de Emisión');
+
+            // 👇 NUEVAS RELACIONES DE CENTRO DE COSTOS A NIVEL CABECERA 👇
+            $table->foreignId('cost_center_id')
+                  ->nullable()
+                  ->constrained('cost_centers')
+                  ->restrictOnDelete()
+                  ->comment('Si es NULL, significa "Varios" y la imputación se hace por línea');
+
+            $table->foreignId('project_id')
+                  ->nullable()
+                  ->constrained('projects')
+                  ->restrictOnDelete()
+                  ->comment('Subcentro o Proyecto a nivel global. Opcional.');
 
             // ── DETALLES Y TOTALES CONSOLIDADOS ──
             $table->string('motive')->comment('Motivo de la erogación');

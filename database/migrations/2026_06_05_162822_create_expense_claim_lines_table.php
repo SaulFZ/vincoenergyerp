@@ -11,19 +11,15 @@ return new class extends Migration
         Schema::create('expense_claim_lines', function (Blueprint $table) {
             $table->id();
 
-            // ── LLAVES FORÁNEAS ──
+            // ── LLAVES FORÁNEAS PRINCIPALES ──
             $table->foreignId('expense_claim_id')->constrained('expense_claims')->cascadeOnDelete();
-
-            // Enlace con la bóveda fiscal (si la fila proviene de una factura válida)
             $table->foreignId('expense_cfdi_id')->nullable()->constrained('expense_cfdis')->nullOnDelete();
 
             // ── ORIGEN DE DATOS Y AUDITORÍA ──
-            $table->string('load_method', 50)
-                  ->index()
-                  ->comment('Origen de los datos: manual, boveda_uuid (búsqueda en SAT), boveda_xml (arrastre de archivo)');
+            $table->string('load_method', 50)->index()->comment('manual, boveda_uuid, boveda_xml');
 
             // ── AGRUPACIÓN Y FECHA ──
-            $table->string('concept_group')->index()->comment('cat-vuelos, cat-restaurantes, cat-combustible, cat-otros');
+            $table->string('concept_group')->index()->comment('cat-vuelos, cat-restaurantes, etc.');
             $table->date('expense_date')->index()->comment('Fecha del gasto');
             $table->string('document_number')->nullable()->comment('Folio/Num. Fac. Comercial');
             $table->string('description')->comment('Descripción Comercial');
@@ -37,6 +33,19 @@ return new class extends Migration
             $table->decimal('tax_ish', 20, 2)->default(0.00)->comment('I.S.H. / Otros Imp.');
             $table->decimal('tax_iva', 20, 2)->default(0.00)->comment('I.V.A.');
             $table->decimal('line_total', 20, 2)->comment('Suma horizontal de la fila');
+
+            // 👇 DISTRIBUCIÓN DE COSTOS A NIVEL PARTIDA 👇
+            $table->foreignId('cost_center_id')
+                  ->nullable()
+                  ->constrained('cost_centers')
+                  ->restrictOnDelete()
+                  ->comment('Centro de costo específico de esta fila (Útil si la cabecera es Varios)');
+
+            $table->foreignId('project_id')
+                  ->nullable()
+                  ->constrained('projects')
+                  ->restrictOnDelete()
+                  ->comment('Proyecto específico de esta fila (Opcional)');
 
             // ── CONTROL INTERNO CONTABLE ──
             $table->boolean('is_deductible')->default(true)->comment('Marcador para contable');

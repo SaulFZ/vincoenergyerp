@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Administration\ExpenseClaims;
 use App\Http\Controllers\Controller;
 use App\Models\Administration\ExpenseClaims\ExpenseClaim;
 use App\Models\Administration\ExpenseClaims\FslNode;
+use App\Models\Administration\ExpenseClaims\CostCenter;
 use App\Models\Auth\User;
 
 class ReimbursementController extends Controller
@@ -49,11 +50,30 @@ class ReimbursementController extends Controller
             ];
         })->values()->toArray();
 
+        // 4. Traer Catálogo de Centros de Costo con Proyectos Hijos
+        $costCenters = CostCenter::with(['projects' => function($q) {
+            $q->where('is_active', true);
+        }])->where('is_active', true)->get()->map(function($cc) {
+            return [
+                'id'   => $cc->id,
+                'code' => $cc->code,
+                'name' => $cc->name,
+                'projects' => $cc->projects->map(function($p) {
+                    return [
+                        'id'   => $p->id,
+                        'code' => $p->code,
+                        'name' => $p->name,
+                    ];
+                })->toArray()
+            ];
+        })->toArray();
+
         return view('modules.administration.expense-claims.reimbursements', [
             'reembolsos'   => $reembolsos,
             'requestsData' => $requestsData,
             'rfcEmpresa'   => $rfcEmpresa,
-            'usersList'    => $usersList
+            'usersList'    => $usersList,
+            'costCenters'  => $costCenters // 👈 Inyectamos a la vista
         ]);
     }
 }

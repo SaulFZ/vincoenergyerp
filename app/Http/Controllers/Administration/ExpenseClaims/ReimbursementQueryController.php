@@ -12,7 +12,6 @@ class ReimbursementQueryController extends Controller
             'lines',
             'beneficiary.employee.area',
             'creator',
-            // Traemos el historial ordenado desde el más reciente
             'logs' => function($q) { $q->orderBy('created_at', 'desc'); }
         ])->findOrFail($id);
 

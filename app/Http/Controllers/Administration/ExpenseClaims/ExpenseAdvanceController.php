@@ -35,6 +35,35 @@ class ExpenseAdvanceController extends Controller
 
         return view('modules.administration.expense-claims.advances', compact('advances'));
     }
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'new_status' => 'required|in:Aprobado,Rechazado',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $advance = ExpenseAdvance::findOrFail($id);
+            $advance->update([
+                'status' => $request->new_status
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'El anticipo ha sido ' . strtolower($request->new_status) . ' correctamente.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function getActiveByUser($userId)
     {

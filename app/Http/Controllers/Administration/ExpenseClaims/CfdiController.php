@@ -36,7 +36,6 @@ class CfdiController extends Controller
         $xml->registerXPathNamespace('cfdi', 'http://www.sat.gob.mx/cfd/4');
         $xml->registerXPathNamespace('tfd', 'http://www.sat.gob.mx/TimbreFiscalDigital');
         $xml->registerXPathNamespace('implocal', 'http://www.sat.gob.mx/implocal');
-        // ── NUEVO: Agregamos el namespace de Pagos 2.0 ──
         $xml->registerXPathNamespace('pago20', 'http://www.sat.gob.mx/Pagos20');
 
         $timbre      = $xml->xpath('//tfd:TimbreFiscalDigital')[0] ?? null;
@@ -96,7 +95,6 @@ class CfdiController extends Controller
             $ish = (float) $nodoIsh[0]['TotaldeTraslados'];
         }
 
-        // ── REGLA ESPECIAL PARA COMPLEMENTOS DE PAGO (TIPO P) ──
         if ($cfdiType === 'P') {
             $nodoTotalesPago = $xml->xpath('//pago20:Totales')[0] ?? null;
             if ($nodoTotalesPago) {
@@ -145,9 +143,29 @@ class CfdiController extends Controller
         ]);
     }
 
+    public function searchByUuid(Request $request)
+    {
+        $request->validate([
+            'uuid' => 'required|string|size:36',
+        ]);
+
+        $cfdi = ExpenseCfdi::where('uuid', strtoupper($request->uuid))->first();
+
+        if ($cfdi) {
+            return response()->json([
+                'success' => true,
+                'data'    => $cfdi,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No se encontró ningún comprobante con este UUID en la bóveda fiscal del sistema.',
+        ], 404);
+    }
+
     public function autocomplete(Request $request)
     {
-        // Acepta tanto 'term' como 'q' para evitar errores de compatibilidad
         $queryParam = $request->query('term') ?? $request->query('q', '');
         $term = strtoupper(trim($queryParam));
 
@@ -158,20 +176,17 @@ class CfdiController extends Controller
             ]);
         }
 
-        // Búsqueda inteligente: UUID parcial, Folio, Serie o Razón Social
+        // 👈 CORRECCIÓN: Se quitó el ->select(...) para que traiga TODAS las columnas (id, fecha, iva, etc.)
         $results = ExpenseCfdi::where('uuid', 'like', "%{$term}%")
             ->orWhere('folio', 'like', "%{$term}%")
             ->orWhere('serie', 'like', "%{$term}%")
             ->orWhere('issuer_name', 'like', "%{$term}%")
-            ->select('uuid', 'serie', 'folio', 'issuer_name', 'total', 'concept_summary', 'subtotal')
             ->limit(10)
             ->get();
 
-        // DEBEMOS devolverlo con 'success' y 'data' para que el JS lo entienda
         return response()->json([
             'success' => true,
             'data' => $results
         ]);
     }
-
 }

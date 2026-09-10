@@ -73,7 +73,7 @@ class TicketStoreController extends Controller
                 }
             } catch (\Exception $mailEx) {
                 // Registro silencioso del error de correo sin deshacer el registro del ticket
-                Log::error('🚨 [Vinco ERP] Error enviando alerta de nuevo ticket: ' . $mailEx->getMessage());
+                Log::error('[VesCore] Error enviando alerta de nuevo ticket: ' . $mailEx->getMessage());
             }
 
             // =========================================================
@@ -87,7 +87,7 @@ class TicketStoreController extends Controller
 
         } catch (\Exception $e) {
             // Log crítico si falla la base de datos
-            Log::critical('🚨 [Vinco ERP] Error crítico en creación de Ticket: ' . $e->getMessage(), [
+            Log::critical('[VesCore] Error crítico en creación de Ticket: ' . $e->getMessage(), [
                 'user_id' => auth()->id(),
                 'payload' => $request->all()
             ]);

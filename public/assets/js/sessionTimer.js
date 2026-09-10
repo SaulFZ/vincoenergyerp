@@ -1,29 +1,40 @@
 (function () {
     // ====== VERIFICACIÓN INICIAL ======
     const currentPath = window.location.pathname.toLowerCase();
-    const excludedPaths = ['/login', '/logout', '/password', '/reset', '/register', '/verify-email'];
-    const hasLoginElements = document.querySelector('#loginForm') !== null ||
-                             document.querySelector('#forgotPasswordLink') !== null ||
-                             document.querySelector('.toggle-password') !== null;
+    const excludedPaths = [
+        "/login",
+        "/logout",
+        "/password",
+        "/reset",
+        "/register",
+        "/verify-email",
+    ];
+    const hasLoginElements =
+        document.querySelector("#loginForm") !== null ||
+        document.querySelector("#forgotPasswordLink") !== null ||
+        document.querySelector(".toggle-password") !== null;
 
-    const shouldSkip = excludedPaths.some(path => currentPath.includes(path)) || hasLoginElements;
+    const shouldSkip =
+        excludedPaths.some((path) => currentPath.includes(path)) ||
+        hasLoginElements;
     if (shouldSkip) return;
 
     // ====== CONFIGURACIÓN ======
     const SESSION_TIMEOUT_MINUTES = 15;
-    const WARNING_TIME_MINUTES    = 1;
+    const WARNING_TIME_MINUTES = 1;
 
-    const EXPIRY_TIME_MS       = SESSION_TIMEOUT_MINUTES * 60 * 1000;
-    const ALERT_THRESHOLD_MS   = (SESSION_TIMEOUT_MINUTES - WARNING_TIME_MINUTES) * 60 * 1000;
+    const EXPIRY_TIME_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
+    const ALERT_THRESHOLD_MS =
+        (SESSION_TIMEOUT_MINUTES - WARNING_TIME_MINUTES) * 60 * 1000;
     const FINAL_ALERT_DURATION = 6000;
 
-    let lastActivityTime  = Date.now();
-    let isWarningShown    = false;
+    let lastActivityTime = Date.now();
+    let isWarningShown = false;
     let isFinalAlertShown = false;
     let checkInactivityInterval;
 
     // ====== ESTILOS GLOBALES ======
-    const styleEl = document.createElement('style');
+    const styleEl = document.createElement("style");
     styleEl.textContent = `
         .swal-session-popup {
             border-radius: 16px !important;
@@ -104,32 +115,38 @@
     function isExternalSwalOpen() {
         const swalVisible = Swal.isVisible();
         if (!swalVisible) return false;
-        const ourModal = document.querySelector('.swal2-container [data-session-modal="true"]');
+        const ourModal = document.querySelector(
+            '.swal2-container [data-session-modal="true"]',
+        );
         return swalVisible && !ourModal;
     }
 
     // ====== AUXILIARES ======
-    function isTabActive() { return !document.hidden; }
+    function isTabActive() {
+        return !document.hidden;
+    }
 
     function getCsrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
-        return meta ? meta.getAttribute('content') : null;
+        return meta ? meta.getAttribute("content") : null;
     }
 
     async function pingSession() {
         const csrf = getCsrfToken();
         if (!csrf) return false;
         try {
-            const resp = await fetch('/session-ping', {
-                method: 'POST',
+            const resp = await fetch("/session-ping", {
+                method: "POST",
                 headers: {
-                    'X-CSRF-TOKEN': csrf,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
+                    "X-CSRF-TOKEN": csrf,
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Content-Type": "application/json",
+                },
             });
             return resp.ok;
-        } catch (e) { return false; }
+        } catch (e) {
+            return false;
+        }
     }
 
     function resetActivity() {
@@ -140,7 +157,7 @@
     async function extendSession() {
         await pingSession();
         lastActivityTime = Date.now();
-        isWarningShown   = false;
+        isWarningShown = false;
         Swal.close();
     }
 
@@ -152,8 +169,8 @@
         isWarningShown = true;
 
         Swal.fire({
-            icon: 'warning',
-            title: 'Sesión a punto de expirar',
+            icon: "warning",
+            title: "Sesión a punto de expirar",
             html: `
                 <div data-session-modal="true">
                     <div class="session-divider"></div>
@@ -172,21 +189,24 @@
             `,
             didOpen: () => {
                 const popup = Swal.getPopup();
-                if (popup) popup.setAttribute('data-session-modal', 'true');
+                if (popup) popup.setAttribute("data-session-modal", "true");
 
-                const timerEl  = document.getElementById('sessionTimer');
+                const timerEl = document.getElementById("sessionTimer");
                 const timerInt = setInterval(() => {
-                    const elapsed  = Date.now() - lastActivityTime;
-                    const timeLeft = Math.max(0, Math.ceil((EXPIRY_TIME_MS - elapsed) / 1000));
+                    const elapsed = Date.now() - lastActivityTime;
+                    const timeLeft = Math.max(
+                        0,
+                        Math.ceil((EXPIRY_TIME_MS - elapsed) / 1000),
+                    );
 
                     if (timerEl) {
                         timerEl.textContent = timeLeft;
                         if (timeLeft <= 10) {
-                            timerEl.style.color     = '#b91c1c';
-                            timerEl.style.transform = 'scale(1.12)';
+                            timerEl.style.color = "#b91c1c";
+                            timerEl.style.transform = "scale(1.12)";
                         } else {
-                            timerEl.style.color     = '#dc2626';
-                            timerEl.style.transform = 'scale(1)';
+                            timerEl.style.color = "#dc2626";
+                            timerEl.style.transform = "scale(1)";
                         }
                     }
 
@@ -203,15 +223,15 @@
                 if (popup && popup._timerInt) clearInterval(popup._timerInt);
             },
             showCancelButton: false,
-            confirmButtonText: 'Continuar trabajando',
-            confirmButtonColor: '#3b82f6',
+            confirmButtonText: "Continuar trabajando",
+            confirmButtonColor: "#3b82f6",
             allowOutsideClick: false,
             allowEscapeKey: false,
             customClass: {
-                popup:         'swal-session-popup',
-                title:         'swal-session-title',
-                confirmButton: 'swal-session-confirm',
-            }
+                popup: "swal-session-popup",
+                title: "swal-session-title",
+                confirmButton: "swal-session-confirm",
+            },
         }).then((result) => {
             if (result.isConfirmed) extendSession();
         });
@@ -221,19 +241,19 @@
     function showFinalAlert() {
         if (isFinalAlertShown) return;
         isFinalAlertShown = true;
-        isWarningShown    = false;
+        isWarningShown = false;
 
         Swal.close();
 
         const overTime = Date.now() - lastActivityTime;
         if (overTime > EXPIRY_TIME_MS + 5000) {
-            window.location.href = '/login';
+            window.location.href = "/login";
             return;
         }
 
         Swal.fire({
-            icon: 'error',
-            title: 'Sesión cerrada',
+            icon: "error",
+            title: "Sesión cerrada",
             html: `
                 <div data-session-modal="true">
                     <div class="session-divider" style="background: linear-gradient(90deg, #ef4444, #dc2626);"></div>
@@ -256,12 +276,13 @@
             `,
             didOpen: () => {
                 const popup = Swal.getPopup();
-                if (popup) popup.setAttribute('data-session-modal', 'true');
+                if (popup) popup.setAttribute("data-session-modal", "true");
 
-                const timerEl  = document.getElementById('finalTimer');
+                const timerEl = document.getElementById("finalTimer");
                 const interval = setInterval(() => {
                     const left = Swal.getTimerLeft();
-                    if (timerEl && left !== undefined) timerEl.textContent = Math.ceil(left / 1000);
+                    if (timerEl && left !== undefined)
+                        timerEl.textContent = Math.ceil(left / 1000);
                     if (!left) clearInterval(interval);
                 }, 100);
             },
@@ -271,11 +292,11 @@
             allowOutsideClick: false,
             allowEscapeKey: false,
             customClass: {
-                popup: 'swal-session-popup',
-                title: 'swal-session-title',
-            }
+                popup: "swal-session-popup",
+                title: "swal-session-title",
+            },
         }).then(() => {
-            window.location.href = '/login';
+            window.location.href = "/login";
         });
     }
 
@@ -294,23 +315,32 @@
 
     // ====== INICIALIZACIÓN ======
     function init() {
-        const activityEvents = ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'];
-        activityEvents.forEach(e => document.addEventListener(e, resetActivity, { passive: true }));
+        const activityEvents = [
+            "click",
+            "keydown",
+            "scroll",
+            "touchstart",
+            "mousemove",
+        ];
+        activityEvents.forEach((e) =>
+            document.addEventListener(e, resetActivity, { passive: true }),
+        );
 
         checkInactivityInterval = setInterval(checkInactivity, 1000);
 
-        document.addEventListener('visibilitychange', () => {
+        document.addEventListener("visibilitychange", () => {
             if (!document.hidden) checkInactivity();
         });
 
         setInterval(() => {
-            if (isTabActive() && !isWarningShown && !isFinalAlertShown) pingSession();
+            if (isTabActive() && !isWarningShown && !isFinalAlertShown)
+                pingSession();
         }, 300000);
     }
 
-    if (typeof Swal === 'undefined') {
+    if (typeof Swal === "undefined") {
         const checkSwal = setInterval(() => {
-            if (typeof Swal !== 'undefined') {
+            if (typeof Swal !== "undefined") {
                 clearInterval(checkSwal);
                 init();
             }

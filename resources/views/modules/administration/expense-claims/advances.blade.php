@@ -1,13 +1,9 @@
 {{-- ════════════════════════════════════════════════════════════════════════════
      VISTA BLADE: PANEL DE ANTICIPOS (advances.blade.php)
-     Vinco ERP - Gestión y Solicitud de Fondos Operativos
+     VesCore - Autorización y Gestión de Fondos Operativos
      ════════════════════════════════════════════════════════════════════════════ --}}
 @extends('modules.administration.expense-claims.index')
 
-@section('styles')
-    {{-- Vinculación de la hoja de estilos externa limpia --}}
-    <link rel="stylesheet" href="{{ asset('css/modules/administration/expense-claims/advances.css') }}">
-@endsection
 
 @section('content')
     <div class="advances-container">
@@ -44,7 +40,7 @@
         <div class="adv-card">
             <div class="adv-card-header">
                 <div class="adv-card-title">
-                    <i class="bx bx-history"></i> Historial de Anticipos Operativos
+                    <i class="bx bx-history"></i> Autorización de Anticipos Operativos
                 </div>
                 <div class="adv-table-controls">
                     <div class="adv-search-wrap">
@@ -58,11 +54,6 @@
                         <button class="adv-filter-tab" data-filter="Entregado">Entregados</button>
                         <button class="adv-filter-tab" data-filter="Comprobado">Comprobados</button>
                     </div>
-
-                    {{-- BOTÓN NUEVO ANTICIPO --}}
-                    <button class="btn btn-primary adv-btn-new" onclick="openAdvanceModalForCreate()" aria-label="Solicitar Anticipo">
-                        <i class="bx bx-plus-circle" style="font-size: 1.1rem;"></i> Solicitar Anticipo
-                    </button>
                 </div>
             </div>
 
@@ -73,11 +64,10 @@
                             <th>Folio Sistema</th>
                             <th>Solicitante</th>
                             <th>Departamento</th>
-                            <th class="text-center">Fecha Requerida</th>
+                            <th class="text-center">Fecha Creación</th>
                             <th>Tipo de Anticipo</th>
                             <th>Motivo / Justificación</th>
                             <th class="text-right">Monto (MXN)</th>
-                            <th class="text-right">Saldo a Comprobar</th>
                             <th class="text-center">Estado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
@@ -107,9 +97,9 @@
                     <div class="adv-page-size-wrap">
                         <span>Mostrar:</span>
                         <select id="adv-page-size-select" class="adv-page-size-select" onchange="changePageSize()">
-                            <option value="10" selected>10</option>
+                            <option value="7" selected>7</option>
+                            <option value="15">15</option>
                             <option value="25">25</option>
-                            <option value="50">50</option>
                             <option value="all">Todos</option>
                         </select>
                     </div>
@@ -120,13 +110,13 @@
     </div>
 
     {{-- ════════════════════════════════════════════════════════════════════════
-         MODAL: SOLICITAR / VER ANTICIPO DE GASTO OPERATIVO
+         MODAL: INSPECCIONAR / DICTAMINAR ANTICIPO (TIPO TARJETA DE LECTURA)
          ════════════════════════════════════════════════════════════════════════ --}}
     <div id="advance-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
         <div class="modal-box adv-modal-box">
             <div class="adv-modal-header">
                 <h2 class="adv-modal-title" id="adv-modal-title">
-                    <i class="bx bx-money-withdraw"></i> Solicitud de <strong>Anticipo</strong>
+                    <i class="bx bx-search-alt"></i> Inspección de <strong>Anticipo</strong>
                 </h2>
                 <div class="modal-header-actions">
                     <button class="adv-btn-close" onclick="closeAdvanceModal()" aria-label="Cerrar ventana"><i class="bx bx-x"></i></button>
@@ -134,73 +124,78 @@
             </div>
 
             <div class="adv-modal-body">
+
+                {{-- Tira de Información Principal --}}
                 <div class="adv-info-strip">
                     <div>
-                        <span class="adv-info-label">Folio del Anticipo</span>
-                        <strong id="adv-modal-folio" class="adv-info-val-primary">Nuevo Trámite</strong>
+                        <span class="adv-info-label">Folio Operativo</span>
+                        <strong id="adv-modal-folio" class="adv-info-val-primary">...</strong>
                     </div>
                     <div class="text-right">
                         <span class="adv-info-label">Estado Actual</span>
-                        <strong id="adv-modal-status" class="adv-info-val-secondary">Generando...</strong>
+                        <span id="adv-modal-status" class="adv-status-badge">...</span>
+                    </div>
+                </div>
+
+                {{-- Reemplazo de Inputs por Cajas de Lectura (Divs) --}}
+                <div class="adv-grid-2">
+                    <div class="adv-readonly-box">
+                        <span class="adv-readonly-label">Colaborador Solicitante</span>
+                        <div class="adv-readonly-content">
+                            <i class="bx bx-user"></i>
+                            <span id="adv-user-name" class="adv-readonly-value">Cargando...</span>
+                        </div>
+                    </div>
+                    <div class="adv-readonly-box">
+                        <span class="adv-readonly-label">Fecha de Creación</span>
+                        <div class="adv-readonly-content">
+                            <i class="bx bx-calendar"></i>
+                            <span id="adv-date-text" class="adv-readonly-value">--/--/----</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="adv-grid-2">
-                    <div>
-                        <label class="adv-input-label">Nombre del Solicitante</label>
-                        <div class="adv-input-wrap">
-                            <i class="bx bx-user adv-input-icon"></i>
-                            <input type="text" id="adv-user-name" class="adv-input" readonly value="{{ Auth::user()->name }}">
+                    <div class="adv-readonly-box">
+                        <span class="adv-readonly-label">Clasificación</span>
+                        <div class="adv-readonly-content">
+                            <i class="bx bx-briefcase"></i>
+                            <span id="adv-type" class="adv-readonly-value">...</span>
                         </div>
                     </div>
-                    <div>
-                        <label class="adv-input-label">Fecha de Requerimiento</label>
-                        <div class="adv-input-wrap">
-                            <i class="bx bx-calendar adv-input-icon"></i>
-                            <input type="text" id="adv-date-text" class="adv-input adv-focusable" placeholder="DD/MM/AAAA">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="adv-grid-2">
-                    <div>
-                        <label class="adv-input-label">Tipo de Anticipo</label>
-                        <div class="adv-input-wrap">
-                            <i class="bx bx-briefcase adv-input-icon"></i>
-                            <select id="adv-type" class="adv-input adv-focusable">
-                                <option value="Viaticos" selected>Viáticos y Hospedaje</option>
-                                <option value="Operativos">Gastos Operativos (Campo)</option>
-                                <option value="Caja Chica">Fondo de Caja Chica</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="adv-input-label">Monto Solicitado (MXN)</label>
-                        <div class="adv-input-wrap">
-                            <i class="bx bx-dollar adv-input-icon"></i>
-                            <input type="number" id="adv-amount" class="adv-input adv-focusable" placeholder="Ej. 5000.00" min="1" step="0.01">
+                    <div class="adv-readonly-box">
+                        <span class="adv-readonly-label">Monto Aprobado / Solicitado</span>
+                        <div class="adv-readonly-content">
+                            <i class="bx bx-dollar-circle"></i>
+                            <span id="adv-amount" class="adv-readonly-value adv-readonly-amount">0.00</span>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="adv-input-label">Descripción / Justificación Operativa</label>
-                    <textarea id="adv-desc" class="adv-input adv-focusable" placeholder="Explique para qué se destinarán los fondos solicitados..."></textarea>
+                    <span class="adv-readonly-label" style="margin-bottom: 0.5rem; display:block;">Justificación Operativa / Motivo</span>
+                    <div id="adv-desc" class="adv-readonly-desc">
+                        Cargando información descriptiva...
+                    </div>
                 </div>
+
             </div>
 
             <div class="adv-modal-footer">
                 <span id="adv-modal-note" class="adv-footer-note">
-                    <i class="bx bx-info-circle"></i> Los anticipos requieren validación de la gerencia.
+                    <i class="bx bx-shield-quarter"></i> Panel de lectura y auditoría interna.
                 </span>
-                <div id="adv-footer-create" class="adv-footer-actions">
-                    <button type="button" class="adv-btn-cancel" onclick="closeAdvanceModal()">Cancelar</button>
-                    <button type="button" class="btn btn-primary adv-btn-submit" onclick="submitAdvance()">
-                        <i class="bx bx-send"></i> Emitir Solicitud
-                    </button>
-                </div>
+
+                {{-- BOTONES DE SOLO LECTURA --}}
                 <div id="adv-footer-view" class="adv-footer-actions hidden">
-                    <button type="button" class="btn btn-secondary adv-btn-close-view" onclick="closeAdvanceModal()">Cerrar Vista</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAdvanceModal()" style="padding: 0.6rem 1.5rem; border-radius: 0.5rem; font-weight: 700;">Cerrar Consulta</button>
+                </div>
+
+                {{-- BOTONES PARA DICTAMINAR --}}
+                <div id="adv-footer-evaluate" class="adv-footer-actions hidden">
+                    <button type="button" class="btn btn-secondary" onclick="closeAdvanceModal()" style="padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 700;">Cancelar</button>
+                    <button type="button" class="btn" style="background:#ef4444; color:#fff; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 700; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);" onclick="processAdvanceEvaluation('Rechazado')"><i class="bx bx-x"></i> Rechazar</button>
+                    <button type="button" class="btn" style="background:var(--primary-dark); color:#fff; padding: 0.6rem 1.5rem; border-radius: 0.5rem; font-weight: 700; box-shadow: 0 4px 6px rgba(21, 40, 69, 0.2);" onclick="processAdvanceEvaluation('Aprobado')"><i class="bx bx-check-double"></i> Aprobar</button>
                 </div>
             </div>
         </div>
@@ -209,15 +204,14 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
 
     <script>
         const advancesData = {!! json_encode($advances) !!};
         let currentPage = 1;
-        let itemsPerPage = 10;
+        let itemsPerPage = 7; // 👈 Paginación ajustada a 7 por defecto
         let searchQuery = '';
         let activeFilter = 'all';
+        let currentEvaluateAdvId = null;
 
         const fmt = n => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
 
@@ -313,8 +307,11 @@
 
             paginatedData.forEach((adv, index) => {
                 const st = getStatusConfig(adv.status);
-                const debtClass = adv.saldo > 0 ? 'adv-text-danger' : 'adv-text-success';
-                let shortMotive = adv.motivo.length > 30 ? adv.motivo.substring(0, 30) + '...' : adv.motivo;
+                let shortMotive = adv.motivo.length > 40 ? adv.motivo.substring(0, 40) + '...' : adv.motivo;
+
+                // Botón de Evaluación (Solo si está pendiente)
+                const evaluateBtn = adv.status === 'Pendiente' ?
+                    `<button class="btn-icon-view" onclick="evaluarAnticipo(${adv.id})" title="Dictaminar Anticipo" style="background:#e0e7ff; color:#4f46e5; border-color:#c7d2fe;"><i class="bx bx-check-shield"></i></button>` : '';
 
                 let html = `
                 <tr class="adv-row-enter" style="animation-delay: ${index * 0.04}s;">
@@ -325,12 +322,14 @@
                     <td><i class="${getTypeIcon(adv.tipo)} adv-icon-muted"></i> ${adv.tipo}</td>
                     <td title="${adv.motivo}">${shortMotive}</td>
                     <td class="text-right adv-font-mono adv-fw-700">${fmt(adv.monto)}</td>
-                    <td class="text-right adv-font-mono adv-fw-700 ${debtClass}">${fmt(adv.saldo)}</td>
                     <td class="text-center">
                         <span class="adv-status-badge ${st.class}"><i class="${st.icon}"></i> ${st.label}</span>
                     </td>
                     <td class="text-center">
-                        <button class="adv-btn-icon-view" onclick="verDetalles(${adv.id})" title="Inspeccionar Solicitud"><i class="bx bx-search-alt"></i></button>
+                        <div style="display:flex; justify-content:center; gap:0.4rem;">
+                            <button class="btn-icon-view" onclick="verDetalles(${adv.id})" title="Inspeccionar Solicitud"><i class="bx bx-show"></i></button>
+                            ${evaluateBtn}
+                        </div>
                     </td>
                 </tr>`;
                 list.innerHTML += html;
@@ -367,25 +366,8 @@
             container.appendChild(btnNext);
         }
 
-        /* ── LÓGICA DEL MODAL ── */
-        function openAdvanceModalForCreate() {
-            document.getElementById('adv-modal-title').innerHTML = '<i class="bx bx-money-withdraw"></i> Solicitud de <strong>Anticipo</strong>';
-            document.getElementById('adv-modal-folio').textContent = 'Asignación Automática';
-            document.getElementById('adv-modal-status').textContent = 'Borrador / Pendiente';
-
-            flatpickr("#adv-date-text", { locale: "es", dateFormat: "d/m/Y", disableMobile: "true" });
-            document.getElementById('adv-date-text').value = '';
-            document.getElementById('adv-amount').value = '';
-            document.getElementById('adv-desc').value = '';
-
-            document.querySelectorAll('.adv-focusable').forEach(el => el.removeAttribute('disabled'));
-            document.getElementById('adv-footer-create').classList.remove('hidden');
-            document.getElementById('adv-footer-view').classList.add('hidden');
-
-            document.getElementById('advance-modal').classList.remove('hidden');
-        }
-
-        async function verDetalles(id) {
+        /* ── LÓGICA DE APERTURA DEL MODAL (AHORA INYECTA EN DIVS) ── */
+        async function fetchAndPopulateAdvance(id) {
             Swal.fire({ title: 'Cargando Detalles...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const response = await fetch(`{{ url('administration/expense-claims/advances') }}/${id}`);
@@ -393,71 +375,115 @@
 
                 if (res.success) {
                     const adv = res.data;
-                    document.getElementById('adv-modal-title').innerHTML = `<i class="bx bx-search-alt"></i> Inspección de <strong>Anticipo</strong>`;
+                    const st = getStatusConfig(adv.status);
+
+                    // Reemplazamos .value por .textContent ya que ahora son divs/spans
                     document.getElementById('adv-modal-folio').textContent = adv.folio_system;
-                    document.getElementById('adv-modal-status').textContent = adv.status;
 
-                    document.getElementById('adv-user-name').value = adv.user.name;
+                    // Inyectamos el badge en lugar de solo texto plano para mejor UI
+                    document.getElementById('adv-modal-status').className = `adv-status-badge ${st.class}`;
+                    document.getElementById('adv-modal-status').innerHTML = `<i class="${st.icon}"></i> ${st.label}`;
 
-                    const dateParts = adv.advance_date.split('-');
-                    document.getElementById('adv-date-text').value = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                    document.getElementById('adv-user-name').textContent = adv.user.name;
 
-                    document.getElementById('adv-type').value = adv.advance_type;
-                    document.getElementById('adv-amount').value = adv.amount;
-                    document.getElementById('adv-desc').value = adv.description;
+                    // CORRECCIÓN DE FECHA
+                    const cleanDate = adv.advance_date ? adv.advance_date.split('T')[0] : '';
+                    if (cleanDate) {
+                        const [y, m, d] = cleanDate.split('-');
+                        document.getElementById('adv-date-text').textContent = `${d}/${m}/${y}`;
+                    } else {
+                        document.getElementById('adv-date-text').textContent = adv.advance_date;
+                    }
 
-                    document.querySelectorAll('.adv-focusable').forEach(el => el.setAttribute('disabled', 'true'));
-                    document.getElementById('adv-footer-create').classList.add('hidden');
-                    document.getElementById('adv-footer-view').classList.remove('hidden');
+                    document.getElementById('adv-type').textContent = adv.advance_type;
+                    document.getElementById('adv-amount').textContent = fmt(adv.amount);
+                    document.getElementById('adv-desc').textContent = adv.description;
 
                     Swal.close();
-                    document.getElementById('advance-modal').classList.remove('hidden');
+                    return adv;
                 }
             } catch (error) {
                 Swal.fire('Error', 'No se pudo cargar la información.', 'error');
             }
+            return null;
+        }
+
+        async function verDetalles(id) {
+            const adv = await fetchAndPopulateAdvance(id);
+            if (!adv) return;
+
+            document.getElementById('adv-modal-title').innerHTML = `<i class="bx bx-search-alt"></i> Inspección de <strong>Anticipo</strong>`;
+
+            document.getElementById('adv-footer-evaluate').classList.add('hidden');
+            document.getElementById('adv-footer-view').classList.remove('hidden');
+            document.getElementById('advance-modal').classList.remove('hidden');
+        }
+
+        async function evaluarAnticipo(id) {
+            const adv = await fetchAndPopulateAdvance(id);
+            if (!adv) return;
+
+            currentEvaluateAdvId = id;
+            document.getElementById('adv-modal-title').innerHTML = `<i class="bx bx-check-shield"></i> Dictamen de <strong>Anticipo</strong>`;
+
+            document.getElementById('adv-footer-view').classList.add('hidden');
+            document.getElementById('adv-footer-evaluate').classList.remove('hidden');
+            document.getElementById('advance-modal').classList.remove('hidden');
         }
 
         function closeAdvanceModal() {
             document.getElementById('advance-modal').classList.add('hidden');
+            currentEvaluateAdvId = null;
         }
 
-        async function submitAdvance() {
-            const tipo = document.getElementById('adv-type').value;
-            const fecha = document.getElementById('adv-date-text').value;
-            const monto = document.getElementById('adv-amount').value;
-            const desc = document.getElementById('adv-desc').value.trim();
+        /* ── LÓGICA DE APROBACIÓN / RECHAZO ── */
+        function processAdvanceEvaluation(status) {
+            if (!currentEvaluateAdvId) return;
 
-            if (!fecha || !monto || !desc) {
-                Swal.fire('Atención', 'Todos los campos son obligatorios.', 'warning');
-                return;
-            }
+            let actionText = status === 'Aprobado' ? 'Aprobar Definitivamente este Anticipo' : 'Denegar y Rechazar el Anticipo';
+            let confirmColor = status === 'Aprobado' ? '#16a34a' : '#dc2626';
 
-            let formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}');
-            formData.append('advance_type', tipo);
-            formData.append('advance_date', fecha);
-            formData.append('amount', monto);
-            formData.append('description', desc);
+            Swal.fire({
+                title: `<span style="font-family:'Poppins', sans-serif;">¿Confirmar Dictamen?</span>`,
+                html: `<span style="font-family:'Poppins', sans-serif; color:#64748b;">¿Estás seguro de que deseas <strong>${actionText}</strong>?</span>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: `Sí, confirmar`,
+                cancelButtonText: `Cancelar`
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    updateAdvanceStatus(currentEvaluateAdvId, status);
+                }
+            });
+        }
 
+        async function updateAdvanceStatus(id, status) {
             try {
-                Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const response = await fetch('{{ route('expense-claims.advances.store') }}', {
+                Swal.fire({ title: 'Actualizando estado...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                let formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('new_status', status);
+
+                const response = await fetch(`{{ url('administration/expense-claims/advances') }}/${id}/status`, {
                     method: 'POST',
                     body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
+
                 const data = await response.json();
 
                 if (data.success) {
-                    Swal.fire({ title: '¡Anticipo Solicitado!', text: `Folio: ${data.folio}`, icon: 'success' }).then(() => {
-                        window.location.reload();
-                    });
+                    Swal.fire('¡Listo!', data.message, 'success');
+                    closeAdvanceModal();
+                    setTimeout(() => window.location.reload(), 1500);
                 } else {
                     Swal.fire('Error', data.message, 'error');
                 }
             } catch (error) {
-                Swal.fire('Error', 'Problema de conexión con el servidor.', 'error');
+                Swal.fire('Error', 'Hubo un error al intentar guardar los cambios. Intenta de nuevo.', 'error');
             }
         }
 

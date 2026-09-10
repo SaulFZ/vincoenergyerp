@@ -14,6 +14,15 @@ use Carbon\Carbon;
 
 class ReimbursementStoreController extends Controller
 {
+    private function parseCostCenter($value)
+    {
+        if (!$value || $value === 'VARIOS') return ['cc' => null, 'prj' => null];
+        $parts = explode('_', $value);
+        if ($parts[0] === 'CC') return ['cc' => $parts[1], 'prj' => null];
+        if ($parts[0] === 'PRJ') return ['cc' => $parts[2], 'prj' => $parts[1]];
+        return ['cc' => null, 'prj' => null];
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -53,26 +62,30 @@ class ReimbursementStoreController extends Controller
             $statusReview = $isDraft ? 'Borrador' : 'Pendiente';
             $statusPayment = $isDraft ? 'N/A' : 'En espera';
 
+            // Decodificar la selección de cabecera
+            $headerImputation = $this->parseCostCenter($request->centro_costo);
+
             $claim = ExpenseClaim::create([
-                'folio_system'   => $folioSystem,
-                'folio_user'     => $folioUser,
-                'claim_date'     => Carbon::now()->toDateString(),
-                'request_type'   => $request->tipo_solicitud,
-                'category'       => $request->tipo_gasto,
-                'is_deductible'  => $request->boolean('is_deductible'),
+                'folio_system'       => $folioSystem,
+                'folio_user'         => $folioUser,
+                'claim_date'         => Carbon::now()->toDateString(),
+                'request_type'       => $request->tipo_solicitud,
+                'category'           => $request->tipo_gasto,
+                'is_deductible'      => $request->boolean('is_deductible'),
                 'expense_advance_id' => $request->advance_id ?: null,
-                'user_id'        => $beneficiaryId,
-                'created_by_id'  => $creatorId,
-                'area'           => $request->depto,
-                'cost_center'    => $request->centro_costo,
-                'emission_place' => $request->lugar_emision ?? 'VHSA, TAB.',
-                'motive'         => $request->motivo,
-                'total_subtotal' => $request->total_subtotal,
-                'total_iva'      => $request->total_iva,
-                'total_ish'      => $request->total_ish,
-                'total_amount'   => $request->total_amount,
-                'status_review'  => $statusReview,
-                'status_payment' => $statusPayment,
+                'user_id'            => $beneficiaryId,
+                'created_by_id'      => $creatorId,
+                'area'               => $request->depto,
+                'cost_center_id'     => $headerImputation['cc'],  // 👈 Nuevo
+                'project_id'         => $headerImputation['prj'], // 👈 Nuevo
+                'emission_place'     => $request->lugar_emision ?? 'VHSA, TAB.',
+                'motive'             => $request->motivo,
+                'total_subtotal'     => $request->total_subtotal,
+                'total_iva'          => $request->total_iva,
+                'total_ish'          => $request->total_ish,
+                'total_amount'       => $request->total_amount,
+                'status_review'      => $statusReview,
+                'status_payment'     => $statusPayment,
                 'evidence_documents' => []
             ]);
 
@@ -86,13 +99,15 @@ class ReimbursementStoreController extends Controller
                 $claim->update(['evidence_documents' => $rutasPdf]);
             }
 
-            // Guardado de Líneas (AQUÍ GUARDAMOS EL LOAD METHOD)
+            // Guardado de Líneas
             $lineas = json_decode($request->input('lineas'), true);
             foreach ($lineas as $linea) {
+                $lineImputation = $this->parseCostCenter($linea['centro_costo'] ?? null);
+
                 ExpenseClaimLine::create([
                     'expense_claim_id' => $claim->id,
                     'expense_cfdi_id'  => !empty($linea['cfdi_id']) ? $linea['cfdi_id'] : null,
-                    'load_method'      => $linea['load_method'] ?? 'captura_manual', // 👈 Se guarda en BD
+                    'load_method'      => $linea['load_method'] ?? 'manual_entry',
                     'concept_group'    => $linea['categoria'],
                     'expense_date'     => Carbon::createFromFormat('d/m/Y', $linea['fecha'])->toDateString(),
                     'document_number'  => $linea['folio'],
@@ -103,6 +118,8 @@ class ReimbursementStoreController extends Controller
                     'tax_ish'          => $linea['ish'] ?? 0,
                     'tax_iva'          => $linea['iva'] ?? 0,
                     'line_total'       => $linea['total_linea'] ?? 0,
+                    'cost_center_id'   => $lineImputation['cc'],  // 👈 Nuevo
+                    'project_id'       => $lineImputation['prj'], // 👈 Nuevo
                 ]);
             }
 
@@ -127,6 +144,7 @@ class ReimbursementStoreController extends Controller
     {
         $request->validate([
             'motivo'        => 'required|string|max:255',
+            'centro_costo'  => 'required|string',
             'total_amount'  => 'required|numeric|min:0.01',
             'lineas'        => 'required|json'
         ]);
@@ -157,30 +175,35 @@ class ReimbursementStoreController extends Controller
                 $claim->folio_user = $initials . '-' . str_pad($userNum, 2, '0', STR_PAD_LEFT);
             }
 
+            $headerImputation = $this->parseCostCenter($request->centro_costo);
+
             $claim->update([
-                'request_type'   => $request->tipo_solicitud,
-                'category'       => $request->tipo_gasto,
-                'is_deductible'  => $request->boolean('is_deductible'),
+                'request_type'       => $request->tipo_solicitud,
+                'category'           => $request->tipo_gasto,
+                'is_deductible'      => $request->boolean('is_deductible'),
                 'expense_advance_id' => $request->advance_id ?: null,
-                'cost_center'    => $request->centro_costo,
-                'emission_place' => $request->lugar_emision ?? 'VHSA, TAB.',
-                'motive'         => $request->motivo,
-                'total_subtotal' => $request->total_subtotal,
-                'total_iva'      => $request->total_iva,
-                'total_ish'      => $request->total_ish,
-                'total_amount'   => $request->total_amount,
-                'status_review'  => $newStatus,
-                'status_payment' => $newPayment,
+                'cost_center_id'     => $headerImputation['cc'],
+                'project_id'         => $headerImputation['prj'],
+                'emission_place'     => $request->lugar_emision ?? 'VHSA, TAB.',
+                'motive'             => $request->motivo,
+                'total_subtotal'     => $request->total_subtotal,
+                'total_iva'          => $request->total_iva,
+                'total_ish'          => $request->total_ish,
+                'total_amount'       => $request->total_amount,
+                'status_review'      => $newStatus,
+                'status_payment'     => $newPayment,
             ]);
 
             ExpenseClaimLine::where('expense_claim_id', $claim->id)->delete();
 
             $lineas = json_decode($request->input('lineas'), true);
             foreach ($lineas as $linea) {
+                $lineImputation = $this->parseCostCenter($linea['centro_costo'] ?? null);
+
                 ExpenseClaimLine::create([
                     'expense_claim_id' => $claim->id,
                     'expense_cfdi_id'  => !empty($linea['cfdi_id']) ? $linea['cfdi_id'] : null,
-                    'load_method'      => $linea['load_method'] ?? 'captura_manual', // 👈 Se guarda en BD
+                    'load_method'      => $linea['load_method'] ?? 'manual_entry',
                     'concept_group'    => $linea['categoria'],
                     'expense_date'     => Carbon::createFromFormat('d/m/Y', $linea['fecha'])->toDateString(),
                     'document_number'  => $linea['folio'],
@@ -191,6 +214,8 @@ class ReimbursementStoreController extends Controller
                     'tax_ish'          => $linea['ish'] ?? 0,
                     'tax_iva'          => $linea['iva'] ?? 0,
                     'line_total'       => $linea['total_linea'] ?? 0,
+                    'cost_center_id'   => $lineImputation['cc'],
+                    'project_id'       => $lineImputation['prj'],
                 ]);
             }
 
