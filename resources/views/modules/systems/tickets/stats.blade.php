@@ -644,7 +644,7 @@
                     <div class="sd-card-title">
                         <i class="fas fa-table"></i> Detalle Operativo por Departamento
                     </div>
-                    <div class="sd-card-desc">Análisis exhaustivo del desempeño y flujo de trabajo por área de VINCO ERP
+                    <div class="sd-card-desc">Análisis exhaustivo del desempeño y flujo de trabajo por área de VesCore
                     </div>
                 </div>
 

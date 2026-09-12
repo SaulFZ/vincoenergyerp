@@ -8699,14 +8699,14 @@ function verificarNotificacionesNuevas(viajes) {
 function enviarNotificacionPush(titulo, mensaje) {
     const options = {
         body: mensaje,
-        icon: 'https://cdn-icons-png.flaticon.com/512/1055/1055644.png', // Opcional: Cambia esto por la URL del logo de Vinco ERP
+        icon: 'https://cdn-icons-png.flaticon.com/512/1055/1055644.png', // Opcional: Cambia esto por la URL del logo de VesCore
         requireInteraction: true // Hace que la notificación no desaparezca sola rápido
     };
 
     const notif = new Notification(titulo, options);
 
     notif.onclick = () => {
-        window.focus(); // Trae la pestaña de Vinco ERP al frente si le dan clic
+        window.focus(); // Trae la pestaña de VesCore al frente si le dan clic
         notif.close();
     };
 }

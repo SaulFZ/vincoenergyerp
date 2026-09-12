@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restablecer Contraseña - Vinco</title>
+    <title>Restablecer Contraseña - VesCore</title>
     <style>
         /* Reset básico para compatibilidad con clientes de correo */
         body,
@@ -392,13 +392,13 @@
 
                             <p class="greeting"
                                 style="font-size: 20px; color: #2d3748; font-weight: 600; margin-bottom: 20px;">
-                                👋 ¡Hola, {{ $userName }}!</p>
+                                ¡Hola, {{ $userName }}!</p>
 
                             <p
                                 style="font-size: 15px; color: #4a5568; line-height: 1.7; margin: 0 0 16px 0;">
                                 Hemos recibido una solicitud para <strong
                                     style="color: #2d3748;">restablecer la
-                                    contraseña</strong> de tu cuenta en Vinco ERP.
+                                    contraseña</strong> de tu cuenta en VesCore.
                             </p>
 
                             <p

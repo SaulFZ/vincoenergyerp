@@ -120,7 +120,7 @@
                                             </tr>
                                         </table>
                                         <p style="margin: 12px 0 0 0; font-size: 13px; color: #64748b; font-family: Arial, Helvetica, sans-serif;">
-                                            * Serás redirigido a la pantalla de inicio de sesión para ingresar al sistema.
+                                            Serás redirigido a la pantalla de inicio de sesión para ingresar al sistema.
                                         </p>
                                     </td>
                                 </tr>
