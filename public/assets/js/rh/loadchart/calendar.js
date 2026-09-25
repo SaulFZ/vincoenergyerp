@@ -296,24 +296,49 @@ function initializeModalCalendarScripts(employeeId) {
         }
     }
 
-    function createActivityHTML(activity) {
-        const color = getActivityTagColor(activity.activity_type);
-        const statusIcon = getStatusIcon(activity.day_status || 'under_review');
-        let html = `<div class="day-header-info">`;
+    // ✅ NUEVO: Devuelve la abreviatura de 2 letras según el tipo de actividad
+function getActivityAbbr(activityType) {
+    if (!activityType) return '';
+    const abbrs = {
+        'B':   'TB',   // Trabajo en Base
+        'P':   'TP',   // Trabajo en Pozo
+        'TC':  'TC',   // Trabajo en Casa
+        'V':   'VJ',   // Viaje
+        'D':   'DE',   // Descanso
+        'VAC': 'VA',   // Vacaciones
+        'E':   'EN',   // Entrenamiento
+        'M':   'ME',   // Médico
+        'C':   'CO',   // Comisionado
+        'A':   'AU',   // Ausencia
+        'PE':  'PE',   // Permiso
+        'N':   'NI'    // Ninguna
+    };
+    return abbrs[activityType] || activityType.substring(0, 2).toUpperCase();
+}
 
-        html += `<div class="tags-wrapper">`;
+function createActivityHTML(activity) {
+    const color = getActivityTagColor(activity.activity_type);
+    const statusIcon = getStatusIcon(activity.day_status || 'under_review');
+    const abbr = getActivityAbbr(activity.activity_type);
 
-        html += `<div class="activity-tag" style="background-color: ${color};">${activity.activity_description || activity.activity_type}</div>`;
+    let html = `<div class="day-header-info">`;
 
-        if (activity.activity_type_vespertina && activity.activity_type_vespertina !== 'N') {
-            const colorVesp = getActivityTagColor(activity.activity_type_vespertina);
-            html += `<div class="activity-tag" style="background-color: ${colorVesp};">${activity.activity_description_vespertina || activity.activity_type_vespertina}</div>`;
-        }
+    html += `<div class="tags-wrapper">`;
 
-        html += `</div>`;
-        html += `${statusIcon}</div>`;
-        return html;
+    // ✅ Tag principal con data-abbr
+    html += `<div class="activity-tag" data-abbr="${abbr}" style="background-color: ${color};">${activity.activity_description || activity.activity_type}</div>`;
+
+    // ✅ Tag vespertino (guardias) también con data-abbr
+    if (activity.activity_type_vespertina && activity.activity_type_vespertina !== 'N') {
+        const colorVesp = getActivityTagColor(activity.activity_type_vespertina);
+        const abbrVesp = getActivityAbbr(activity.activity_type_vespertina);
+        html += `<div class="activity-tag" data-abbr="${abbrVesp}" style="background-color: ${colorVesp};">${activity.activity_description_vespertina || activity.activity_type_vespertina}</div>`;
     }
+
+    html += `</div>`;
+    html += `${statusIcon}</div>`;
+    return html;
+}
 
     async function updateBalanceUI(vacationDays, totalRestDaysInMonth) {
         if (vacationDaysElement) {
