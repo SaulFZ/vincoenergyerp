@@ -14,47 +14,48 @@
                     {{-- ✅ La URL viene formateada perfectamente desde el Controller --}}
                     <img src="{{ $employee_photo }}" alt="Foto de perfil" class="employee-photo">
                 </div>
-                <div>
+                <div class="employee-header-content">
                     <h2>Nombre</h2>
                     <p class="employee-name-header">{{ $employee->full_name ?? 'N/A' }}</p>
                 </div>
             </div>
             <div class="employee-info">
                 <div class="info-group">
-                    <h3>Número de empleado</h3>
+                    <h3><i class="fas fa-id-badge"></i> Número de empleado</h3>
                     <p>{{ $employee->employee_number ?? 'N/A' }}</p>
                 </div>
 
                 {{-- NUEVO: ÁREA Y DEPARTAMENTO --}}
                 <div class="info-group">
-                    <h3>Área</h3>
+                    <h3><i class="fas fa-building"></i> Área</h3>
                     <p>{{ $employee->area->name ?? 'N/A' }}</p>
                 </div>
 
-                {{-- Mostramos el departamento SOLO si existe y tiene un nombre válido (ej. evitamos ID 5 que viene en blanco) --}}
+                {{-- Mostramos el departamento SOLO si existe y tiene un nombre válido (ej. evitamos ID 5 que viene en
+                blanco) --}}
                 @php $deptoObj = $employee->department()->first(); @endphp
                 @if ($deptoObj && !empty(trim($deptoObj->name)))
-                    <div class="info-group">
-                        <h3>Departamento</h3>
-                        <p>{{ $deptoObj->name }}</p>
-                    </div>
+                <div class="info-group">
+                    <h3><i class="fas fa-sitemap"></i> Departamento</h3>
+                    <p>{{ $deptoObj->name }}</p>
+                </div>
                 @endif
                 {{-- FIN NUEVO --}}
 
                 <div class="info-group">
-                    <h3>Puesto</h3>
+                    <h3><i class="fas fa-user-tie"></i> Puesto</h3>
                     <p>{{ $employee->job_title ?? 'N/A' }}</p>
                 </div>
                 <div class="info-group">
-                    <h3>Fecha de Ingreso</h3>
+                    <h3><i class="fas fa-calendar-check"></i> Fecha de Ingreso</h3>
                     <p>{{ $hire_date }}</p>
                 </div>
-                <div class="info-group">
-                    <h3>Vacaciones</h3>
+                <div class="info-group info-group--accent">
+                    <h3><i class="fas fa-umbrella-beach"></i> Vacaciones</h3>
                     <p class="vacation-days" data-balance-type="vacation">{{ $vacationDays }} días</p>
                 </div>
                 <div class="info-group">
-                    <h3>Días de Descanso</h3>
+                    <h3><i class="fas fa-bed"></i> Días de Descanso</h3>
                     <p data-balance-type="rest">{{ $restDays }} días</p>
                 </div>
             </div>
@@ -65,196 +66,214 @@
                 <h2><i class="fas fa-chart-bar"></i> Load Chart - {{ $monthName }} {{ $currentYear }}</h2>
                 <div class="chart-actions">
                     <div class="month-navigation">
-                        <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                        <button id="prev-month" aria-label="Mes anterior"><i class="fas fa-chevron-left"></i></button>
                         <span data-month="{{ $currentMonth }}" data-year="{{ $currentYear }}">{{ $monthName }}
                             {{ $currentYear }}</span>
-                        <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+                        <button id="next-month" aria-label="Mes siguiente"><i class="fas fa-chevron-right"></i></button>
                     </div>
                     @if (!isset($isForModal) || !$isForModal)
-                        @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_loadchart'))
-                            <button class="btn btn-orange" id="approve-loadchart" data-route="/approval">
-                                <i class="fas fa-check-circle"></i> Aprobar Loadchart
-                            </button>
-                        @endif
+                    @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_loadchart'))
+                    <button class="btn btn-orange" id="approve-loadchart" data-route="/approval">
+                        <i class="fas fa-check-circle"></i> Aprobar Loadchart
+                    </button>
+                    @endif
                     @endif
                 </div>
             </div>
-            <table class="calendar">
-                <thead>
-                    <tr>
-                        <th>Lunes</th>
-                        <th>Martes</th>
-                        <th>Miércoles</th>
-                        <th>Jueves</th>
-                        <th>Viernes</th>
-                        <th>Sábado</th>
-                        <th>Domingo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        @foreach ($calendarDays as $day)
+
+            <div class="calendar-container">
+                <table class="calendar">
+                    <thead>
+                        <tr>
+                            <th>
+                                <span class="day-full">Lunes</span>
+                                <span class="day-short">Lun</span>
+                                <span class="day-single">L</span>
+                            </th>
+                            <th>
+                                <span class="day-full">Martes</span>
+                                <span class="day-short">Mar</span>
+                                <span class="day-single">M</span>
+                            </th>
+                            <th>
+                                <span class="day-full">Miércoles</span>
+                                <span class="day-short">Mié</span>
+                                <span class="day-single">M</span>
+                            </th>
+                            <th>
+                                <span class="day-full">Jueves</span>
+                                <span class="day-short">Jue</span>
+                                <span class="day-single">J</span>
+                            </th>
+                            <th>
+                                <span class="day-full">Viernes</span>
+                                <span class="day-short">Vie</span>
+                                <span class="day-single">V</span>
+                            </th>
+                            <th>
+                                <span class="day-full">Sábado</span>
+                                <span class="day-short">Sáb</span>
+                                <span class="day-single">S</span>
+                            </th>
+                            <th>
+                                <span class="day-full">Domingo</span>
+                                <span class="day-short">Dom</span>
+                                <span class="day-single">D</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            @foreach ($calendarDays as $day)
                             @php
-                                $isCurrentMonth = $day['current_month'];
-                                $isToday = $day['date'] == date('Y-m-d');
+                            $isCurrentMonth = $day['current_month'];
+                            $isToday = $day['date'] == date('Y-m-d');
 
-                                $dateString = $day['date'] ?? null;
-                                $dateObj = $dateString ? new \DateTime($dateString) : null;
-                                $inPayrollPeriod = false;
+                            $dateString = $day['date'] ?? null;
+                            $dateObj = $dateString ? new \DateTime($dateString) : null;
+                            $inPayrollPeriod = false;
 
-                                if ($dateObj) {
-                                    if ($payrollDates['q1_start'] && $payrollDates['q1_end']) {
-                                        $q1Start = new \DateTime($payrollDates['q1_start']);
-                                        $q1End = new \DateTime($payrollDates['q1_end'] . ' 23:59:59');
-                                        if ($dateObj >= $q1Start && $dateObj <= $q1End) {
-                                            $inPayrollPeriod = true;
-                                        }
-                                    }
-                                    if ($payrollDates['q2_start'] && $payrollDates['q2_end']) {
-                                        $q2Start = new \DateTime($payrollDates['q2_start']);
-                                        $q2End = new \DateTime($payrollDates['q2_end'] . ' 23:59:59');
-                                        if ($dateObj >= $q2Start && $dateObj <= $q2End) {
-                                            $inPayrollPeriod = true;
-                                        }
-                                    }
-                                }
+                            if ($dateObj) {
+                            if ($payrollDates['q1_start'] && $payrollDates['q1_end']) {
+                            $q1Start = new \DateTime($payrollDates['q1_start']);
+                            $q1End = new \DateTime($payrollDates['q1_end'] . ' 23:59:59');
+                            if ($dateObj >= $q1Start && $dateObj <= $q1End) { $inPayrollPeriod=true; } } if
+                                ($payrollDates['q2_start'] && $payrollDates['q2_end']) { $q2Start=new
+                                \DateTime($payrollDates['q2_start']); $q2End=new \DateTime($payrollDates['q2_end']
+                                . ' 23:59:59' ); if ($dateObj>= $q2Start && $dateObj <= $q2End) { $inPayrollPeriod=true;
+                                    } } } $isPayrollStart1=$payrollDates['q1_start'] && date('Y-m-d',
+                                    strtotime($payrollDates['q1_start']))==$day['date'];
+                                    $isPayrollEnd1=$payrollDates['q1_end'] && date('Y-m-d',
+                                    strtotime($payrollDates['q1_end']))==$day['date'];
+                                    $isPayrollStart2=$payrollDates['q2_start'] && date('Y-m-d',
+                                    strtotime($payrollDates['q2_start']))==$day['date'];
+                                    $isPayrollEnd2=$payrollDates['q2_end'] && date('Y-m-d',
+                                    strtotime($payrollDates['q2_end']))==$day['date']; @endphp <td
+                                    class="{{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'current-d' : '' }} {{ $inPayrollPeriod ? 'in-payroll-period' : '' }}"
+                                    data-date="{{ $day['date'] }}">
+                                    <span class="day-number">{{ $day['day'] }}</span>
 
-                                $isPayrollStart1 =
-                                    $payrollDates['q1_start'] &&
-                                    date('Y-m-d', strtotime($payrollDates['q1_start'])) == $day['date'];
-                                $isPayrollEnd1 =
-                                    $payrollDates['q1_end'] &&
-                                    date('Y-m-d', strtotime($payrollDates['q1_end'])) == $day['date'];
-                                $isPayrollStart2 =
-                                    $payrollDates['q2_start'] &&
-                                    date('Y-m-d', strtotime($payrollDates['q2_start'])) == $day['date'];
-                                $isPayrollEnd2 =
-                                    $payrollDates['q2_end'] &&
-                                    date('Y-m-d', strtotime($payrollDates['q2_end'])) == $day['date'];
-                            @endphp
-
-                            <td class="{{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'current-d' : '' }} {{ $inPayrollPeriod ? 'in-payroll-period' : '' }}"
-                                data-date="{{ $day['date'] }}">
-                                <span class="day-number">{{ $day['day'] }}</span>
-
-                                @if (isset($day['is_holiday']) && $day['is_holiday'])
+                                    @if (isset($day['is_holiday']) && $day['is_holiday'])
                                     @if ($day['holiday_icon_type'] == 'christmas_tree')
-                                        <img src="https://img.icons8.com/external-victoruler-flat-victoruler/64/external-christmas-tree-christmas-victoruler-flat-victoruler-1.png"
-                                            alt="Árbol de Navidad" class="holiday-icon"
-                                            title="{{ $day['holiday_name'] }}">
+                                    <img src="https://img.icons8.com/external-victoruler-flat-victoruler/64/external-christmas-tree-christmas-victoruler-flat-victoruler-1.png"
+                                        alt="Árbol de Navidad" class="holiday-icon" title="{{ $day['holiday_name'] }}">
                                     @else
-                                        <img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo"
-                                            class="holiday-icon" title="{{ $day['holiday_name'] }}">
+                                    <img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo"
+                                        class="holiday-icon" title="{{ $day['holiday_name'] }}">
                                     @endif
-                                @endif
+                                    @endif
 
-                                @if ($isPayrollStart1)
+                                    @if ($isPayrollStart1)
                                     <i class="fas fa-flag payroll-icon payroll-start-1" title="Inicio Quincena 1"></i>
-                                @endif
-                                @if ($isPayrollEnd1)
+                                    @endif
+                                    @if ($isPayrollEnd1)
                                     <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 1"></i>
-                                @endif
-                                @if ($isPayrollStart2)
+                                    @endif
+                                    @if ($isPayrollStart2)
                                     <i class="fas fa-flag payroll-icon payroll-start-2" title="Inicio Quincena 2"></i>
-                                @endif
-                                @if ($isPayrollEnd2)
+                                    @endif
+                                    @if ($isPayrollEnd2)
                                     <i class="fas fa-flag payroll-icon payroll-end" title="Fin Quincena 2"></i>
-                                @endif
+                                    @endif
 
-                            </td>
-                            @if ($loop->iteration % 7 == 0)
-                    </tr>
-                    <tr>
-                        @endif
-                        @endforeach
-                    </tr>
-                </tbody>
-            </table>
-            <div class="loading-overlay" id="calendarLoadingOverlay">
-                <div class="loading-spinner-lg"></div>
-                <div class="loading-message">Cargando datos del calendario...</div>
+                                    </td>
+                                    @if ($loop->iteration % 7 == 0)
+                        </tr>
+                        <tr>
+                            @endif
+                            @endforeach
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="loading-overlay" id="calendarLoadingOverlay">
+                    <div class="loading-spinner-lg"></div>
+                    <div class="loading-message">Cargando datos del calendario...</div>
+                </div>
             </div>
-            <div class="activity-legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--work-base);"></div>
-                    <div>Trabajo en Base</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--work-well);"></div>
-                    <div>Trabajo en Pozo</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--home-office);"></div>
-                    <div>Trabajo en Casa</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--traveling);"></div>
-                    <div>Viaje</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--rest);"></div>
-                    <div>Descanso</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--vacation);"></div>
-                    <div>Vacaciones</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--training);"></div>
-                    <div>Entrenamiento</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--medical);"></div>
-                    <div>Médico</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--commissioned);"></div>
-                    <div>Comisionado</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--absence);"></div>
-                    <div>Ausencia</div>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--permission);"></div>
-                    <div>Permiso</div>
-                </div>
-                <div class="legend-item">
-                    <i class="fa-regular fa-hourglass-half legend-under-review"></i>
-                    <div>Bajo Revisión</div>
-                </div>
-                <div class="legend-item">
-                    <i class="fas fa-lock-open legend-reviewed"></i>
-                    <div>Revisado</div>
-                </div>
-                <div class="legend-item">
-                    <i class="fas fa-lock legend-approved"></i>
-                    <div>Aprobado</div>
-                </div>
-                <div class="legend-item">
-                    <i class="fas fa-exclamation-triangle legend-rejected"></i>
-                    <div>Rechazado</div>
-                </div>
 
-                <div class="legend-item">
-                    <i class="fas fa-flag payroll-start-1"></i>
-                    <div>Inicio Q1</div>
-                </div>
-                <div class="legend-item">
-                    <i class="fas fa-flag payroll-start-2"></i>
-                    <div>Inicio Q2</div>
-                </div>
-                <div class="legend-item">
-                    <i class="fas fa-flag payroll-end"></i>
-                    <div>Fin Quincena</div>
-                </div>
-                <div class="legend-item">
-                    <img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo"
-                        class="legend-holiday-icon">
-                    <div>Dia Festivo</div>
-                </div>
+            <details class="legend-details" open>
+                <summary><i class="fas fa-circle-info"></i> Leyenda de actividades</summary>
+                <div class="activity-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--work-base);"></div>
+                        <div>Trabajo en Base</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--work-well);"></div>
+                        <div>Trabajo en Pozo</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--home-office);"></div>
+                        <div>Trabajo en Casa</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--traveling);"></div>
+                        <div>Viaje</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--rest);"></div>
+                        <div>Descanso</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--vacation);"></div>
+                        <div>Vacaciones</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--training);"></div>
+                        <div>Entrenamiento</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--medical);"></div>
+                        <div>Médico</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--commissioned);"></div>
+                        <div>Comisionado</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--absence);"></div>
+                        <div>Ausencia</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: var(--permission);"></div>
+                        <div>Permiso</div>
+                    </div>
+                    <div class="legend-item">
+                        <i class="fa-regular fa-hourglass-half legend-under-review"></i>
+                        <div>Bajo Revisión</div>
+                    </div>
+                    <div class="legend-item">
+                        <i class="fas fa-lock-open legend-reviewed"></i>
+                        <div>Revisado</div>
+                    </div>
+                    <div class="legend-item">
+                        <i class="fas fa-lock legend-approved"></i>
+                        <div>Aprobado</div>
+                    </div>
+                    <div class="legend-item">
+                        <i class="fas fa-exclamation-triangle legend-rejected"></i>
+                        <div>Rechazado</div>
+                    </div>
 
-            </div>
+                    <div class="legend-item">
+                        <i class="fas fa-flag payroll-start-1"></i>
+                        <div>Inicio Q1</div>
+                    </div>
+                    <div class="legend-item">
+                        <i class="fas fa-flag payroll-start-2"></i>
+                        <div>Inicio Q2</div>
+                    </div>
+                    <div class="legend-item">
+                        <i class="fas fa-flag payroll-end"></i>
+                        <div>Fin Quincena</div>
+                    </div>
+                    <div class="legend-item">
+                        <img src="https://img.icons8.com/skeuomorphism/32/event.png" alt="Día Festivo"
+                            class="legend-holiday-icon">
+                        <div>Dia Festivo</div>
+                    </div>
+                </div>
+            </details>
         </div>
     </div>
 </div>
@@ -272,8 +291,7 @@
         <div class="modal-body">
             <div class="form-tabs">
                 <button class="tab-btn active" data-tab="activity">Actividad</button>
-                <button class="tab-btn" data-tab="service" id="service-tab-btn"
-                    style="display: none;">Servicio</button>
+                <button class="tab-btn" data-tab="service" id="service-tab-btn" style="display: none;">Servicio</button>
             </div>
 
             <div class="tab-content active" id="activity-tab">
@@ -321,8 +339,8 @@
                                     </div>
                                     <div class="activity-label">Comisionado</div>
                                 </div>
-                                <div class="activity-code"
-                                    style="background-color: var(--commissioned); color: #fff;">C</div>
+                                <div class="activity-code" style="background-color: var(--commissioned); color: #fff;">C
+                                </div>
                             </div>
 
                             <div class="activity-option" data-value="TC">
@@ -476,8 +494,8 @@
                                         </div>
                                         <div class="activity-label">Trabajo en Base</div>
                                     </div>
-                                    <div class="activity-code"
-                                        style="background-color: var(--work-base); color: #fff;">B</div>
+                                    <div class="activity-code" style="background-color: var(--work-base); color: #fff;">
+                                        B</div>
                                 </div>
                                 <div class="activity-option" data-value="D">
                                     <div class="option-content">
@@ -492,8 +510,8 @@
                                         <div class="color-indicator" style="background-color: var(--vacation);"></div>
                                         <div class="activity-label">Vacaciones</div>
                                     </div>
-                                    <div class="activity-code"
-                                        style="background-color: var(--vacation); color: #fff;">VAC</div>
+                                    <div class="activity-code" style="background-color: var(--vacation); color: #fff;">
+                                        VAC</div>
                                 </div>
                                 <div class="activity-option" data-value="M">
                                     <div class="option-content">
@@ -557,8 +575,8 @@
                                         </div>
                                         <div class="activity-label">Trabajo en Base</div>
                                     </div>
-                                    <div class="activity-code"
-                                        style="background-color: var(--work-base); color: #fff;">B</div>
+                                    <div class="activity-code" style="background-color: var(--work-base); color: #fff;">
+                                        B</div>
                                 </div>
                                 <div class="activity-option" data-value="D">
                                     <div class="option-content">
@@ -573,8 +591,8 @@
                                         <div class="color-indicator" style="background-color: var(--vacation);"></div>
                                         <div class="activity-label">Vacaciones</div>
                                     </div>
-                                    <div class="activity-code"
-                                        style="background-color: var(--vacation); color: #fff;">VAC</div>
+                                    <div class="activity-code" style="background-color: var(--vacation); color: #fff;">
+                                        VAC</div>
                                 </div>
                                 <div class="activity-option" data-value="M">
                                     <div class="option-content">
@@ -633,16 +651,14 @@
                             </div>
                             <div class="select-options" id="guardia-bonus-options">
                                 @if (isset($guardiaBonuses))
-                                    @foreach ($guardiaBonuses as $bonus)
-                                        <div class="activity-option bonus-option"
-                                            data-value="{{ $bonus->bonus_identifier }}"
-                                            data-amount="{{ $bonus->amount }}"
-                                            data-currency="{{ $bonus->currency }}">
-                                            <div class="option-content">
-                                                <div class="activity-label">{{ $bonus->bonus_type }}</div>
-                                            </div>
-                                        </div>
-                                    @endforeach
+                                @foreach ($guardiaBonuses as $bonus)
+                                <div class="activity-option bonus-option" data-value="{{ $bonus->bonus_identifier }}"
+                                    data-amount="{{ $bonus->amount }}" data-currency="{{ $bonus->currency }}">
+                                    <div class="option-content">
+                                        <div class="activity-label">{{ $bonus->bonus_type }}</div>
+                                    </div>
+                                </div>
+                                @endforeach
                                 @endif
                                 <div class="activity-option bonus-option" data-value="" data-amount="0"
                                     data-currency="MXN">
@@ -659,8 +675,8 @@
                             <label for="guardia-bonus-quantity"
                                 style="font-size: 0.9em; font-weight: bold; color: #555;">Cantidad Realizada (Unidades,
                                 Metros)</label>
-                            <input type="number" id="guardia-bonus-quantity" class="input-custom" value="1"
-                                min="1" step="1" style="width: 100%;">
+                            <input type="number" id="guardia-bonus-quantity" class="input-custom" value="1" min="1"
+                                step="1" style="width: 100%;">
                         </div>
                     </div>
                 </div>
@@ -669,8 +685,8 @@
                     <label for="well-name">Buscar el Nombre del Pozo</label>
                     <div class="input-with-icon">
                         <i class="fas fa-oil-well"></i>
-                        <input type="text" id="well-name" class="input-custom"
-                            placeholder="Ingrese nombre del pozo" autocomplete="off">
+                        <input type="text" id="well-name" class="input-custom" placeholder="Ingrese nombre del pozo"
+                            autocomplete="off">
                     </div>
 
                     <ul id="well-search-results" class="autocomplete-list" style="display: none;"></ul>
@@ -683,12 +699,12 @@
                     <select id="commissioned-select" class="select-custom">
                         <option value="">Seleccionar área...</option>
                         @if (isset($areasList))
-                            @foreach ($areasList as $area)
-                                {{-- FILTRO: NO MOSTRAR EL ÁREA DEL EMPLEADO ACTUAL --}}
-                                @if ($area != ($employee->area->name ?? ''))
-                                    <option value="{{ $area }}">{{ $area }}</option>
-                                @endif
-                            @endforeach
+                        @foreach ($areasList as $area)
+                        {{-- FILTRO: NO MOSTRAR EL ÁREA DEL EMPLEADO ACTUAL --}}
+                        @if ($area != ($employee->area->name ?? ''))
+                        <option value="{{ $area }}">{{ $area }}</option>
+                        @endif
+                        @endforeach
                         @endif
                     </select>
                     <div class="error-message" id="commissioned-error">Debes seleccionar un área comisionada
@@ -724,8 +740,7 @@
                     <label for="travel-reason">Motivo del Viaje</label>
                     <div class="input-with-icon">
                         <i class="fas fa-route"></i>
-                        <input type="text" id="travel-reason" class="input-custom"
-                            placeholder="Ingrese el motivo">
+                        <input type="text" id="travel-reason" class="input-custom" placeholder="Ingrese el motivo">
                     </div>
                     <div class="error-message" id="travel-reason-error">Debes ingresar el motivo del viaje
                     </div>
@@ -734,8 +749,7 @@
                 {{-- NUEVOS CAMPOS DE CONTINUACIÓN Y SUMINISTRO --}}
                 <div class="form-group" id="continuation-field"
                     style="display: none; margin-bottom: 15px; background: #eef2f5; padding: 10px; border-radius: 6px;">
-                    <label class="checkbox-inline"
-                        style="margin: 0; font-weight: bold; color: #333; cursor: pointer;">
+                    <label class="checkbox-inline" style="margin: 0; font-weight: bold; color: #333; cursor: pointer;">
                         <input type="checkbox" id="is-continuation" style="margin-right: 8px;">
                         <i class="fas fa-link"></i> Es continuación de viaje del día anterior
                     </label>
@@ -750,12 +764,12 @@
                         <select id="contract-number" class="select-custom" style="padding-left: 35px;">
                             <option value="">Seleccionar contrato...</option>
                             @if (isset($supplyContracts))
-                                @foreach ($supplyContracts as $contract)
-                                    <option value="{{ $contract->number }}">
-                                        {{ $contract->number }} @if ($contract->short_name)
-                                        @endif
-                                    </option>
-                                @endforeach
+                            @foreach ($supplyContracts as $contract)
+                            <option value="{{ $contract->number }}">
+                                {{ $contract->number }} @if ($contract->short_name)
+                                @endif
+                            </option>
+                            @endforeach
                             @endif
                         </select>
                     </div>
@@ -784,9 +798,9 @@
                         <select id="food-bonus" class="select-custom">
                             <option value="">Seleccionar bono de comida...</option>
                             @foreach ($foodOptions as $meal)
-                                <option value="{{ $meal->meal_number }}">
-                                    {{ $meal->meal_number }}
-                                </option>
+                            <option value="{{ $meal->meal_number }}">
+                                {{ $meal->meal_number }}
+                            </option>
                             @endforeach
                         </select>
                         <div class="error-message" id="food-bonus-error">Debes seleccionar un bono de comida.
@@ -798,9 +812,9 @@
                         <select id="field-bonus" class="select-custom">
                             <option value="">Seleccionar bono de campo...</option>
                             @foreach ($fieldBonuses as $bonus)
-                                <option value="{{ $bonus->bonus_identifier }}">
-                                    {{ $bonus->bonus_type }}
-                                </option>
+                            <option value="{{ $bonus->bonus_identifier }}">
+                                {{ $bonus->bonus_type }}
+                            </option>
                             @endforeach
                         </select>
                         <div class="error-message" id="field-bonus-error">
@@ -808,31 +822,29 @@
                         </div>
                     </div>
                     @if (isset($showServiceBonusOption) && $showServiceBonusOption)
-                        <div class="form-group">
-                            <label for="has-service-bonus">¿Bono de servicio?</label>
-                            <div class="service-bonus-options">
-                                <div class="service-bonus-option selected" data-value="no">
-                                    <input type="radio" name="has_service_bonus" id="service-bonus-no"
-                                        value="no" checked>
-                                    <span class="service-bonus-label">
-                                        <i class="fas fa-times-circle"></i> No
-                                    </span>
-                                </div>
-                                <div class="service-bonus-option" data-value="si">
-                                    <input type="radio" name="has_service_bonus" id="service-bonus-yes"
-                                        value="si">
-                                    <span class="service-bonus-label">
-                                        <i class="fas fa-check-circle"></i> Sí
-                                    </span>
-                                </div>
+                    <div class="form-group">
+                        <label for="has-service-bonus">¿Bono de servicio?</label>
+                        <div class="service-bonus-options">
+                            <div class="service-bonus-option selected" data-value="no">
+                                <input type="radio" name="has_service_bonus" id="service-bonus-no" value="no" checked>
+                                <span class="service-bonus-label">
+                                    <i class="fas fa-times-circle"></i> No
+                                </span>
+                            </div>
+                            <div class="service-bonus-option" data-value="si">
+                                <input type="radio" name="has_service_bonus" id="service-bonus-yes" value="si">
+                                <span class="service-bonus-label">
+                                    <i class="fas fa-check-circle"></i> Sí
+                                </span>
                             </div>
                         </div>
+                    </div>
                     @endif
                 </div>
             </div>
             <script id="service-data" type="application/json">
-        @json($services->toArray())
-    </script>
+                @json($services->toArray())
+            </script>
 
             <div class="tab-content" id="service-tab">
                 <div class="form-group">
@@ -915,7 +927,8 @@
             </div>
         </div>
 
-        <div class="form-actions" style="@if (isset($isForModal) &&
+        <div class="form-actions"
+            style="@if (isset($isForModal) &&
                 $isForModal &&
                 !\App\Helpers\PermissionHelper::hasDirectPermission('editar_loadchart_empleado')) display: none; @endif">
             <button class="btn btn-outline" id="cancel-activity">
