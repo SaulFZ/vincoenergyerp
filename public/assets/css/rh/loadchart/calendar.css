@@ -1,24 +1,68 @@
-.content-layout {
-    display: grid;
-    grid-template-columns: 1fr 3fr;
-    gap: 10px;
+/* =========================================================
+   VARIABLES DE COLOR Y UI
+   ========================================================= */
+:root {
+    --primary-blue: #334c95;
+    --blue-dark: #263a74;
+    --primary-orange: #d67e29;
+    --dark-gray: #2d3748;
+    --medium-gray: #4a5568;
+    --light-gray: #e2e8f0;
+    --background-gray: #f7fafc;
+    --secondary-blue: #34495e;
+    --white: #ffffff;
+
+    /* Colores de Actividad del Load Chart */
+    --work-base: #334c95;
+    --work-well: #6475aa;
+    --home-office: #7293ff;
+    --traveling: #a2b5ff;
+    --rest: #118b20;
+    --vacation: #59983e;
+    --training: #a5a5a5;
+    --medical: #dd840fe0;
+    --commissioned: #249399;
+    --absence: #7d4e4e;
+    --permission: #49c0c9;
+
+    /* Colores de Estado del Load Chart */
+    --under-review: #ffd900;
+    --reviewed: #da8544;
+    --not-approved: #f35900;
+    --approved: #64946f;
+
+    /* Colores de Nómina del Load Chart */
+    --payroll-start-1: #00a700;
+    --payroll-start-2: #004bad;
+    --payroll-end: #d61c1c;
 }
 
-/* ======================================================= */
-/* SECCIÓN DE DETALLES DEL EMPLEADO                        */
-/* ======================================================= */
+
+/* =========================================================
+   LAYOUT PRINCIPAL
+   ========================================================= */
+
+.content-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* =========================================================
+   TARJETA DE DETALLES DEL EMPLEADO
+   ========================================================= */
 
 .employee-details {
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.04),
-        0 8px 24px rgba(45, 55, 72, 0.08);
-    padding: 24px;
+    background: var(--white);
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(28, 37, 54, 0.08);
+    padding: 22px;
     height: fit-content;
     position: sticky;
     top: 20px;
-    border-top: 3px solid #d67e29;
+    border: 1px solid var(--light-gray);
+    border-top: 3px solid var(--primary-orange);
 }
 
 .employee-header {
@@ -26,20 +70,20 @@
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 18px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--light-gray);
     gap: 16px;
 }
 
 .employee-photo-container {
-    width: 72px;
-    height: 72px;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid #e2e8f0;
-    outline: 3px solid #d67e29;
+    border: 2px solid var(--white);
+    outline: 3px solid var(--primary-orange);
     outline-offset: 2px;
     flex-shrink: 0;
-    background: #f7fafc;
+    background: var(--background-gray);
 }
 
 .employee-photo {
@@ -54,25 +98,23 @@
 }
 
 .employee-header h2 {
-    color: #4a5568;
-    font-size: 11px;
-    font-weight: 600;
-    margin-bottom: 4px;
+    color: #8a94a6;
+    font-size: 10.5px;
+    font-weight: 700;
+    margin: 0 0 4px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.1px;
 }
 
 .employee-name-header {
-    color: #2d3748;
+    color: var(--dark-gray);
     font-size: 17px;
-    font-weight: 700;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
+    font-weight: 800;
     line-height: 1.25;
+    margin: 0;
 }
 
-/* Info Groups */
+/* Grupos de información */
 .employee-info {
     display: grid;
     grid-template-columns: 1fr;
@@ -80,57 +122,68 @@
 }
 
 .info-group {
-    background: #ffffff;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid #e2e8f0;
-    border-left: 3px solid #334c95;
-    position: relative;
-    transition: box-shadow 0.2s ease, border-left-color 0.2s ease;
-}
-
-.info-group::before {
-    content: none;
+    background: var(--white);
+    padding: 11px 13px;
+    border-radius: 8px;
+    border: 1px solid var(--light-gray);
+    border-left: 3px solid var(--primary-blue);
+    transition: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                border-left-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .info-group:hover {
-    transform: none;
-    box-shadow: 0 2px 10px rgba(51, 76, 149, 0.08);
-    border-left-color: #d67e29;
+    box-shadow: 0 1px 2px rgba(28, 37, 54, 0.05);
+    border-left-color: var(--primary-orange);
+    transform: translateX(1px);
+}
+
+.info-group--accent {
+    border-left-color: var(--primary-orange);
+    background: #fdf1e4;
 }
 
 .info-group h3 {
     font-size: 10px;
-    color: #4a5568;
-    margin-bottom: 4px;
-    font-weight: 600;
+    color: #8a94a6;
+    margin: 0 0 4px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.7px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-group h3 i {
+    color: var(--primary-blue);
+    font-size: 11px;
+    width: 12px;
+    text-align: center;
 }
 
 .info-group p {
     font-size: 14px;
-    color: #2d3748;
+    color: var(--dark-gray);
     font-weight: 600;
+    margin: 0;
 }
 
 .vacation-days {
-    color: #d67e29 !important;
-    font-size: 17px;
-    font-weight: 700;
+    color: #b8651a !important;
+    font-size: 18px;
+    font-weight: 800;
 }
 
-
-/* ======================================================= */
-/* CALENDARIO DE CARGA (LOAD CHART)                        */
-/* ======================================================= */
+/* =========================================================
+   CONTENEDOR DEL LOAD CHART
+   ========================================================= */
 
 .load-chart-container {
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.04),
-        0 8px 24px rgba(45, 55, 72, 0.08);
+    background: var(--white);
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(28, 37, 54, 0.08);
+    border: 1px solid var(--light-gray);
     padding: 20px 22px;
     margin-bottom: 20px;
     position: relative;
@@ -140,20 +193,26 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2px;
+    margin-bottom: 16px;
     flex-wrap: wrap;
     gap: 12px;
     padding-bottom: 14px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--light-gray);
 }
 
 .chart-header h2 {
-    color: #2d3748;
-    font-size: 17px;
+    color: var(--dark-gray);
+    font-size: 16.5px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 700;
+    gap: 9px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.chart-header h2 i {
+    color: var(--primary-orange);
+    font-size: 15px;
 }
 
 .chart-actions {
@@ -163,13 +222,13 @@
     align-items: center;
 }
 
-/* Navegación de Meses */
+/* Navegación de meses */
 .month-navigation {
     display: flex;
     align-items: center;
     gap: 4px;
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--background-gray);
+    border: 1px solid var(--light-gray);
     border-radius: 10px;
     padding: 4px;
 }
@@ -177,153 +236,186 @@
 .month-navigation button {
     background: none;
     border: none;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     border-radius: 7px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #2d3748;
-    transition: background 0.15s ease, color 0.15s ease;
+    color: var(--dark-gray);
+    transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                color 150ms cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 13px;
 }
 
 .month-navigation button:hover {
-    background: #2d3748;
-    color: #ffffff;
+    background: var(--primary-blue);
+    color: #fff;
+}
+
+.month-navigation button:focus-visible,
+.btn:focus-visible,
+.tab-btn:focus-visible {
+    outline: 2px solid var(--primary-orange);
+    outline-offset: 2px;
 }
 
 .month-navigation span {
     font-size: 13px;
-    font-weight: 600;
-    min-width: 110px;
+    font-weight: 700;
+    min-width: 108px;
     text-align: center;
-    color: #2d3748;
+    color: var(--dark-gray);
 }
 
 /* Botones */
 .btn {
-    padding: 7px 15px;
+    padding: 8px 16px;
     border-radius: 8px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: background 0.15s ease, box-shadow 0.15s ease;
+    transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 12px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     letter-spacing: 0.2px;
 }
 
+.btn:active {
+    transform: translateY(1px);
+}
+
 .btn-primary {
-    background-color: #2d3748;
-    color: #ffffff;
-    border-color: #2d3748;
+    background-color: var(--dark-gray);
+    color: var(--white);
 }
 
 .btn-primary:hover {
-    background-color: #4a5568;
-    box-shadow: 0 2px 8px rgba(45, 55, 72, 0.2);
+    background-color: var(--blue-dark);
+    box-shadow: 0 1px 2px rgba(28, 37, 54, 0.05);
 }
 
 .btn-orange {
-    background-color: #d67e29;
-    color: #ffffff;
-    border-color: #d67e29;
+    background-color: var(--primary-orange);
+    color: var(--white);
 }
 
 .btn-orange:hover {
-    background-color: #c06d1f;
-    box-shadow: 0 2px 8px rgba(214, 126, 41, 0.3);
+    background-color: #b8651a;
+    box-shadow: 0 4px 14px rgba(214, 126, 41, 0.28);
 }
 
+.btn-outline {
+    background: var(--white);
+    border-color: var(--light-gray);
+    color: var(--medium-gray);
+}
 
-/* ======================================================= */
-/* CALENDARIO                                              */
-/* ======================================================= */
+.btn-outline:hover {
+    border-color: #8a94a6;
+    background: var(--background-gray);
+}
+
+/* =========================================================
+   CALENDARIO
+   ========================================================= */
 
 .calendar-container {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin-bottom: 16px;
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--light-gray);
+    position: relative;
 }
 
 .calendar {
     width: 100%;
     border-collapse: collapse;
-    overflow: hidden;
     font-size: 13px;
-    min-width: 600px;
+    min-width: 640px;
     table-layout: fixed;
 }
 
 .calendar th {
-    background-color: #2d3748;
-    color: #ffffff;
-    padding: 10px;
+    background-color: var(--dark-gray);
+    color: var(--white);
+    padding: 11px 6px;
     text-align: center;
-    font-weight: 600;
-    font-size: 12px;
-    letter-spacing: 0.5px;
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.6px;
     text-transform: uppercase;
     width: 14.2857%;
 }
 
+/* Los 3 estados de etiquetas de día */
+.day-short {
+    display: none;
+}
+
+.day-single {
+    display: none;
+}
+
 .calendar td {
-    height: 78px;
+    height: 80px;
     vertical-align: top;
     padding: 6px;
     position: relative;
     cursor: pointer;
-    transition: background 0.15s ease;
-    border: 1px solid #c7c9cc;
-    box-sizing: border-box;
+    transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--light-gray);
     width: 14.2857%;
-    min-height: 78px;
-    background: #ffffff;
+    background: var(--white);
 }
 
 .calendar td:hover {
-    background-color: #f7fafc;
+    background-color: #eef1fa;
 }
 
 .calendar .other-month {
-    background-color: #f9fafb;
-    color: #a0aec0;
+    background-color: #fafbfd;
+    color: #b7bfcc;
 }
 
 .calendar .in-payroll-period {
-    background-color: #ffffff;
-    color: inherit;
+    background-color: var(--white);
 }
 
 .calendar .current-d {
-    background-color: rgba(51, 76, 149, 0.05);
-    border: 2px solid #334c95 !important;
+    background-color: rgba(51, 76, 149, 0.06);
+    border: 2px solid var(--primary-blue) !important;
 }
 
 .day-number {
-    font-weight: 700;
+    font-weight: 800;
     font-size: 13px;
     display: inline-block;
     margin-bottom: 3px;
-    color: #2d3748;
+    color: var(--dark-gray);
 }
 
-/* ======================================================= */
-/* TAGS DE ACTIVIDAD                                       */
-/* ======================================================= */
+.other-month .day-number {
+    color: #b7bfcc;
+}
+
+/* =========================================================
+   TAGS DE ACTIVIDAD (inyectados por JS en cada día)
+   ========================================================= */
 
 .activity-tag {
     padding: 2px 6px;
     border-radius: 5px;
     font-size: 10px;
-    color: #ffffff;
+    color: var(--white);
     text-align: left;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -335,22 +427,21 @@
     letter-spacing: 0.2px;
 }
 
-.activity-tag.work-base      { background-color: #334c95; }
-.activity-tag.work-well      { background-color: #6475aa; }
-.activity-tag.home-office    { background-color: #7293ff; }
-.activity-tag.traveling      { background-color: #a2b5ff; color: #2d3748; }
-.activity-tag.rest           { background-color: #118b20; }
-.activity-tag.vacation       { background-color: #59983e; }
-.activity-tag.training       { background-color: #a5a5a5; }
-.activity-tag.medical        { background-color: #dd840fe0; }
-.activity-tag.commissioned   { background-color: #249399; }
-.activity-tag.absence        { background-color: #7d4e4e; }
-.activity-tag.permission     { background-color: #49c0c9; color: #2d3748; }
+.activity-tag.work-base      { background-color: var(--work-base); }
+.activity-tag.work-well      { background-color: var(--work-well); }
+.activity-tag.home-office    { background-color: var(--home-office); }
+.activity-tag.traveling      { background-color: var(--traveling); color: var(--dark-gray); }
+.activity-tag.rest           { background-color: var(--rest); }
+.activity-tag.vacation       { background-color: var(--vacation); }
+.activity-tag.training       { background-color: var(--training); }
+.activity-tag.medical        { background-color: var(--medical); }
+.activity-tag.commissioned   { background-color: var(--commissioned); }
+.activity-tag.absence        { background-color: var(--absence); }
+.activity-tag.permission     { background-color: var(--permission); color: var(--dark-gray); }
 
-
-/* ======================================================= */
-/* LOADING OVERLAY                                         */
-/* ======================================================= */
+/* =========================================================
+   LOADING OVERLAY
+   ========================================================= */
 
 .loading-overlay {
     position: absolute;
@@ -358,13 +449,13 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.405);
+    background-color: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(1px);
     display: none;
     justify-content: center;
     align-items: center;
     z-index: 50;
-    border-radius: 12px;
-    transition: opacity 0.25s ease;
+    transition: opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0;
 }
 
@@ -375,48 +466,58 @@
 
 .loading-spinner-lg {
     display: inline-block;
-    width: 38px;
-    height: 38px;
-    border: 3px solid #e2e8f0;
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--light-gray);
     border-radius: 50%;
-    border-top-color: #334c95;
-    animation: spin 0.9s ease-in-out infinite;
+    border-top-color: var(--primary-blue);
+    animation: lc-spin 0.85s linear infinite;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: lc-spin 0.7s linear infinite;
+}
+
+@keyframes lc-spin {
+    to { transform: rotate(360deg); }
 }
 
 .loading-message {
-    font-size: 14px;
-    font-weight: 600;
-    color: #4a5568;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--medium-gray);
     margin-left: 12px;
 }
 
-.calendar tbody tr td.loading {
-    display: none;
-}
-
-
-/* ======================================================= */
-/* TOOLTIP                                                 */
-/* ======================================================= */
+/* =========================================================
+   TOOLTIP
+   ========================================================= */
 
 .calendar-tooltip {
     position: absolute;
     top: -34px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #2d3748;
-    color: #ffffff;
+    background-color: var(--dark-gray);
+    color: var(--white);
     padding: 5px 10px;
     border-radius: 6px;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
     z-index: 100;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.15s ease, visibility 0.15s ease;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 150ms cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 20px rgba(28, 37, 54, 0.08);
 }
 
 .calendar-tooltip::after {
@@ -427,7 +528,7 @@
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #2d3748 transparent transparent transparent;
+    border-color: var(--dark-gray) transparent transparent transparent;
 }
 
 .calendar td:hover .calendar-tooltip {
@@ -435,10 +536,9 @@
     visibility: visible;
 }
 
-
-/* ======================================================= */
-/* ICONOS Y ESTADOS                                        */
-/* ======================================================= */
+/* =========================================================
+   ICONOS Y ESTADOS
+   ========================================================= */
 
 .day-header-info {
     position: absolute;
@@ -464,20 +564,18 @@
     margin-top: 0 !important;
 }
 
-/* Iconos de Estado */
 .status-icon {
     font-size: 11px;
     z-index: 10;
 }
 
-.status-icon.approved     { color: #64946f; }
-.status-icon.under-review { color: #ffd900; }
-.status-icon.reviewed     { color: #da8544; }
-.status-icon.rejected     { color: #f35900; filter: drop-shadow(0 0 1px #ffffff); }
+.status-icon.approved     { color: var(--approved); }
+.status-icon.under-review { color: var(--under-review); }
+.status-icon.reviewed     { color: var(--reviewed); }
+.status-icon.rejected     { color: var(--not-approved); filter: drop-shadow(0 0 1px var(--white)); }
 
-.status-indicator.reviewed { background-color: #da8544; }
+.status-indicator.reviewed { background-color: var(--reviewed); }
 
-/* Iconos de Nómina */
 .payroll-icon {
     position: absolute;
     bottom: 4px;
@@ -486,11 +584,10 @@
     z-index: 10;
 }
 
-.payroll-start-1 { color: #00a700; }
-.payroll-start-2 { color: #004bad; }
-.payroll-end     { color: #d61c1c; }
+.payroll-start-1 { color: var(--payroll-start-1); }
+.payroll-start-2 { color: var(--payroll-start-2); }
+.payroll-end     { color: var(--payroll-end); }
 
-/* Día Festivo */
 .holiday-icon {
     position: absolute;
     bottom: 4px;
@@ -500,69 +597,95 @@
     z-index: 10;
 }
 
+/* =========================================================
+   LEYENDA DE ACTIVIDADES (colapsable)
+   ========================================================= */
 
-/* ======================================================= */
-/* LEYENDA DE ACTIVIDADES                                  */
-/* ======================================================= */
+.legend-details {
+    margin-top: 4px;
+    border: 1px solid var(--light-gray);
+    border-radius: 12px;
+    background: #fbfcfe;
+    overflow: hidden;
+}
+
+.legend-details summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 11px 16px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--dark-gray);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    background: #f2f4f9;
+}
+
+.legend-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.legend-details summary i {
+    color: var(--primary-blue);
+}
+
+.legend-details summary::after {
+    content: '\f078';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-left: auto;
+    font-size: 10px;
+    color: #8a94a6;
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.legend-details[open] summary::after {
+    transform: rotate(180deg);
+}
 
 .activity-legend {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-    gap: 8px 14px;
-    margin-top: 16px;
-    background: #dee1e449;
-    border-radius: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 9px 16px;
+    padding: 14px 16px;
     font-size: 12px;
-    border: 1px solid #e2e8f0;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 7px;
-    color: #2d3748;
-    font-weight: 500;
+    gap: 8px;
+    color: var(--medium-gray);
+    font-weight: 600;
 }
 
 .legend-color {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     border-radius: 4px;
     flex-shrink: 0;
 }
 
-.legend-color.work-base    { background-color: #334c95; }
-.legend-color.work-well    { background-color: #6475aa; }
-.legend-color.home-office  { background-color: #7293ff; }
-.legend-color.traveling    { background-color: #a2b5ff; }
-.legend-color.rest         { background-color: #118b20; }
-.legend-color.vacation     { background-color: #59983e; }
-.legend-color.training     { background-color: #a5a5a5; }
-.legend-color.medical      { background-color: #dd840fe0; }
-.legend-color.commissioned { background-color: #249399; }
-
-/* Iconos de Leyenda */
 .legend-approved,
 .legend-reviewed,
-.legend-not-approved,
 .legend-under-review,
-.legend-payroll-start-1,
-.legend-payroll-start-2,
-.legend-payroll-end {
+.legend-rejected,
+.payroll-start-1,
+.payroll-start-2,
+.payroll-end {
     width: 15px;
     text-align: center;
     flex-shrink: 0;
     font-size: 12px;
 }
 
-.legend-approved        { color: #64946f; }
-.legend-reviewed        { color: #da8544; }
-.legend-not-approved,
-.fa-exclamation-triangle { color: #f35900; filter: drop-shadow(0 0 1px #817c7c); }
-.legend-under-review    { color: #ffd900; }
-.legend-payroll-start-1 { color: #00a700; }
-.legend-payroll-start-2 { color: #004bad; }
-.legend-payroll-end     { color: #d61c1c; }
+.legend-approved     { color: var(--approved); }
+.legend-reviewed     { color: var(--reviewed); }
+.legend-under-review { color: var(--under-review); }
+.legend-rejected,
+.fa-exclamation-triangle { color: var(--not-approved); filter: drop-shadow(0 0 1px #f3f3f3); }
 
 .legend-holiday-icon {
     width: 15px;
@@ -572,20 +695,17 @@
     flex-shrink: 0;
 }
 
+/* =========================================================
+   AUTOCOMPLETADO DE POZOS
+   ========================================================= */
 
-
-/* ======================================================= */
-/* AUTOCOMPLETADO DE POZOS (Buscador)                      */
-/* ======================================================= */
-
-/* Aseguramos que el contenedor padre sea el ancla */
 #well-name-field {
     position: relative;
 }
 
 .autocomplete-list {
     position: absolute;
-    top: calc(100% + 4px); /* Pequeña separación del input */
+    top: calc(100% + 4px);
     left: 0;
     right: 0;
     background-color: var(--white);
@@ -593,99 +713,86 @@
     border-radius: 8px;
     max-height: 220px;
     overflow-y: auto;
-    z-index: 9999; /* Asegura que flote sobre todo (calendario, modales) */
+    z-index: 9999;
     list-style: none;
     padding: 6px 0;
     margin: 0;
-    box-shadow: 0 8px 25px rgba(45, 55, 72, 0.12); /* Sombra amplia y elegante */
-
-    /* Animación de aparición */
+    box-shadow: 0 16px 40px rgba(28, 37, 54, 0.12);
     opacity: 0;
-    transform: translateY(-10px);
-    animation: slideDownFade 0.2s ease-out forwards;
+    transform: translateY(-8px);
+    animation: lc-slide-fade 0.18s ease-out forwards;
 }
 
-@keyframes slideDownFade {
+@keyframes lc-slide-fade {
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-/* Scrollbar moderno y delgado para la lista */
 .autocomplete-list::-webkit-scrollbar {
     width: 6px;
 }
+
 .autocomplete-list::-webkit-scrollbar-track {
     background: transparent;
     margin: 4px 0;
 }
+
 .autocomplete-list::-webkit-scrollbar-thumb {
     background-color: #cbd5e0;
     border-radius: 10px;
 }
-.autocomplete-list::-webkit-scrollbar-thumb:hover {
-    background-color: var(--medium-gray);
-}
 
-/* Diseño de cada ítem de la lista */
 .autocomplete-list li {
     padding: 10px 16px;
     cursor: pointer;
-    color: var(--dark-gray);
+    color: var(--medium-gray);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 12px; /* Espaciado perfecto entre ícono y texto */
-    transition: all 0.2s ease;
-    border-bottom: 1px solid #f8fafc; /* Línea separadora casi invisible */
+    gap: 12px;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid #f8fafc;
 }
 
 .autocomplete-list li:last-child {
     border-bottom: none;
 }
 
-/* El texto que coincide con la búsqueda (negritas) */
 .autocomplete-list li strong {
     color: var(--primary-blue);
     font-weight: 800;
 }
 
-/* Ícono del pozo */
 .autocomplete-list li i {
     color: var(--primary-orange);
     font-size: 14px;
-    width: 16px; /* Fija el ancho para que los textos no "bailen" */
+    width: 16px;
     text-align: center;
-    transition: transform 0.2s ease;
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Interacción (Hover) */
 .autocomplete-list li:hover {
     background-color: var(--background-gray);
     color: var(--primary-blue);
-    padding-left: 20px; /* Efecto de desplazamiento sutil a la derecha */
+    padding-left: 20px;
 }
 
 .autocomplete-list li:hover i {
-    transform: scale(1.15); /* El ícono crece un poco */
+    transform: scale(1.15);
 }
-
-/* ======================================================= */
-/* ESTADOS ESPECIALES: Buscando... y Sin Resultados        */
-/* ======================================================= */
 
 .autocomplete-list li.searching-indicator,
 .autocomplete-list li.no-results {
-    justify-content: center; /* Texto centrado */
+    justify-content: center;
     padding: 16px;
     cursor: default;
     background-color: var(--white);
-    font-weight: 600;
+    font-weight: 700;
 }
 
-/* Anulamos el efecto hover para los estados informativos */
 .autocomplete-list li.searching-indicator:hover,
 .autocomplete-list li.no-results:hover {
     background-color: var(--white);
@@ -693,33 +800,29 @@
     color: inherit;
 }
 
-/* Diseño de "Buscando..." */
 .autocomplete-list li.searching-indicator {
     color: var(--primary-blue);
 }
 
 .autocomplete-list li.searching-indicator i {
     color: var(--primary-blue);
-    animation: spin 1s linear infinite; /* Animación de rotación del ícono */
+    animation: lc-spin 1s linear infinite;
 }
 
-/* Diseño de "No hay resultados" */
 .autocomplete-list li.no-results {
-    color: var(--medium-gray);
+    color: #8a94a6;
     font-style: italic;
 }
 
 .autocomplete-list li.no-results i {
-    color: var(--medium-gray);
-    transform: none; /* Evita que crezca */
+    color: #8a94a6;
+    transform: none;
 }
 
+/* =========================================================
+   MODAL
+   ========================================================= */
 
-/* ======================================================= */
-/* 6. ESTILOS DE MODAL Y FORMULARIO */
-/* ======================================================= */
-
-/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -727,145 +830,145 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(20, 26, 41, 0.5);
     z-index: 1000;
     align-items: center;
     justify-content: center;
     padding: 10px;
-    box-sizing: border-box;
     backdrop-filter: blur(2px);
-    transition: all 0.3s ease;
+}
+
+.modal.active,
+.modal.show {
+    display: flex;
 }
 
 .modal-content {
-    background: white;
-    border-radius: 10px;
+    background: var(--white);
+    border-radius: 12px;
     width: 95%;
     max-width: 500px;
-    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.1), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 16px 40px rgba(28, 37, 54, 0.12);
     overflow: hidden;
-    animation: modalFadeIn 0.3s ease-out;
-    transform: translateY(0);
-    transition: all 0.3s ease;
+    animation: lc-modal-in 0.22s ease-out;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
 }
 
-.modal-content:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 15px 20px -4px rgba(0, 0, 0, 0.1), 0 8px 8px -4px rgba(0, 0, 0, 0.04);
-}
-
-@keyframes modalFadeIn {
+@keyframes lc-modal-in {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-10px) scale(0.98);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
 .modal-header {
     background: var(--dark-gray);
-    color: white;
-    padding: 15px 20px;
-    position: relative;
+    color: var(--white);
+    padding: 16px 20px;
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
 }
 
 .header-icon {
-    font-size: 18px;
+    font-size: 17px;
     display: flex;
     align-items: center;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--primary-orange);
 }
 
 .modal-header h3 {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 15.5px;
+    font-weight: 700;
     margin: 0;
     flex-grow: 1;
-    color: white;
+    color: var(--white);
 }
 
 .close-modal {
     background: none;
     border: none;
-    color: white;
+    color: var(--white);
     font-size: 20px;
     cursor: pointer;
     padding: 2px;
     display: flex;
     align-items: center;
-    transition: all 0.3s ease;
+    justify-content: center;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 50%;
     width: 28px;
     height: 28px;
-    justify-content: center;
 }
 
 .close-modal:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.15);
     transform: rotate(90deg);
 }
 
 .modal-body {
     padding: 0;
-    max-height: 80vh;
     overflow-y: auto;
 }
 
-/* Pestañas (Tabs) */
+/* Pestañas */
 .form-tabs {
     display: flex;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--light-gray);
     padding: 0 20px;
-    background-color: #f8fafc;
+    background-color: var(--background-gray);
+    flex-shrink: 0;
 }
 
 .tab-btn {
-    padding: 12px 14px;
+    padding: 13px 14px;
     background: none;
     border: none;
+    border-bottom: 2px solid transparent;
     cursor: pointer;
     font-size: 13px;
-    font-weight: 500;
-    color: var(--medium-gray);
-    position: relative;
-    transition: all 0.3s ease;
+    font-weight: 700;
+    color: #8a94a6;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: -1px;
 }
 
-/* Contenido de la Pestaña */
+.tab-btn:hover {
+    color: var(--dark-gray);
+}
+
+.tab-btn.active {
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-orange);
+}
+
 .tab-content {
     padding: 20px;
     display: none;
-    animation: fadeIn 0.3s ease;
+    animation: lc-fade-in 0.2s ease;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(3px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+@keyframes lc-fade-in {
+    from { opacity: 0; transform: translateY(3px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .tab-content.active {
     display: block;
 }
 
-/* ======================================================= */
-/* 7. ELEMENTOS DEL FORMULARIO */
-/* ======================================================= */
+/* =========================================================
+   ELEMENTOS DEL FORMULARIO
+   ========================================================= */
+
 .form-group {
     margin-bottom: 15px;
     position: relative;
@@ -874,9 +977,9 @@
 .form-group label {
     display: block;
     margin-bottom: 6px;
-    font-weight: 500;
-    color: var(--dark-gray);
-    font-size: 13px;
+    font-weight: 700;
+    color: var(--medium-gray);
+    font-size: 12.5px;
 }
 
 .input-with-icon {
@@ -887,25 +990,27 @@
 
 .input-with-icon i {
     position: absolute;
-    left: 10px;
-    color: var(--medium-gray);
+    left: 11px;
+    color: #8a94a6;
     z-index: 1;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .input-with-icon input {
-    padding-left: 32px !important;
+    padding-left: 33px !important;
 }
 
 .input-custom,
 .select-custom {
     width: 100%;
-    padding: 9px 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    padding: 9px 11px;
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
     font-size: 13px;
-    transition: all 0.3s ease;
-    background-color: white;
+    font-family: 'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--white);
     color: var(--dark-gray);
     min-height: 38px;
 }
@@ -914,33 +1019,33 @@
 .select-custom:focus {
     outline: none;
     border-color: var(--primary-blue);
-    box-shadow: 0 0 0 2px rgba(51, 76, 149, 0.1);
+    box-shadow: 0 0 0 3px rgba(51, 76, 149, 0.12);
 }
 
 .input-custom:disabled,
 .select-custom:disabled {
-    background-color: #f8fafc;
-    color: #94a3b8;
+    background-color: var(--background-gray);
+    color: #a8b0bd;
     cursor: not-allowed;
 }
 
-/* Custom Select para Tipo de Actividad */
+/* Custom select */
 .custom-select {
     position: relative;
     width: 100%;
 }
 
 .select-header {
-    padding: 9px 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    padding: 9px 11px;
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
     font-size: 13px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: white;
-    transition: all 0.3s ease;
+    background-color: var(--white);
+    transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
     min-height: 38px;
 }
 
@@ -948,8 +1053,20 @@
     border-color: var(--primary-blue);
 }
 
+.select-header .placeholder {
+    color: #8a94a6;
+}
+
+.select-header i {
+    color: #8a94a6;
+    font-size: 11px;
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .select-header.open {
-    border-radius: 6px 6px 0 0;
+    border-radius: 8px 8px 0 0;
+    border-color: var(--primary-blue);
     border-bottom-color: transparent;
 }
 
@@ -960,23 +1077,22 @@
 
 .select-options {
     position: relative;
-    top: 0;
-    left: 0;
     width: 100%;
     max-height: 0;
     overflow: hidden;
-    background: white;
+    background: var(--white);
     border: 1px solid transparent;
-    border-radius: 0 0 6px 6px;
-    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 6px 20px rgba(28, 37, 54, 0.08);
     z-index: 10;
-    transition: max-height 0.3s ease, border-color 0.3s ease;
+    transition: max-height 240ms cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .select-options.open {
     max-height: 500px;
-    overflow-y: hidden;
-    border-color: #e2e8f0;
+    overflow-y: auto;
+    border-color: var(--primary-blue);
     border-top: none;
 }
 
@@ -984,9 +1100,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px;
+    padding: 10px 11px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1);
     border-bottom: 1px solid #f1f5f9;
 }
 
@@ -995,11 +1111,11 @@
 }
 
 .activity-option:hover {
-    background-color: #f8fafc;
+    background-color: var(--background-gray);
 }
 
 .activity-option.selected {
-    background-color: #f0f4ff;
+    background-color: #eef1fa;
     border-left: 3px solid var(--primary-blue);
 }
 
@@ -1010,28 +1126,26 @@
 }
 
 .color-indicator {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
+    width: 13px;
+    height: 13px;
+    border-radius: 4px;
     flex-shrink: 0;
 }
 
 .activity-label {
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--dark-gray);
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .activity-code {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--background-gray);
-    background: #f1f5f9;
-    padding: 1px 6px;
-    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
 }
 
-/* Opciones de Tipo de Trabajo (Radio Buttons) */
+/* Tipo de trabajo (radio) */
 .work-type-options {
     display: flex;
     gap: 10px;
@@ -1041,23 +1155,24 @@
 .work-type-option {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 7px;
     cursor: pointer;
-    padding: 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
     flex: 1;
-    transition: all 0.3s ease;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .work-type-option:hover {
     border-color: var(--primary-blue);
-    background-color: rgba(51, 76, 149, 0.03);
+    background-color: #eef1fa;
 }
 
 .work-type-option.selected {
     border-color: var(--primary-blue);
-    background-color: #f0f4ff;
+    background-color: #eef1fa;
 }
 
 .work-type-option input[type="radio"] {
@@ -1066,15 +1181,15 @@
 
 .work-type-label {
     font-size: 13px;
-    color: var(--dark-gray);
+    color: var(--medium-gray);
+    font-weight: 600;
 }
 
 .work-type-option.selected .work-type-label {
     color: var(--primary-blue);
-    font-weight: 500;
 }
 
-/* Opciones de Bono de Servicio */
+/* Bono de servicio (radio) */
 .service-bonus-options {
     display: flex;
     gap: 10px;
@@ -1087,24 +1202,22 @@
     gap: 6px;
     cursor: pointer;
     padding: 10px 14px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--light-gray);
     border-radius: 8px;
     flex: 1;
-    transition: all 0.3s ease;
-    text-align: center;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
     justify-content: center;
 }
 
 .service-bonus-option:hover {
     border-color: var(--primary-blue);
-    background-color: rgba(51, 76, 149, 0.03);
-    transform: translateY(-1px);
+    background-color: #eef1fa;
 }
 
 .service-bonus-option.selected {
     border-color: var(--primary-blue);
-    background-color: #f0f4ff;
-    box-shadow: 0 2px 8px rgba(51, 76, 149, 0.1);
+    background-color: #eef1fa;
+    box-shadow: 0 1px 2px rgba(28, 37, 54, 0.05);
 }
 
 .service-bonus-option input[type="radio"] {
@@ -1113,88 +1226,75 @@
 
 .service-bonus-label {
     font-size: 13px;
-    font-weight: 600;
-    color: var(--dark-gray);
+    font-weight: 700;
+    color: var(--medium-gray);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
 }
 
 .service-bonus-option.selected .service-bonus-label {
     color: var(--primary-blue);
 }
 
-.service-bonus-option[data-value="no"] .service-bonus-label i {
-    color: #e53e3e;
-}
-
-.service-bonus-option[data-value="si"] .service-bonus-label i {
-    color: #38a169;
-}
+.service-bonus-option[data-value="no"] .service-bonus-label i { color: var(--not-approved); }
+.service-bonus-option[data-value="si"] .service-bonus-label i { color: var(--approved); }
 
 .service-bonus-option[data-value="no"].selected .service-bonus-label i,
 .service-bonus-option[data-value="si"].selected .service-bonus-label i {
     color: var(--primary-blue);
 }
 
-/* Texto de Ayuda del Formulario */
 .form-help {
-    color: #64748b;
+    color: #8a94a6;
     font-size: 11px;
     margin-top: 3px;
     display: block;
     font-style: italic;
 }
 
-/* Campo "Well Name" */
 #well-name-field .input-with-icon i {
-    color: #475f92;
-}
-
-#well-name {
-    transition: all 0.3s ease;
+    color: var(--primary-blue);
 }
 
 #well-name:focus {
-    border-color: #1e3b7a;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(51, 76, 149, 0.12);
 }
 
-/* Acciones del Formulario */
 .form-actions {
     display: flex;
     justify-content: center;
     gap: 10px;
-    padding: 12px 20px;
-    background-color: #f8fafc;
-    border-top: 1px solid #e2e8f0;
-    margin-top: 6px;
+    padding: 14px 20px;
+    background-color: var(--background-gray);
+    border-top: 1px solid var(--light-gray);
+    flex-shrink: 0;
 }
 
-/* ======================================================= */
-/* 8. ESTADOS DE VALIDACIÓN Y BLOQUEO */
-/* ======================================================= */
+/* =========================================================
+   VALIDACIÓN Y BLOQUEO
+   ========================================================= */
 
-/* Campo Rechazado (Validation Error) */
 .rejected-field {
-    border: 1px solid #e53e3e !important;
-    box-shadow: 0 0 0 1px #e53e3e !important;
+    border: 1px solid var(--not-approved) !important;
+    box-shadow: 0 0 0 1px var(--not-approved) !important;
 }
 
 .work-type-options.rejected-field,
 .service-bonus-options.rejected-field {
-    border: 1px solid #e53e3e !important;
+    border: 1px solid var(--not-approved) !important;
     border-radius: 8px;
     padding: 8px 12px;
-    background-color: #fff5f5;
+    background-color: #fdf1ee;
     box-shadow: none !important;
 }
 
 .rejection-message {
     margin-top: 6px;
-    padding: 6px 10px;
-    border-left: 3px solid #e53e3e;
-    background-color: #fff5f5;
+    padding: 7px 10px;
+    border-left: 3px solid var(--not-approved);
+    background-color: #fdf1ee;
     border-radius: 4px;
 }
 
@@ -1202,109 +1302,94 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.8rem;
-    color: #c53030;
+    font-size: 12px;
+    color: var(--not-approved);
+    font-weight: 600;
 }
 
 .error-message {
-    color: #e53e3e;
+    color: var(--not-approved);
     font-size: 11px;
     margin-top: 4px;
     display: none;
+    font-weight: 600;
 }
 
-/* Indicador de Bloqueo (Lock Indicator) */
 .lock-indicator {
     position: absolute;
     top: -4px;
     right: 0;
     font-size: 10px;
-    font-weight: 600;
-    padding: 2px 6px;
+    font-weight: 700;
+    padding: 2px 7px;
     border-radius: 5px;
     color: var(--white);
     z-index: 5;
     display: flex;
     align-items: center;
     gap: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    opacity: 0.95;
-    transition: background-color 0.3s ease;
-}
-
-.lock-indicator i {
-    font-size: 9px;
+    box-shadow: 0 1px 2px rgba(28, 37, 54, 0.05);
 }
 
 .form-group:has(.lock-indicator) label {
     font-style: italic;
-    color: var(--medium-gray);
+    color: #8a94a6;
 }
 
-/* ======================================================= */
-/* 9. RESPONSIVE Y MEDIA QUERIES - HEADER Y CALENDARIO MEJORADO */
-/* ======================================================= */
+/* Accesibilidad: respeta la preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+    #normalView *,
+    .modal * {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+    }
+}
 
-/* Media Query para Móviles/Tabletas pequeñas (<= 768px) */
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+/* Tablet / móvil grande */
 @media (max-width: 768px) {
     .content-layout {
         grid-template-columns: 1fr;
-        gap: 15px;
+        gap: 14px;
     }
 
     .employee-details {
         position: static;
-        margin-bottom: 0;
     }
 
     .employee-header {
-        flex-direction: column;
-        text-align: center;
-        gap: 12px;
-    }
-
-    .employee-photo-container {
-        margin: 0 auto;
-    }
-
-    .employee-header-content {
-        flex: 1;
-        min-width: auto;
-        width: 100%;
-    }
-
-    .employee-name-header {
-        text-align: center;
-        width: 100%;
-        line-height: 1.2;
+        gap: 14px;
     }
 
     .employee-info {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .load-chart-container {
-        padding: 12px;
-        overflow-x: auto;
+        padding: 14px;
     }
 
     .chart-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 12px;
+    }
+
+    .chart-header h2 {
+        font-size: 15px;
     }
 
     .chart-actions {
         width: 100%;
         justify-content: space-between;
-        flex-direction: row;
-        flex-wrap: wrap;
     }
 
     .month-navigation {
         flex: 1;
         justify-content: space-between;
-        min-width: 50%;
     }
 
     .btn {
@@ -1313,66 +1398,22 @@
     }
 
     .calendar {
-        min-width: 500px;
-        table-layout: fixed;
+        min-width: 560px;
     }
 
     .calendar td {
-        height: 70px;
-        padding: 3px;
-        min-height: 70px;
-        width: 14.2857%;
-    }
-
-    .day-header-info {
-        position: static;
-        top: initial;
-        right: initial;
-        justify-content: flex-end;
-        margin-bottom: 2px;
-    }
-
-    .day-number {
-        position: relative;
-        top: 0;
-        left: 0;
-        font-size: 12px;
-        margin-bottom: 2px;
-    }
-
-    .activity-tag {
-        text-align: center;
-        padding: 1px;
-        font-size: 8px;
-        min-height: 12px;
-        line-height: 10px;
-        margin: 1px auto 0 auto;
-        display: block;
-        width: 95%;
-        box-sizing: border-box;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .tags-wrapper {
-        width: 100%;
-        align-items: center;
-        /* Centra los tags en móviles */
-    }
-
-    .tags-wrapper .activity-tag {
-        width: 95%;
-        /* Mantiene el tamaño largo en teléfonos */
+        height: 72px;
+        padding: 4px;
     }
 
     .modal-content {
         margin: 5px;
         width: calc(100% - 10px);
+        max-height: 96vh;
     }
 
     .form-tabs {
-        padding: 0 10px;
+        padding: 0 12px;
     }
 
     .tab-content {
@@ -1386,6 +1427,209 @@
 
     .form-actions {
         flex-direction: column;
-        padding: 10px;
     }
 }
+
+/* =========================================================
+   📱 MÓVIL: Iniciales en días + 2 letras en tags
+   ========================================================= */
+/* =========================================================
+   📱 MÓVIL: Iniciales en días + 2 letras en tags
+   ========================================================= */
+@media (max-width: 480px) {
+
+    .employee-info {
+        grid-template-columns: 1fr;
+    }
+
+    .employee-photo-container {
+        width: 58px;
+        height: 58px;
+    }
+
+    /* ---------- Encabezados de día: solo inicial ---------- */
+    .day-full,
+    .day-short {
+        display: none;
+    }
+
+    .day-single {
+        display: inline;
+    }
+
+    .calendar {
+        min-width: 0;
+        width: 100%;
+        font-size: 11px;
+        table-layout: fixed;
+    }
+
+    .calendar th {
+        padding: 8px 2px;
+        font-size: 12px;
+        letter-spacing: 0;
+    }
+
+    .calendar td {
+        height: 62px;
+        padding: 4px 3px;
+        vertical-align: top;
+        position: relative; /* Necesario para posicionar hijos absolutos */
+    }
+
+    /* ============================================
+       ✅ FECHA: arriba a la izquierda
+       ============================================ */
+    .day-number {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        font-size: 11.5px;
+        font-weight: 800;
+        margin-bottom: 0;
+        z-index: 10;
+        line-height: 1;
+    }
+
+    /* ============================================
+       ✅ TAGS + ICONO DE ESTADO: centrados verticalmente
+       ============================================ */
+    .day-header-info {
+        position: absolute;
+        top: 50%;                     /* Centro vertical */
+        right: 4px;
+        transform: translateY(-50%);  /* Centrado perfecto */
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        max-width: calc(100% - 8px);
+        z-index: 5;
+    }
+
+    .tags-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-end;
+        min-width: 0;
+    }
+
+    /* ============================================
+       ✅ TAGS DE ACTIVIDAD: 2 LETRAS LEGIBLES
+       ============================================ */
+    .activity-tag {
+        font-size: 0;                 /* oculta el texto completo */
+        padding: 2px 0;
+        text-align: center;
+        min-height: 18px;
+        line-height: 1;
+        letter-spacing: 0;
+        display: block;
+        text-overflow: clip;
+        overflow: hidden;
+        white-space: nowrap;
+        border-radius: 4px;
+        font-weight: 800;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+        width: max-content;
+        max-width: 100%;
+        margin-top: 0 !important;
+    }
+
+    /* ✅ Muestra las 2 letras guardadas en data-abbr */
+    .activity-tag::before {
+        content: attr(data-abbr);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: 0.3px;
+        display: inline-block;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Contenedor de tags en la esquina superior derecha */
+    .tags-wrapper .activity-tag {
+        width: 100%;
+        min-width: 20px;
+        max-width: 100%;
+        margin-top: 1px !important;
+    }
+
+    /* Icono de estado (candrado/reloj) */
+    .status-icon {
+        font-size: 11px;
+        opacity: 0.95;
+        flex-shrink: 0;
+    }
+
+    /* Iconos de nómina y festivos un poco más pequeños */
+    .payroll-icon {
+        font-size: 9px;
+        bottom: 3px;
+        right: 3px;
+    }
+
+    .holiday-icon {
+        width: 13px;
+        height: 13px;
+        bottom: 3px;
+        left: 3px;
+    }
+
+    /* ============================================
+       LEYENDA Y OTROS
+       ============================================ */
+    .legend-details summary {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .activity-legend {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 8px 10px;
+        padding: 12px;
+    }
+
+    .month-navigation span {
+        min-width: 0;
+        font-size: 12px;
+    }
+
+    .btn-orange span.btn-label,
+    .modal-header h3 {
+        font-size: 14.5px;
+    }
+}
+
+/* Móvil pequeño */
+@media (max-width: 360px) {
+
+    .calendar {
+        min-width: 0;
+    }
+
+    .calendar td {
+        height: 56px;
+        padding: 3px 2px;
+    }
+
+    /* Tags un poco más chicos pero todavía legibles */
+    .activity-tag {
+        min-height: 16px;
+        padding: 2px 0;
+    }
+
+    .activity-tag::before {
+        font-size: 10px;
+    }
+
+    .day-number {
+        font-size: 11px;
+    }
+
+    .month-navigation button {
+        width: 26px;
+        height: 26px;
+    }
+}
+
