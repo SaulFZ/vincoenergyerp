@@ -173,7 +173,7 @@ class CalendarController extends Controller
             'Operador de Campo 1', 'Operador de Campo 2', 'Operador de Campo 3',
             'Operador de Campo 4', 'Operador de Campo 5', 'Operador de Campo 6',
             'Auxiliar Mecanico', 'Auxiliar General', 'Mecánico General',
-            'Especialista en Mantenimiento de ECP y CCL'
+            'Especialista en Mantenimiento de ECP y CCL','Coordinador de Mantenimiento',
         ];
 
         $requiresBaseDescription = (
