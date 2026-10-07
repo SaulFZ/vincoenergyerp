@@ -1,15 +1,9 @@
 @extends('modules.rh.loadchart.index')
-@push('styles')
-    {{-- Asegúrate de que este CSS incluya los estilos del punto 3 (si es necesario) --}}
-    <link href="{{ asset('assets/css/rh/loadchart/approval.css') }}" rel="stylesheet">
-@endpush
-
 
 @section('content')
     <div id="approvalView">
         <div class="approval-container">
             <div class="approval-header">
-                {{-- ... (Resto del period-navigation-container) ... --}}
                 <div class="period-navigation-container">
                     <div class="period-navigation">
                         <button class="period-btn active" id="quincena1">Quincena 1</button>
@@ -23,52 +17,42 @@
                 </div>
 
                 <div class="approval-actions">
-                    {{-- BOTÓN DE FILTROS NORMALES --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
-                        <button class="back-btn" id="toggle-filters-btn" aria-expanded="false"
-                            aria-controls="filters-container">
+                        <button class="back-btn" id="toggle-filters-btn" aria-expanded="false" aria-controls="filters-container">
                             <i class="fas fa-filter"></i> Abrir Filtros
                         </button>
                     @endif
 
-                    {{-- ⭐ NUEVO BOTÓN PARA AUXILIAR PAL (Solo para quienes tienen permiso ver_guardias) --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_guardias'))
-                        <button class="back-btn" id="toggle-auxiliar-pal-btn"
-                            style="background-color: #4a5568; color: white;">
+                        <button class="back-btn" id="toggle-auxiliar-pal-btn" style="background-color: #4a5568; color: white;">
                             <i class="fas fa-user-shield"></i> Ver Auxiliar PAL
                         </button>
                     @endif
 
-                    {{-- Control de Cuadrillas --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('control_cuadrillas'))
                         <button class="squad-btn" id="squad-control">
                             <i class="fas fa-users-cog"></i> Control de Cuadrillas
                         </button>
                     @endif
 
-                    {{-- Info de Servicios --}}
                     <button class="services-info-btn" id="services-info">
                         <i class="fas fa-tasks"></i> Info de Servicios
                     </button>
 
-                    {{-- Días de Quincena --}}
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('gestionar_quincenas'))
                         <button class="back-btn" id="days-quincena">
                             <i class="fas fa-calendar-day"></i> Días de Quincena
                         </button>
                     @endif
 
-                    {{-- Volver al Calendario --}}
                     <button class="back-btn" id="back-to-calendar" data-route="/calendar">
                         <i class="fas fa-arrow-left"></i> Volver al Calendario
                     </button>
                 </div>
             </div>
 
-            {{-- INICIO: NUEVO CONTENEDOR DE FILTROS (Solo si tiene permiso) --}}
             @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'))
                 <div class="filters-container" id="filters-container" style="display: none;">
-                    {{-- ⭐ NUEVO FILTRO DE ASIGNACIÓN --}}
                     <div class="filter-group">
                         <label for="assignment-filter">Asignación</label>
                         <select id="assignment-filter" class="filter-select">
@@ -77,7 +61,6 @@
                         </select>
                     </div>
 
-                    {{-- ✅ FILTRO DE ÁREA EN LUGAR DE DEPARTAMENTO --}}
                     <div class="filter-group">
                         <label for="area-filter">Área</label>
                         <select id="area-filter" class="filter-select">
@@ -88,97 +71,43 @@
                         </select>
                     </div>
 
-                    {{-- NUEVO FILTRO DE CARGO --}}
                     <div class="filter-group">
                         <label for="position-filter">Cargo</label>
                         <select id="position-filter" class="filter-select">
                             <option value="">Todos los Cargos</option>
-                            {{-- Las opciones se llenarán con JS --}}
                         </select>
                     </div>
-                    {{-- FILTRO DE BÚSQUEDA EXISTENTE --}}
                     <div class="filter-group filter-search-group">
                         <label for="employee-search">Buscar Empleado</label>
                         <input type="text" id="employee-search" class="filter-input" placeholder="Nombre, # Empleado...">
                     </div>
                 </div>
             @endif
-            {{-- FIN: NUEVO CONTENEDOR DE FILTROS --}}
 
             <div class="activity-legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--work-base);">B</div>
-                    <span>Base</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--work-well);">P</div>
-                    <span>Pozo</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--home-office);">TC</div>
-                    <span>Trabajo en Casa</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--commissioned);">C</div>
-                    <span>Comisionado</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--traveling);">V</div>
-                    <span>Viaje</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--training);">E</div>
-                    <span>Entrenamiento</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--rest);">D</div>
-                    <span>Descanso</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--vacation);">VAC</div>
-                    <span>Vacaciones</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--medical);">M</div>
-                    <span>Médico</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--permission);">PE</div>
-                    <span>Permiso</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--absence);">A</div>
-                    <span>Ausencia</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background-color: var(--gray) ;">N</div>
-                    <span>Sin Act.</span>
-                </div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--work-base);">B</div><span>Base</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--work-well);">P</div><span>Pozo</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--home-office);">TC</div><span>Trabajo en Casa</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--commissioned);">C</div><span>Comisionado</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--traveling);">V</div><span>Viaje</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--training);">E</div><span>Entrenamiento</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--rest);">D</div><span>Descanso</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--vacation);">VAC</div><span>Vacaciones</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--medical);">M</div><span>Médico</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--permission);">PE</div><span>Permiso</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--absence);">A</div><span>Ausencia</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--gray);">N</div><span>Sin Act.</span></div>
                 <div class="legend-divider"></div>
-                {{-- ➡️ Indicadores de Aprobación --}}
-                <div class="legend-item">
-                    <div class="legend-color under-review-border"></div>
-                    <span>Bajo Revisión</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color reviewed-border"></div>
-                    <span>Revisado</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color approved-border"></div>
-                    <span>Aprobado</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color rejected-border"></div>
-                    <span>Rechazado</span>
-                </div>
+                <div class="legend-item"><div class="legend-color under-review-border"></div><span>Bajo Revisión</span></div>
+                <div class="legend-item"><div class="legend-color reviewed-border"></div><span>Revisado</span></div>
+                <div class="legend-item"><div class="legend-color approved-border"></div><span>Aprobado</span></div>
+                <div class="legend-item"><div class="legend-color rejected-border"></div><span>Rechazado</span></div>
             </div>
 
             <div class="table-master-wrapper">
-
                 <div id="table-loading-overlay" class="table-loading-overlay">
                     <div class="table-loader-spinner"></div>
-                    <div class="table-loader-text">Procesando y aplicando filtros...</div>
+                    <div class="table-loader-text">Procesando Datos</div>
                 </div>
 
                 <div class="table-container">
@@ -187,226 +116,72 @@
                             <tr class="header-row">
                                 <th rowspan="2">Nombre</th>
                                 <th rowspan="2">KPI</th>
-                                {{-- ⭐ CORRECCIÓN: Contar solo los días de la Q1 desde el principio --}}
                                 @php
                                     $q1DaysCount = collect($monthlyDays)->where('is_quincena_1', true)->count();
                                 @endphp
-                                <th colspan="{{ $q1DaysCount }}" id="days-columns">Días del Período ({{ $q1DaysCount }}
-                                    días)</th>
+                                <th colspan="{{ $q1DaysCount }}" id="days-columns">Días del Período ({{ $q1DaysCount }} días)</th>
                                 <th rowspan="2">Total</th>
                                 <th rowspan="2" class="vacations-header" title="Vacaciones">Vac.</th>
                                 <th rowspan="2" class="breaks-header" title="Descansos/Otros">Desc.</th>
                                 <th rowspan="2" class="utilization-header" title="Utilización">Utiliz.</th>
-                                <th rowspan="2" class="utilization-header" title="Aprobación">Aprob.</th>
+                                <th rowspan="2" class="utilization-header" title="Aprobación">Acciones</th>
                             </tr>
                             <tr class="header-row" id="days-header-row">
-                                @foreach ($monthlyDays as $dayInfo)
-                                    <th class="day-header {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
-                                        data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
-                                        data-quincena-1="{{ $dayInfo['is_quincena_1'] ? 'true' : 'false' }}"
-                                        data-quincena-2="{{ $dayInfo['is_quincena_2'] ? 'true' : 'false' }}"
-                                        data-current-month="{{ $dayInfo['is_current_month'] ? 'true' : 'false' }}"
-                                        data-month="{{ $dayInfo['month'] }}"
-                                        title="{{ \Carbon\Carbon::parse($dayInfo['date'])->format('d/m/Y') }}{{ !$dayInfo['is_current_month'] ? ' (Mes anterior)' : '' }}"
-                                        style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">
-                                        {{-- ⭐ OCULTAR SI NO ES Q1 --}}
-                                        {{ $dayInfo['day'] }}<br>{{ $dayInfo['day_name'] }}
-                                    </th>
-                                @endforeach
+                                {{-- Renderizado por JS --}}
                             </tr>
                         </thead>
                         <tbody id="approval-table-body">
-                            @php
-                                // 1. Obtener empleados con su número de cuadrilla (si tienen asignación)
-                                $employeesWithSquad = $employees->map(function ($employee) {
-                                    // Asume que un empleado puede tener múltiples entradas en la tabla Squad,
-                                    // pero para propósitos de la cuadrilla principal, tomaremos la primera o la más relevante.
-                                    // Si no hay squad, se asigna un número grande para que vaya al final.
-                                    $squad = $employee->squads->first();
-                                    $employee->squad_number = $squad ? $squad->squad_number : 999;
-                                    return $employee;
-                                });
-
-                                // 2. Ordenar y agrupar por número de cuadrilla
-                                $groupedEmployees = $employeesWithSquad
-                                    ->sortBy('squad_number')
-                                    ->groupBy('squad_number');
-
-                                $showSquadGrouping = \App\Helpers\PermissionHelper::hasDirectPermission(
-                                    'control_cuadrillas',
-                                );
-                                // Colspan = 1 (Nombre) + 1 (KPI) + Días + 1 (Total) + 1 (Vac) + 1 (Desc) + 1 (Utiliz) + 1 (Aprob) = 6 + count($monthlyDays)
-                                $colspanValue = 6 + count($monthlyDays);
-                                $currentUserId = auth()->id();
-                            @endphp
-
-                            @foreach ($groupedEmployees as $squadNumber => $squadEmployees)
-                                {{-- INICIO: Fila de Encabezado de Cuadrilla (Solo si tiene permiso) --}}
-                                @if ($showSquadGrouping)
-                                    @php
-                                        $squadLabel =
-                                            $squadNumber !== 999
-                                                ? 'Cuadrilla-' . str_pad($squadNumber, 2, '0', STR_PAD_LEFT)
-                                                : 'Sin Cuadrilla Asignada';
-                                        $squadClass =
-                                            $squadNumber !== 999 ? 'squad-group-row-active' : 'squad-group-row-none';
-                                    @endphp
-                                    <tr class="squad-group-row {{ $squadClass }}"
-                                        data-squad-number="{{ $squadNumber }}">
-                                        <td colspan="{{ $colspanValue }}" class="squad-group-label">
-                                            {{ $squadLabel }}
-                                        </td>
-                                    </tr>
-                                @endif
-                                {{-- FIN: Fila de Encabezado de Cuadrilla --}}
-
-                                @foreach ($squadEmployees as $employee)
-                                    {{-- LÓGICA DE PERMISOS PARA LOS BOTONES --}}
-                                    @php
-                                        $employeeAssignment = $loadChartAssignments->firstWhere(
-                                            'employee_id',
-                                            $employee->id,
-                                        );
-                                        $isReviewerForEmployee =
-                                            $employeeAssignment && $employeeAssignment->reviewer_id === $currentUserId;
-                                        $isApproverForEmployee =
-                                            $employeeAssignment && $employeeAssignment->approver_id === $currentUserId;
-
-                                        // ✅ OBTENEMOS EL ÁREA
-                                        $areaName = $employee->area ? $employee->area->name : '';
-                                    @endphp
-
-                                    {{-- Fila Principal (Actividad) ✅ data-area --}}
-                                    <tr class="employee-row" data-employee-id="{{ $employee->id }}"
-                                        data-area="{{ $areaName }}">
-                                        <td rowspan="4" class="employee-info-cell" data-icon="bx bx-calendar"
-                                            data-text="ver calendario">
-                                            {{ $employee->full_name }}
-                                        </td>
-                                        <td class="activity-label-cell">Actividad</td>
-                                        @foreach ($monthlyDays as $dayInfo)
-                                            <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
-                                                data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
-                                                style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">
-                                                {{-- ⭐ OCULTAR SI NO ES Q1 --}}
-                                                <div class="status-indicator status-n">N</div>
-                                            </td>
-                                        @endforeach
-                                        <td class="data-cell total-activity">
-                                            <div class="status-indicator">0</div>
-                                        </td>
-                                        <td rowspan="4" class="vacations-cell">
-                                            <div class="vacations-container">
-                                                <div class="vacations-value">0</div>
-                                            </div>
-                                        </td>
-                                        <td rowspan="4" class="breaks-cell">
-                                            <div class="breaks-container">
-                                                <div class="breaks-value">0</div>
-                                            </div>
-                                        </td>
-                                        <td rowspan="4" class="utilization-cell">
-                                            <div class="utilization-container">
-                                                <div class="utilization-value">0%</div>
-                                            </div>
-                                        </td>
-                                        <td rowspan="4" class="actions-cell">
-                                            <div class="actions-container">
-                                                {{-- MOSTRAR BOTONES DE ACCIÓN SOLO SI ES REVISOR O APROBADOR DEL EMPLEADO --}}
-                                                @if ($isReviewerForEmployee)
-                                                    <button class="btn-review">Revisar</button>
-                                                @endif
-
-                                                @if ($isApproverForEmployee)
-                                                    <button class="btn-approve">Aprobar</button>
-                                                @endif
-
-                                                @if (!$isReviewerForEmployee && !$isApproverForEmployee)
-                                                    <span class="no-permissions">Sin permisos</span>
-                                                @endif
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {{-- Filas de Detalle ✅ data-area --}}
-                                    @php $rowTypes = ['Comida', 'Bono', 'Servicio']; @endphp
-                                    @foreach ($rowTypes as $rowType)
-                                        <tr class="activity-row hidden" data-employee-id="{{ $employee->id }}"
-                                            data-area="{{ $areaName }}">
-                                            <td class="activity-label-cell">{{ $rowType }}</td>
-                                            @foreach ($monthlyDays as $dayInfo)
-                                                <td class="data-cell {{ $dayInfo['is_quincena_1'] ? 'quincena-1' : '' }} {{ $dayInfo['is_quincena_2'] ? 'quincena-2' : '' }} {{ !$dayInfo['is_working_day'] ? 'non-working' : '' }} {{ !$dayInfo['is_current_month'] ? 'other-month' : '' }}"
-                                                    data-day="{{ $dayInfo['day'] }}" data-date="{{ $dayInfo['date'] }}"
-                                                    style="{{ !$dayInfo['is_quincena_1'] ? 'display: none;' : '' }}">0
-                                                    {{-- ⭐ OCULTAR SI NO ES Q1 --}}
-                                                </td>
-                                            @endforeach
-                                            <td class="data-cell total-{{ strtolower(str_replace(' ', '-', $rowType)) }}">
-                                                0
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @endforeach
-                            @endforeach
+                            {{-- EL JS RENDERIZARÁ LA TABLA AQUÍ DE FORMA DINÁMICA Y RÁPIDA --}}
                         </tbody>
                     </table>
                 </div>
-
             </div>
         </div>
+
         <script>
-            // Variables globales
+            // ✅ Variables globales inyectadas de forma segura y completa
             let currentMonth = {{ $currentMonth }};
             let currentYear = {{ $currentYear }};
             let currentView = 'quincena1';
+            
+            // Los datos esenciales se cargan directo desde el servidor
             let workLogsData = @json($workLogsData ?? []);
             let fortnightlyConfig = @json($fortnightlyConfig);
-            let canSeeAmounts = @json($canSeeAmounts ?? false);
-            let userPermissions = @json($userPermissions ?? []);
-            // ⚠️ Se envía TODA la data de asignación para que el JS pueda comprobar permisos en CADA empleado.
+            let monthlyDays = @json($monthlyDays ?? []);
+            let employees = @json($employees ?? []);
             let loadChartAssignments = @json($loadChartAssignments ?? []);
+            let userPermissions = @json($userPermissions ?? []);
+            let canSeeAmounts = @json($canSeeAmounts ?? false);
+            let canSeeFilters = @json(\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'));
             let currentUserId = {{ auth()->id() }};
-            // NUEVAS VARIABLES GLOBALES PARA FILTROS
+            
             let allEmployeeRows = [];
             let allSquadRows = [];
-            let canSeeFilters = @json(\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros')); // Permiso de filtro
         </script>
     </div>
 
+    {{-- Modal de Aprobación --}}
     <div class="modal-approval-custom" id="approvalModal">
         <div class="modal-approval-content">
-
             <div class="modal-approval-header">
                 <div class="modal-header-left">
-                    <div class="modal-header-icon">
-                        <i class="fas fa-clipboard-check"></i>
-                    </div>
+                    <div class="modal-header-icon"><i class="fas fa-clipboard-check"></i></div>
                     <div>
                         <div class="modal-approval-title">Registro de Actividad</div>
                         <div class="modal-approval-subtitle">—</div>
                     </div>
                 </div>
-                <button class="modal-approval-close" title="Cerrar">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button class="modal-approval-close" title="Cerrar"><i class="fas fa-times"></i></button>
             </div>
-
-            <div class="modal-approval-body" id="modal-items-list">
-                {{-- Cards generados por JS --}}
-            </div>
-
+            <div class="modal-approval-body" id="modal-items-list"></div>
             <div class="modal-approval-footer">
-                <button class="btn btn-secondary modal-approval-close-btn">
-                    <i class="fas fa-times"></i> Cerrar
-                </button>
-                <button class="btn btn-success" id="modal-save-btn">
-                    <i class="fas fa-save"></i> Guardar Cambios
-                </button>
+                <button class="btn btn-secondary modal-approval-close-btn"><i class="fas fa-times"></i> Cerrar</button>
+                <button class="btn btn-success" id="modal-save-btn"><i class="fas fa-save"></i> Guardar Cambios</button>
             </div>
-
         </div>
     </div>
 
-
+ 
     {{-- Modal de Servicios --}}
     <div id="services-modal" class="services-modal">
         <div class="services-modal-content">
@@ -626,15 +401,12 @@
     </div>
 
     <script>
-        // Definición de rutas
         window.appRoutes = {
             getOperadores: '{{ route('squads.get_operadores') }}',
             getSquads: '{{ route('squads.get_squads') }}',
             storeSquad: '{{ route('squads.store') }}',
-            destroySquad: '{{ route('squads.destroy', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace(
-                '__SQUAD_NUMBER__', ''),
-            showSquad: '{{ route('squads.show', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace('__SQUAD_NUMBER__',
-                '')
+            destroySquad: '{{ route('squads.destroy', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace('__SQUAD_NUMBER__', ''),
+            showSquad: '{{ route('squads.show', ['squadNumber' => '__SQUAD_NUMBER__']) }}'.replace('__SQUAD_NUMBER__', '')
         };
     </script>
 

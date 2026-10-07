@@ -16,6 +16,7 @@
 
     <link href="{{ asset('assets/css/rh/loadchart/index.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/rh/loadchart/calendar.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/rh/loadchart/approval.css') }}" rel="stylesheet">
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @stack('styles')

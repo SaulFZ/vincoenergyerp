@@ -1,144 +1,128 @@
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener("DOMContentLoaded", function () {
     initializeServicesModal();
     initializeSquadControl();
     initializeQuincenaModal();
-    // También puedes agregar aquí la inicialización de otros componentes
-    // como los modales de servicios, quincenas y control de cuadrillas
+    enableDragToScroll(".table-container");
 
-
-    /*MODAL DE SERVCIOS Y BONOS*/
-
+    /* =========================================================================================
+      MODAL DE SERVICIOS Y BONOS
+     ========================================================================================= */
     function initializeServicesModal() {
-        const servicesInfoBtn = document.getElementById('services-info');
-        const servicesModal = document.getElementById('services-modal');
-        const servicesCloseBtn = document.querySelector('.services-close-btn');
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const searchInput = document.getElementById('service-search'); // Nuevo input de búsqueda
+        const servicesInfoBtn = document.getElementById("services-info");
+        const servicesModal = document.getElementById("services-modal");
+        const servicesCloseBtn = document.querySelector(".services-close-btn");
+        const tabButtons = document.querySelectorAll(".tab-btn");
+        const tabContents = document.querySelectorAll(".tab-content");
+        const searchInput = document.getElementById("service-search");
 
         if (servicesInfoBtn) {
-            servicesInfoBtn.addEventListener('click', function () {
-                servicesModal.style.display = 'flex';
+            servicesInfoBtn.addEventListener("click", function () {
+                servicesModal.style.display = "flex";
                 loadServicesAndBonuses();
             });
         }
 
         if (servicesCloseBtn) {
-            servicesCloseBtn.addEventListener('click', function () {
-                servicesModal.style.display = 'none';
+            servicesCloseBtn.addEventListener("click", function () {
+                servicesModal.style.display = "none";
             });
         }
 
-        // Cierra el modal si el usuario hace clic fuera de él
-        window.addEventListener('click', function (event) {
+        window.addEventListener("click", function (event) {
             if (event.target === servicesModal) {
-                servicesModal.style.display = 'none';
+                servicesModal.style.display = "none";
             }
         });
 
-        // Funcionalidad de pestañas
-        tabButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
+        tabButtons.forEach((button) => {
+            button.addEventListener("click", function () {
+                tabButtons.forEach((btn) => btn.classList.remove("active"));
+                tabContents.forEach((content) =>
+                    content.classList.remove("active"),
+                );
 
-                const targetTab = this.getAttribute('data-tab');
-                document.getElementById(targetTab).classList.add('active');
-                this.classList.add('active');
+                const targetTab = this.getAttribute("data-tab");
+                document.getElementById(targetTab).classList.add("active");
+                this.classList.add("active");
             });
         });
 
-        // **NUEVO: Lógica de filtrado al escribir**
         if (searchInput) {
-            searchInput.addEventListener('keyup', filterServices);
+            searchInput.addEventListener("keyup", filterServices);
         }
     }
 
-    /**
-     * Normaliza y elimina acentos de una cadena de texto.
-     * @param {string} str - La cadena de texto.
-     * @returns {string} La cadena sin acentos.
-     */
     function removeAccents(str) {
         return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     }
 
-    /**
-     * Filtra las filas de la tabla de servicios basándose en el valor del input de búsqueda.
-     */
     function filterServices() {
-        const searchInput = document.getElementById('service-search');
-        // **NORMALIZACIÓN: Se normaliza y se quitan acentos del filtro**
+        const searchInput = document.getElementById("service-search");
         const filter = removeAccents(searchInput.value).toUpperCase();
-        const servicesTableBody = document.getElementById('services-table-body');
+        const servicesTableBody = document.getElementById(
+            "services-table-body",
+        );
 
         if (!servicesTableBody) return;
 
-        const rows = servicesTableBody.querySelectorAll('.table-row');
-        rows.forEach(row => {
+        const rows = servicesTableBody.querySelectorAll(".table-row");
+        rows.forEach((row) => {
             const textContent = row.textContent || row.innerText;
-            // **NORMALIZACIÓN: Se normaliza y se quitan acentos del contenido de la fila**
             const normalizedContent = removeAccents(textContent).toUpperCase();
 
             if (normalizedContent.indexOf(filter) > -1) {
-                row.style.display = ""; // Mostrar
+                row.style.display = "";
             } else {
-                row.style.display = "none"; // Ocultar
+                row.style.display = "none";
             }
         });
     }
 
-    /**
-     * Carga servicios y bonos del servidor y los muestra en el modal.
-     */
     async function loadServicesAndBonuses() {
-        const servicesPlaceholder = document.getElementById('services-placeholder');
-        const bonusesPlaceholder = document.getElementById('bonuses-placeholder');
-        const searchInput = document.getElementById('service-search');
+        const servicesPlaceholder = document.getElementById(
+            "services-placeholder",
+        );
+        const bonusesPlaceholder = document.getElementById(
+            "bonuses-placeholder",
+        );
+        const searchInput = document.getElementById("service-search");
 
-        servicesPlaceholder.innerHTML = '<p>Cargando servicios...</p>';
-        bonusesPlaceholder.innerHTML = '<p>Cargando bonos...</p>';
+        servicesPlaceholder.innerHTML = "<p>Cargando servicios...</p>";
+        bonusesPlaceholder.innerHTML = "<p>Cargando bonos...</p>";
         if (searchInput) {
-            searchInput.value = ''; // Limpiar la búsqueda al cargar
+            searchInput.value = "";
         }
 
-
         try {
-            const response = await fetch('/rh/loadchart/info-services');
+            const response = await fetch("/rh/loadchart/info-services");
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error("Network response was not ok");
             }
 
             const data = await response.json();
             renderServices(servicesPlaceholder, data.services);
             renderBonuses(bonusesPlaceholder, data.bonuses);
         } catch (error) {
-            console.error('Error fetching services and bonuses:', error);
-            servicesPlaceholder.innerHTML = '<p style="color: red;">Error al cargar los servicios.</p>';
-            bonusesPlaceholder.innerHTML = '<p style="color: red;">Error al cargar los bonos.</p>';
+            console.error("Error fetching services and bonuses:", error);
+            servicesPlaceholder.innerHTML =
+                '<p style="color: red;">Error al cargar los servicios.</p>';
+            bonusesPlaceholder.innerHTML =
+                '<p style="color: red;">Error al cargar los bonos.</p>';
         }
     }
 
-    /**
-     * Renderiza los datos de servicios en un formato de tabla.
-     * @param {HTMLElement} placeholder - El elemento DOM donde renderizar.
-     * @param {Object} servicesData - Los datos de servicios agrupados.
-     */
     function renderServices(placeholder, servicesData) {
         if (Object.keys(servicesData).length === 0) {
-            placeholder.innerHTML = '<p>No hay servicios disponibles.</p>';
+            placeholder.innerHTML = "<p>No hay servicios disponibles.</p>";
             return;
         }
 
-        // Crear el contenedor principal de la tabla
-        const servicesTableContainer = document.createElement('div');
-        servicesTableContainer.className = 'services-table-container';
+        const servicesTableContainer = document.createElement("div");
+        servicesTableContainer.className = "services-table-container";
 
-        const servicesTable = document.createElement('div');
-        servicesTable.className = 'services-table';
+        const servicesTable = document.createElement("div");
+        servicesTable.className = "services-table";
 
-        // **ACTUALIZADO: Se agregó la columna 'Monto' (col-6)**
         servicesTable.innerHTML = `
         <div class="table-header">
             <div class="col-1">Operación</div>
@@ -151,7 +135,9 @@ document.addEventListener('DOMContentLoaded', function () {
         <div id="services-table-body"></div>
         `;
 
-        const servicesTableBody = servicesTable.querySelector('#services-table-body');
+        const servicesTableBody = servicesTable.querySelector(
+            "#services-table-body",
+        );
 
         for (const operationType in servicesData) {
             const operationGroup = servicesData[operationType];
@@ -159,19 +145,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 const serviceTypeGroup = operationGroup[serviceType];
                 for (const servicePerformed in serviceTypeGroup) {
                     const servicesArray = serviceTypeGroup[servicePerformed];
-                    servicesArray.forEach(service => {
-                        const row = document.createElement('div');
-                        row.className = 'table-row';
+                    servicesArray.forEach((service) => {
+                        const row = document.createElement("div");
+                        row.className = "table-row";
 
-                        // Formatear el monto a moneda
-                        const formattedAmount = new Intl.NumberFormat('es-MX', {
-                            style: 'currency',
-                            currency: 'MXN',
+                        const formattedAmount = new Intl.NumberFormat("es-MX", {
+                            style: "currency",
+                            currency: "MXN",
                             minimumFractionDigits: 2,
                         }).format(service.amount);
 
-
-                        // **ACTUALIZADO: Se agregó service.amount**
                         row.innerHTML = `
                         <div class="col-1">${service.operation_type}</div>
                         <div class="col-2">${service.service_type}</div>
@@ -185,56 +168,51 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         }
-
-        // Reemplazar el contenido del placeholder con la nueva estructura
-        placeholder.innerHTML = '';
+        placeholder.innerHTML = "";
         placeholder.appendChild(servicesTable);
     }
 
-    /**
-     * Renderiza los datos de bonos en un formato de tabla.
-     * @param {HTMLElement} placeholder - El elemento DOM donde renderizar.
-     * @param {Array} bonusesData - El array de objetos de bonos.
-     */
     function renderBonuses(placeholder, bonusesData) {
         if (bonusesData.length === 0) {
-            placeholder.innerHTML = '<p>No hay bonos disponibles.</p>';
+            placeholder.innerHTML = "<p>No hay bonos disponibles.</p>";
             return;
         }
 
-        const bonusesTable = document.createElement('div');
-        bonusesTable.className = 'bonuses-table';
+        const bonusesTable = document.createElement("div");
+        bonusesTable.className = "bonuses-table";
         bonusesTable.innerHTML = `
         <div class="table-header">
             <div class="col-1">Categoría de Empleado</div>
             <div class="col-2">Tipo de Bono</div>
             <div class="col-3">Identificador</div>
         </div>
-    `;
+        `;
 
-        bonusesData.forEach(bonus => {
-            const row = document.createElement('div');
-            row.className = 'table-row';
+        bonusesData.forEach((bonus) => {
+            const row = document.createElement("div");
+            row.className = "table-row";
             row.innerHTML = `
             <div class="col-1">${bonus.employee_category}</div>
             <div class="col-2">${bonus.bonus_type}</div>
             <div class="col-3">${bonus.bonus_identifier}</div>
-        `;
+            `;
             bonusesTable.appendChild(row);
         });
 
-        placeholder.innerHTML = '';
+        placeholder.innerHTML = "";
         placeholder.appendChild(bonusesTable);
     }
 
-    /*MODAL DE CUADRILLA*/
+    /* =========================================================================================
+     MODAL DE CUADRILLA
+     ========================================================================================= */
     function initializeSquadControl() {
-        // Elementos del DOM
         const squadModal = document.getElementById("squad-control-modal");
         const squadFormModal = document.getElementById("squad-form-modal");
-        const closeSquadModalBtn = squadModal.querySelector(".squad-close-btn");
-        const closeFormModalBtns = squadFormModal.querySelectorAll(
-            ".form-close-btn, .cancel-sq-btn"
+        const closeSquadModalBtn =
+            squadModal?.querySelector(".squad-close-btn");
+        const closeFormModalBtns = squadFormModal?.querySelectorAll(
+            ".form-close-btn, .cancel-sq-btn",
         );
         const addNewSquadBtn = document.getElementById("add-new-squad");
         const saveFormBtn = document.querySelector(".save-sq-btn");
@@ -245,13 +223,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.querySelector(".search-input");
         const searchClearBtn = document.querySelector(".search-clear");
 
-        // Variables de estado
+        if (!squadModal) return; // Si no tiene permisos, este div no existirá
+
         let operadoresData = [];
         let squadsData = [];
         let isEditMode = false;
         let editingSquadNumber = null;
 
-        // Mostrar skeleton de carga
         function showLoadingSkeleton() {
             squadTableBody.innerHTML = "";
             for (let i = 0; i < 5; i++) {
@@ -264,9 +242,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>
                     <div class="operators-grid">
                         ${Array(4)
-                        .fill()
-                        .map(
-                            () => `
+                            .fill()
+                            .map(
+                                () => `
                                 <div class="operator-card skeleton">
                                     <div class="operator-avatar skeleton"></div>
                                     <div class="operator-info">
@@ -274,9 +252,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <span class="operator-id skeleton skeleton-text"></span>
                                     </div>
                                 </div>
-                            `
-                        )
-                        .join("")}
+                            `,
+                            )
+                            .join("")}
                     </div>
                 </td>
                 <td>
@@ -290,78 +268,48 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Generar opciones de cuadrillas disponibles
         function generateSquadOptions() {
-            squadSelect.innerHTML = '<option value="">Seleccionar Cuadrilla...</option>';
-
-            // Obtener números de cuadrillas existentes
-            const existingSquads = squadsData.map((squad) => squad.squad_number);
+            squadSelect.innerHTML =
+                '<option value="">Seleccionar Cuadrilla...</option>';
+            const existingSquads = squadsData.map(
+                (squad) => squad.squad_number,
+            );
 
             for (let i = 1; i <= 20; i++) {
                 const option = document.createElement("option");
-                const squadNumber = i.toString().padStart(2, "0");
+                const squadNumberStr = i.toString().padStart(2, "0");
                 option.value = i;
-                option.textContent = `Cuadrilla-${squadNumber}`;
+                option.textContent = `Cuadrilla-${squadNumberStr}`;
 
-                // LÓGICA MEJORADA
-                // Deshabilitar la opción si ya existe en otra cuadrilla
                 const isExisting = existingSquads.includes(i);
-                const isEditingThisSquad = (isEditMode && parseInt(editingSquadNumber) === i);
+                const isEditingThisSquad =
+                    isEditMode && parseInt(editingSquadNumber) === i;
 
                 if (isExisting && !isEditingThisSquad) {
                     option.disabled = true;
                     option.textContent += " (Existente)";
                 }
-                // Fin de la lógica mejorada
 
                 squadSelect.appendChild(option);
             }
         }
 
-        // Cargar operadores con caché local
-        async function fetchAndPopulateOperators() {
-            try {
-                // Mostrar loading en selects
-                operatorSelects.forEach((select) => {
-                    select.innerHTML = '<option value="">Cargando operadores...</option>';
-                    select.disabled = true;
-                });
-
-                // Verificar si ya tenemos los datos en caché
-                if (operadoresData.length > 0) {
-                    populateOperatorSelects();
-                    return;
-                }
-
-                const response = await fetch(window.appRoutes.getOperadores);
-                if (!response.ok) throw new Error("Error al obtener operadores");
-
-                operadoresData = await response.json();
-                populateOperatorSelects();
-            } catch (error) {
-                console.error("Error:", error);
-                operatorSelects.forEach((select) => {
-                    select.innerHTML = '<option value="">Error al cargar</option>';
-                });
-                showError("Error al cargar los operadores");
-            }
-        }
-
         function populateOperatorSelects() {
             operatorSelects.forEach((select) => {
-                select.innerHTML = '<option value="">Seleccionar Operador...</option>';
-
+                select.innerHTML =
+                    '<option value="">Seleccionar Operador...</option>';
                 operadoresData.forEach((operador) => {
                     const option = document.createElement("option");
                     option.value = operador.employee_number;
                     option.textContent = operador.full_name;
 
-                    // Deshabilitar operadores ya asignados (excepto en edición)
                     if (!isEditMode) {
                         const isAssigned = squadsData.some((squad) =>
                             squad.employees.some(
-                                (emp) => emp.employee_number === operador.employee_number
-                            )
+                                (emp) =>
+                                    emp.employee_number ===
+                                    operador.employee_number,
+                            ),
                         );
                         option.disabled = isAssigned;
                         if (isAssigned) {
@@ -371,15 +319,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     select.appendChild(option);
                 });
-
                 select.disabled = false;
             });
         }
 
-        // Cargar cuadrillas con skeleton
         async function loadSquads() {
             showLoadingSkeleton();
-
             try {
                 const response = await fetch(window.appRoutes.getSquads);
                 if (!response.ok) throw new Error("Error al cargar cuadrillas");
@@ -397,17 +342,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     </td>
                 </tr>
             `;
-
                 document
                     .getElementById("retry-load-squads")
                     ?.addEventListener("click", loadSquads);
             }
         }
 
-        // Renderizar tabla de cuadrillas
         function renderSquadsTable() {
             squadTableBody.innerHTML = "";
-
             if (squadsData.length === 0) {
                 squadTableBody.innerHTML = `
                 <tr>
@@ -425,7 +367,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 row.className = "squad-row";
                 row.dataset.squadNumber = squad.squad_number;
 
-                // Crear celdas de operadores
                 let operatorsHtml = "";
                 squad.employees.forEach((employee) => {
                     operatorsHtml += `
@@ -439,7 +380,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
                 });
 
-                // Agregar espacios vacíos si hay menos de 4 operadores
                 const remainingSlots = 4 - squad.employees.length;
                 for (let i = 0; i < remainingSlots; i++) {
                     operatorsHtml += `
@@ -470,50 +410,43 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 </td>
             `;
-
                 squadTableBody.appendChild(row);
             });
         }
 
-        // Editar cuadrilla con animación
         function editSquad(squadNumber) {
-            // Busca la cuadrilla en los datos que ya tenemos
             const squadData = squadsData.find(
-                (squad) => parseInt(squad.squad_number) === parseInt(squadNumber)
+                (squad) =>
+                    parseInt(squad.squad_number) === parseInt(squadNumber),
             );
-
-            // Valida que la cuadrilla exista
             if (!squadData) {
                 showError("Cuadrilla no encontrada en los datos locales.");
                 return;
             }
 
-            // Configura el formulario para el modo de edición
             isEditMode = true;
             editingSquadNumber = squadNumber;
             formTitle.textContent = `Editar ${squadData.squad_name}`;
 
-            // Regenera las opciones del select de cuadrillas y selecciona la actual
             generateSquadOptions();
             squadSelect.value = squadNumber;
 
-            // Limpia todos los selects primero
             operatorSelects.forEach((select) => {
-                select.innerHTML = '<option value="">Seleccionar Operador...</option>';
-
-                // Llenar con todos los operadores
+                select.innerHTML =
+                    '<option value="">Seleccionar Operador...</option>';
                 operadoresData.forEach((operador) => {
                     const option = document.createElement("option");
                     option.value = operador.employee_number;
                     option.textContent = operador.full_name;
 
-                    // Deshabilitar operadores ya asignados a OTRAS cuadrillas
                     const isAssignedToOtherSquad = squadsData.some(
                         (squad) =>
                             squad.squad_number != squadNumber &&
                             squad.employees.some(
-                                (emp) => emp.employee_number === operador.employee_number
-                            )
+                                (emp) =>
+                                    emp.employee_number ===
+                                    operador.employee_number,
+                            ),
                     );
 
                     option.disabled = isAssignedToOtherSquad;
@@ -525,18 +458,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
 
-            // Rellena los selects de operadores con los datos de la cuadrilla
             squadData.employees.forEach((employee, index) => {
                 if (index < operatorSelects.length) {
                     operatorSelects[index].value = employee.employee_number;
                 }
             });
 
-            // Muestra el modal del formulario
             showModal(squadFormModal);
         }
 
-        // Eliminar cuadrilla
         async function deleteSquad(squadNumber) {
             const result = await Swal.fire({
                 title: "¿Estás seguro?",
@@ -557,12 +487,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             method: "DELETE",
                             headers: {
                                 "X-CSRF-TOKEN": document.querySelector(
-                                    'meta[name="csrf-token"]'
+                                    'meta[name="csrf-token"]',
                                 ).content,
                             },
-                        }
+                        },
                     );
-
                     const data = await response.json();
 
                     if (response.ok) {
@@ -578,36 +507,32 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Guardar cuadrilla con validación mejorada
         async function saveSquad() {
             const squadNumber = squadSelect.value;
             const selectedOperators = Array.from(operatorSelects)
                 .map((select) => select.value)
                 .filter((op) => op);
 
-            // Validaciones
             if (!squadNumber) {
                 showError("Selecciona un número de cuadrilla");
                 return false;
             }
-
             if (selectedOperators.length === 0) {
                 showError("Selecciona al menos un operador");
                 return false;
             }
-
             if (selectedOperators.length > 4) {
                 showError("Máximo 4 operadores por cuadrilla");
                 return false;
             }
-
             if (new Set(selectedOperators).size !== selectedOperators.length) {
                 showError("No puede haber operadores duplicados");
                 return false;
             }
 
             try {
-                saveFormBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                saveFormBtn.innerHTML =
+                    '<i class="fas fa-spinner fa-spin"></i> Guardando...';
                 saveFormBtn.disabled = true;
 
                 const response = await fetch(window.appRoutes.storeSquad, {
@@ -615,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRF-TOKEN": document.querySelector(
-                            'meta[name="csrf-token"]'
+                            'meta[name="csrf-token"]',
                         ).content,
                     },
                     body: JSON.stringify({
@@ -628,30 +553,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Actualizar los datos locales con la respuesta del servidor
                     if (isEditMode) {
-                        // Actualizar cuadrilla existente
                         const squadIndex = squadsData.findIndex(
-                            (s) => s.squad_number == squadNumber
+                            (s) => s.squad_number == squadNumber,
                         );
-                        if (squadIndex !== -1) {
+                        if (squadIndex !== -1)
                             squadsData[squadIndex] = data.squad;
-                        }
                     } else {
-                        // Agregar nueva cuadrilla
                         squadsData.push(data.squad);
                     }
 
-                    // Ordenar cuadrillas por número
                     squadsData.sort((a, b) => a.squad_number - b.squad_number);
 
-                    // Animación de éxito
                     squadFormModal.classList.add("success-animation");
                     setTimeout(() => {
                         hideModal(squadFormModal);
                         squadFormModal.classList.remove("success-animation");
-
-                        // Renderizar tabla con datos actualizados
                         renderSquadsTable();
                         showSuccess(data.message);
                         resetForm();
@@ -663,12 +580,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error("Error:", error);
                 showError("Error al guardar la cuadrilla");
             } finally {
-                saveFormBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cuadrilla';
+                saveFormBtn.innerHTML =
+                    '<i class="fas fa-save"></i> Guardar Cuadrilla';
                 saveFormBtn.disabled = false;
             }
         }
 
-        // Reiniciar formulario
         function resetForm() {
             squadSelect.value = "";
             operatorSelects.forEach((select) => (select.value = ""));
@@ -677,17 +594,18 @@ document.addEventListener('DOMContentLoaded', function () {
             formTitle.textContent = "Nueva Cuadrilla";
         }
 
-        // Búsqueda
         function handleSearch() {
             const searchTerm = searchInput.value.toLowerCase();
-            const squadRows = document.querySelectorAll(".squad-row:not(.loading)");
+            const squadRows = document.querySelectorAll(
+                ".squad-row:not(.loading)",
+            );
 
             squadRows.forEach((row) => {
                 const squadName = row
                     .querySelector(".squad-badge")
                     .textContent.toLowerCase();
                 const operatorNames = Array.from(
-                    row.querySelectorAll(".operator-name")
+                    row.querySelectorAll(".operator-name"),
                 )
                     .map((el) => el.textContent.toLowerCase())
                     .join(" ");
@@ -703,7 +621,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Mostrar/ocultar modales
         function showModal(modalElement) {
             modalElement.classList.add("is-visible");
             document.body.style.overflow = "hidden";
@@ -719,82 +636,73 @@ document.addEventListener('DOMContentLoaded', function () {
         function showError(message) {
             Swal.fire("Error", message, "error");
         }
-
         function showSuccess(message) {
             Swal.fire("¡Éxito!", message, "success");
         }
 
-        // Event Listeners
-        document.getElementById("squad-control")?.addEventListener("click", () => {
-            showModal(squadModal);
-            loadSquads();
-        });
+        document
+            .getElementById("squad-control")
+            ?.addEventListener("click", () => {
+                showModal(squadModal);
+                loadSquads();
+            });
 
-        closeSquadModalBtn.addEventListener("click", () => hideModal(squadModal));
-
+        if (closeSquadModalBtn)
+            closeSquadModalBtn.addEventListener("click", () =>
+                hideModal(squadModal),
+            );
         closeFormModalBtns.forEach((btn) =>
-            btn.addEventListener("click", () => hideModal(squadFormModal))
+            btn.addEventListener("click", () => hideModal(squadFormModal)),
         );
 
-        addNewSquadBtn.addEventListener("click", () => {
-            resetForm();
-            generateSquadOptions();
-            populateOperatorSelects();
-            showModal(squadFormModal);
-        });
+        if (addNewSquadBtn) {
+            addNewSquadBtn.addEventListener("click", () => {
+                resetForm();
+                generateSquadOptions();
+                populateOperatorSelects();
+                showModal(squadFormModal);
+            });
+        }
 
-        squadTableBody.addEventListener("click", function (event) {
-            const editBtn = event.target.closest(".action-btn.edit");
-            const deleteBtn = event.target.closest(".action-btn.delete");
+        if (squadTableBody) {
+            squadTableBody.addEventListener("click", function (event) {
+                const editBtn = event.target.closest(".action-btn.edit");
+                const deleteBtn = event.target.closest(".action-btn.delete");
 
-            if (editBtn) {
-                editSquad(editBtn.dataset.squad);
-            }
+                if (editBtn) editSquad(editBtn.dataset.squad);
+                if (deleteBtn) deleteSquad(deleteBtn.dataset.squad);
+            });
+        }
 
-            if (deleteBtn) {
-                deleteSquad(deleteBtn.dataset.squad);
-            }
-        });
+        if (saveFormBtn) saveFormBtn.addEventListener("click", saveSquad);
+        if (searchInput) searchInput.addEventListener("input", handleSearch);
+        if (searchClearBtn) {
+            searchClearBtn.addEventListener("click", () => {
+                searchInput.value = "";
+                handleSearch();
+            });
+        }
 
-        saveFormBtn.addEventListener("click", saveSquad);
-
-        searchInput.addEventListener("input", handleSearch);
-
-        searchClearBtn.addEventListener("click", () => {
-            searchInput.value = "";
-            handleSearch();
-        });
-
-        // Inicialización mejorada
         async function initialize() {
             try {
-                // Mostrar skeleton loading
                 showLoadingSkeleton();
-
-                // Cargar operadores y cuadrillas en paralelo para mayor velocidad
                 const [operadoresResponse, squadsResponse] = await Promise.all([
                     fetch(window.appRoutes.getOperadores),
                     fetch(window.appRoutes.getSquads),
                 ]);
 
-                if (!operadoresResponse.ok || !squadsResponse.ok) {
+                if (!operadoresResponse.ok || !squadsResponse.ok)
                     throw new Error("Error al cargar datos iniciales");
-                }
 
-                // Asignar datos
                 operadoresData = await operadoresResponse.json();
                 squadsData = await squadsResponse.json();
 
-                // Renderizar tabla
                 renderSquadsTable();
-
-                // Generar opciones de cuadrillas
                 generateSquadOptions();
             } catch (error) {
                 console.error("Error en inicialización:", error);
                 showError("Error al cargar los datos iniciales");
 
-                // Mostrar opción de reintento
                 squadTableBody.innerHTML = `
                 <tr>
                     <td colspan="3" class="text-center error">
@@ -804,39 +712,45 @@ document.addEventListener('DOMContentLoaded', function () {
                     </td>
                 </tr>
             `;
-
                 document
                     .getElementById("retry-load-data")
                     ?.addEventListener("click", initialize);
             }
         }
-
         initialize();
     }
 
-
-
-    // ================================================================
-    // === MODAL DE CONFIGURACIÓN DE QUINCENAS =======================
-    // ================================================================
-
+    /* =========================================================================================
+      MODAL DE CONFIGURACIÓN DE QUINCENAS
+     ========================================================================================= */
     function initializeQuincenaModal() {
         const quincenaModal = document.getElementById("quincena-modal");
         const openBtn = document.getElementById("days-quincena");
-        const quincenaCloseBtn = quincenaModal.querySelector(".quincena-close-btn");
-        const cancelBtn = quincenaModal.querySelector(".quincena-cancel-btn");
-        const saveBtn = quincenaModal.querySelector(".quincena-save-btn");
-        const editBtn = quincenaModal.querySelector(".quincena-edit-btn");
-        const prevMonthBtn = quincenaModal.querySelector(".quincena-prev-month");
-        const nextMonthBtn = quincenaModal.querySelector(".quincena-next-month");
-        const monthTitle = quincenaModal.querySelector(".quincena-month-title");
-        const calendarGrid = quincenaModal.querySelector(".quincena-calendar-grid");
+        const quincenaCloseBtn = quincenaModal?.querySelector(
+            ".quincena-close-btn",
+        );
+        const cancelBtn = quincenaModal?.querySelector(".quincena-cancel-btn");
+        const saveBtn = quincenaModal?.querySelector(".quincena-save-btn");
+        const editBtn = quincenaModal?.querySelector(".quincena-edit-btn");
+        const prevMonthBtn = quincenaModal?.querySelector(
+            ".quincena-prev-month",
+        );
+        const nextMonthBtn = quincenaModal?.querySelector(
+            ".quincena-next-month",
+        );
+        const monthTitle = quincenaModal?.querySelector(
+            ".quincena-month-title",
+        );
+        const calendarGrid = quincenaModal?.querySelector(
+            ".quincena-calendar-grid",
+        );
 
-        // Inputs de fechas
         const q1StartInput = document.getElementById("q1-start");
         const q1EndInput = document.getElementById("q1-end");
         const q2StartInput = document.getElementById("q2-start");
         const q2EndInput = document.getElementById("q2-end");
+
+        if (!quincenaModal) return;
 
         let currentDate = new Date();
         let currentQuincenaConfig = null;
@@ -854,7 +768,8 @@ document.addEventListener('DOMContentLoaded', function () {
             resetForm();
         }
 
-        if (quincenaCloseBtn) quincenaCloseBtn.addEventListener("click", closeQuincenaModal);
+        if (quincenaCloseBtn)
+            quincenaCloseBtn.addEventListener("click", closeQuincenaModal);
 
         if (cancelBtn) {
             cancelBtn.addEventListener("click", function () {
@@ -881,35 +796,40 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        if (saveBtn) {
-            saveBtn.addEventListener("click", saveQuincenaConfig);
-        }
+        if (saveBtn) saveBtn.addEventListener("click", saveQuincenaConfig);
 
-        document.querySelectorAll('.quincena-date-input').forEach(input => {
+        document.querySelectorAll(".quincena-date-input").forEach((input) => {
             input.addEventListener("change", updateCalendarFromInputs);
         });
 
         function enableEditMode() {
             saveBtn.disabled = false;
-            editBtn.style.display = 'none';
-            cancelBtn.style.display = 'inline-flex';
+            editBtn.style.display = "none";
+            cancelBtn.style.display = "inline-flex";
 
-            document.querySelectorAll('.quincena-date-input').forEach(input => {
-                input.removeAttribute('readonly');
-            });
+            document
+                .querySelectorAll(".quincena-date-input")
+                .forEach((input) => {
+                    input.removeAttribute("readonly");
+                });
 
-            showNotification('Modo de edición activado. Puedes modificar las fechas.', 'info');
+            showNotification(
+                "Modo de edición activado. Puedes modificar las fechas.",
+                "info",
+            );
             renderQuincenaCalendar(currentDate);
         }
 
         function disableEditMode() {
             saveBtn.disabled = true;
-            editBtn.style.display = 'inline-flex';
-            cancelBtn.style.display = 'none';
+            editBtn.style.display = "inline-flex";
+            cancelBtn.style.display = "none";
 
-            document.querySelectorAll('.quincena-date-input').forEach(input => {
-                input.setAttribute('readonly', true);
-            });
+            document
+                .querySelectorAll(".quincena-date-input")
+                .forEach((input) => {
+                    input.setAttribute("readonly", true);
+                });
 
             renderQuincenaCalendar(currentDate);
         }
@@ -919,25 +839,36 @@ document.addEventListener('DOMContentLoaded', function () {
             const month = currentDate.getMonth() + 1;
 
             try {
-                const response = await fetch(`/rh/loadchart/fortnightly-config/${year}/${month}`);
+                const response = await fetch(
+                    `/rh/loadchart/fortnightly-config/${year}/${month}`,
+                );
 
                 if (response.ok) {
                     const config = await response.json();
                     if (config) {
                         currentQuincenaConfig = config;
                     } else {
-                        currentQuincenaConfig = await generateDefaultConfig(year, month);
+                        currentQuincenaConfig = await generateDefaultConfig(
+                            year,
+                            month,
+                        );
                     }
                 } else {
-                    currentQuincenaConfig = await generateDefaultConfig(year, month);
+                    currentQuincenaConfig = await generateDefaultConfig(
+                        year,
+                        month,
+                    );
                 }
 
                 originalQuincenaConfig = { ...currentQuincenaConfig };
                 populateFormWithConfig(currentQuincenaConfig);
                 disableEditMode();
             } catch (error) {
-                console.error('Error loading config:', error);
-                currentQuincenaConfig = await generateDefaultConfig(year, month);
+                console.error("Error loading config:", error);
+                currentQuincenaConfig = await generateDefaultConfig(
+                    year,
+                    month,
+                );
                 originalQuincenaConfig = { ...currentQuincenaConfig };
                 populateFormWithConfig(currentQuincenaConfig);
                 disableEditMode();
@@ -946,21 +877,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         async function generateDefaultConfig(year, month) {
             try {
-                const response = await fetch('/rh/loadchart/fortnightly-config/generate-default', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                const response = await fetch(
+                    "/rh/loadchart/fortnightly-config/generate-default",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document
+                                .querySelector('meta[name="csrf-token"]')
+                                .getAttribute("content"),
+                        },
+                        body: JSON.stringify({ year, month }),
                     },
-                    body: JSON.stringify({ year, month })
-                });
+                );
 
                 const result = await response.json();
-                if (response.ok) {
-                    return result.data;
-                }
+                if (response.ok) return result.data;
             } catch (error) {
-                console.error('Error generating default config:', error);
+                console.error("Error generating default config:", error);
             }
 
             const firstDay = new Date(year, month - 1, 1);
@@ -978,29 +912,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 q1_start: formatDateForInput(firstDay),
                 q1_end: formatDateForInput(fifteenthDay),
                 q2_start: formatDateForInput(sixteenthDay),
-                q2_end: formatDateForInput(lastDay)
+                q2_end: formatDateForInput(lastDay),
             };
         }
 
         function populateFormWithConfig(config) {
-            q1StartInput.value = config.q1_start ? new Date(config.q1_start).toISOString().split('T')[0] : '';
-            q1EndInput.value = config.q1_end ? new Date(config.q1_end).toISOString().split('T')[0] : '';
-            q2StartInput.value = config.q2_start ? new Date(config.q2_start).toISOString().split('T')[0] : '';
-            q2EndInput.value = config.q2_end ? new Date(config.q2_end).toISOString().split('T')[0] : '';
+            q1StartInput.value = config.q1_start
+                ? new Date(config.q1_start).toISOString().split("T")[0]
+                : "";
+            q1EndInput.value = config.q1_end
+                ? new Date(config.q1_end).toISOString().split("T")[0]
+                : "";
+            q2StartInput.value = config.q2_start
+                ? new Date(config.q2_start).toISOString().split("T")[0]
+                : "";
+            q2EndInput.value = config.q2_end
+                ? new Date(config.q2_end).toISOString().split("T")[0]
+                : "";
 
             renderQuincenaCalendar(currentDate);
         }
 
         function formatDateForInput(date) {
             const d = new Date(date);
-            let month = '' + (d.getMonth() + 1);
-            let day = '' + d.getDate();
+            let month = "" + (d.getMonth() + 1);
+            let day = "" + d.getDate();
             const year = d.getFullYear();
 
-            if (month.length < 2) month = '0' + month;
-            if (day.length < 2) day = '0' + day;
+            if (month.length < 2) month = "0" + month;
+            if (day.length < 2) day = "0" + day;
 
-            return [year, month, day].join('-');
+            return [year, month, day].join("-");
         }
 
         function updateCalendarFromInputs() {
@@ -1008,25 +950,43 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function isDateInQuincena(date) {
-            const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
-            const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
-            const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
-            const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
+            const q1Start = q1StartInput.value
+                ? new Date(q1StartInput.value + "T00:00:00")
+                : null;
+            const q1End = q1EndInput.value
+                ? new Date(q1EndInput.value + "T00:00:00")
+                : null;
+            const q2Start = q2StartInput.value
+                ? new Date(q2StartInput.value + "T00:00:00")
+                : null;
+            const q2End = q2EndInput.value
+                ? new Date(q2EndInput.value + "T00:00:00")
+                : null;
 
             const testDate = new Date(date);
             testDate.setHours(0, 0, 0, 0);
 
-            const isQ1 = q1Start && q1End && testDate >= q1Start && testDate <= q1End;
-            const isQ2 = q2Start && q2End && testDate >= q2Start && testDate <= q2End;
+            const isQ1 =
+                q1Start && q1End && testDate >= q1Start && testDate <= q1End;
+            const isQ2 =
+                q2Start && q2End && testDate >= q2Start && testDate <= q2End;
 
             return isQ1 || isQ2;
         }
 
         function isBoundaryDay(date) {
-            const q1Start = q1StartInput.value ? new Date(q1StartInput.value + 'T00:00:00') : null;
-            const q1End = q1EndInput.value ? new Date(q1EndInput.value + 'T00:00:00') : null;
-            const q2Start = q2StartInput.value ? new Date(q2StartInput.value + 'T00:00:00') : null;
-            const q2End = q2EndInput.value ? new Date(q2EndInput.value + 'T00:00:00') : null;
+            const q1Start = q1StartInput.value
+                ? new Date(q1StartInput.value + "T00:00:00")
+                : null;
+            const q1End = q1EndInput.value
+                ? new Date(q1EndInput.value + "T00:00:00")
+                : null;
+            const q2Start = q2StartInput.value
+                ? new Date(q2StartInput.value + "T00:00:00")
+                : null;
+            const q2End = q2EndInput.value
+                ? new Date(q2EndInput.value + "T00:00:00")
+                : null;
 
             const testDate = new Date(date);
             testDate.setHours(0, 0, 0, 0);
@@ -1034,9 +994,11 @@ document.addEventListener('DOMContentLoaded', function () {
             let isStart = false;
             let isEnd = false;
 
-            if (q1Start && testDate.getTime() === q1Start.getTime()) isStart = true;
+            if (q1Start && testDate.getTime() === q1Start.getTime())
+                isStart = true;
             if (q1End && testDate.getTime() === q1End.getTime()) isEnd = true;
-            if (q2Start && testDate.getTime() === q2Start.getTime()) isStart = true;
+            if (q2Start && testDate.getTime() === q2Start.getTime())
+                isStart = true;
             if (q2End && testDate.getTime() === q2End.getTime()) isEnd = true;
 
             return { isStart, isEnd };
@@ -1057,7 +1019,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const dayLabels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-            dayLabels.forEach(label => {
+            dayLabels.forEach((label) => {
                 const labelCell = document.createElement("div");
                 labelCell.className = "quincena-day-label";
                 labelCell.textContent = label;
@@ -1076,26 +1038,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
             for (let i = prevMonthDaysCount - 1; i >= 0; i--) {
                 const day = prevMonthLastDay.getDate() - i;
-                const prevMonthDate = new Date(prevMonthLastDay.getFullYear(), prevMonthLastDay.getMonth(), day);
+                const prevMonthDate = new Date(
+                    prevMonthLastDay.getFullYear(),
+                    prevMonthLastDay.getMonth(),
+                    day,
+                );
 
                 const dayCell = document.createElement("div");
                 dayCell.className = "quincena-day-cell other-month-day";
                 dayCell.textContent = day;
 
-                if (isDateInQuincena(prevMonthDate)) {
+                if (isDateInQuincena(prevMonthDate))
                     dayCell.classList.add("quincena-selected");
-                }
 
                 const boundary = isBoundaryDay(prevMonthDate);
-                if (boundary.isStart) {
-                    dayCell.classList.add("quincena-start");
-                }
-                if (boundary.isEnd) {
-                    dayCell.classList.add("quincena-end");
-                }
+                if (boundary.isStart) dayCell.classList.add("quincena-start");
+                if (boundary.isEnd) dayCell.classList.add("quincena-end");
 
-                dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(prevMonthDate.getMonth())} ${prevMonthDate.getFullYear()}`);
-                dayCell.classList.add('has-tooltip');
+                dayCell.setAttribute(
+                    "data-tooltip",
+                    `${day} de ${getMonthName(prevMonthDate.getMonth())} ${prevMonthDate.getFullYear()}`,
+                );
+                dayCell.classList.add("has-tooltip");
                 calendarGrid.appendChild(dayCell);
             }
 
@@ -1106,20 +1070,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const cellDate = new Date(year, month, day);
 
-                if (isDateInQuincena(cellDate)) {
+                if (isDateInQuincena(cellDate))
                     dayCell.classList.add("quincena-selected");
-                }
 
                 const boundary = isBoundaryDay(cellDate);
-                if (boundary.isStart) {
-                    dayCell.classList.add("quincena-start");
-                }
-                if (boundary.isEnd) {
-                    dayCell.classList.add("quincena-end");
-                }
+                if (boundary.isStart) dayCell.classList.add("quincena-start");
+                if (boundary.isEnd) dayCell.classList.add("quincena-end");
 
-                dayCell.setAttribute('data-tooltip', `${day} de ${getMonthName(month)} ${year}`);
-                dayCell.classList.add('has-tooltip');
+                dayCell.setAttribute(
+                    "data-tooltip",
+                    `${day} de ${getMonthName(month)} ${year}`,
+                );
+                dayCell.classList.add("has-tooltip");
                 calendarGrid.appendChild(dayCell);
             }
 
@@ -1135,37 +1097,51 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         async function saveQuincenaConfig() {
-            // Prevenir doble ejecución
             if (this.saving) return;
             this.saving = true;
 
             const saveBtn = document.querySelector(".quincena-save-btn");
 
-            if (!q1StartInput.value || !q1EndInput.value || !q2StartInput.value || !q2EndInput.value) {
-                showNotification('Por favor, complete todas las fechas', 'error');
+            if (
+                !q1StartInput.value ||
+                !q1EndInput.value ||
+                !q2StartInput.value ||
+                !q2EndInput.value
+            ) {
+                showNotification(
+                    "Por favor, complete todas las fechas",
+                    "error",
+                );
                 this.saving = false;
                 return;
             }
 
-            const q1Start = new Date(q1StartInput.value + 'T00:00:00');
-            const q1End = new Date(q1EndInput.value + 'T00:00:00');
-            const q2Start = new Date(q2StartInput.value + 'T00:00:00');
-            const q2End = new Date(q2EndInput.value + 'T00:00:00');
+            const q1Start = new Date(q1StartInput.value + "T00:00:00");
+            const q1End = new Date(q1EndInput.value + "T00:00:00");
+            const q2Start = new Date(q2StartInput.value + "T00:00:00");
+            const q2End = new Date(q2EndInput.value + "T00:00:00");
 
             if (q1Start > q1End) {
-                showNotification('La fecha de inicio de la primera quincena debe ser anterior a la de fin.', 'error');
+                showNotification(
+                    "La fecha de inicio de la primera quincena debe ser anterior a la de fin.",
+                    "error",
+                );
                 this.saving = false;
                 return;
             }
-
             if (q1End.getTime() >= q2Start.getTime()) {
-                showNotification('La primera quincena debe terminar antes de que inicie la segunda.', 'error');
+                showNotification(
+                    "La primera quincena debe terminar antes de que inicie la segunda.",
+                    "error",
+                );
                 this.saving = false;
                 return;
             }
-
             if (q2Start > q2End) {
-                showNotification('La fecha de inicio de la segunda quincena debe ser anterior a la de fin.', 'error');
+                showNotification(
+                    "La fecha de inicio de la segunda quincena debe ser anterior a la de fin.",
+                    "error",
+                );
                 this.saving = false;
                 return;
             }
@@ -1177,39 +1153,54 @@ document.addEventListener('DOMContentLoaded', function () {
                 q1_end: q1EndInput.value,
                 q2_start: q2StartInput.value,
                 q2_end: q2EndInput.value,
-                _token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                _token: document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content"),
             };
 
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            saveBtn.innerHTML =
+                '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
             try {
-                const response = await fetch('/rh/loadchart/fortnightly-config', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': configData._token
+                const response = await fetch(
+                    "/rh/loadchart/fortnightly-config",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": configData._token,
+                        },
+                        body: JSON.stringify(configData),
                     },
-                    body: JSON.stringify(configData)
-                });
+                );
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    showNotification('Configuración guardada exitosamente', 'success');
+                    showNotification(
+                        "Configuración guardada exitosamente",
+                        "success",
+                    );
                     currentQuincenaConfig = result.data;
                     originalQuincenaConfig = { ...currentQuincenaConfig };
                     populateFormWithConfig(currentQuincenaConfig);
                     disableEditMode();
                 } else {
-                    const errorMessage = result.errors ? Object.values(result.errors).flat().join('<br>') : result.message;
-                    showNotification(errorMessage || 'Error al guardar la configuración', 'error');
+                    const errorMessage = result.errors
+                        ? Object.values(result.errors).flat().join("<br>")
+                        : result.message;
+                    showNotification(
+                        errorMessage || "Error al guardar la configuración",
+                        "error",
+                    );
                 }
             } catch (error) {
-                showNotification('Error al guardar la configuración', 'error');
+                showNotification("Error al guardar la configuración", "error");
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+                saveBtn.innerHTML =
+                    '<i class="fas fa-save"></i> Guardar Cambios';
                 this.saving = false;
             }
         }
@@ -1217,37 +1208,122 @@ document.addEventListener('DOMContentLoaded', function () {
         function resetForm() {
             currentQuincenaConfig = null;
             originalQuincenaConfig = null;
-            q1StartInput.value = '';
-            q1EndInput.value = '';
-            q2StartInput.value = '';
-            q2EndInput.value = '';
+            q1StartInput.value = "";
+            q1EndInput.value = "";
+            q2StartInput.value = "";
+            q2EndInput.value = "";
             disableEditMode();
             renderQuincenaCalendar(currentDate);
         }
 
         function getMonthName(monthIndex) {
-            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const months = [
+                "Enero",
+                "Febrero",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agosto",
+                "Septiembre",
+                "Octubre",
+                "Noviembre",
+                "Diciembre",
+            ];
             return months[monthIndex];
         }
     }
 
-    // Función para mostrar notificaciones (debe estar disponible globalmente)
-    function showNotification(message, type = 'info') {
+    // Funciones globales reutilizables
+    function showNotification(message, type = "info") {
         const notification = document.createElement("div");
         notification.className = `notification ${type}`;
 
-        const icon = type === 'success' ? 'fa-check-circle' :
-            type === 'error' ? 'fa-exclamation-circle' :
-                'fa-info-circle';
+        const icon =
+            type === "success"
+                ? "fa-check-circle"
+                : type === "error"
+                  ? "fa-exclamation-circle"
+                  : "fa-info-circle";
 
         notification.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
         document.body.appendChild(notification);
 
-        setTimeout(() => notification.classList.add('show'), 100);
+        setTimeout(() => notification.classList.add("show"), 100);
 
         setTimeout(() => {
             notification.classList.add("fade-out");
             setTimeout(() => notification.remove(), 500);
         }, 4000);
+    }
+
+    /* =========================================================================================
+     SISTEMA DRAG-TO-SCROLL PARA LA TABLA PRINCIPAL
+     ========================================================================================= */
+    function enableDragToScroll(containerSelector) {
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+
+        let isDown = false;
+        let startX, startY, scrollLeft, scrollTop;
+
+        container.addEventListener("mousedown", (e) => {
+            if (e.target.closest("button, input, select, a, .status-indicator"))
+                return;
+
+            isDown = true;
+            container.classList.add("is-grabbing");
+            startX = e.pageX - container.offsetLeft;
+            startY = e.pageY - container.offsetTop;
+            scrollLeft = container.scrollLeft;
+            scrollTop = container.scrollTop;
+            e.preventDefault();
+        });
+
+        container.addEventListener("mouseleave", () => {
+            isDown = false;
+            container.classList.remove("is-grabbing");
+        });
+
+        container.addEventListener("mouseup", () => {
+            isDown = false;
+            container.classList.remove("is-grabbing");
+        });
+
+        container.addEventListener("mousemove", (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const y = e.pageY - container.offsetTop;
+            const walkX = (x - startX) * 1.2;
+            const walkY = (y - startY) * 1.2;
+            container.scrollLeft = scrollLeft - walkX;
+            container.scrollTop = scrollTop - walkY;
+        });
+
+        let touchStartX, touchStartY, touchScrollLeft, touchScrollTop;
+
+        container.addEventListener(
+            "touchstart",
+            (e) => {
+                touchStartX = e.touches[0].pageX - container.offsetLeft;
+                touchStartY = e.touches[0].pageY - container.offsetTop;
+                touchScrollLeft = container.scrollLeft;
+                touchScrollTop = container.scrollTop;
+            },
+            { passive: true },
+        );
+
+        container.addEventListener(
+            "touchmove",
+            (e) => {
+                const x = e.touches[0].pageX - container.offsetLeft;
+                const y = e.touches[0].pageY - container.offsetTop;
+                container.scrollLeft = touchScrollLeft - (x - touchStartX);
+                container.scrollTop = touchScrollTop - (y - touchStartY);
+            },
+            { passive: true },
+        );
     }
 });

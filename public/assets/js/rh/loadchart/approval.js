@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Inicialización del script
+    // Inicialización del script principal
     initializeApprovalTable();
     setupModalEventListeners();
 });
@@ -19,15 +19,10 @@ let currentModalData = {
 
 let autoRefreshInterval = null;
 let lastUpdateTime = new Date();
-let monthlyDays = [];
-let employees = [];
-allEmployeeRows = [];
-allSquadRows = [];
 let isFiltersOpen = false;
 let auxiliarPalState = 'inactive';
-
-// Set para evitar múltiples alertas consecutivas
 let hasAlertedVacations = new Set();
+let currentEmployeeModal = null;
 
 function stopAutoRefresh() {
     if (autoRefreshInterval) {
@@ -43,30 +38,46 @@ function handleVisibilityChange() {
     }
 }
 
+// =========================================================================================
+// 🚀 INICIALIZACIÓN Y RENDERIZADO ULTRARRÁPIDO
+// =========================================================================================
 function initializeApprovalTable() {
     setupEventListeners();
     initializeEmployeeNameClickListeners();
     initializeEmployeeModalListeners();
 
-    loadMonthData(false).then(() => {
+    // 1. Construir la estructura de la tabla (usando DocumentFragment interno)
+    updateTableStructure(monthlyDays, employees);
+
+    // 2. Establecer la vista inicial
+    if (typeof currentView !== 'undefined') {
+        if (currentView === 'quincena1') showQuincena(1);
+        else if (currentView === 'quincena2') showQuincena(2);
+        else showFullMonth();
+    } else {
         showQuincena(1);
         setActiveButton("quincena1");
-        updatePeriodInfo();
+    }
+    
+    updatePeriodInfo();
 
-        allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
-        allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
+    // 3. Capturar referencias en el DOM
+    allEmployeeRows = Array.from(document.querySelectorAll('.employee-row'));
+    allSquadRows = Array.from(document.querySelectorAll('.squad-group-row'));
 
-        if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
-            const assignmentFilter = document.getElementById('assignment-filter');
-            if (assignmentFilter) {
-                assignmentFilter.value = 'assigned';
-            }
-            populatePositionFilter();
+    // 4. Configurar y Aplicar Filtros
+    if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
+        const assignmentFilter = document.getElementById('assignment-filter');
+        if (assignmentFilter) {
+            assignmentFilter.value = 'assigned';
         }
+        populatePositionFilter();
+    }
 
-        applyFilters();
-    });
+    applyFilters();
+    hideLoadingState(); // Esconder el spinner
 
+    // 5. Configurar Botones y Alertas
     const toggleAuxBtn = document.getElementById('toggle-auxiliar-pal-btn');
     if (toggleAuxBtn) {
         toggleAuxBtn.addEventListener('click', function () {
@@ -86,112 +97,452 @@ function initializeApprovalTable() {
     if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
         document.getElementById('toggle-filters-btn').addEventListener('click', toggleFilters);
         document.getElementById('assignment-filter').addEventListener('change', applyFilters);
-
         document.getElementById('area-filter').addEventListener('change', function () {
             populatePositionFilter();
             applyFilters();
         });
-
         document.getElementById('position-filter').addEventListener('change', applyFilters);
         document.getElementById('employee-search').addEventListener('input', applyFilters);
     }
+
+    checkPendingVacationsAlert();
+    initializeAutoRefresh();
 }
 
-let currentEmployeeModal = null;
-
-function initializeEmployeeNameClickListeners() {
-    document.getElementById('approval-table-body').addEventListener('click', function (event) {
-        const employeeNameCell = event.target.closest('.employee-info-cell');
-        if (employeeNameCell) {
-            event.preventDefault();
-            const employeeRow = employeeNameCell.closest('.employee-row');
-            const employeeId = employeeRow.getAttribute('data-employee-id');
-            const employeeName = employeeNameCell.textContent.trim();
-
-            openEmployeeDetailModal(employeeId, employeeName);
-        }
-    });
+function updateTableStructure(monthlyDaysData, employeesData) {
+    updateDaysHeader(monthlyDaysData);
+    updateTableBody(employeesData, monthlyDaysData);
+    renderEmployeeWorkLog();
 }
 
-function openEmployeeDetailModal(employeeId, employeeName, month = null, year = null) {
-    const modal = document.getElementById('employee-detail-modal');
-    const subtitle = document.getElementById('employee-modal-subtitle');
-    const content = document.getElementById('employee-detail-content');
+function updateDaysHeader(monthlyDaysData) {
+    const daysColumnsHeader = document.getElementById('days-columns');
+    const daysHeaderRow = document.getElementById('days-header-row');
 
-    modal.style.display = 'block';
-    subtitle.textContent = `Cargando información de ${employeeName}`;
-    content.innerHTML = `
-        <div class="loading-spinner-container">
-            <div class="loading-spinner-lg"></div>
-            <div class="loading-message">Cargando calendario...</div>
-        </div>
-    `;
-
-    let url = `/rh/loadchart/calendar?employee_id=${employeeId}`;
-    if (month && year) {
-        url += `&month=${month}&year=${year}`;
+    if (daysColumnsHeader) {
+        let visibleCount = monthlyDaysData.length;
+        if (currentView === 'quincena1') visibleCount = monthlyDaysData.filter(d => d.is_quincena_1).length;
+        if (currentView === 'quincena2') visibleCount = monthlyDaysData.filter(d => d.is_quincena_2).length;
+        daysColumnsHeader.colSpan = visibleCount;
+        daysColumnsHeader.textContent = `Días del Período (${visibleCount} días)`;
     }
 
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                content.innerHTML = data.html;
-                subtitle.textContent = employeeName;
+    if (daysHeaderRow) {
+        daysHeaderRow.innerHTML = '';
+        const frag = document.createDocumentFragment();
 
-                if (typeof initializeModalCalendarScripts === 'function') {
-                    initializeModalCalendarScripts(employeeId);
-                } else {
-                    console.error("Error: La función initializeModalCalendarScripts no está definida.");
-                }
-            } else {
-                throw new Error(data.message || 'Error al cargar la información');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            content.innerHTML = `
-                <div class="error-container">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Error al cargar la información</h3>
-                    <p>${error.message}</p>
-                    <button class="btn btn-primary" onclick="openEmployeeDetailModal(${employeeId}, '${employeeName}')">
-                        <i class="fas fa-redo"></i> Reintentar
-                    </button>
-                </div>
-            `;
+        monthlyDaysData.forEach(dayInfo => {
+            const th = document.createElement('th');
+            th.className = `day-header ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}`;
+            th.setAttribute('data-day', dayInfo.day);
+            th.setAttribute('data-date', dayInfo.date);
+            th.setAttribute('data-quincena-1', dayInfo.is_quincena_1 ? 'true' : 'false');
+            th.setAttribute('data-quincena-2', dayInfo.is_quincena_2 ? 'true' : 'false');
+            th.setAttribute('data-current-month', dayInfo.is_current_month ? 'true' : 'false');
+            th.setAttribute('data-month', dayInfo.month);
+            th.innerHTML = `${dayInfo.day}<br>${dayInfo.day_name}`;
+            th.title = `${dayInfo.date}${!dayInfo.is_current_month ? ' (Mes anterior)' : ''}`;
+
+            if (currentView === 'quincena1' && !dayInfo.is_quincena_1) th.style.display = 'none';
+            if (currentView === 'quincena2' && !dayInfo.is_quincena_2) th.style.display = 'none';
+
+            frag.appendChild(th);
         });
+        daysHeaderRow.appendChild(frag);
+    }
 }
 
-function closeEmployeeDetailModal() {
-    const modal = document.getElementById('employee-detail-modal');
-    modal.style.display = 'none';
-    currentEmployeeModal = null;
-}
+function updateTableBody(employeesData, monthlyDaysData) {
+    const tbody = document.getElementById('approval-table-body');
+    if (!tbody) return;
 
-function initializeEmployeeModalListeners() {
-    document.querySelector('.employee-detail-close-btn').addEventListener('click', closeEmployeeDetailModal);
+    const frag = document.createDocumentFragment();
 
-    document.getElementById('employee-detail-modal').addEventListener('click', function (event) {
-        if (event.target === this) {
-            closeEmployeeDetailModal();
-        }
+    const groupedEmployees = {};
+    employeesData.forEach(employee => {
+        const squadNumber = employee.squads && employee.squads.length > 0 ? employee.squads[0].squad_number : 999;
+        if (!groupedEmployees[squadNumber]) groupedEmployees[squadNumber] = [];
+        groupedEmployees[squadNumber].push(employee);
     });
 
-    document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
-            closeEmployeeDetailModal();
+    const sortedSquadNumbers = Object.keys(groupedEmployees).sort((a, b) => parseInt(a) - parseInt(b));
+    const showSquadGrouping = document.getElementById('squad-control') !== null;
+    const totalColumnsForSquadRow = 6 + monthlyDaysData.length;
+
+    sortedSquadNumbers.forEach(squadNumber => {
+        const squadEmployees = groupedEmployees[squadNumber];
+
+        if (showSquadGrouping) {
+            const squadLabel = squadNumber !== '999' ? `Cuadrilla-${squadNumber.padStart(2, '0')}` : 'Sin Cuadrilla Asignada';
+            const squadClass = squadNumber !== '999' ? 'squad-group-row-active' : 'squad-group-row-none';
+            let squadRow = document.createElement('tr');
+            squadRow.className = `squad-group-row ${squadClass}`;
+            squadRow.setAttribute('data-squad-number', squadNumber);
+            squadRow.innerHTML = `<td colspan="${totalColumnsForSquadRow}" class="squad-group-label">${squadLabel}</td>`;
+            frag.appendChild(squadRow);
+        }
+
+        squadEmployees.forEach(employee => {
+            const assignment = loadChartAssignments.find(a => a.employee_id.toString() === employee.id.toString());
+            const isReviewerForEmployee = assignment && assignment.reviewer_id === currentUserId;
+            const isApproverForEmployee = assignment && assignment.approver_id === currentUserId;
+            const empArea = employee.area ? employee.area.name : '';
+
+            let mainRow = document.createElement('tr');
+            mainRow.className = 'employee-row';
+            mainRow.setAttribute('data-employee-id', employee.id);
+            mainRow.setAttribute('data-area', empArea);
+
+            mainRow.innerHTML = `
+                <td rowspan="5" class="employee-info-cell" data-icon="bx bx-calendar" data-text="ver calendario">
+                    ${employee.full_name}
+                </td>
+                <td class="activity-label-cell activity-main-label">Actividad</td>
+                ${monthlyDaysData.map(dayInfo => {
+                    let displayStyle = '';
+                    if (currentView === 'quincena1' && !dayInfo.is_quincena_1) displayStyle = 'display: none;';
+                    if (currentView === 'quincena2' && !dayInfo.is_quincena_2) displayStyle = 'display: none;';
+                    return `
+                    <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
+                        data-day="${dayInfo.day}" data-date="${dayInfo.date}" style="${displayStyle}">
+                        <div class="status-indicator status-n">N</div>
+                    </td>`
+                }).join('')}
+                <td class="data-cell total-activity"><div class="status-indicator">0</div></td>
+                <td rowspan="5" class="vacations-cell"><div class="vacations-container"><div class="vacations-value">0</div></div></td>
+                <td rowspan="5" class="breaks-cell"><div class="breaks-container"><div class="breaks-value">0</div></div></td>
+                <td rowspan="5" class="utilization-cell"><div class="utilization-container"><div class="utilization-value">0%</div></div></td>
+                <td rowspan="5" class="actions-cell">
+                    <div class="actions-container">
+                        ${isReviewerForEmployee ? '<button class="btn-review">Revisar</button>' : ''}
+                        ${isApproverForEmployee ? '<button class="btn-approve">Aprobar</button>' : ''}
+                        ${!isReviewerForEmployee && !isApproverForEmployee ? '<span class="no-permissions">Sin permisos</span>' : ''}
+                    </div>
+                </td>
+            `;
+            frag.appendChild(mainRow);
+
+            const rowTypes = ['Vespertina', 'Comida', 'Bono', 'Servicio'];
+            rowTypes.forEach(rowType => {
+                let detailRow = document.createElement('tr');
+                detailRow.className = 'activity-row';
+                detailRow.setAttribute('data-employee-id', employee.id);
+                detailRow.setAttribute('data-area', empArea);
+
+                let cellsHtml = monthlyDaysData.map(dayInfo => {
+                    let displayStyle = '';
+                    if (currentView === 'quincena1' && !dayInfo.is_quincena_1) displayStyle = 'display: none;';
+                    if (currentView === 'quincena2' && !dayInfo.is_quincena_2) displayStyle = 'display: none;';
+                    const content = rowType === 'Vespertina' ? '<div class="status-indicator status-n">N</div>' : '0';
+                    return `
+                    <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
+                        data-day="${dayInfo.day}" data-date="${dayInfo.date}" style="${displayStyle}">${content}</td>`
+                }).join('');
+
+                let totalCellHtml = rowType === 'Vespertina' 
+                    ? '<td class="data-cell total-vespertina"><div class="status-indicator">0</div></td>'
+                    : `<td class="data-cell total-${rowType.toLowerCase()}">0</td>`;
+
+                detailRow.innerHTML = `<td class="activity-label-cell">${rowType}</td>${cellsHtml}${totalCellHtml}`;
+                frag.appendChild(detailRow);
+            });
+        });
+    });
+
+    tbody.innerHTML = '';
+    tbody.appendChild(frag);
+}
+
+function renderEmployeeWorkLog() {
+    if (!workLogsData || workLogsData.length === 0) {
+        calculateAndRenderTotals();
+        return;
+    }
+
+    workLogsData.forEach(employeeData => {
+        const employeeRow = document.querySelector(`.employee-row[data-employee-id="${employeeData.employee_id}"]`);
+        if (!employeeRow) return;
+
+        const activityRow = employeeRow;
+        let currentRow = employeeRow.nextElementSibling;
+        let vespertinaRow = null, comidaRow = null, fieldBonusRow = null, servicioRow = null;
+
+        while (currentRow && currentRow.getAttribute('data-employee-id') === employeeData.employee_id.toString() && currentRow.classList.contains('activity-row')) {
+            const label = currentRow.querySelector('.activity-label-cell').textContent;
+            if (label === 'Vespertina') vespertinaRow = currentRow;
+            else if (label === 'Comida') comidaRow = currentRow;
+            else if (label === 'Bono') fieldBonusRow = currentRow;
+            else if (label === 'Servicio') servicioRow = currentRow;
+            currentRow = currentRow.nextElementSibling;
+        }
+
+        const activityCells = Array.from(activityRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date'));
+        const vespertinaCells = vespertinaRow ? Array.from(vespertinaRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date')) : [];
+        const comidaCells = comidaRow ? Array.from(comidaRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date')) : [];
+        const fieldBonusCells = fieldBonusRow ? Array.from(fieldBonusRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date')) : [];
+        const servicioCells = servicioRow ? Array.from(servicioRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date')) : [];
+
+        const dailyActivitiesMap = new Map();
+        if (employeeData.daily_activities) {
+            employeeData.daily_activities.forEach(activity => dailyActivitiesMap.set(activity.date, activity));
+        }
+
+        let hasVespertinaItemsInPeriod = false, hasFoodItemsInPeriod = false, hasFieldBonusItemsInPeriod = false, hasServiceItemsInPeriod = false;
+        const visibleDayHeaders = Array.from(document.querySelectorAll('.day-header')).filter(header => header.style.display !== 'none');
+        const visibleDates = visibleDayHeaders.map(header => header.getAttribute('data-date'));
+
+        visibleDates.forEach(dateAttr => {
+            const dailyActivity = dailyActivitiesMap.get(dateAttr);
+            if (dailyActivity) {
+                if (dailyActivity.activity_type_vespertina && dailyActivity.activity_type_vespertina !== 'N') hasVespertinaItemsInPeriod = true;
+                if (dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0) hasFoodItemsInPeriod = true;
+                if (dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0) hasFieldBonusItemsInPeriod = true;
+                if (dailyActivity.services_list && dailyActivity.services_list.length > 0) hasServiceItemsInPeriod = true;
+            }
+        });
+
+        if (vespertinaRow) { vespertinaRow.style.display = hasVespertinaItemsInPeriod ? '' : 'none'; vespertinaRow.setAttribute('data-has-items', hasVespertinaItemsInPeriod ? 'true' : 'false'); }
+        if (comidaRow) { comidaRow.style.display = hasFoodItemsInPeriod ? '' : 'none'; comidaRow.setAttribute('data-has-items', hasFoodItemsInPeriod ? 'true' : 'false'); }
+        if (fieldBonusRow) { fieldBonusRow.style.display = hasFieldBonusItemsInPeriod ? '' : 'none'; fieldBonusRow.setAttribute('data-has-items', hasFieldBonusItemsInPeriod ? 'true' : 'false'); }
+        if (servicioRow) { servicioRow.style.display = hasServiceItemsInPeriod ? '' : 'none'; servicioRow.setAttribute('data-has-items', hasServiceItemsInPeriod ? 'true' : 'false'); }
+
+        let visibleDetailRows = 1;
+        if (hasVespertinaItemsInPeriod) visibleDetailRows++;
+        if (hasFoodItemsInPeriod) visibleDetailRows++;
+        if (hasFieldBonusItemsInPeriod) visibleDetailRows++;
+        if (hasServiceItemsInPeriod) visibleDetailRows++;
+
+        const mainLabelCell = employeeRow.querySelector('.activity-main-label');
+        if (mainLabelCell) mainLabelCell.textContent = hasVespertinaItemsInPeriod ? 'Matutina' : 'Actividad';
+
+        const rowspans = ['.employee-info-cell', '.vacations-cell', '.breaks-cell', '.utilization-cell', '.actions-cell'];
+        rowspans.forEach(sel => {
+            const cell = employeeRow.querySelector(sel);
+            if (cell) cell.setAttribute('rowspan', visibleDetailRows);
+        });
+
+        activityCells.forEach((cell, index) => {
+            const dateAttr = cell.getAttribute('data-date');
+            if (!dateAttr) return;
+
+            const dailyActivity = dailyActivitiesMap.get(dateAttr);
+            const statusIndicator = cell.querySelector('.status-indicator');
+
+            if (statusIndicator) {
+                statusIndicator.textContent = 'N';
+                statusIndicator.className = 'status-indicator status-n';
+                statusIndicator.title = 'No hay actividad registrada';
+                statusIndicator.classList.remove('approved-border', 'reviewed-border', 'rejected-border', 'under-review-border');
+            }
+            if (vespertinaCells[index]) {
+                const vInd = vespertinaCells[index].querySelector('.status-indicator');
+                if (vInd) {
+                    vInd.textContent = 'N';
+                    vInd.className = 'status-indicator status-n';
+                    vInd.title = 'No hay actividad registrada';
+                    vInd.classList.remove('approved-border', 'reviewed-border', 'rejected-border', 'under-review-border');
+                }
+            }
+            if (comidaCells[index]) comidaCells[index].textContent = '0';
+            if (fieldBonusCells[index]) fieldBonusCells[index].textContent = '0';
+            if (servicioCells[index]) servicioCells[index].textContent = '0';
+
+            if (dailyActivity) {
+                if (statusIndicator && dailyActivity.activity_type) {
+                    const activityType = dailyActivity.activity_type.toUpperCase();
+                    statusIndicator.textContent = activityType;
+                    statusIndicator.className = `status-indicator status-${activityType.toLowerCase()}`;
+                    statusIndicator.title = dailyActivity.activity_description || '';
+
+                    const matStatus = (dailyActivity.activity_status || 'under_review').toLowerCase();
+                    if (matStatus === 'approved') statusIndicator.classList.add('approved-border');
+                    else if (matStatus === 'reviewed') statusIndicator.classList.add('reviewed-border');
+                    else if (matStatus === 'rejected') statusIndicator.classList.add('rejected-border');
+                    else statusIndicator.classList.add('under-review-border');
+                }
+
+                if (vespertinaCells[index] && dailyActivity.activity_type_vespertina) {
+                    const vInd = vespertinaCells[index].querySelector('.status-indicator');
+                    if (vInd && dailyActivity.activity_type_vespertina !== 'N') {
+                        const vType = dailyActivity.activity_type_vespertina.toUpperCase();
+                        vInd.textContent = vType;
+                        vInd.className = `status-indicator status-${vType.toLowerCase()}`;
+                        vInd.title = dailyActivity.activity_description_vespertina || '';
+
+                        const vespStatus = (dailyActivity.activity_status_vespertina || 'under_review').toLowerCase();
+                        if (vespStatus === 'approved') vInd.classList.add('approved-border');
+                        else if (vespStatus === 'reviewed') vInd.classList.add('reviewed-border');
+                        else if (vespStatus === 'rejected') vInd.classList.add('rejected-border');
+                        else vInd.classList.add('under-review-border');
+                    }
+                }
+
+                if (canSeeAmounts) {
+                    if (comidaCells[index]) {
+                        const totalFoodBonus = dailyActivity.food_bonuses ? dailyActivity.food_bonuses.reduce((sum, bonus) => sum + Number(bonus.daily_amount || 0), 0) : 0;
+                        comidaCells[index].textContent = totalFoodBonus > 0 ? totalFoodBonus.toFixed(2) : '0';
+                        comidaCells[index].title = dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0 ? dailyActivity.food_bonuses.map(b => `${b.num_daily} comidas`).join(', ') : '';
+                    }
+
+                    if (fieldBonusCells[index]) {
+                        const totalFieldBonus = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.reduce((sum, bonus) => {
+                            const amount = Number(bonus.daily_amount || 0);
+                            if (bonus.currency === 'USD' && bonus.usd_to_mxn_rate) return sum + amount;
+                            return sum + amount;
+                        }, 0) : 0;
+                        fieldBonusCells[index].textContent = totalFieldBonus > 0 ? totalFieldBonus.toFixed(2) : '0';
+                        fieldBonusCells[index].title = dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0 ? dailyActivity.field_bonuses.map(b => `${b.bonus_type} (${b.daily_amount} ${b.currency})`).join(', ') : '';
+                    }
+
+                    if (servicioCells[index]) {
+                        const totalServiceAmount = dailyActivity.services_list ? dailyActivity.services_list.reduce((sum, service) => sum + Number(service.amount || 0), 0) : 0;
+                        servicioCells[index].textContent = totalServiceAmount > 0 ? totalServiceAmount.toFixed(2) : '0';
+                        servicioCells[index].title = dailyActivity.services_list && dailyActivity.services_list.length > 0 ? dailyActivity.services_list.map(s => s.service_name).join(', ') : '';
+                    }
+                } else {
+                    if (comidaCells[index]) {
+                        const foodBonuses = dailyActivity.food_bonuses || [];
+                        if (foodBonuses.length > 0) {
+                            const totalNumDaily = foodBonuses.reduce((sum, bonus) => sum + Number(bonus.num_daily || 0), 0);
+                            comidaCells[index].textContent = foodBonuses.length > 1 ? `${foodBonuses.length} items` : `${totalNumDaily}`;
+                            comidaCells[index].title = foodBonuses.map(b => `${b.bonus_type} x${b.num_daily}`).join(', ');
+                        } else { comidaCells[index].textContent = '0'; comidaCells[index].title = ''; }
+                    }
+
+                    if (fieldBonusCells[index]) {
+                        const fieldBonuses = dailyActivity.field_bonuses || [];
+                        if (fieldBonuses.length > 0) {
+                            fieldBonusCells[index].textContent = fieldBonuses.length > 1 ? fieldBonuses.length : (fieldBonuses[0].bonus_identifier || 'Bono');
+                            fieldBonusCells[index].title = fieldBonuses.map(b => `${b.bonus_type} (${b.bonus_identifier})`).join(', ');
+                        } else { fieldBonusCells[index].textContent = '0'; fieldBonusCells[index].title = ''; }
+                    }
+
+                    if (servicioCells[index]) {
+                        const services = dailyActivity.services_list || [];
+                        if (services.length > 0) {
+                            servicioCells[index].textContent = services.length > 1 ? services.length : (services[0].service_identifier || 'Servicio');
+                            servicioCells[index].title = services.map(s => `${s.service_name} (${s.service_identifier})`).join(', ');
+                        } else { servicioCells[index].textContent = '0'; servicioCells[index].title = ''; }
+                    }
+                }
+            }
+        });
+    });
+
+    calculateAndRenderTotals();
+}
+
+function calculateAndRenderTotals() {
+    const employeeRows = Array.from(document.querySelectorAll('.employee-row')).filter(row => row.style.display !== 'none');
+    const workingActivityTypes = ['B', 'P', 'TC', 'V', 'E', 'C'];
+    const allDayHeaders = Array.from(document.querySelectorAll('.day-header'));
+    const visibleDayHeaders = allDayHeaders.filter(header => header.style.display !== 'none');
+    const visibleDates = visibleDayHeaders.map(header => header.getAttribute('data-date'));
+    const totalWorkingDaysInFullMonth = allDayHeaders.filter(header => header.getAttribute('data-quincena-1') === 'true' || header.getAttribute('data-quincena-2') === 'true').length;
+
+    employeeRows.forEach(employeeRow => {
+        const employeeId = employeeRow.getAttribute('data-employee-id');
+        const employeeData = workLogsData.find(log => log.employee_id.toString() === employeeId);
+        if (!employeeData || !employeeData.daily_activities) return;
+
+        let totalDays = 0, totalVespertina = 0, totalFood = 0, totalFieldBonus = 0, totalService = 0;
+        let totalBreaks = 0, totalVacations = 0;
+        let foodCount = 0, fieldBonusCount = 0, serviceCount = 0;
+        let isDoubleShiftEmployee = false, halfShiftBreaksCount = 0;
+
+        const dailyActivitiesMap = new Map(employeeData.daily_activities.map(activity => [activity.date, activity]));
+        
+        visibleDates.forEach(dateAttr => {
+            const act = dailyActivitiesMap.get(dateAttr);
+            if (act && act.activity_type_vespertina && act.activity_type_vespertina !== 'N') isDoubleShiftEmployee = true;
+        });
+
+        visibleDates.forEach(dateAttr => {
+            const dailyActivity = dailyActivitiesMap.get(dateAttr);
+            if (dailyActivity) {
+                const activityType = dailyActivity.activity_type ? dailyActivity.activity_type.toUpperCase() : 'N';
+                const vType = dailyActivity.activity_type_vespertina ? dailyActivity.activity_type_vespertina.toUpperCase() : 'N';
+
+                if (workingActivityTypes.includes(activityType)) totalDays++;
+                if (activityType === 'VAC' || vType === 'VAC') totalVacations++;
+                if (workingActivityTypes.includes(vType)) totalVespertina++;
+
+                if (isDoubleShiftEmployee) {
+                    if (activityType === 'D') halfShiftBreaksCount++;
+                    if (vType === 'D') halfShiftBreaksCount++;
+                } else {
+                    if (activityType === 'D') totalBreaks++;
+                }
+
+                foodCount += (dailyActivity.food_bonuses || []).length;
+                fieldBonusCount += (dailyActivity.field_bonuses || []).length;
+                serviceCount += (dailyActivity.services_list || []).length;
+
+                if (canSeeAmounts) {
+                    totalFood += (dailyActivity.food_bonuses || []).reduce((sum, bonus) => sum + Number(bonus.daily_amount || 0), 0);
+                    totalFieldBonus += (dailyActivity.field_bonuses || []).reduce((sum, bonus) => {
+                        const amount = Number(bonus.daily_amount || 0);
+                        if (bonus.currency === 'USD' && bonus.usd_to_mxn_rate) return sum + amount;
+                        return sum + amount;
+                    }, 0);
+                    totalService += (dailyActivity.services_list || []).reduce((sum, service) => sum + Number(service.amount || 0), 0);
+                }
+            }
+        });
+
+        if (isDoubleShiftEmployee) totalBreaks = halfShiftBreaksCount / 2;
+
+        let currentRow = employeeRow.nextElementSibling;
+        let vespertinaRow = null, foodRow = null, fieldBonusRow = null, serviceRow = null;
+
+        while (currentRow && currentRow.getAttribute('data-employee-id') === employeeId.toString() && currentRow.classList.contains('activity-row')) {
+            const label = currentRow.querySelector('.activity-label-cell').textContent;
+            if (label === 'Vespertina') vespertinaRow = currentRow;
+            else if (label === 'Comida') foodRow = currentRow;
+            else if (label === 'Bono') fieldBonusRow = currentRow;
+            else if (label === 'Servicio') serviceRow = currentRow;
+            currentRow = currentRow.nextElementSibling;
+        }
+
+        const activityTotalCell = employeeRow.querySelector('.total-activity .status-indicator');
+        const vespertinaTotalCell = vespertinaRow ? vespertinaRow.querySelector('.total-vespertina .status-indicator') : null;
+        const foodTotalCell = foodRow ? foodRow.querySelector('.total-comida') : null;
+        const fieldBonusTotalCell = fieldBonusRow ? fieldBonusRow.querySelector('.total-bono') : null;
+        const serviceTotalCell = serviceRow ? serviceRow.querySelector('.total-servicio') : null;
+
+        if (activityTotalCell) activityTotalCell.textContent = totalDays;
+        if (vespertinaTotalCell) vespertinaTotalCell.textContent = totalVespertina;
+        if (foodTotalCell) foodTotalCell.textContent = canSeeAmounts ? totalFood.toFixed(2) : foodCount.toString();
+        if (fieldBonusTotalCell) fieldBonusTotalCell.textContent = canSeeAmounts ? totalFieldBonus.toFixed(2) : fieldBonusCount.toString();
+        if (serviceTotalCell) serviceTotalCell.textContent = canSeeAmounts ? totalService.toFixed(2) : serviceCount.toString();
+
+        const vacCell = employeeRow.querySelector('.vacations-value');
+        if (vacCell) vacCell.textContent = totalVacations;
+
+        const breaksCell = employeeRow.querySelector('.breaks-value');
+        if (breaksCell) breaksCell.textContent = totalBreaks;
+
+        const utilCell = employeeRow.querySelector('.utilization-value');
+        if (utilCell) {
+            const utilizationRate = totalWorkingDaysInFullMonth > 0 ? (totalDays / totalWorkingDaysInFullMonth) * 100 : 0;
+            const percentage = Math.round(utilizationRate);
+            utilCell.textContent = `${percentage}%`;
+
+            if (percentage < 85) {
+                utilCell.style.color = '#4e6952ff';
+                utilCell.style.fontWeight = 'bold';
+            } else if (percentage >= 85 && percentage <= 90) {
+                utilCell.style.color = '#FF4500';
+            } else if (percentage > 90) {
+                utilCell.style.color = '#B22222';
+            }
         }
     });
 }
 
-// 🆕 LÓGICA DE FILTROS
+// =========================================================================================
+// 🔍 FILTROS Y EVENTOS BÁSICOS
+// =========================================================================================
 function toggleFilters() {
     const filtersContainer = document.getElementById('filters-container');
     const toggleButton = document.getElementById('toggle-filters-btn');
@@ -214,16 +565,12 @@ function populatePositionFilter() {
 
     const currentPosition = positionFilter.value;
     const selectedArea = areaFilter.value;
-
     const uniquePositions = new Set();
 
     employees.forEach(employee => {
         const empArea = employee.area ? employee.area.name : '';
-
         if (!selectedArea || empArea === selectedArea) {
-            if (employee.position) {
-                uniquePositions.add(employee.position);
-            }
+            if (employee.position) uniquePositions.add(employee.position);
         }
     });
 
@@ -265,7 +612,6 @@ function applyFilters() {
     allEmployeeRows.forEach(row => {
         const area = row.getAttribute('data-area');
         const employeeId = row.getAttribute('data-employee-id');
-
         const employeeData = employees.find(e => e.id.toString() === employeeId);
 
         const employeeName = employeeData ? employeeData.full_name.toLowerCase().trim() : '';
@@ -283,23 +629,18 @@ function applyFilters() {
         const matchesArea = !areaFilter || area === areaFilter;
         const matchesPosition = !positionFilter || employeePosition === positionFilter;
         const matchesSearch = !searchFilter || employeeName.includes(searchFilter) || employeeNumber.includes(searchFilter);
-
         const matchesAssignment = !assignmentFilterElem ? true : (assignmentFilter === 'all' || (assignmentFilter === 'assigned' && isAssigned));
 
         let matchesAuxiliar = true;
-
         if (auxiliarPalState === 'active') {
             matchesAuxiliar = isAuxiliarPal;
         } else {
-            if (isAuxiliarPal) {
-                if (!isUsingManualFilters) {
-                    matchesAuxiliar = false;
-                }
+            if (isAuxiliarPal && !isUsingManualFilters) {
+                matchesAuxiliar = false;
             }
         }
 
         const isVisible = matchesArea && matchesPosition && matchesSearch && matchesAssignment && matchesAuxiliar;
-
         row.style.display = isVisible ? '' : 'none';
 
         let nextRow = row.nextElementSibling;
@@ -309,12 +650,7 @@ function applyFilters() {
             } else {
                 const isHiddenByToggle = nextRow.classList.contains('hidden');
                 const isHiddenByRender = nextRow.getAttribute('data-has-items') === 'false';
-
-                if (isHiddenByToggle || isHiddenByRender) {
-                    nextRow.style.display = 'none';
-                } else {
-                    nextRow.style.display = '';
-                }
+                nextRow.style.display = (isHiddenByToggle || isHiddenByRender) ? 'none' : '';
             }
             nextRow = nextRow.nextElementSibling;
         }
@@ -346,78 +682,97 @@ function applyFilters() {
         else if (currentView === 'quincena2') showQuincena(2);
         else showFullMonth();
     }
-
     calculateAndRenderTotals();
 }
 
-function initializeAutoRefresh() {
-    autoRefreshInterval = setInterval(checkForUpdates, 10000);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    lastUpdateTime = new Date();
-}
-
-async function checkForUpdates() {
-    try {
-        const response = await fetch('/rh/loadchart/check-updates', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                last_update: lastUpdateTime.toISOString(),
-                month: currentMonth,
-                year: currentYear
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.has_updates) {
-            await refreshData();
+function initializeEmployeeNameClickListeners() {
+    document.getElementById('approval-table-body').addEventListener('click', function (event) {
+        const employeeNameCell = event.target.closest('.employee-info-cell');
+        if (employeeNameCell) {
+            event.preventDefault();
+            const employeeRow = employeeNameCell.closest('.employee-row');
+            const employeeId = employeeRow.getAttribute('data-employee-id');
+            const employeeName = employeeNameCell.textContent.trim();
+            openEmployeeDetailModal(employeeId, employeeName);
         }
-    } catch (error) {
-        console.error('Error verificando actualizaciones:', error);
-    }
+    });
 }
 
-async function refreshData() {
-    try {
-        stopAutoRefresh();
+function openEmployeeDetailModal(employeeId, employeeName, month = null, year = null) {
+    const modal = document.getElementById('employee-detail-modal');
+    const subtitle = document.getElementById('employee-modal-subtitle');
+    const content = document.getElementById('employee-detail-content');
 
-        const response = await fetch(`/rh/loadchart/approval-data/${currentYear}/${currentMonth}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+    modal.style.display = 'block';
+    subtitle.textContent = `Cargando información de ${employeeName}`;
+    content.innerHTML = `
+        <div class="loading-spinner-container">
+            <div class="loading-spinner-lg"></div>
+            <div class="loading-message">Cargando calendario...</div>
+        </div>
+    `;
+
+    let url = `/rh/loadchart/calendar?employee_id=${employeeId}`;
+    if (month && year) {
+        url += `&month=${month}&year=${year}`;
+    }
+
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            content.innerHTML = data.html;
+            subtitle.textContent = employeeName;
+            if (typeof initializeModalCalendarScripts === 'function') {
+                initializeModalCalendarScripts(employeeId);
+            } else {
+                console.error("Error: La función initializeModalCalendarScripts no está definida.");
             }
-        });
-
-        if (!response.ok) {
-            throw new Error('Error al cargar los datos actualizados');
+        } else {
+            throw new Error(data.message || 'Error al cargar la información');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        content.innerHTML = `
+            <div class="error-container">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error al cargar la información</h3>
+                <p>${error.message}</p>
+                <button class="btn btn-primary" onclick="openEmployeeDetailModal(${employeeId}, '${employeeName}')">
+                    <i class="fas fa-redo"></i> Reintentar
+                </button>
+            </div>
+        `;
+    });
+}
 
-        const data = await response.json();
+function closeEmployeeDetailModal() {
+    const modal = document.getElementById('employee-detail-modal');
+    modal.style.display = 'none';
+    currentEmployeeModal = null;
+}
 
-        if (!data.success) {
-            throw new Error(data.error || 'Error al cargar los datos actualizados');
+function initializeEmployeeModalListeners() {
+    document.querySelector('.employee-detail-close-btn').addEventListener('click', closeEmployeeDetailModal);
+
+    document.getElementById('employee-detail-modal').addEventListener('click', function (event) {
+        if (event.target === this) {
+            closeEmployeeDetailModal();
         }
+    });
 
-        workLogsData = data.workLogsData;
-        fortnightlyConfig = data.fortnightlyConfig;
-        loadChartAssignments = data.loadChartAssignments;
-        canSeeAmounts = data.canSeeAmounts;
-        userPermissions = data.userPermissions;
-        monthlyDays = data.monthlyDays;
-        employees = data.employees;
-
-        await loadMonthData(true);
-
-    } catch (error) {
-        console.error('Error refreshing data:', error);
-        initializeAutoRefresh();
-    }
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeEmployeeDetailModal();
+        }
+    });
 }
 
 function setupEventListeners() {
@@ -431,7 +786,6 @@ function setupEventListeners() {
 
     document.getElementById("quincena2").addEventListener("click", () => {
         showLoadingState();
-
         setTimeout(() => {
             showQuincena(2);
             setActiveButton("quincena2");
@@ -441,7 +795,6 @@ function setupEventListeners() {
 
     document.getElementById("full-month").addEventListener("click", () => {
         showLoadingState();
-
         setTimeout(() => {
             showFullMonth();
             setActiveButton("full-month");
@@ -473,11 +826,9 @@ function setupEventListeners() {
 
 function setupModalEventListeners() {
     const modal = document.getElementById('approvalModal');
-
     modal.querySelectorAll('.modal-approval-close, .modal-approval-close-btn').forEach(btn => {
         btn.addEventListener('click', () => { modal.style.display = 'none'; });
     });
-
     document.getElementById('modal-save-btn').addEventListener('click', saveModalChanges);
 }
 
@@ -486,7 +837,6 @@ function handleTableClick(event) {
     if (statusIndicator) {
         const cell = statusIndicator.closest('.data-cell');
         const row = cell.closest('.employee-row') || cell.closest('.activity-row');
-
         if (!row) return;
 
         const employeeId = row.getAttribute('data-employee-id');
@@ -516,6 +866,9 @@ function handleTableClick(event) {
     }
 }
 
+// =========================================================================================
+// 🏗️ LÓGICA DEL MODAL DE APROBACIÓN POR CELDA
+// =========================================================================================
 async function saveModalChanges() {
     const itemsList = document.getElementById('modal-items-list');
     const cards = itemsList.querySelectorAll('.approval-item-card');
@@ -558,11 +911,7 @@ async function saveModalChanges() {
     });
 
     if (isVac && activityStatus && vespertinaStatus && activityStatus !== vespertinaStatus) {
-        showSwalNotification(
-            'Acción Inválida',
-            'Para Vacaciones, el turno Matutino y Vespertino deben coincidir (ambos Aprobados o ambos Rechazados).',
-            'warning'
-        );
+        showSwalNotification('Acción Inválida', 'Para Vacaciones, el turno Matutino y Vespertino deben coincidir.', 'warning');
         return;
     }
 
@@ -603,9 +952,7 @@ function getStatusIconClass(status) {
 
 function buildStatusBadge(status) {
     const s = (status || 'under_review').toLowerCase();
-    return `<span class="item-status-badge status-badge-${s}">
-                <i class="${getStatusIconClass(s)}" style="font-size:10px;"></i> ${getStatusLabel(s)}
-            </span>`;
+    return `<span class="item-status-badge status-badge-${s}"><i class="${getStatusIconClass(s)}" style="font-size:10px;"></i> ${getStatusLabel(s)}</span>`;
 }
 
 function addItemCard(concept, details, identifier, additionalDetails, itemType, itemIndex, status, rejectionReason, amount, isReviewer, isApprover) {
@@ -635,88 +982,40 @@ function addItemCard(concept, details, identifier, additionalDetails, itemType, 
 
     const showPill = ['activity', 'activity_vespertina'].includes(itemType);
     const pillColor = activityColors[identifier] || '#a5a5a5';
-    const pillHTML = showPill
-        ? `<span class="item-activity-pill" style="background-color:${pillColor};">${identifier}</span>`
-        : '';
+    const pillHTML = showPill ? `<span class="item-activity-pill" style="background-color:${pillColor};">${identifier}</span>` : '';
 
     let detailsRow = '';
     const detailParts = [];
 
-    if (additionalDetails) {
-        detailParts.push(`<span class="detail-chip">${additionalDetails}</span>`);
-    }
-
+    if (additionalDetails) detailParts.push(`<span class="detail-chip">${additionalDetails}</span>`);
     if (amount && canSeeAmounts) {
-        detailParts.push(`
-        <span class="amount-chip">
-            <span style="font-size:10px; font-weight:600; opacity:0.8; margin-right:3px;">Monto:</span>
-            <strong style="font-size:13px; letter-spacing:0.01em;">$${amount}</strong>
-        </span>
-    `);
+        detailParts.push(`<span class="amount-chip"><span style="font-size:10px; font-weight:600; opacity:0.8; margin-right:3px;">Monto:</span><strong style="font-size:13px; letter-spacing:0.01em;">$${amount}</strong></span>`);
     }
 
-    if (detailParts.length) {
-        detailsRow = `<div class="item-card-details">${detailParts.join('')}</div>`;
-    }
+    if (detailParts.length) detailsRow = `<div class="item-card-details">${detailParts.join('')}</div>`;
 
     let controlsHTML = '';
-
     if (effectivelyLocked) {
         let lockMsg = '';
-        if (isLockedNoRole) {
-            lockMsg = `<i class="fas fa-lock" style="font-size:11px;"></i> ${getStatusLabel(safeStatus)}`;
-        } else if (safeStatus === 'approved') {
-            lockMsg = `<i class="fas fa-lock" style="font-size:11px; color:#64946f;"></i> Aprobado — solo el Aprobador puede modificar`;
-        } else {
-            lockMsg = `<i class="fas fa-exclamation-triangle" style="font-size:11px; color:#f35900;"></i> Rechazado — esperando corrección del empleado`;
-        }
+        if (isLockedNoRole) lockMsg = `<i class="fas fa-lock" style="font-size:11px;"></i> ${getStatusLabel(safeStatus)}`;
+        else if (safeStatus === 'approved') lockMsg = `<i class="fas fa-lock" style="font-size:11px; color:#64946f;"></i> Aprobado — solo el Aprobador puede modificar`;
+        else lockMsg = `<i class="fas fa-exclamation-triangle" style="font-size:11px; color:#f35900;"></i> Rechazado — esperando corrección del empleado`;
 
         controlsHTML = `<div class="item-card-controls"><span class="locked-status-display">${lockMsg}</span>`;
-
         if (rejectionReason) {
-            controlsHTML += `
-                <div class="item-card-details">
-                    <span class="rejection-reason-chip">
-                        <i class="fas fa-comment" style="font-size:10px;"></i> ${rejectionReason}
-                    </span>
-                </div>`;
+            controlsHTML += `<div class="item-card-details"><span class="rejection-reason-chip"><i class="fas fa-comment" style="font-size:10px;"></i> ${rejectionReason}</span></div>`;
         }
         controlsHTML += '</div>';
-
     } else {
         const isApproved = safeStatus === 'approved';
         const isReviewed = safeStatus === 'reviewed';
         const isRejected = safeStatus === 'rejected';
 
         const btnDefs = [
-            {
-                status: 'under_review',
-                label: 'Bajo Revisión',
-                icon: 'fa-regular fa-hourglass-half',
-                show: true,
-                disabled: isReviewed || isApproved
-            },
-            {
-                status: 'reviewed',
-                label: 'Revisado',
-                icon: 'fas fa-lock-open',
-                show: true,
-                disabled: false
-            },
-            {
-                status: 'approved',
-                label: 'Aprobado',
-                icon: 'fas fa-lock',
-                show: isApprover,
-                disabled: false
-            },
-            {
-                status: 'rejected',
-                label: 'Rechazado',
-                icon: 'fas fa-exclamation-triangle',
-                show: true,
-                disabled: false
-            },
+            { status: 'under_review', label: 'Bajo Revisión', icon: 'fa-regular fa-hourglass-half', show: true, disabled: isReviewed || isApproved },
+            { status: 'reviewed', label: 'Revisado', icon: 'fas fa-lock-open', show: true, disabled: false },
+            { status: 'approved', label: 'Aprobado', icon: 'fas fa-lock', show: isApprover, disabled: false },
+            { status: 'rejected', label: 'Rechazado', icon: 'fas fa-exclamation-triangle', show: true, disabled: false }
         ];
 
         if (isApprover && isApproved) {
@@ -728,21 +1027,10 @@ function addItemCard(concept, details, identifier, additionalDetails, itemType, 
         btnDefs.forEach(btn => {
             if (!btn.show) return;
             const isActive = btn.status === safeStatus;
-            btns += `
-                <button class="approval-btn btn-${btn.status}${isActive ? ' is-active' : ''}"
-                        data-status="${btn.status}"
-                        ${btn.disabled ? 'disabled' : ''}>
-                    <i class="${btn.icon}" style="font-size:10px;"></i> ${btn.label}
-                </button>`;
+            btns += `<button class="approval-btn btn-${btn.status}${isActive ? ' is-active' : ''}" data-status="${btn.status}" ${btn.disabled ? 'disabled' : ''}><i class="${btn.icon}" style="font-size:10px;"></i> ${btn.label}</button>`;
         });
 
-        controlsHTML = `
-            <div class="item-card-controls">
-                <div class="approval-btn-group">${btns}</div>
-                <div class="rejection-textarea-wrapper${isRejected ? ' is-visible' : ''}">
-                    <textarea class="rejection-textarea" placeholder="Escribe el motivo de rechazo...">${rejectionReason || ''}</textarea>
-                </div>
-            </div>`;
+        controlsHTML = `<div class="item-card-controls"><div class="approval-btn-group">${btns}</div><div class="rejection-textarea-wrapper${isRejected ? ' is-visible' : ''}"><textarea class="rejection-textarea" placeholder="Escribe el motivo de rechazo...">${rejectionReason || ''}</textarea></div></div>`;
     }
 
     card.innerHTML = `
@@ -750,10 +1038,11 @@ function addItemCard(concept, details, identifier, additionalDetails, itemType, 
             <span class="item-concept-badge">${concept}</span>
             ${pillHTML}
             <span class="item-description">${details}</span>
-<span style="display:inline-flex; align-items:center; gap:5px; flex-shrink:0;">
-    <span style="font-size:10px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.06em;">Estado:</span>
-    ${buildStatusBadge(safeStatus)}
-</span>        </div>
+            <span style="display:inline-flex; align-items:center; gap:5px; flex-shrink:0;">
+                <span style="font-size:10px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.06em;">Estado:</span>
+                ${buildStatusBadge(safeStatus)}
+            </span>
+        </div>
         ${detailsRow}
         ${controlsHTML}
     `;
@@ -768,17 +1057,14 @@ function addItemCard(concept, details, identifier, additionalDetails, itemType, 
                 btn.addEventListener('click', function () {
                     if (this.disabled) return;
                     const newStatus = this.getAttribute('data-status');
-
                     btnGroup.querySelectorAll('.approval-btn').forEach(b => b.classList.remove('is-active'));
                     this.classList.add('is-active');
-
                     card.setAttribute('data-selected-status', newStatus);
 
                     if (statusBadge) {
                         statusBadge.className = `item-status-badge status-badge-${newStatus}`;
                         statusBadge.innerHTML = `<i class="${getStatusIconClass(newStatus)}" style="font-size:10px;"></i> ${getStatusLabel(newStatus)}`;
                     }
-
                     if (textareaWrapper) {
                         if (newStatus === 'rejected') {
                             textareaWrapper.classList.add('is-visible');
@@ -807,20 +1093,11 @@ function openApprovalModal(employeeData, dailyActivity) {
     if (employeeInfo) {
         employeeName = employeeInfo.full_name;
         employeeJobTitle = employeeInfo.job_title ? employeeInfo.job_title.toUpperCase() : '';
-    } else {
-        const employeeRow = document.querySelector(`.employee-row[data-employee-id="${employeeData.employee_id}"]`);
-        if (employeeRow) {
-            const nameCell = employeeRow.querySelector('.employee-info-cell');
-            if (nameCell) employeeName = nameCell.textContent.trim();
-        }
     }
 
     const isGuardia = employeeJobTitle.includes('AUXILIAR PAL');
-
     const dateWithTime = dailyActivity.date + 'T12:00:00';
-    const formattedDate = new Date(dateWithTime).toLocaleDateString('es-ES', {
-        day: 'numeric', month: 'long', year: 'numeric'
-    });
+    const formattedDate = new Date(dateWithTime).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 
     currentModalData.employeeId = employeeData.employee_id;
     currentModalData.date = dailyActivity.date;
@@ -836,132 +1113,80 @@ function openApprovalModal(employeeData, dailyActivity) {
     if (dailyActivity.activity_type) {
         const actStatus = (dailyActivity.activity_status ?? 'under_review').toLowerCase();
         let extraDetails = '';
-
         if (dailyActivity.activity_type === 'P' && dailyActivity.well_name) {
             extraDetails = `<span class="chip-label">Pozo</span> <strong style="color:#1a2035;">${dailyActivity.well_name}</strong>`;
         } else if (dailyActivity.activity_type === 'C' && dailyActivity.commissioned_to) {
             extraDetails = `<span class="chip-label">Área comisionada</span> <strong style="color:#1a2035;">${dailyActivity.commissioned_to}</strong>`;
         } else if (dailyActivity.activity_type === 'V') {
             extraDetails = `Destino: <strong style="color:#1a2035;">${dailyActivity.travel_destination || 'N/A'}</strong> &nbsp;·&nbsp; Motivo: <strong style="color:#1a2035;">${dailyActivity.travel_reason || 'N/A'}</strong>`;
-
             if (dailyActivity.contract_number) {
-                extraDetails += `<br><span style="margin-top: 5px; display: inline-block; font-size: 0.95em;">
-                                    <i class="fas fa-file-contract" style="color:#6b7280;"></i> Contrato: <strong style="color:#1a2035;">${dailyActivity.contract_number}</strong>
-                                    &nbsp;·&nbsp;
-                                    <i class="fas fa-cogs" style="color:#6b7280;"></i> Servicio: <strong style="color:#1a2035;">${dailyActivity.travel_service_type || 'N/A'}</strong>
-                                 </span>`;
+                extraDetails += `<br><span style="margin-top: 5px; display: inline-block; font-size: 0.95em;"><i class="fas fa-file-contract" style="color:#6b7280;"></i> Contrato: <strong style="color:#1a2035;">${dailyActivity.contract_number}</strong> &nbsp;·&nbsp; <i class="fas fa-cogs" style="color:#6b7280;"></i> Servicio: <strong style="color:#1a2035;">${dailyActivity.travel_service_type || 'N/A'}</strong></span>`;
             }
         } else if (dailyActivity.activity_type === 'B' && dailyActivity.base_activity_description) {
             extraDetails = `Actividad: <strong style="color:#1a2035;">${dailyActivity.base_activity_description}</strong>`;
         }
 
-        const conceptTitle = (dailyActivity.activity_type_vespertina && dailyActivity.activity_type_vespertina !== 'N')
-            ? 'Matutina' : 'Actividad';
-
-        addItemCard(
-            conceptTitle,
-            dailyActivity.activity_description || '',
-            dailyActivity.activity_type || 'N',
-            extraDetails,
-            'activity', null, actStatus,
-            dailyActivity.rejection_reason,
-            null, isReviewer, isApprover
-        );
+        const conceptTitle = (dailyActivity.activity_type_vespertina && dailyActivity.activity_type_vespertina !== 'N') ? 'Matutina' : 'Actividad';
+        addItemCard(conceptTitle, dailyActivity.activity_description || '', dailyActivity.activity_type || 'N', extraDetails, 'activity', null, actStatus, dailyActivity.rejection_reason, null, isReviewer, isApprover);
     }
 
     if (dailyActivity.activity_type_vespertina && dailyActivity.activity_type_vespertina !== 'N') {
         const vStatus = (dailyActivity.activity_status_vespertina || 'under_review').toLowerCase();
         let vDetails = '';
-
         if (dailyActivity.activity_type_vespertina === 'B' && dailyActivity.base_activity_description) {
             vDetails = `Actividad: <strong style="color:#1a2035;">${dailyActivity.base_activity_description}</strong>`;
         } else if (dailyActivity.activity_type_vespertina === 'P' && dailyActivity.well_name) {
             vDetails = `Pozo: <strong style="color:#1a2035;">${dailyActivity.well_name}</strong>`;
         } else if (dailyActivity.activity_type_vespertina === 'V') {
             vDetails = `Destino: <strong style="color:#1a2035;">${dailyActivity.travel_destination || 'N/A'}</strong> &nbsp;·&nbsp; Motivo: <strong style="color:#1a2035;">${dailyActivity.travel_reason || 'N/A'}</strong>`;
-
             if (dailyActivity.contract_number) {
-                vDetails += `<br><span style="margin-top: 5px; display: inline-block; font-size: 0.95em;">
-                                <i class="fas fa-file-contract" style="color:#6b7280;"></i> Contrato: <strong style="color:#1a2035;">${dailyActivity.contract_number}</strong>
-                                &nbsp;·&nbsp;
-                                <i class="fas fa-cogs" style="color:#6b7280;"></i> Servicio: <strong style="color:#1a2035;">${dailyActivity.travel_service_type || 'N/A'}</strong>
-                             </span>`;
+                vDetails += `<br><span style="margin-top: 5px; display: inline-block; font-size: 0.95em;"><i class="fas fa-file-contract" style="color:#6b7280;"></i> Contrato: <strong style="color:#1a2035;">${dailyActivity.contract_number}</strong> &nbsp;·&nbsp; <i class="fas fa-cogs" style="color:#6b7280;"></i> Servicio: <strong style="color:#1a2035;">${dailyActivity.travel_service_type || 'N/A'}</strong></span>`;
             }
         } else if (dailyActivity.activity_description_vespertina) {
             vDetails = dailyActivity.activity_description_vespertina;
         }
 
-        addItemCard(
-            'Vespertina',
-            dailyActivity.activity_description_vespertina || '',
-            dailyActivity.activity_type_vespertina || 'N',
-            vDetails,
-            'activity_vespertina', null, vStatus,
-            dailyActivity.rejection_reason_vespertina || '',
-            null, isReviewer, isApprover
-        );
+        addItemCard('Vespertina', dailyActivity.activity_description_vespertina || '', dailyActivity.activity_type_vespertina || 'N', vDetails, 'activity_vespertina', null, vStatus, dailyActivity.rejection_reason_vespertina || '', null, isReviewer, isApprover);
     }
 
     if (dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0) {
         dailyActivity.food_bonuses.forEach((bonus, index) => {
             const amount = canSeeAmounts ? `${Number(bonus.daily_amount).toFixed(2)} MXN` : null;
             const detalle = `Raciones: <strong style="font-size:13px; color:#1a2035;">${bonus.num_daily}</strong>`;
-
-            addItemCard(
-                'Bono', bonus.bonus_type, 'Comida', detalle, 'food_bonuses', index,
-                bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover
-            );
+            addItemCard('Bono', bonus.bonus_type, 'Comida', detalle, 'food_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
         });
     }
 
     if (dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0) {
         dailyActivity.field_bonuses.forEach((bonus, index) => {
             let detailParts = [`Moneda: <strong style="color:#1a2035;">${bonus.currency}</strong>`];
-
-            if (bonus.quantity && bonus.quantity > 1) {
-                detailParts.push(`Cant. realizada: <strong style="font-size:13px; color:#1a2035;">${bonus.quantity}</strong>`);
-            }
-
-            if (canSeeAmounts && bonus.base_amount && bonus.quantity > 1) {
-                detailParts.push(`Precio base: <strong style="color:#166534;">$${Number(bonus.base_amount).toFixed(2)}</strong>`);
-            }
-
+            if (bonus.quantity && bonus.quantity > 1) detailParts.push(`Cant. realizada: <strong style="font-size:13px; color:#1a2035;">${bonus.quantity}</strong>`);
+            if (canSeeAmounts && bonus.base_amount && bonus.quantity > 1) detailParts.push(`Precio base: <strong style="color:#166534;">$${Number(bonus.base_amount).toFixed(2)}</strong>`);
             const amount = canSeeAmounts ? `${Number(bonus.daily_amount).toFixed(2)} ${bonus.currency}` : null;
             const conceptName = isGuardia ? 'Bono Especial' : 'Bono';
-
-            addItemCard(
-                conceptName, bonus.bonus_type, bonus.bonus_identifier, detailParts.join(' &nbsp;·&nbsp; '),
-                'field_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover
-            );
+            addItemCard(conceptName, bonus.bonus_type, bonus.bonus_identifier, detailParts.join(' &nbsp;·&nbsp; '), 'field_bonuses', index, bonus.status, bonus.rejection_reason, amount, isReviewer, isApprover);
         });
     }
 
     if (dailyActivity.services_list && dailyActivity.services_list.length > 0) {
         dailyActivity.services_list.forEach((service, index) => {
             const amount = canSeeAmounts ? `${Number(service.amount).toFixed(2)} MXN` : null;
-            const payrollDetail = service.service_real_date
-                ? `Fecha realización: <strong style="color:#1a2035;">${service.service_real_date}</strong>`
-                : `<span style="color:#9ca3af;">Sin fecha especificada</span>`;
-
-            addItemCard(
-                'Servicio', service.service_name, service.service_identifier, payrollDetail,
-                'services_list', index, service.status, service.rejection_reason, amount, isReviewer, isApprover
-            );
+            const payrollDetail = service.service_real_date ? `Fecha realización: <strong style="color:#1a2035;">${service.service_real_date}</strong>` : `<span style="color:#9ca3af;">Sin fecha especificada</span>`;
+            addItemCard('Servicio', service.service_name, service.service_identifier, payrollDetail, 'services_list', index, service.status, service.rejection_reason, amount, isReviewer, isApprover);
         });
     }
 
     modal.style.display = 'flex';
 }
 
+// =========================================================================================
+// 🌐 COMUNICACIÓN API Y ACTUALIZACIONES
+// =========================================================================================
 async function updateDailyItemsStatus(employeeId, changes) {
     try {
         showLoadingState();
-
         const hasRejections = changes.some(change => change.status === 'rejected');
-        const savingMessage = hasRejections
-            ? 'Guardando cambios y notificando al empleado...'
-            : 'Guardando cambios...';
-
+        const savingMessage = hasRejections ? 'Guardando cambios y notificando al empleado...' : 'Guardando cambios...';
         showModalSavingState(savingMessage);
 
         const response = await fetch('/rh/loadchart/update-multiple-statuses', {
@@ -980,7 +1205,6 @@ async function updateDailyItemsStatus(employeeId, changes) {
         });
 
         const data = await response.json();
-
         hideLoadingState();
         hideModalSavingState();
 
@@ -1015,10 +1239,7 @@ function showModalSavingState(message) {
         overlay = document.createElement('div');
         overlay.id = 'modal-save-overlay';
         overlay.className = 'modal-save-overlay';
-        overlay.innerHTML = `
-            <div class="modal-spinner"></div>
-            <div class="modal-saving-message">${message}</div>
-        `;
+        overlay.innerHTML = `<div class="modal-spinner"></div><div class="modal-saving-message">${message}</div>`;
         modalContent.appendChild(overlay);
     } else {
         overlay.querySelector('.modal-saving-message').textContent = message;
@@ -1026,19 +1247,14 @@ function showModalSavingState(message) {
 
     overlay.style.display = 'flex';
     document.getElementById('modal-save-btn').disabled = true;
-    document.querySelectorAll('.modal-approval-close, .modal-approval-close-btn')
-        .forEach(btn => btn.disabled = true);
+    document.querySelectorAll('.modal-approval-close, .modal-approval-close-btn').forEach(btn => btn.disabled = true);
 }
 
 function hideModalSavingState() {
     const overlay = document.getElementById('modal-save-overlay');
     if (overlay) overlay.style.display = 'none';
-
     document.getElementById('modal-save-btn').disabled = false;
     document.querySelectorAll('.modal-approval-close, .modal-approval-close-btn').forEach(btn => btn.disabled = false);
-}
-
-function setupEmployeeRowListeners() {
 }
 
 async function handleApprove() {
@@ -1061,25 +1277,7 @@ async function handleApprove() {
         return;
     }
 
-    let periodActivities = [];
-    if (fortnight === 'quincena1' && fortnightlyConfig.q1_start && fortnightlyConfig.q1_end) {
-        periodActivities = employeeLog.daily_activities.filter(act => {
-            const actDate = new Date(act.date);
-            const q1Start = new Date(fortnightlyConfig.q1_start);
-            const q1End = new Date(fortnightlyConfig.q1_end);
-            return actDate >= q1Start && actDate <= q1End;
-        });
-    } else if (fortnight === 'quincena2' && fortnightlyConfig.q2_start && fortnightlyConfig.q2_end) {
-        periodActivities = employeeLog.daily_activities.filter(act => {
-            const actDate = new Date(act.date);
-            const q2Start = new Date(fortnightlyConfig.q2_start);
-            const q2End = new Date(fortnightlyConfig.q2_end);
-            return actDate >= q2Start && actDate <= q2End;
-        });
-    } else if (fortnight === 'full-month') {
-        periodActivities = employeeLog.daily_activities;
-    }
-
+    let periodActivities = filterActivitiesByPeriod(employeeLog.daily_activities, fortnight);
     const activitiesToApprove = periodActivities.filter(act => act.day_status !== 'approved' && act.day_status !== 'rejected');
     const rejectedActivitiesExist = periodActivities.some(act => act.day_status === 'rejected');
     const underReviewActivitiesExist = periodActivities.some(act => act.day_status === 'under_review');
@@ -1138,25 +1336,7 @@ async function handleReview() {
         return;
     }
 
-    let periodActivities = [];
-    if (fortnight === 'quincena1' && fortnightlyConfig.q1_start && fortnightlyConfig.q1_end) {
-        periodActivities = employeeLog.daily_activities.filter(act => {
-            const actDate = new Date(act.date);
-            const q1Start = new Date(fortnightlyConfig.q1_start);
-            const q1End = new Date(fortnightlyConfig.q1_end);
-            return actDate >= q1Start && actDate <= q1End;
-        });
-    } else if (fortnight === 'quincena2' && fortnightlyConfig.q2_start && fortnightlyConfig.q2_end) {
-        periodActivities = employeeLog.daily_activities.filter(act => {
-            const actDate = new Date(act.date);
-            const q2Start = new Date(fortnightlyConfig.q2_start);
-            const q2End = new Date(fortnightlyConfig.q2_end);
-            return actDate >= q2Start && actDate <= q2End;
-        });
-    } else if (fortnight === 'full-month') {
-        periodActivities = employeeLog.daily_activities;
-    }
-
+    let periodActivities = filterActivitiesByPeriod(employeeLog.daily_activities, fortnight);
     const activitiesToReview = periodActivities.filter(act => act.day_status === 'under_review');
     const rejectedActivitiesExist = periodActivities.some(act => act.day_status === 'rejected');
 
@@ -1192,21 +1372,25 @@ function filterActivitiesByPeriod(dailyActivities, fortnight) {
         return dailyActivities;
     }
 
-    const q1Start = fortnightlyConfig.q1_start ? new Date(fortnightlyConfig.q1_start + 'T00:00:00') : null;
-    const q1End = fortnightlyConfig.q1_end ? new Date(fortnightlyConfig.q1_end + 'T00:00:00') : null;
-    const q2Start = fortnightlyConfig.q2_start ? new Date(fortnightlyConfig.q2_start + 'T00:00:00') : null;
-    const q2End = fortnightlyConfig.q2_end ? new Date(fortnightlyConfig.q2_end + 'T00:00:00') : null;
+    // Función auxiliar para extraer solo la parte YYYY-MM-DD y evitar problemas de zona horaria o el 'T00:00:00' duplicado
+    const getSafeDateStr = (dateString) => {
+        if (!dateString) return null;
+        return dateString.split('T')[0]; 
+    };
+
+    const q1Start = getSafeDateStr(fortnightlyConfig.q1_start);
+    const q1End = getSafeDateStr(fortnightlyConfig.q1_end);
+    const q2Start = getSafeDateStr(fortnightlyConfig.q2_start);
+    const q2End = getSafeDateStr(fortnightlyConfig.q2_end);
 
     return dailyActivities.filter(act => {
-        const actDate = new Date(act.date + 'T00:00:00');
+        const actDate = act.date; // act.date ya viene como 'YYYY-MM-DD'
+        
         if (fortnight === 'quincena1' && q1Start && q1End) {
-            const q1EndPlusDay = new Date(q1End);
-            q1EndPlusDay.setDate(q1EndPlusDay.getDate() + 1);
-            return actDate >= q1Start && actDate < q1EndPlusDay;
+            // Comparación de strings es 100% segura para formato ISO YYYY-MM-DD
+            return actDate >= q1Start && actDate <= q1End;
         } else if (fortnight === 'quincena2' && q2Start && q2End) {
-            const q2EndPlusDay = new Date(q2End);
-            q2EndPlusDay.setDate(q2EndPlusDay.getDate() + 1);
-            return actDate >= q2Start && actDate < q2EndPlusDay;
+            return actDate >= q2Start && actDate <= q2End;
         }
         return false;
     });
@@ -1261,20 +1445,19 @@ function showSwalNotification(title, message, icon) {
 function showNotification(message, type = 'info') {
     const notification = document.createElement("div");
     notification.className = `notification ${type}`;
-
     const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
     notification.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
-
     document.body.appendChild(notification);
-
     setTimeout(() => notification.classList.add('show'), 100);
-
     setTimeout(() => {
         notification.classList.add("fade-out");
         setTimeout(() => notification.remove(), 500);
     }, 4000);
 }
 
+// =========================================================================================
+// 📅 NAVEGACIÓN Y CARGA DE DATOS
+// =========================================================================================
 async function navigateToPreviousMonth() {
     if (currentMonth === 1) {
         currentMonth = 12;
@@ -1312,7 +1495,6 @@ async function loadMonthData(isRefresh = false) {
         });
 
         if (!response.ok) throw new Error('Error al cargar los datos del mes');
-
         const data = await response.json();
         if (!data.success) throw new Error(data.error || 'Error al cargar los datos');
 
@@ -1340,15 +1522,11 @@ async function loadMonthData(isRefresh = false) {
                 applyFilters();
             }
 
-            setupEmployeeRowListeners();
-
             if (!isRefresh) {
                 hideLoadingState();
             }
 
-            // ⭐ AQUÍ LLAMAMOS LA FUNCIÓN DE ALERTA DE VACACIONES AL CARGAR LA TABLA
             checkPendingVacationsAlert();
-
             lastUpdateTime = new Date();
             initializeAutoRefresh();
 
@@ -1364,10 +1542,7 @@ async function loadMonthData(isRefresh = false) {
 
 function showLoadingState() {
     const overlay = document.getElementById('table-loading-overlay');
-    if (overlay) {
-        overlay.classList.remove('hidden');
-    }
-
+    if (overlay) overlay.classList.remove('hidden');
     const prevBtn = document.getElementById('prev-period');
     const nextBtn = document.getElementById('next-period');
     if (prevBtn) prevBtn.disabled = true;
@@ -1376,10 +1551,7 @@ function showLoadingState() {
 
 function hideLoadingState() {
     const overlay = document.getElementById('table-loading-overlay');
-    if (overlay) {
-        overlay.classList.add('hidden');
-    }
-
+    if (overlay) overlay.classList.add('hidden');
     const prevBtn = document.getElementById('prev-period');
     const nextBtn = document.getElementById('next-period');
     if (prevBtn) prevBtn.disabled = false;
@@ -1387,215 +1559,17 @@ function hideLoadingState() {
 }
 
 function updatePeriodInfo() {
-    const monthNames = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-
+    const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const periodInfo = document.getElementById('current-period');
     if (periodInfo) {
         periodInfo.textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
     }
 }
 
-function updateTableStructure(monthlyDays, employees) {
-    updateDaysHeader(monthlyDays);
-    updateTableBody(employees, monthlyDays);
-    renderEmployeeWorkLog();
-}
-
-function updateDaysHeader(monthlyDays) {
-    const daysColumnsHeader = document.getElementById('days-columns');
-    const daysHeaderRow = document.getElementById('days-header-row');
-
-    if (daysColumnsHeader) {
-        let visibleCount = monthlyDays.length;
-        if (currentView === 'quincena1') visibleCount = monthlyDays.filter(d => d.is_quincena_1).length;
-        if (currentView === 'quincena2') visibleCount = monthlyDays.filter(d => d.is_quincena_2).length;
-
-        daysColumnsHeader.colSpan = visibleCount;
-        daysColumnsHeader.textContent = `Días del Período (${visibleCount} días)`;
-    }
-
-    if (daysHeaderRow) {
-        daysHeaderRow.innerHTML = '';
-
-        monthlyDays.forEach(dayInfo => {
-            const th = document.createElement('th');
-            th.className = `day-header ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}`;
-            th.setAttribute('data-day', dayInfo.day);
-            th.setAttribute('data-date', dayInfo.date);
-            th.setAttribute('data-quincena-1', dayInfo.is_quincena_1 ? 'true' : 'false');
-            th.setAttribute('data-quincena-2', dayInfo.is_quincena_2 ? 'true' : 'false');
-            th.setAttribute('data-current-month', dayInfo.is_current_month ? 'true' : 'false');
-            th.setAttribute('data-month', dayInfo.month);
-            th.innerHTML = `${dayInfo.day}<br>${dayInfo.day_name}`;
-            th.title = `${dayInfo.date}${!dayInfo.is_current_month ? ' (Mes anterior)' : ''}`;
-
-            if (currentView === 'quincena1' && !dayInfo.is_quincena_1) th.style.display = 'none';
-            if (currentView === 'quincena2' && !dayInfo.is_quincena_2) th.style.display = 'none';
-
-            daysHeaderRow.appendChild(th);
-        });
-    }
-}
-
-function updateTableBody(employeesData, monthlyDaysData) {
-    const tbody = document.getElementById('approval-table-body');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    const groupedEmployees = {};
-    employeesData.forEach(employee => {
-        const squadNumber = employee.squads && employee.squads.length > 0
-            ? employee.squads[0].squad_number
-            : 999;
-
-        if (!groupedEmployees[squadNumber]) {
-            groupedEmployees[squadNumber] = [];
-        }
-        groupedEmployees[squadNumber].push(employee);
-    });
-
-    const sortedSquadNumbers = Object.keys(groupedEmployees).sort((a, b) => parseInt(a) - parseInt(b));
-    const showSquadGrouping = document.getElementById('squad-control') !== null;
-    const totalColumnsForSquadRow = 6 + monthlyDaysData.length;
-
-    sortedSquadNumbers.forEach(squadNumber => {
-        const squadEmployees = groupedEmployees[squadNumber];
-
-        if (showSquadGrouping) {
-            const squadLabel = squadNumber !== '999'
-                ? `Cuadrilla-${squadNumber.padStart(2, '0')}`
-                : 'Sin Cuadrilla Asignada';
-            const squadClass = squadNumber !== '999' ? 'squad-group-row-active' : 'squad-group-row-none';
-
-            let squadRow = document.createElement('tr');
-            squadRow.className = `squad-group-row ${squadClass}`;
-            squadRow.setAttribute('data-squad-number', squadNumber);
-            squadRow.innerHTML = `
-                <td colspan="${totalColumnsForSquadRow}" class="squad-group-label">
-                    ${squadLabel}
-                </td>
-            `;
-            tbody.appendChild(squadRow);
-        }
-
-        squadEmployees.forEach(employee => {
-            const assignment = loadChartAssignments.find(a => a.employee_id === employee.id);
-            const isReviewerForEmployee = assignment && assignment.reviewer_id === currentUserId;
-            const isApproverForEmployee = assignment && assignment.approver_id === currentUserId;
-
-            const empArea = employee.area ? employee.area.name : '';
-
-            let mainRow = document.createElement('tr');
-            mainRow.className = 'employee-row';
-            mainRow.setAttribute('data-employee-id', employee.id);
-            mainRow.setAttribute('data-area', empArea);
-
-            mainRow.innerHTML = `
-                <td rowspan="5" class="employee-info-cell" data-icon="bx bx-calendar" data-text="ver calendario">
-                    ${employee.full_name}
-                </td>
-                <td class="activity-label-cell activity-main-label">Actividad</td>
-                ${monthlyDaysData.map(dayInfo => {
-                let displayStyle = '';
-                if (currentView === 'quincena1' && !dayInfo.is_quincena_1) displayStyle = 'display: none;';
-                if (currentView === 'quincena2' && !dayInfo.is_quincena_2) displayStyle = 'display: none;';
-
-                return `
-                    <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
-                        data-day="${dayInfo.day}" data-date="${dayInfo.date}" style="${displayStyle}">
-                        <div class="status-indicator status-n">N</div>
-                    </td>
-                `}).join('')}
-                <td class="data-cell total-activity">
-                    <div class="status-indicator">0</div>
-                </td>
-                <td rowspan="5" class="vacations-cell">
-                    <div class="vacations-container">
-                        <div class="vacations-value">0</div>
-                    </div>
-                </td>
-                <td rowspan="5" class="breaks-cell">
-                    <div class="breaks-container">
-                        <div class="breaks-value">0</div>
-                    </div>
-                </td>
-                <td rowspan="5" class="utilization-cell">
-                    <div class="utilization-container">
-                        <div class="utilization-value">0%</div>
-                    </div>
-                </td>
-                <td rowspan="5" class="actions-cell">
-                    <div class="actions-container">
-                        ${isReviewerForEmployee ? '<button class="btn-review">Revisar</button>' : ''}
-                        ${isApproverForEmployee ? '<button class="btn-approve">Aprobar</button>' : ''}
-                        ${!isReviewerForEmployee && !isApproverForEmployee ? '<span class="no-permissions">Sin permisos</span>' : ''}
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(mainRow);
-
-            const rowTypes = ['Vespertina', 'Comida', 'Bono', 'Servicio'];
-            rowTypes.forEach(rowType => {
-                let detailRow = document.createElement('tr');
-                detailRow.className = 'activity-row';
-                detailRow.setAttribute('data-employee-id', employee.id);
-                detailRow.setAttribute('data-area', empArea);
-
-                let cellsHtml = '';
-                if (rowType === 'Vespertina') {
-                    cellsHtml = monthlyDaysData.map(dayInfo => {
-                        let displayStyle = '';
-                        if (currentView === 'quincena1' && !dayInfo.is_quincena_1) displayStyle = 'display: none;';
-                        if (currentView === 'quincena2' && !dayInfo.is_quincena_2) displayStyle = 'display: none;';
-                        return `
-                        <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
-                            data-day="${dayInfo.day}" data-date="${dayInfo.date}" style="${displayStyle}">
-                            <div class="status-indicator status-n">N</div>
-                        </td>
-                    `}).join('');
-                } else {
-                    cellsHtml = monthlyDaysData.map(dayInfo => {
-                        let displayStyle = '';
-                        if (currentView === 'quincena1' && !dayInfo.is_quincena_1) displayStyle = 'display: none;';
-                        if (currentView === 'quincena2' && !dayInfo.is_quincena_2) displayStyle = 'display: none;';
-                        return `
-                        <td class="data-cell ${dayInfo.is_quincena_1 ? 'quincena-1' : ''} ${dayInfo.is_quincena_2 ? 'quincena-2' : ''} ${!dayInfo.is_working_day ? 'non-working' : ''} ${!dayInfo.is_current_month ? 'other-month' : ''}"
-                            data-day="${dayInfo.day}" data-date="${dayInfo.date}" style="${displayStyle}">0</td>
-                    `}).join('');
-                }
-
-                let totalCellHtml = '';
-                if (rowType === 'Vespertina') {
-                    totalCellHtml = '<td class="data-cell total-vespertina"><div class="status-indicator">0</div></td>';
-                } else {
-                    totalCellHtml = `<td class="data-cell total-${rowType.toLowerCase()}">0</td>`;
-                }
-
-                detailRow.innerHTML = `
-                    <td class="activity-label-cell">${rowType}</td>
-                    ${cellsHtml}
-                    ${totalCellHtml}
-                `;
-                tbody.appendChild(detailRow);
-            });
-        });
-    });
-}
-
 function setActiveButton(buttonId) {
-    document.querySelectorAll(".period-btn").forEach((btn) => {
-        btn.classList.remove("active");
-    });
-
+    document.querySelectorAll(".period-btn").forEach(btn => btn.classList.remove("active"));
     const targetBtn = document.getElementById(buttonId);
-    if (targetBtn) {
-        targetBtn.classList.add("active");
-    }
-
+    if (targetBtn) targetBtn.classList.add("active");
     currentView = buttonId;
 }
 
@@ -1609,20 +1583,16 @@ function showQuincena(quincena) {
     let visibleDays = 0;
     const targetAttr = quincena === 1 ? 'data-quincena-1' : 'data-quincena-2';
 
-    dayHeaders.forEach((header, index) => {
+    dayHeaders.forEach((header) => {
         const shouldShow = header.getAttribute(targetAttr) === 'true';
-
         header.style.display = shouldShow ? "" : "none";
         if (shouldShow) visibleDays++;
 
         allRows.forEach((row) => {
             if (row.classList.contains('activity-row') || row.classList.contains('employee-row')) {
                 const dayCell = Array.from(row.children).find(cell => cell.getAttribute('data-day') === header.getAttribute('data-day') && cell.getAttribute('data-date') === header.getAttribute('data-date'));
-
-                if (dayCell) {
-                    if (row.style.display !== 'none') {
-                        dayCell.style.display = shouldShow ? "" : "none";
-                    }
+                if (dayCell && row.style.display !== 'none') {
+                    dayCell.style.display = shouldShow ? "" : "none";
                 }
             }
         });
@@ -1630,7 +1600,6 @@ function showQuincena(quincena) {
 
     daysColumnsHeader.colSpan = visibleDays;
     daysColumnsHeader.textContent = `Días del Período (${visibleDays} días)`;
-
     calculateAndRenderTotals();
 }
 
@@ -1643,15 +1612,11 @@ function showFullMonth() {
 
     dayHeaders.forEach((header) => {
         header.style.display = "";
-
         allRows.forEach((row) => {
             if (row.classList.contains('activity-row') || row.classList.contains('employee-row')) {
                 const dayCell = Array.from(row.children).find(cell => cell.getAttribute('data-day') === header.getAttribute('data-day') && cell.getAttribute('data-date') === header.getAttribute('data-date'));
-
-                if (dayCell) {
-                    if (row.style.display !== 'none') {
-                        dayCell.style.display = "";
-                    }
+                if (dayCell && row.style.display !== 'none') {
+                    dayCell.style.display = "";
                 }
             }
         });
@@ -1659,442 +1624,20 @@ function showFullMonth() {
 
     daysColumnsHeader.colSpan = dayHeaders.length;
     daysColumnsHeader.textContent = `Días del Período (${dayHeaders.length} días)`;
-
     calculateAndRenderTotals();
 }
-
-function calculateAndRenderTotals() {
-    const employeeRows = Array.from(document.querySelectorAll('.employee-row')).filter(row => row.style.display !== 'none');
-    const workingActivityTypes = ['B', 'P', 'TC', 'V', 'E', 'C'];
-    const allDayHeaders = Array.from(document.querySelectorAll('.day-header'));
-    const visibleDayHeaders = allDayHeaders.filter(header => header.style.display !== 'none');
-    const visibleDates = visibleDayHeaders.map(header => header.getAttribute('data-date'));
-    const totalWorkingDaysInFullMonth = allDayHeaders.filter(header =>
-        header.getAttribute('data-quincena-1') === 'true' ||
-        header.getAttribute('data-quincena-2') === 'true'
-    ).length;
-
-    employeeRows.forEach(employeeRow => {
-        const employeeId = employeeRow.getAttribute('data-employee-id');
-        const employeeData = workLogsData.find(log => log.employee_id.toString() === employeeId);
-
-        if (!employeeData || !employeeData.daily_activities) return;
-
-        let totalDays = 0;
-        let totalVespertina = 0;
-        let totalFood = 0;
-        let totalFieldBonus = 0;
-        let totalService = 0;
-        let totalBreaks = 0;
-        let totalVacations = 0;
-
-        let foodCount = 0;
-        let fieldBonusCount = 0;
-        let serviceCount = 0;
-
-        let isDoubleShiftEmployee = false;
-        let halfShiftBreaksCount = 0;
-
-        const dailyActivitiesMap = new Map(employeeData.daily_activities.map(activity => [activity.date, activity]));
-
-        visibleDates.forEach(dateAttr => {
-            const dailyActivity = dailyActivitiesMap.get(dateAttr);
-            if (dailyActivity && dailyActivity.activity_type_vespertina && dailyActivity.activity_type_vespertina !== 'N') {
-                isDoubleShiftEmployee = true;
-            }
-        });
-
-        visibleDates.forEach(dateAttr => {
-            const dailyActivity = dailyActivitiesMap.get(dateAttr);
-
-            if (dailyActivity) {
-                const activityType = dailyActivity.activity_type ? dailyActivity.activity_type.toUpperCase() : 'N';
-                const vType = dailyActivity.activity_type_vespertina ? dailyActivity.activity_type_vespertina.toUpperCase() : 'N';
-
-                if (workingActivityTypes.includes(activityType)) totalDays++;
-
-                if (activityType === 'VAC' || vType === 'VAC') {
-                    totalVacations++;
-                }
-
-                if (workingActivityTypes.includes(vType)) totalVespertina++;
-
-                if (isDoubleShiftEmployee) {
-                    if (activityType === 'D') halfShiftBreaksCount++;
-                    if (vType === 'D') halfShiftBreaksCount++;
-                } else {
-                    if (activityType === 'D') totalBreaks++;
-                }
-
-                const dailyFoodBonuses = dailyActivity.food_bonuses || [];
-                const dailyFieldBonuses = dailyActivity.field_bonuses || [];
-                const dailyServices = dailyActivity.services_list || [];
-
-                foodCount += dailyFoodBonuses.length;
-                fieldBonusCount += dailyFieldBonuses.length;
-                serviceCount += dailyServices.length;
-
-                if (canSeeAmounts) {
-                    totalFood += dailyFoodBonuses.reduce((sum, bonus) => sum + Number(bonus.daily_amount || 0), 0);
-                    totalFieldBonus += dailyFieldBonuses.reduce((sum, bonus) => {
-                        const amount = Number(bonus.daily_amount || 0);
-                        if (bonus.currency === 'USD' && bonus.usd_to_mxn_rate) return sum + amount;
-                        return sum + amount;
-                    }, 0);
-                    totalService += dailyServices.reduce((sum, service) => sum + Number(service.amount || 0), 0);
-                }
-            }
-        });
-
-        if (isDoubleShiftEmployee) {
-            totalBreaks = halfShiftBreaksCount / 2;
-        }
-
-        let currentRow = employeeRow.nextElementSibling;
-        let vespertinaRow = null;
-        let foodRow = null;
-        let fieldBonusRow = null;
-        let serviceRow = null;
-
-        while (currentRow && currentRow.getAttribute('data-employee-id') === employeeId.toString() && currentRow.classList.contains('activity-row')) {
-            const label = currentRow.querySelector('.activity-label-cell').textContent;
-            if (label === 'Vespertina') vespertinaRow = currentRow;
-            else if (label === 'Comida') foodRow = currentRow;
-            else if (label === 'Bono') fieldBonusRow = currentRow;
-            else if (label === 'Servicio') serviceRow = currentRow;
-            currentRow = currentRow.nextElementSibling;
-        }
-
-        const activityTotalCell = employeeRow.querySelector('.total-activity .status-indicator');
-        const vespertinaTotalCell = vespertinaRow ? vespertinaRow.querySelector('.total-vespertina .status-indicator') : null;
-        const foodTotalCell = foodRow ? foodRow.querySelector('.total-comida') : null;
-        const fieldBonusTotalCell = fieldBonusRow ? fieldBonusRow.querySelector('.total-bono') : null;
-        const serviceTotalCell = serviceRow ? serviceRow.querySelector('.total-servicio') : null;
-
-        if (activityTotalCell) activityTotalCell.textContent = totalDays;
-        if (vespertinaTotalCell) vespertinaTotalCell.textContent = totalVespertina;
-
-        if (foodTotalCell) foodTotalCell.textContent = canSeeAmounts ? totalFood.toFixed(2) : foodCount.toString();
-        if (fieldBonusTotalCell) fieldBonusTotalCell.textContent = canSeeAmounts ? totalFieldBonus.toFixed(2) : fieldBonusCount.toString();
-        if (serviceTotalCell) serviceTotalCell.textContent = canSeeAmounts ? totalService.toFixed(2) : serviceCount.toString();
-
-        const vacCell = employeeRow.querySelector('.vacations-value');
-        if (vacCell) vacCell.textContent = totalVacations;
-
-        const breaksCell = employeeRow.querySelector('.breaks-value');
-        if (breaksCell) breaksCell.textContent = totalBreaks;
-
-        const utilCell = employeeRow.querySelector('.utilization-value');
-        if (utilCell) {
-            const utilizationRate = totalWorkingDaysInFullMonth > 0 ? (totalDays / totalWorkingDaysInFullMonth) * 100 : 0;
-            const percentage = Math.round(utilizationRate);
-            utilCell.textContent = `${percentage}%`;
-
-            if (percentage < 85) {
-                utilCell.style.color = '#4e6952ff';
-                utilCell.style.fontWeight = 'bold';
-            } else if (percentage >= 85 && percentage <= 90) {
-                utilCell.style.color = '#FF4500';
-            } else if (percentage > 90) {
-                utilCell.style.color = '#B22222';
-            }
-        }
-    });
-}
-
-function renderEmployeeWorkLog() {
-    if (!workLogsData || workLogsData.length === 0) {
-        calculateAndRenderTotals();
-        return;
-    }
-
-    workLogsData.forEach(employeeData => {
-        const employeeRow = document.querySelector(`.employee-row[data-employee-id="${employeeData.employee_id}"]`);
-        if (!employeeRow) return;
-
-        const activityRow = employeeRow;
-        let currentRow = employeeRow.nextElementSibling;
-
-        let vespertinaRow = null;
-        let comidaRow = null;
-        let fieldBonusRow = null;
-        let servicioRow = null;
-
-        while (currentRow && currentRow.getAttribute('data-employee-id') === employeeData.employee_id.toString() && currentRow.classList.contains('activity-row')) {
-            const label = currentRow.querySelector('.activity-label-cell').textContent;
-            if (label === 'Vespertina') vespertinaRow = currentRow;
-            else if (label === 'Comida') comidaRow = currentRow;
-            else if (label === 'Bono') fieldBonusRow = currentRow;
-            else if (label === 'Servicio') servicioRow = currentRow;
-            currentRow = currentRow.nextElementSibling;
-        }
-
-        const activityCells = Array.from(activityRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date'));
-        const vespertinaCells = vespertinaRow ? Array.from(vespertinaRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date')) : [];
-        const comidaCells = comidaRow ? Array.from(comidaRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date')) : [];
-        const fieldBonusCells = fieldBonusRow ? Array.from(fieldBonusRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date')) : [];
-        const servicioCells = servicioRow ? Array.from(servicioRow.querySelectorAll('.data-cell')).filter(cell => cell.getAttribute('data-date')) : [];
-
-        const dailyActivitiesMap = new Map();
-        if (employeeData.daily_activities) {
-            employeeData.daily_activities.forEach(activity => {
-                dailyActivitiesMap.set(activity.date, activity);
-            });
-        }
-
-        let hasVespertinaItemsInPeriod = false;
-        let hasFoodItemsInPeriod = false;
-        let hasFieldBonusItemsInPeriod = false;
-        let hasServiceItemsInPeriod = false;
-
-        const visibleDayHeaders = Array.from(document.querySelectorAll('.day-header')).filter(header => header.style.display !== 'none');
-        const visibleDates = visibleDayHeaders.map(header => header.getAttribute('data-date'));
-
-        visibleDates.forEach(dateAttr => {
-            const dailyActivity = dailyActivitiesMap.get(dateAttr);
-            if (dailyActivity) {
-                if (dailyActivity.activity_type_vespertina && dailyActivity.activity_type_vespertina !== 'N') hasVespertinaItemsInPeriod = true;
-                if (dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0) hasFoodItemsInPeriod = true;
-                if (dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0) hasFieldBonusItemsInPeriod = true;
-                if (dailyActivity.services_list && dailyActivity.services_list.length > 0) hasServiceItemsInPeriod = true;
-            }
-        });
-
-        if (vespertinaRow) vespertinaRow.style.display = hasVespertinaItemsInPeriod ? '' : 'none';
-        if (comidaRow) comidaRow.style.display = hasFoodItemsInPeriod ? '' : 'none';
-        if (fieldBonusRow) fieldBonusRow.style.display = hasFieldBonusItemsInPeriod ? '' : 'none';
-        if (servicioRow) servicioRow.style.display = hasServiceItemsInPeriod ? '' : 'none';
-
-        if (vespertinaRow) vespertinaRow.setAttribute('data-has-items', hasVespertinaItemsInPeriod ? 'true' : 'false');
-        if (comidaRow) comidaRow.setAttribute('data-has-items', hasFoodItemsInPeriod ? 'true' : 'false');
-        if (fieldBonusRow) fieldBonusRow.setAttribute('data-has-items', hasFieldBonusItemsInPeriod ? 'true' : 'false');
-        if (servicioRow) servicioRow.setAttribute('data-has-items', hasServiceItemsInPeriod ? 'true' : 'false');
-
-        let visibleDetailRows = 1;
-        if (hasVespertinaItemsInPeriod) visibleDetailRows++;
-        if (hasFoodItemsInPeriod) visibleDetailRows++;
-        if (hasFieldBonusItemsInPeriod) visibleDetailRows++;
-        if (hasServiceItemsInPeriod) visibleDetailRows++;
-
-        const mainLabelCell = employeeRow.querySelector('.activity-main-label');
-        if (mainLabelCell) {
-            mainLabelCell.textContent = hasVespertinaItemsInPeriod ? 'Matutina' : 'Actividad';
-        }
-
-        const employeeNameCell = employeeRow.querySelector('.employee-info-cell');
-        const vacationsCell = employeeRow.querySelector('.vacations-cell');
-        const breaksCell = employeeRow.querySelector('.breaks-cell');
-        const utilizationCell = employeeRow.querySelector('.utilization-cell');
-        const actionsCell = employeeRow.querySelector('.actions-cell');
-
-        if (employeeNameCell) employeeNameCell.setAttribute('rowspan', visibleDetailRows);
-        if (vacationsCell) vacationsCell.setAttribute('rowspan', visibleDetailRows);
-        if (breaksCell) breaksCell.setAttribute('rowspan', visibleDetailRows);
-        if (utilizationCell) utilizationCell.setAttribute('rowspan', visibleDetailRows);
-        if (actionsCell) actionsCell.setAttribute('rowspan', visibleDetailRows);
-
-        activityCells.forEach((cell, index) => {
-            const dateAttr = cell.getAttribute('data-date');
-            if (!dateAttr) return;
-
-            const dailyActivity = dailyActivitiesMap.get(dateAttr);
-            const statusIndicator = cell.querySelector('.status-indicator');
-
-            if (statusIndicator) {
-                statusIndicator.textContent = 'N';
-                statusIndicator.className = 'status-indicator status-n';
-                statusIndicator.title = 'No hay actividad registrada';
-                statusIndicator.classList.remove('approved-border', 'reviewed-border', 'rejected-border', 'under-review-border');
-            }
-            if (vespertinaCells[index]) {
-                const vInd = vespertinaCells[index].querySelector('.status-indicator');
-                if (vInd) {
-                    vInd.textContent = 'N';
-                    vInd.className = 'status-indicator status-n';
-                    vInd.title = 'No hay actividad registrada';
-                    vInd.classList.remove('approved-border', 'reviewed-border', 'rejected-border', 'under-review-border');
-                }
-            }
-            if (comidaCells[index]) comidaCells[index].textContent = '0';
-            if (fieldBonusCells[index]) fieldBonusCells[index].textContent = '0';
-            if (servicioCells[index]) servicioCells[index].textContent = '0';
-
-            if (dailyActivity) {
-                if (statusIndicator && dailyActivity.activity_type) {
-                    const activityType = dailyActivity.activity_type.toUpperCase();
-                    statusIndicator.textContent = activityType;
-                    statusIndicator.className = `status-indicator status-${activityType.toLowerCase()}`;
-                    statusIndicator.title = dailyActivity.activity_description || '';
-
-                    const matStatus = (dailyActivity.activity_status || 'under_review').toLowerCase();
-
-                    if (matStatus === 'approved') statusIndicator.classList.add('approved-border');
-                    else if (matStatus === 'reviewed') statusIndicator.classList.add('reviewed-border');
-                    else if (matStatus === 'rejected') statusIndicator.classList.add('rejected-border');
-                    else statusIndicator.classList.add('under-review-border');
-                }
-
-                if (vespertinaCells[index] && dailyActivity.activity_type_vespertina) {
-                    const vInd = vespertinaCells[index].querySelector('.status-indicator');
-                    if (vInd && dailyActivity.activity_type_vespertina !== 'N') {
-                        const vType = dailyActivity.activity_type_vespertina.toUpperCase();
-                        vInd.textContent = vType;
-                        vInd.className = `status-indicator status-${vType.toLowerCase()}`;
-                        vInd.title = dailyActivity.activity_description_vespertina || '';
-
-                        const vespStatus = (dailyActivity.activity_status_vespertina || 'under_review').toLowerCase();
-
-                        if (vespStatus === 'approved') vInd.classList.add('approved-border');
-                        else if (vespStatus === 'reviewed') vInd.classList.add('reviewed-border');
-                        else if (vespStatus === 'rejected') vInd.classList.add('rejected-border');
-                        else vInd.classList.add('under-review-border');
-                    }
-                }
-
-                if (canSeeAmounts) {
-                    if (comidaCells[index]) {
-                        const totalFoodBonus = dailyActivity.food_bonuses ? dailyActivity.food_bonuses.reduce((sum, bonus) => sum + Number(bonus.daily_amount || 0), 0) : 0;
-                        comidaCells[index].textContent = totalFoodBonus > 0 ? totalFoodBonus.toFixed(2) : '0';
-                        comidaCells[index].title = dailyActivity.food_bonuses && dailyActivity.food_bonuses.length > 0 ? dailyActivity.food_bonuses.map(b => `${b.num_daily} comidas`).join(', ') : '';
-                    }
-
-                    if (fieldBonusCells[index]) {
-                        const totalFieldBonus = dailyActivity.field_bonuses ? dailyActivity.field_bonuses.reduce((sum, bonus) => {
-                            const amount = Number(bonus.daily_amount || 0);
-                            if (bonus.currency === 'USD' && bonus.usd_to_mxn_rate) return sum + amount;
-                            return sum + amount;
-                        }, 0) : 0;
-                        fieldBonusCells[index].textContent = totalFieldBonus > 0 ? totalFieldBonus.toFixed(2) : '0';
-                        fieldBonusCells[index].title = dailyActivity.field_bonuses && dailyActivity.field_bonuses.length > 0 ? dailyActivity.field_bonuses.map(b => `${b.bonus_type} (${b.daily_amount} ${b.currency})`).join(', ') : '';
-                    }
-
-                    if (servicioCells[index]) {
-                        const totalServiceAmount = dailyActivity.services_list ? dailyActivity.services_list.reduce((sum, service) => sum + Number(service.amount || 0), 0) : 0;
-                        servicioCells[index].textContent = totalServiceAmount > 0 ? totalServiceAmount.toFixed(2) : '0';
-                        servicioCells[index].title = dailyActivity.services_list && dailyActivity.services_list.length > 0 ? dailyActivity.services_list.map(s => s.service_name).join(', ') : '';
-                    }
-                } else {
-                    if (comidaCells[index]) {
-                        const foodBonuses = dailyActivity.food_bonuses || [];
-                        if (foodBonuses.length > 0) {
-                            const totalNumDaily = foodBonuses.reduce((sum, bonus) => sum + Number(bonus.num_daily || 0), 0);
-                            comidaCells[index].textContent = foodBonuses.length > 1 ? `${foodBonuses.length} items` : `${totalNumDaily}`;
-                            comidaCells[index].title = foodBonuses.map(b => `${b.bonus_type} x${b.num_daily}`).join(', ');
-                        } else {
-                            comidaCells[index].textContent = '0';
-                            comidaCells[index].title = '';
-                        }
-                    }
-
-                    if (fieldBonusCells[index]) {
-                        const fieldBonuses = dailyActivity.field_bonuses || [];
-                        if (fieldBonuses.length > 0) {
-                            fieldBonusCells[index].textContent = fieldBonuses.length > 1 ? fieldBonuses.length : (fieldBonuses[0].bonus_identifier || 'Bono');
-                            fieldBonusCells[index].title = fieldBonuses.map(b => `${b.bonus_type} (${b.bonus_identifier})`).join(', ');
-                        } else {
-                            fieldBonusCells[index].textContent = '0';
-                            fieldBonusCells[index].title = '';
-                        }
-                    }
-
-                    if (servicioCells[index]) {
-                        const services = dailyActivity.services_list || [];
-                        if (services.length > 0) {
-                            servicioCells[index].textContent = services.length > 1 ? services.length : (services[0].service_identifier || 'Servicio');
-                            servicioCells[index].title = services.map(s => `${s.service_name} (${s.service_identifier})`).join(', ');
-                        } else {
-                            servicioCells[index].textContent = '0';
-                            servicioCells[index].title = '';
-                        }
-                    }
-                }
-            }
-        });
-    });
-
-    calculateAndRenderTotals();
-}
-
-function enableDragToScroll(containerSelector) {
-    const container = document.querySelector(containerSelector);
-    if (!container) return;
-
-    let isDown = false;
-    let startX, startY, scrollLeft, scrollTop;
-
-    container.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button, input, select, a, .status-indicator')) return;
-
-        isDown = true;
-        container.classList.add('is-grabbing');
-        startX = e.pageX - container.offsetLeft;
-        startY = e.pageY - container.offsetTop;
-        scrollLeft = container.scrollLeft;
-        scrollTop = container.scrollTop;
-        e.preventDefault();
-    });
-
-    container.addEventListener('mouseleave', () => {
-        isDown = false;
-        container.classList.remove('is-grabbing');
-    });
-
-    container.addEventListener('mouseup', () => {
-        isDown = false;
-        container.classList.remove('is-grabbing');
-    });
-
-    container.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - container.offsetLeft;
-        const y = e.pageY - container.offsetTop;
-        const walkX = (x - startX) * 1.2;
-        const walkY = (y - startY) * 1.2;
-        container.scrollLeft = scrollLeft - walkX;
-        container.scrollTop = scrollTop - walkY;
-    });
-
-    let touchStartX, touchStartY, touchScrollLeft, touchScrollTop;
-
-    container.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].pageX - container.offsetLeft;
-        touchStartY = e.touches[0].pageY - container.offsetTop;
-        touchScrollLeft = container.scrollLeft;
-        touchScrollTop = container.scrollTop;
-    }, { passive: true });
-
-    container.addEventListener('touchmove', (e) => {
-        const x = e.touches[0].pageX - container.offsetLeft;
-        const y = e.touches[0].pageY - container.offsetTop;
-        container.scrollLeft = touchScrollLeft - (x - touchStartX);
-        container.scrollTop = touchScrollTop - (y - touchStartY);
-    }, { passive: true });
-}
-
 
 function checkPendingVacationsAlert() {
     const periodKey = `${currentMonth}-${currentYear}`;
-
     if (hasAlertedVacations.has(periodKey)) return;
 
     let pendingCount = 0;
     let employeesWithPending = new Set();
     const safeCurrentUserId = parseInt(currentUserId, 10);
 
-    console.log("--- Iniciando chequeo de vacaciones. Usuario ID:", safeCurrentUserId);
-
     if (Array.isArray(workLogsData)) {
         workLogsData.forEach(log => {
-            const assignment = loadChartAssignments.find(a =>
-                parseInt(a.employee_id, 10) === parseInt(log.employee_id, 10)
-            );
-
-            // Log para ver si encuentra asignaciones
-            if (assignment) {
-                console.log(`Empleado ${log.employee_id} tiene asignación con approver: ${assignment.approver_id}`);
-            }
-
+            const assignment = loadChartAssignments.find(a => parseInt(a.employee_id, 10) === parseInt(log.employee_id, 10));
             if (assignment && parseInt(assignment.approver_id, 10) === safeCurrentUserId) {
                 if (log.daily_activities) {
                     log.daily_activities.forEach(act => {
@@ -2103,22 +1646,18 @@ function checkPendingVacationsAlert() {
                         const status = (act.activity_status || 'under_review').toLowerCase();
                         const vStatus = (act.activity_status_vespertina || 'under_review').toLowerCase();
 
-                        // Comprobación de estado
                         const isVacPending = (actType === 'VAC' && (status === 'under_review' || status === 'reviewed')) ||
                                              (vType === 'VAC' && (vStatus === 'under_review' || vStatus === 'reviewed'));
 
                         if (isVacPending) {
                             pendingCount++;
                             employeesWithPending.add(log.employee_id);
-                            console.log(`¡Vacación pendiente encontrada! Fecha: ${act.date}, Empleado: ${log.employee_id}`);
                         }
                     });
                 }
             }
         });
     }
-
-    console.log("--- Total vacaciones encontradas:", pendingCount);
 
     if (pendingCount > 0) {
         Swal.fire({
@@ -2131,4 +1670,64 @@ function checkPendingVacationsAlert() {
         hasAlertedVacations.add(periodKey);
     }
 }
-enableDragToScroll('.table-container');
+
+function initializeAutoRefresh() {
+    autoRefreshInterval = setInterval(checkForUpdates, 10000);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    lastUpdateTime = new Date();
+}
+
+async function checkForUpdates() {
+    try {
+        const response = await fetch('/rh/loadchart/check-updates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                last_update: lastUpdateTime.toISOString(),
+                month: currentMonth,
+                year: currentYear
+            })
+        });
+
+        const data = await response.json();
+        if (data.success && data.has_updates) {
+            await refreshData();
+        }
+    } catch (error) {
+        console.error('Error verificando actualizaciones:', error);
+    }
+}
+
+async function refreshData() {
+    try {
+        stopAutoRefresh();
+        const response = await fetch(`/rh/loadchart/approval-data/${currentYear}/${currentMonth}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) throw new Error('Error al cargar los datos actualizados');
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'Error al cargar los datos actualizados');
+
+        workLogsData = data.workLogsData;
+        fortnightlyConfig = data.fortnightlyConfig;
+        loadChartAssignments = data.loadChartAssignments;
+        canSeeAmounts = data.canSeeAmounts;
+        userPermissions = data.userPermissions;
+        monthlyDays = data.monthlyDays;
+        employees = data.employees;
+
+        await loadMonthData(true);
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+        initializeAutoRefresh();
+    }
+}
