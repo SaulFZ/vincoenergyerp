@@ -143,7 +143,7 @@
             let currentMonth = {{ $currentMonth }};
             let currentYear = {{ $currentYear }};
             let currentView = 'quincena1';
-            
+
             // Los datos esenciales se cargan directo desde el servidor
             let workLogsData = @json($workLogsData ?? []);
             let fortnightlyConfig = @json($fortnightlyConfig);
@@ -154,7 +154,7 @@
             let canSeeAmounts = @json($canSeeAmounts ?? false);
             let canSeeFilters = @json(\App\Helpers\PermissionHelper::hasDirectPermission('ver_filtros'));
             let currentUserId = {{ auth()->id() }};
-            
+
             let allEmployeeRows = [];
             let allSquadRows = [];
         </script>
@@ -181,7 +181,7 @@
         </div>
     </div>
 
- 
+
     {{-- Modal de Servicios --}}
     <div id="services-modal" class="services-modal">
         <div class="services-modal-content">
@@ -413,3 +413,9 @@
     <script src="{{ asset('assets/js/rh/loadchart/approval.js') }}"></script>
     <script src="{{ asset('assets/js/rh/loadchart/approvalModals.js') }}"></script>
 @endsection
+
+
+
+
+
+

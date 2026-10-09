@@ -6,14 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Auth\User;
 use App\Models\RH\LoadChart\LoadChartAssignment;
-use App\Models\RH\OrgManagement\Area; // ✅ IMPORTANTE: Agregar el modelo Area
+use App\Models\RH\OrgManagement\Area;
 use Illuminate\Http\Request;
 
 class AssignmentController extends Controller
 {
     public function index()
     {
-        // ✅ Obtenemos las áreas activas en lugar de la antigua columna de texto
+        //  Obtenemos las áreas activas en lugar de la antigua columna de texto
         $areas = Area::where('is_active', 1)->orderBy('name')->pluck('name');
 
         $reviewers = User::whereHas('directPermissions', function ($query) {

@@ -58,7 +58,7 @@ function initializeApprovalTable() {
         showQuincena(1);
         setActiveButton("quincena1");
     }
-    
+
     updatePeriodInfo();
 
     // 3. Capturar referencias en el DOM
@@ -239,7 +239,7 @@ function updateTableBody(employeesData, monthlyDaysData) {
                         data-day="${dayInfo.day}" data-date="${dayInfo.date}" style="${displayStyle}">${content}</td>`
                 }).join('');
 
-                let totalCellHtml = rowType === 'Vespertina' 
+                let totalCellHtml = rowType === 'Vespertina'
                     ? '<td class="data-cell total-vespertina"><div class="status-indicator">0</div></td>'
                     : `<td class="data-cell total-${rowType.toLowerCase()}">0</td>`;
 
@@ -451,7 +451,7 @@ function calculateAndRenderTotals() {
         let isDoubleShiftEmployee = false, halfShiftBreaksCount = 0;
 
         const dailyActivitiesMap = new Map(employeeData.daily_activities.map(activity => [activity.date, activity]));
-        
+
         visibleDates.forEach(dateAttr => {
             const act = dailyActivitiesMap.get(dateAttr);
             if (act && act.activity_type_vespertina && act.activity_type_vespertina !== 'N') isDoubleShiftEmployee = true;
@@ -1375,7 +1375,7 @@ function filterActivitiesByPeriod(dailyActivities, fortnight) {
     // Función auxiliar para extraer solo la parte YYYY-MM-DD y evitar problemas de zona horaria o el 'T00:00:00' duplicado
     const getSafeDateStr = (dateString) => {
         if (!dateString) return null;
-        return dateString.split('T')[0]; 
+        return dateString.split('T')[0];
     };
 
     const q1Start = getSafeDateStr(fortnightlyConfig.q1_start);
@@ -1385,7 +1385,7 @@ function filterActivitiesByPeriod(dailyActivities, fortnight) {
 
     return dailyActivities.filter(act => {
         const actDate = act.date; // act.date ya viene como 'YYYY-MM-DD'
-        
+
         if (fortnight === 'quincena1' && q1Start && q1End) {
             // Comparación de strings es 100% segura para formato ISO YYYY-MM-DD
             return actDate >= q1Start && actDate <= q1End;
