@@ -81,14 +81,11 @@ function initializeApprovalTable() {
     const toggleAuxBtn = document.getElementById('toggle-auxiliar-pal-btn');
     if (toggleAuxBtn) {
         toggleAuxBtn.addEventListener('click', function () {
-            if (auxiliarPalState === 'inactive') {
-                auxiliarPalState = 'active';
-                this.innerHTML = '<i class="fas fa-times-circle"></i> Regresar';
-                this.style.backgroundColor = '#e53e3e';
-            } else {
-                auxiliarPalState = 'inactive';
-                this.innerHTML = '<i class="fas fa-user-shield"></i> Ver Auxiliar PAL';
-                this.style.backgroundColor = '#4a5568';
+            const returning = auxiliarPalState === 'active';
+            setAuxiliarPalMode(!returning);
+            if (returning) {
+                const assignment = document.getElementById('assignment-filter');
+                if (assignment) assignment.value = 'assigned';
             }
             applyFilters();
         });
@@ -96,7 +93,10 @@ function initializeApprovalTable() {
 
     if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
         document.getElementById('toggle-filters-btn').addEventListener('click', toggleFilters);
-        document.getElementById('assignment-filter').addEventListener('change', applyFilters);
+        document.getElementById('assignment-filter').addEventListener('change', function () {
+            setAuxiliarPalMode(false);
+            applyFilters();
+        });
         document.getElementById('area-filter').addEventListener('change', function () {
             populatePositionFilter();
             applyFilters();
@@ -184,8 +184,8 @@ function updateTableBody(employeesData, monthlyDaysData) {
 
         squadEmployees.forEach(employee => {
             const assignment = loadChartAssignments.find(a => a.employee_id.toString() === employee.id.toString());
-            const isReviewerForEmployee = assignment && assignment.reviewer_id === currentUserId;
-            const isApproverForEmployee = assignment && assignment.approver_id === currentUserId;
+            const isReviewerForEmployee = assignment && sameId(assignment.reviewer_id, currentUserId);
+            const isApproverForEmployee = assignment && sameId(assignment.approver_id, currentUserId);
             const empArea = employee.area ? employee.area.name : '';
 
             let mainRow = document.createElement('tr');
@@ -254,8 +254,12 @@ function updateTableBody(employeesData, monthlyDaysData) {
 }
 
 function renderEmployeeWorkLog() {
+    document.querySelectorAll('#approval-table-body .activity-row').forEach(row => {
+        row.setAttribute('data-has-items', 'false');
+        row.style.display = 'none';
+    });
     if (!workLogsData || workLogsData.length === 0) {
-        calculateAndRenderTotals();
+        applyFilters();
         return;
     }
 
@@ -429,7 +433,7 @@ function renderEmployeeWorkLog() {
         });
     });
 
-    calculateAndRenderTotals();
+    applyFilters();
 }
 
 function calculateAndRenderTotals() {
@@ -591,97 +595,76 @@ function populatePositionFilter() {
     }
 }
 
+// Unifica IDs numéricos y de texto sin convertir null en un usuario válido.
+function sameId(left, right) {
+    return left != null && right != null && String(left) === String(right);
+}
+
+function setAuxiliarPalMode(active) {
+    auxiliarPalState = active ? 'active' : 'inactive';
+    const button = document.getElementById('toggle-auxiliar-pal-btn');
+    if (!button) return;
+    button.innerHTML = active
+        ? '<i class="fas fa-times-circle"></i> Regresar'
+        : '<i class="fas fa-user-shield"></i> Ver Auxiliar PAL';
+    button.style.backgroundColor = active ? '#e53e3e' : '#4a5568';
+    button.setAttribute('aria-pressed', String(active));
+}
+
 function applyFilters() {
-    const assignmentFilterElem = document.getElementById('assignment-filter');
-    const areaFilterElem = document.getElementById('area-filter');
-    const positionFilterElem = document.getElementById('position-filter');
-    const searchFilterElem = document.getElementById('employee-search');
-
-    const assignmentFilter = assignmentFilterElem ? assignmentFilterElem.value : 'all';
-    const areaFilter = areaFilterElem ? areaFilterElem.value : '';
-    const positionFilter = positionFilterElem ? positionFilterElem.value : '';
-    const searchFilter = searchFilterElem ? searchFilterElem.value.toLowerCase().trim() : '';
-
-    const isUsingManualFilters = (
-        areaFilter !== '' ||
-        positionFilter !== '' ||
-        searchFilter !== '' ||
-        (assignmentFilterElem !== null && assignmentFilter === 'all')
-    );
+    const tbody = document.getElementById('approval-table-body');
+    if (!tbody) return;
+    // Siempre obtener las filas actuales: el refresco reemplaza el tbody.
+    allEmployeeRows = Array.from(tbody.querySelectorAll('.employee-row'));
+    allSquadRows = Array.from(tbody.querySelectorAll('.squad-group-row'));
+    const value = id => document.getElementById(id)?.value || '';
+    const assignment = value('assignment-filter') || 'assigned';
+    const area = value('area-filter');
+    const position = value('position-filter');
+    const search = value('employee-search').toLowerCase().trim();
+    const auxiliaryMode = auxiliarPalState === 'active';
+    const employeeMap = new Map(employees.map(employee => [String(employee.id), employee]));
+    const assignedIds = new Set(loadChartAssignments
+        .filter(item => sameId(item.reviewer_id, currentUserId) || sameId(item.approver_id, currentUserId))
+        .map(item => String(item.employee_id)));
 
     allEmployeeRows.forEach(row => {
-        const area = row.getAttribute('data-area');
         const employeeId = row.getAttribute('data-employee-id');
-        const employeeData = employees.find(e => e.id.toString() === employeeId);
-
-        const employeeName = employeeData ? employeeData.full_name.toLowerCase().trim() : '';
-        const employeeNumber = employeeData ? employeeData.employee_number.toString().toLowerCase() : '';
-        const employeePosition = employeeData ? employeeData.position : '';
-
-        const employeeJobTitle = employeeData && employeeData.job_title ? employeeData.job_title.trim().toUpperCase() : '';
-        const isAuxiliarPal = employeeJobTitle.includes('AUXILIAR PAL');
-
-        const employeeAssignment = loadChartAssignments.find(a => a.employee_id.toString() === employeeId);
-        const isReviewerForEmployee = employeeAssignment && employeeAssignment.reviewer_id === currentUserId;
-        const isApproverForEmployee = employeeAssignment && employeeAssignment.approver_id === currentUserId;
-        const isAssigned = isReviewerForEmployee || isApproverForEmployee;
-
-        const matchesArea = !areaFilter || area === areaFilter;
-        const matchesPosition = !positionFilter || employeePosition === positionFilter;
-        const matchesSearch = !searchFilter || employeeName.includes(searchFilter) || employeeNumber.includes(searchFilter);
-        const matchesAssignment = !assignmentFilterElem ? true : (assignmentFilter === 'all' || (assignmentFilter === 'assigned' && isAssigned));
-
-        let matchesAuxiliar = true;
-        if (auxiliarPalState === 'active') {
-            matchesAuxiliar = isAuxiliarPal;
-        } else {
-            if (isAuxiliarPal && !isUsingManualFilters) {
-                matchesAuxiliar = false;
-            }
+        const employee = employeeMap.get(employeeId);
+        const isAuxiliary = String(employee?.job_title ?? '').trim().toUpperCase().includes('AUXILIAR PAL');
+        // PAL es una vista independiente. Al salir, vuelve a regir la asignación.
+        const matchesScope = auxiliaryMode
+            ? isAuxiliary
+            : assignment === 'all' || (assignedIds.has(employeeId) && !isAuxiliary);
+        const matchesArea = !area || employee?.area?.name === area;
+        const matchesPosition = !position || employee?.position === position;
+        const matchesSearch = !search
+            || String(employee?.full_name ?? '').toLowerCase().includes(search)
+            || String(employee?.employee_number ?? '').toLowerCase().includes(search);
+        const visible = Boolean(employee) && matchesScope && matchesArea && matchesPosition && matchesSearch;
+        row.style.display = visible ? '' : 'none';
+        let visibleRowCount = 1;
+        let detail = row.nextElementSibling;
+        while (detail && detail.classList.contains('activity-row') && detail.getAttribute('data-employee-id') === employeeId) {
+            const showDetail = visible && !detail.classList.contains('hidden')
+                && detail.getAttribute('data-has-items') === 'true';
+            detail.style.display = showDetail ? '' : 'none';
+            if (showDetail) visibleRowCount++;
+            detail = detail.nextElementSibling;
         }
-
-        const isVisible = matchesArea && matchesPosition && matchesSearch && matchesAssignment && matchesAuxiliar;
-        row.style.display = isVisible ? '' : 'none';
-
-        let nextRow = row.nextElementSibling;
-        while (nextRow && nextRow.classList.contains('activity-row') && nextRow.getAttribute('data-employee-id') === row.getAttribute('data-employee-id')) {
-            if (!isVisible) {
-                nextRow.style.display = 'none';
-            } else {
-                const isHiddenByToggle = nextRow.classList.contains('hidden');
-                const isHiddenByRender = nextRow.getAttribute('data-has-items') === 'false';
-                nextRow.style.display = (isHiddenByToggle || isHiddenByRender) ? 'none' : '';
-            }
-            nextRow = nextRow.nextElementSibling;
-        }
+        row.querySelectorAll('.employee-info-cell, .vacations-cell, .breaks-cell, .utilization-cell, .actions-cell')
+            .forEach(cell => cell.setAttribute('rowspan', visibleRowCount));
     });
 
-    if (typeof allSquadRows !== 'undefined') {
-        allSquadRows.forEach(squadRow => {
-            const nextRow = squadRow.nextElementSibling;
-            let showSquadRow = false;
-            let currentRow = nextRow;
-
-            while (currentRow && !currentRow.classList.contains('squad-group-row')) {
-                if (currentRow.classList.contains('employee-row') && currentRow.style.display !== 'none') {
-                    showSquadRow = true;
-                    break;
-                }
-                if (currentRow.classList.contains('activity-row')) {
-                    currentRow = currentRow.nextElementSibling;
-                    continue;
-                }
-                currentRow = currentRow.nextElementSibling;
-            }
-            squadRow.style.display = showSquadRow ? '' : 'none';
-        });
-    }
-
-    if (typeof currentView !== 'undefined') {
-        if (currentView === 'quincena1') showQuincena(1);
-        else if (currentView === 'quincena2') showQuincena(2);
-        else showFullMonth();
-    }
+    allSquadRows.forEach(group => {
+        let visible = false;
+        let row = group.nextElementSibling;
+        while (row && !row.classList.contains('squad-group-row')) {
+            if (row.classList.contains('employee-row') && row.style.display !== 'none') visible = true;
+            row = row.nextElementSibling;
+        }
+        group.style.display = visible ? '' : 'none';
+    });
     calculateAndRenderTotals();
 }
 
@@ -1104,8 +1087,8 @@ function openApprovalModal(employeeData, dailyActivity) {
     currentModalData.dailyActivities = dailyActivity;
 
     const assignment = loadChartAssignments.find(a => a.employee_id === employeeData.employee_id);
-    const isReviewer = assignment && assignment.reviewer_id === currentUserId;
-    const isApprover = assignment && assignment.approver_id === currentUserId;
+    const isReviewer = assignment && sameId(assignment.reviewer_id, currentUserId);
+    const isApprover = assignment && sameId(assignment.approver_id, currentUserId);
 
     subtitle.textContent = `${employeeName} — ${formattedDate}`;
     itemsList.innerHTML = '';
@@ -1519,8 +1502,8 @@ async function loadMonthData(isRefresh = false) {
 
             if (typeof canSeeFilters !== 'undefined' && canSeeFilters) {
                 populatePositionFilter();
-                applyFilters();
             }
+            applyFilters();
 
             if (!isRefresh) {
                 hideLoadingState();
@@ -1574,6 +1557,7 @@ function setActiveButton(buttonId) {
 }
 
 function showQuincena(quincena) {
+    currentView = quincena === 1 ? 'quincena1' : 'quincena2';
     const dayHeaders = document.querySelectorAll(".approval-table .day-header");
     const allRows = document.querySelectorAll(".approval-table tbody tr");
     const daysColumnsHeader = document.getElementById("days-columns");
@@ -1591,7 +1575,7 @@ function showQuincena(quincena) {
         allRows.forEach((row) => {
             if (row.classList.contains('activity-row') || row.classList.contains('employee-row')) {
                 const dayCell = Array.from(row.children).find(cell => cell.getAttribute('data-day') === header.getAttribute('data-day') && cell.getAttribute('data-date') === header.getAttribute('data-date'));
-                if (dayCell && row.style.display !== 'none') {
+                if (dayCell) {
                     dayCell.style.display = shouldShow ? "" : "none";
                 }
             }
@@ -1600,10 +1584,11 @@ function showQuincena(quincena) {
 
     daysColumnsHeader.colSpan = visibleDays;
     daysColumnsHeader.textContent = `Días del Período (${visibleDays} días)`;
-    calculateAndRenderTotals();
+    renderEmployeeWorkLog();
 }
 
 function showFullMonth() {
+    currentView = 'full-month';
     const dayHeaders = document.querySelectorAll(".approval-table .day-header");
     const allRows = document.querySelectorAll(".approval-table tbody tr");
     const daysColumnsHeader = document.getElementById("days-columns");
@@ -1615,7 +1600,7 @@ function showFullMonth() {
         allRows.forEach((row) => {
             if (row.classList.contains('activity-row') || row.classList.contains('employee-row')) {
                 const dayCell = Array.from(row.children).find(cell => cell.getAttribute('data-day') === header.getAttribute('data-day') && cell.getAttribute('data-date') === header.getAttribute('data-date'));
-                if (dayCell && row.style.display !== 'none') {
+                if (dayCell) {
                     dayCell.style.display = "";
                 }
             }
@@ -1624,7 +1609,7 @@ function showFullMonth() {
 
     daysColumnsHeader.colSpan = dayHeaders.length;
     daysColumnsHeader.textContent = `Días del Período (${dayHeaders.length} días)`;
-    calculateAndRenderTotals();
+    renderEmployeeWorkLog();
 }
 
 function checkPendingVacationsAlert() {

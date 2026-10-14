@@ -24,7 +24,7 @@
                     @endif
 
                     @if (\App\Helpers\PermissionHelper::hasDirectPermission('ver_guardias'))
-                        <button class="back-btn" id="toggle-auxiliar-pal-btn" style="background-color: #4a5568; color: white;">
+                        <button class="back-btn" id="toggle-auxiliar-pal-btn" type="button" aria-pressed="false" style="background-color: #4a5568; color: white;">
                             <i class="fas fa-user-shield"></i> Ver Auxiliar PAL
                         </button>
                     @endif
@@ -57,7 +57,7 @@
                         <label for="assignment-filter">Asignación</label>
                         <select id="assignment-filter" class="filter-select">
                             <option value="all">Todos los Empleados</option>
-                            <option value="assigned" selected>Ver Solo Personal Asignados</option>
+                            <option value="assigned" selected>Ver solo personal a mi cargo</option>
                         </select>
                     </div>
 

@@ -123,7 +123,9 @@ class ApprovalController extends Controller
             ->orderBy('position')
             ->pluck('position');
 
-        // 🔒 SIEMPRE filtramos por los empleados asignados al usuario actual
+        // ver_filtros permite consultar todos los empleados activos.
+        // La interfaz muestra inicialmente solo los asignados.
+        $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
         $assignedEmployeeIds = $this->getAssignedEmployeeIds();
 
         $employees = Employee::with([
@@ -135,7 +137,9 @@ class ApprovalController extends Controller
             'department'
         ])
             ->where('employment_status', 'active')
-            ->whereIn('id', $assignedEmployeeIds)   // ✅ FIX: solo asignados
+            ->when(!$canSeeFilters, function ($query) use ($assignedEmployeeIds) {
+                $query->whereIn('id', $assignedEmployeeIds);
+            })
             ->select('id', 'full_name', 'employee_number', 'position', 'area_id', 'department_id', 'job_title')
             ->get();
 
@@ -156,8 +160,6 @@ class ApprovalController extends Controller
         $loadChartAssignments = LoadChartAssignment::all();
         $canSeeAmounts = PermissionHelper::hasDirectPermission('ver_montos');
 
-        // ver_filtros solo controla la UI de filtros, NO el alcance de los datos
-        $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
 
         $userPermissions = [
             'is_reviewer' => $loadChartAssignments->contains('reviewer_id', auth()->id()),
@@ -240,11 +242,14 @@ class ApprovalController extends Controller
             ]);
             $lastUpdate = Carbon::parse($request->last_update);
 
-            // 🔒 Solo revisamos actualizaciones de los empleados asignados
+            // Mantener el mismo alcance de lectura que en index y getApprovalData.
+            $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
             $assignedEmployeeIds = $this->getAssignedEmployeeIds();
 
             $hasUpdates = EmployeeMonthlyWorkLog::query()
-                ->whereIn('employee_id', $assignedEmployeeIds)
+                ->when(!$canSeeFilters, function ($query) use ($assignedEmployeeIds) {
+                    $query->whereIn('employee_id', $assignedEmployeeIds);
+                })
                 ->where('month_and_year', Carbon::createFromDate($request->year, $request->month, 1)->format('Y-m'))
                 ->where(function ($query) use ($lastUpdate) {
                     $query->where('updated_at', '>', $lastUpdate)->orWhere('created_at', '>', $lastUpdate);
@@ -278,11 +283,11 @@ class ApprovalController extends Controller
             $canSeeAmounts = PermissionHelper::hasDirectPermission('ver_montos');
             $canSeeFilters = PermissionHelper::hasDirectPermission('ver_filtros');
 
-            // 🔒 SIEMPRE obtenemos los IDs asignados
+            // Los IDs limitan la consulta únicamente cuando no tiene ver_filtros.
             $assignedEmployeeIds = $this->getAssignedEmployeeIds();
 
-            // Si el usuario no tiene ninguna asignación, devolvemos lista vacía
-            if ($assignedEmployeeIds->isEmpty()) {
+            // Con ver_filtros también puede consultar sin tener asignaciones propias.
+            if (!$canSeeFilters && $assignedEmployeeIds->isEmpty()) {
                 return response()->json([
                     'success' => true,
                     'employees' => [],
@@ -299,8 +304,7 @@ class ApprovalController extends Controller
                 ]);
             }
 
-            // ✅ FIX: Siempre restringimos a los empleados asignados,
-            //    sin importar si tiene permiso ver_filtros.
+            // Con ver_filtros se cargan todos los activos, incluidos los no asignados.
             $employeeQuery = Employee::with([
                 'employeeMonthlyWorkLogs' => function ($query) use ($month, $year) {
                     $query->where('month_and_year', Carbon::createFromDate($year, $month, 1)->format('Y-m'));
@@ -310,7 +314,9 @@ class ApprovalController extends Controller
                 'department'
             ])
                 ->where('employment_status', 'active')
-                ->whereIn('id', $assignedEmployeeIds)
+                ->when(!$canSeeFilters, function ($query) use ($assignedEmployeeIds) {
+                    $query->whereIn('id', $assignedEmployeeIds);
+                })
                 ->select('id', 'full_name', 'employee_number', 'position', 'area_id', 'department_id', 'job_title');
 
             $employees = $employeeQuery->get();
