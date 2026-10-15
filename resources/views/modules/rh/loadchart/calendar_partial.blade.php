@@ -468,9 +468,9 @@
 
                         <option value="Paso de cable">Paso de cable</option>
                         <option value="Pruebas de presion para los ECP">Pruebas de presión para los ECP</option>
-                        <option value="Pintura y soldaduras en area de taller">Pintura y soldaduras en área de taller
-                        </option>
+                        <option value="Pintura y soldaduras en area de taller">Pintura y soldaduras en área de taller</option>
                         <option value="Movimiento o eventos con gerencias">Movimiento o eventos con gerencias</option>
+                        <option value="Soporte QHSE">Soporte QHSE</option>
                         <option value="Mantenimiento a polvorin Vinco">Mantenimiento a polvorín Vinco</option>
                         <option value="Mantenimiento de ECP">Mantenimiento de ECP</option>
 
