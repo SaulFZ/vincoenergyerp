@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VesCore - Módulo de Reembolsos</title>
+    <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <link href="{{ asset('assets/css/administration/expense_claims/index.css') }}" rel="stylesheet">
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    @stack('styles')
+</head>
+
+<body>
+    <header class="header-main">
+        <div class="logo-container">
+            <div class="logo-wrapper">
+                <div class="logo-img">
+                    <img src="{{ asset('assets/img/logovinco1.png') }}" alt="Vinco Energy">
+                </div>
+            </div>
+        </div>
+        <nav class="nav-main">
+            {{-- Reembolsos --}}
+            <a href="{{ route('expense-claims.reimbursements') }}" class="nav-link" data-route="reimbursements">
+                <i class="fas fa-home"></i> Reembolsos
+            </a>
+
+            {{-- Cuentas por Pagar (Estado de Cuenta) --}}
+            <a href="{{ route('expense-claims.accounts-payable') }}" class="nav-link" data-route="accounts-payable">
+                <i class="fas fa-hand-holding-usd"></i> Cuentas por Pagar
+            </a>
+
+            {{-- Gestión de Anticipos (Solicitudes) --}}
+            <a href="{{ route('expense-claims.advances') }}" class="nav-link" data-route="advances">
+                <i class="fas fa-money-bill-wave"></i> Anticipos
+            </a>
+
+            <a href="#" class="nav-link" data-route="stats">
+                <i class="fas fa-chart-pie"></i> Estadísticas
+            </a>
+
+            {{-- Bitácora SAT --}}
+            <a href="{{ route('expense-claims.sat-sync.index') }}" class="nav-link" data-route="sat-requests">
+                <i class="fas fa-sync-alt"></i> XML
+            </a>
+
+
+
+            {{-- Configuraciones Generales y Catálogos --}}
+            <a href="{{ route('expense-claims.settings.index') }}" class="nav-link" data-route="settings">
+                <i class="fas fa-cog"></i> Configuración
+            </a>
+
+        </nav>
+        @include('components.layouts._user-profile')
+    </header>
+
+    <main class="main-container" id="main-content">
+        @yield('content')
+    </main>
+
+    <footer class="footer-main">
+        <p>
+            Vinco Energy © <span id="current-year"></span> | Todos los derechos reservados
+        </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('assets/js/administration/expense_claims/index.js') }}"></script>
+    <script src="{{ asset('assets/js/administration/expense_claims/reimbursements.js') }}"></script>
+    <script src="{{ asset('assets/js/sessionTimer.js') }}"></script>
+    @stack('scripts')
+</body>
+
+</html>

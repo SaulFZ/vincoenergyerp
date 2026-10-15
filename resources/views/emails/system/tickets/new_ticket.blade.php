@@ -18,7 +18,7 @@
                             <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                                 <tr>
                                     <td width="60" style="vertical-align: middle; text-align: left;">
-                                        <img src="{{ asset('assets/img/logo.png') }}"
+                                        <img src="{{ asset('assets/img/logob.png') }}"
                                              alt="VesCore"
                                              style="display: inline-block; vertical-align: middle; max-height: 32px; width: auto;">
                                     </td>

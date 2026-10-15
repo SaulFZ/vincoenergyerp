@@ -21,7 +21,7 @@ class SatRequestsController extends Controller
         // 2. Obtenemos el historial paginado estricto a 10 registros por página
         $requests = SatRequest::orderBy('created_at', 'desc')->paginate(10);
 
-        return view('modules.administration.expense-claims.sat-requests-log', [
+        return view('modules.administration.expense_claims.sat_requests_log', [
             'hasRequestToday' => $hasRequestToday,
             'requests'        => $requests,
         ]);

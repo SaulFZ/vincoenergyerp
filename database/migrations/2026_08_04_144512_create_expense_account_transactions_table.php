@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('expense_advance_id')->nullable()->comment('ID del Anticipo origen del sobrante');
             $table->unsignedBigInteger('expense_claim_id')->nullable()->comment('ID del Reembolso o Comprobación origen del excedente');
 
-            $table->string('folio_system', 30)->unique()->comment('Folio único del movimiento de balance (Ej: BAL-2607-001)');
+            $table->string('folio_system', 30)->comment('Folio del movimiento de balance por usuario (Ej: BAL-2607-SFP-001)');
             $table->string('movement_type')->comment('Abono_Retencion = Retiene sobrante de anticipo | Cargo_Excedente = Reconoce gasto extra a favor del empleado | Ajuste_Manual | Liquidacion_Caja');
 
             $table->decimal('amount', 12, 2)->comment('Monto absoluto del movimiento');

@@ -10,6 +10,15 @@ use App\Models\Administration\ExpenseClaims\ExpenseClaimLog;
 
 class ReimbursementStatusController extends Controller
 {
+    private function getRequestLabel($type)
+    {
+        $type = mb_strtolower($type);
+        if (str_contains($type, 'reembolso')) return 'reembolso';
+        if (str_contains($type, 'electronica') || str_contains($type, 'electrónica')) return 'comprobación electrónica';
+        if (str_contains($type, 'directa')) return 'comprobación directa';
+        return 'trámite';
+    }
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -21,31 +30,60 @@ class ReimbursementStatusController extends Controller
             DB::beginTransaction();
 
             $claim = ExpenseClaim::findOrFail($id);
-            $oldStatus = $claim->status_review;
-            $newStatus = $request->new_status;
+            $oldReview = $claim->status_review;
+            $oldApproval = $claim->status_approval;
+            $action = $request->new_status;
 
-            $newPaymentStatus = $claim->status_payment;
-            if ($newStatus === 'Rechazado') $newPaymentStatus = 'No procede';
-            if ($newStatus === 'Validado') $newPaymentStatus = 'Por autorizar';
-            if ($newStatus === 'Aprobado') $newPaymentStatus = 'Por pagar';
+            $label = $this->getRequestLabel($claim->request_type);
 
-            $claim->update([
-                'status_review'  => $newStatus,
-                'status_payment' => $newPaymentStatus,
-            ]);
+            $actionTitle = 'Cambio de Estado';
+            $friendlyComment = "Se ha registrado una actualización en el estatus del {$label}.";
+
+            if ($action === 'rechazado') {
+                if ($oldReview === 'pendiente') {
+                    $claim->update([
+                        'status_review'   => 'rechazado',
+                        'status_approval' => 'en_espera',
+                    ]);
+                } elseif ($oldReview === 'validado') {
+                    $claim->update([
+                        'status_review'   => 'validado',
+                        'status_approval' => 'rechazado',
+                    ]);
+                }
+
+                $actionTitle = 'Solicitud Rechazada';
+                $friendlyComment = $request->comments ?? "Lamentablemente, el {$label} fue devuelto. Revisa las notas o contacta a tu revisor.";
+
+            } elseif ($action === 'validado') {
+                $claim->update([
+                    'status_review'   => 'validado',
+                    'status_approval' => 'en_revision',
+                ]);
+                $actionTitle = 'Validación Exitosa';
+                $friendlyComment = "El revisor verifico la solicitud del {$label} y les dio el visto bueno. Ahora pasa con el aprobador.";
+
+            } elseif ($action === 'aprobado') {
+                $claim->update([
+                    'status_review'   => 'validado',
+                    'status_approval' => 'aprobado',
+                ]);
+                $actionTitle = 'Aprobación Final';
+                $friendlyComment = "¡Todo en orden! El {$label} ha sido aprobado.";
+            }
 
             ExpenseClaimLog::create([
                 'expense_claim_id' => $claim->id,
                 'user_id'          => auth()->id() ?? 1,
-                'action'           => 'Dictamen de Revisión',
-                'previous_status'  => $oldStatus,
-                'new_status'       => $newStatus,
-                'comments'         => $request->comments ?? 'Cambio de estado procesado por el sistema.', // Aquí se guarda el motivo
+                'action'           => $actionTitle,
+                'previous_status'  => $oldReview,
+                'new_status'       => $action,
+                'comments'         => $friendlyComment,
             ]);
 
             DB::commit();
 
-            return response()->json(['success' => true, 'message' => "El folio ha sido procesado como {$newStatus}."]);
+            return response()->json(['success' => true, 'message' => "El folio ha sido procesado exitosamente."]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -53,3 +91,7 @@ class ReimbursementStatusController extends Controller
         }
     }
 }
+
+
+
+

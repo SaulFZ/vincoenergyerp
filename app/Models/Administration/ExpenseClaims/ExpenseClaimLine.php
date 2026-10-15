@@ -14,7 +14,7 @@ class ExpenseClaimLine extends Model
         'expense_date', 'document_number', 'description',
         'amount_fiscal', 'amount_simple', 'amount_none',
         'tax_ish', 'tax_iva', 'line_total',
-        'cost_center_id', 'project_id', // 👈 Nuevos campos
+        'cost_center_id', 'project_id', // Nuevos campos
         'is_deductible', 'accounting_account',
     ];
 

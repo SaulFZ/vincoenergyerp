@@ -11,16 +11,6 @@ use Illuminate\Support\Facades\Storage;
 
 class FslNodeController extends Controller
 {
-    public function index()
-    {
-        // Traemos todos los nodos ordenados por ID descendente (el más nuevo primero)
-        $nodes = FslNode::orderBy('id', 'desc')->get();
-
-        // Obtenemos el activo para resaltarlo si es necesario
-        $activeNode = $nodes->where('is_live', true)->first();
-
-        return view('modules.administration.expense-claims.sat-config', compact('activeNode', 'nodes'));
-    }
 
     public function store(Request $request)
     {

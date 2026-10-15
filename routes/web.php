@@ -5,6 +5,7 @@ use App\Http\Controllers\Administration\ExpenseClaims\CfdiController;
 use App\Http\Controllers\Administration\ExpenseClaims\expenseAccountBalanceController;
 use App\Http\Controllers\Administration\ExpenseClaims\expenseAccountTransactionController;
 use App\Http\Controllers\Administration\ExpenseClaims\ExpenseAdvanceController;
+use App\Http\Controllers\Administration\ExpenseClaims\ExpenseSettingsController;
 use App\Http\Controllers\Administration\ExpenseClaims\ExpenseStatisticsController;
 use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
@@ -12,11 +13,11 @@ use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryControll
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStatusController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
 use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
-use App\Http\Controllers\Administration\ExpenseClaims\ExpenseSettingsController;
 /* CONTROLADORES DE RECURSOS administration */
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Core\MediaController;
 /* CONTROLADORES DE RECURSOS QHSE */
+use App\Http\Controllers\Qhse\Incidents\IncidentController;
 use App\Http\Controllers\Qhse\Management\DriverLicenseController;
 use App\Http\Controllers\Qhse\Management\JourneyController;
 use App\Http\Controllers\Qhse\Management\JourneyQueryController;
@@ -46,6 +47,7 @@ use App\Http\Controllers\Systems\Tickets\TicketStatusController;
 use App\Http\Controllers\Systems\Tickets\TicketStoreController;
 use App\Http\Controllers\Systems\UserManagement\UserManagementController;
 /* CONTROLADORES DE OPERACIONES */
+use App\Http\Controllers\Operations\SgcVes\ServicesController;
 use App\Http\Controllers\Operations\SgcVes\SgcVesController;
 use Illuminate\Support\Facades\Route;
 
@@ -144,27 +146,38 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // ============================
                 Route::controller(AccountsPayableController::class)->group(function () {
                     Route::get('/accounts-payable', 'index')->name('expense-claims.accounts-payable');
-
-                    // Ruta para asentar sobrantes de anticipos o saldos a favor en cuenta corriente
+                    Route::get('accounts-payable/{userId}/reembolsos', 'showReembolsos')
+                        ->name('expense-claims.accounts-payable.reimbolsos');
+                    Route::post('accounts-payable/claims/{id}/mark-paid', 'markReembolsoAsPaid')
+                        ->name('expense-claims.accounts-payable.mark-paid');
                     Route::post('/accounts-payable/balance-adjustment', 'registerBalanceAdjustment')
                         ->name('expense-claims.accounts-payable.adjust-balance');
+
+                    // NUEVA RUTA: Cierre de anticipos en tesorería
+                    Route::post('/accounts-payable/advances/{id}/settle', 'markAdvanceAsSettled')
+                        ->name('expense-claims.accounts-payable.settle-advance');
                 });
+
                 // ============================
                 // ── GESTIÓN DE ANTICIPOS ──
                 // ============================
                 Route::controller(ExpenseAdvanceController::class)->group(function () {
                     Route::get('/advances', 'index')->name('expense-claims.advances');
                     Route::post('/advances/store', 'store')->name('expense-claims.advances.store');
+
+                    // NUEVA RUTA PARA EL DRAWER DE NOTIFICACIONES (Debe ir antes del {id})
+                    Route::get('/advances/history', 'history')->name('expense-claims.advances.history');
+
                     Route::get('/advances/user/{userId}', 'getActiveByUser')->name('expense-claims.advances.by-user');
                     Route::get('/advances/{id}', 'show')->name('expense-claims.advances.show');
-
-                    // 👈 NUEVA RUTA DE EVALUACIÓN
                     Route::post('/advances/{id}/status', 'updateStatus')->name('expense-claims.advances.status');
                 });
 
                 // CONSULTA
                 Route::controller(ReimbursementQueryController::class)->group(function () {
                     Route::get('/reimbursements/{id}', 'show')->name('expense-claims.show');
+                    // NUEVA: sirve el PDF guardado en /private/… para verlo en el navegador
+                    Route::get('/evidence/view', 'viewEvidence')->name('expense-claims.evidence.view');
                 });
 
                 // GUARDADO
@@ -187,14 +200,17 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 // NODOS
                 Route::controller(FslNodeController::class)->group(function () {
-                    Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
+                    // La vista original la puedes comentar o eliminar después,
+                    // pero el POST (store) se queda intacto.
+                    // Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
                     Route::post('/sys-config-node', 'store')->name('expense-claims.node.store');
                 });
+
                 // ============================
-                // ⚙️ CONFIGURACIONES Y CATÁLOGOS (NUEVO)
+                // CONFIGURACIONES Y CATÁLOGOS (NUEVO)
                 // ============================
                 Route::controller(ExpenseSettingsController::class)->group(function () {
-                    // Vista principal de configuraciones (Por defecto carga Centros de Costo)
+                    // Esta será la vista maestra que carga las pestañas
                     Route::get('/settings', 'index')->name('expense-claims.settings.index');
 
                     // CRUD Centros de Costo
@@ -267,6 +283,7 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 Route::controller(InventoryITController::class)->group(function () {
                     Route::get('/index', 'index')->name('systems.inventory-it.index');
+                    Route::get('/equipos', 'equipos')->name('systems.inventory-it.equipos');
                 });
             });
 
@@ -400,6 +417,24 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/stats', 'index')->name('management.stats');
                 });
             });
+
+            // ===================================================
+            // 2. GRUPO GESTIÓN DE INCIDENCIAS (TACIS)
+            // Prefijo: /qhse/incidents
+            // ===================================================
+            Route::prefix('incidents')->group(function () {
+                // Redirección automática al listado principal
+                Route::get('/', function () {
+                    return redirect()->route('incidents.records');
+                })->name('qhse.incidents')->middleware('check.permission:qhse,incidents');
+
+                // ---------------------------------------------------
+                // VISTAS Y CATÁLOGOS (Dropdowns, categorías, matrices de riesgo)
+                // ---------------------------------------------------
+                Route::controller(IncidentController::class)->group(function () {
+                    Route::get('/records', 'index')->name('incidents.records');  // Listado principal
+                });
+            });
         });
 
     // ===================================================
@@ -410,28 +445,20 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->group(function () {
             // ===================================================
             // GRUPO LOADCHART
-            // Prefijo: /recursoshumanos/loadchart
             // ===================================================
             Route::prefix('loadchart')->group(function () {
                 // Redirigir la ruta principal a calendar
                 Route::get('/', function () {
                     return redirect()->route('loadchart.calendar');
-                })
-                    ->name('rh.loadchart')
-                    ->middleware('check.permission:rh,loadchart');
+                })->name('rh.loadchart')->middleware('check.permission:rh,loadchart');
 
                 // --- RUTAS GESTIONADAS POR CalendarController ---
                 Route::controller(CalendarController::class)->group(function () {
-                    // Una sola ruta para ambos casos
                     Route::get('/calendar', 'index')->name('loadchart.calendar');
-
-                    // Las demás rutas auxiliares
                     Route::get('/calendar-data', 'getCalendarData');
                     Route::post('/save-activity', 'saveActivity')->name('loadchart.save_activity');
                     Route::get('/monthly-activities', 'getMonthlyActivities')->name('loadchart.monthly_activities');
                     Route::get('/balances-data', 'getEmployeeBalancesAjax')->name('loadchart.balances.data');
-
-                    // Agrégala dentro de tu grupo de rutas de loadchart
                     Route::get('/search-wells', 'searchWells')->name('loadchart.search_wells');
                 });
 
@@ -442,7 +469,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                         ->name('loadchart.approval.data')
                         ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}']);
                     Route::post('/approval-status', 'updateApprovalStatus')->name('loadchart.approval.status');
-                    // La ruta repetida 'approval-data/{year}/{month}' se eliminó
                     Route::post('check-updates', 'checkUpdates')->name('loadchart.check-updates');
                     Route::post('/update-approval-status', 'updateApprovalStatus')->name('loadchart.update.approval.status');
                     Route::post('/update-multiple-statuses', 'updateMultipleStatuses')->name('loadchart.update.multiple.statuses');
@@ -450,11 +476,7 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 // --- RUTAS DE History (HistoryController) ---
                 Route::controller(HistoryController::class)->group(function () {
-                    // Ruta para cargar la vista inicial (GET)
                     Route::get('/history', 'index')->name('loadchart.history');
-
-                    // Ruta para cargar los datos del historial con filtros y paginación (GET, para AJAX)
-                    // Nota: El prefijo de URL debe coincidir con la configuración de tu grupo de rutas.
                     Route::get('/history/data', 'getHistoryData')->name('loadchart.history.data');
                 });
 
@@ -468,12 +490,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
 
                 // --- RUTAS DE SQUADS (SquadController) ---
-                // Nota: Aquí asumimos que las rutas "get-operadores" y "get-squads" también deben simplificarse.
                 Route::controller(SquadController::class)->group(function () {
-                    // La ruta a la vista approval ya fue definida en ApprovalController, esta puede ser redundante o para AJAX
-                    // Route::get('/approval', 'index')->name('loadchart.approval');
-
-                    // Ajustamos las rutas eliminando el prefijo redundante
                     Route::get('/get-operadores', 'getOperadores')->name('squads.get_operadores');
                     Route::get('/get-squads', 'getSquads')->name('squads.get_squads');
                     Route::post('/squads/store', 'store')->name('squads.store');
@@ -481,23 +498,15 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/squads/{squadNumber}', 'show')->name('squads.show');
                 });
 
-                // --- RUTAS DE SERVICIOS ADICIONALES (InfoServicesController) ---
+                // --- RUTAS DE SERVICIOS ADICIONALES ---
                 Route::get('/info-services', [InfoServicesController::class, 'getServicesAndBonuses'])->name('info.services.json');
 
                 // --- RUTAS DE ASIGNACIONES (AssignmentController) ---
                 Route::controller(AssignmentController::class)->group(function () {
-                    Route::get('/review_assignments', 'index')
-                        ->name('loadchart.review_assignments')
-                        ->middleware('check.permission:rh,loadchart,review_assignments');
-                    Route::get('/review_assignments/employees', 'getEmployees')
-                        ->name('loadchart.getEmployees')
-                        ->middleware('check.permission:rh,loadchart,review_assignments');
-                    Route::post('/review_assignments/existing', 'getExistingAssignments')
-                        ->name('loadchart.getExistingAssignments')
-                        ->middleware('check.permission:rh,loadchart,review_assignments');
-                    Route::post('/review_assignments/save', 'saveAssignment')
-                        ->name('loadchart.saveAssignment')
-                        ->middleware('check.permission:rh,loadchart,review_assignments');
+                    Route::get('/review_assignments', 'index')->name('loadchart.review_assignments')->middleware('check.permission:rh,loadchart,review_assignments');
+                    Route::get('/review_assignments/employees', 'getEmployees')->name('loadchart.getEmployees')->middleware('check.permission:rh,loadchart,review_assignments');
+                    Route::post('/review_assignments/existing', 'getExistingAssignments')->name('loadchart.getExistingAssignments')->middleware('check.permission:rh,loadchart,review_assignments');
+                    Route::post('/review_assignments/save', 'saveAssignment')->name('loadchart.saveAssignment')->middleware('check.permission:rh,loadchart,review_assignments');
                 });
 
                 // --- RUTAS DE BONOS DE CAMPO (FieldBonusController) ---
@@ -511,9 +520,10 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/field-bonuses/{id}/toggle-status', 'toggleStatus');
                 });
 
+                // --- RUTAS DE BALANCE DE VACACIONES ---
                 Route::prefix('employee_vacation_balance')->controller(EmployeeVacationBalanceController::class)->group(function () {
                     Route::get('/', 'index')->name('vacation_balance.index');
-                    Route::get('/data', 'getData')->name('vacation_balance.data');  // 👈 NUEVA
+                    Route::get('/data', 'getData')->name('vacation_balance.data');
                     Route::post('/', 'store');
                     Route::get('/{id}/edit', 'edit');
                     Route::put('/{id}', 'update');
@@ -522,6 +532,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/generate-report', 'generateReport')->name('vacation_balance.generate_report');
                 });
 
+                // --- RUTAS DE ESTADÍSTICAS ---
                 Route::controller(StatsLoadController::class)->group(function () {
                     Route::get('/stats', 'index')->name('loadchart.stats');
                     Route::get('/stats/data', 'getData')->name('loadchart.stats.data');
@@ -532,86 +543,21 @@ Route::middleware(['web', 'auth'])->group(function () {
             // MÓDULO: ORGMANAGEMENT
             // ===================================================
             Route::prefix('orgmanagement')->group(function () {
-                // Vista principal
                 Route::get('/', function () {
                     return view('modules.rh.orgmanagement.employees');
-                })
-                    ->middleware('check.permission:rh,orgmanagement')
-                    ->name('rh.orgmanagement');
+                })->middleware('check.permission:rh,orgmanagement')->name('rh.orgmanagement');
 
-                // --- RUTAS GESTIONADAS POR EmployeeController ---
                 Route::controller(EmployeeController::class)->group(function () {
-                    // Obtener datos para la tabla
-                    Route::get('/employees/data', 'getData')
-                        ->name('orgmanagement.employees.data');
-
-                    // Obtener catálogos para el formulario (áreas, departamentos, jefes)
-                    Route::get('/employees/create-data', 'getCreateData')
-                        ->name('orgmanagement.employees.create_data');
-
-                    // Guardar el nuevo empleado (Alta)
-                    Route::post('/employees', 'store')
-                        ->name('orgmanagement.employees.store');
-
-                    // Ver empleado específico
-                    Route::get('/employees/{id}', 'show')
-                        ->name('orgmanagement.employees.show');
-
-                    // Actualizar empleado (edición)
-                    Route::put('/employees/{id}', 'update')
-                        ->name('orgmanagement.employees.update');
-
-                    // Método POST que actúa como PUT (para formularios sin soporte)
-                    Route::post('/employees/{id}', 'update')
-                        ->name('orgmanagement.employees.update.post');
-
-                    // Desactivar empleado
-                    Route::delete('/employees/{id}', 'destroy')
-                        ->name('orgmanagement.employees.destroy');
+                    Route::get('/employees/data', 'getData')->name('orgmanagement.employees.data');
+                    Route::get('/employees/create-data', 'getCreateData')->name('orgmanagement.employees.create_data');
+                    Route::post('/employees', 'store')->name('orgmanagement.employees.store');
+                    Route::get('/employees/{id}', 'show')->name('orgmanagement.employees.show');
+                    Route::put('/employees/{id}', 'update')->name('orgmanagement.employees.update');
+                    Route::post('/employees/{id}', 'update')->name('orgmanagement.employees.update.post');
+                    Route::delete('/employees/{id}', 'destroy')->name('orgmanagement.employees.destroy');
                 });
             });
-        });
-
-    // ===================================================
-    // MÓDULO: VENTAS Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('ventas')
-        ->middleware('check.permission:ventas')
-        ->group(function () {
-            // Página principal Ventas
-            Route::get('/', function () {
-                return view('modules.ventas.ventashome');
-            })->name('modulo.ventas');
-
-            // Subsistemas de Ventas
-            Route::get('/clientes', function () {
-                return view('modules.ventas.sistemas.clientes.index');
-            })
-                ->middleware('check.permission:ventas,clientes')
-                ->name('ventas.clientes');
-
-            Route::get('/cotizaciones', function () {
-                return view('modules.ventas.sistemas.cotizaciones.index');
-            })
-                ->middleware('check.permission:ventas,cotizaciones')
-                ->name('ventas.cotizaciones');
-
-            Route::get('/oportunidades', function () {
-                return view('modules.ventas.sistemas.oportunidades.index');
-            })
-                ->middleware('check.permission:ventas,oportunidades')
-                ->name('ventas.oportunidades');
-        });
-
-    // ===================================================
-    // MÓDULO: SUMINISTRO
-    // ===================================================
-    Route::get('/suministro', function () {
-        return view('modules.suministros.suministroshome');
-    })
-        ->middleware('check.permission:suministro')
-        ->name('modulo.suministro');
-
+        });  // ===================================================
     // ===================================================
     // MÓDULO: OPERACIONES Y SUBSISTEMAS
     // ===================================================
@@ -648,15 +594,57 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::put('/update/{id}', 'update')->name('operations.sgc-ves.update');
                     Route::delete('/destroy/{id}', 'destroy')->name('operations.sgc-ves.destroy');
                 });
+
+                // 5. Servicios (controlador nuevo)
+                Route::controller(ServicesController::class)->group(function () {
+                    Route::get('/services', 'index')->name('operations.sgc-ves.services.services');
+                });
             });
         });
+    // ===================================================
+    // MÓDULO: VENTAS Y SUBSISTEMAS
+    // ===================================================
+    Route::prefix('ventas')
+        ->middleware('check.permission:ventas')
+        ->group(function () {
+            // Página principal Ventas
+            Route::get('/', function () {
+                return view('modules.ventas.ventashome');
+            })->name('modulo.ventas');
+
+            // Subsistemas de Ventas
+            Route::get('/clientes', function () {
+                return view('modules.ventas.sistemas.clientes.index');
+            })
+                ->middleware('check.permission:ventas,clientes')
+                ->name('ventas.clientes');
+
+            Route::get('/cotizaciones', function () {
+                return view('modules.ventas.sistemas.cotizaciones.index');
+            })
+                ->middleware('check.permission:ventas,cotizaciones')
+                ->name('ventas.cotizaciones');
+
+            Route::get('/oportunidades', function () {
+                return view('modules.ventas.sistemas.oportunidades.index');
+            })
+                ->middleware('check.permission:ventas,oportunidades')
+                ->name('ventas.oportunidades');
+        });
+
+    // ===================================================
+    // MÓDULO: SUMINISTRO
+    // ===================================================
+    Route::get('/suministro', function () {
+        return view('modules.suministros.suministroshome');})
+        ->middleware('check.permission:suministro')
+        ->name('modulo.suministro');
 
     // ===================================================
     // MÓDULO: ALMACÉN
     // ===================================================
     Route::get('/almacen', function () {
-        return view('modules.almacen.index');
-    })
+        return view('modules.almacen.index');})
         ->middleware('check.permission:almacen')
         ->name('modulo.almacen');
 
@@ -683,5 +671,4 @@ Route::middleware(['web', 'auth'])->group(function () {
             })
                 ->middleware('check.permission:geociencias,analisis')
                 ->name('geociencias.analisis');
-        });
-});
+        });});

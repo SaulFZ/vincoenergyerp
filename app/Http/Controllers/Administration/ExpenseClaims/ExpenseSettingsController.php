@@ -6,21 +6,27 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Administration\ExpenseClaims\CostCenter;
 use App\Models\Administration\ExpenseClaims\Project;
-use App\Models\Administration\ExpenseClaims\FslNode; // 👈 Importar modelo
+use App\Models\Administration\ExpenseClaims\FslNode;
+
 class ExpenseSettingsController extends Controller
 {
+    /**
+     * Muestra la vista unificada de configuración (Pestañas)
+     */
     public function index()
-{
-    // Traemos los centros de costo junto con sus proyectos
-    $costCenters = CostCenter::with('projects')->orderBy('code', 'asc')->get();
+    {
+        // 1. Datos para la pestaña de Centros de Costo
+        $costCenters = CostCenter::with('projects')->orderBy('code', 'asc')->get();
 
-    // Traemos los Nodos SAT de seguridad
-    $nodes = FslNode::orderBy('id', 'desc')->get();
+        // 2. Datos para la pestaña de Nodos SAT (Solo lectura para pintar la tabla)
+        $nodes = FslNode::orderBy('id', 'desc')->get();
 
-    return view('modules.administration.expense-claims.settings', compact('costCenters', 'nodes'));
-}
+        return view('modules.administration.expense_claims.settings', compact('costCenters', 'nodes'));
+    }
 
+    // =========================================================================
     // ── CENTROS DE COSTO ──
+    // =========================================================================
 
     public function storeCostCenter(Request $request)
     {
@@ -32,7 +38,6 @@ class ExpenseSettingsController extends Controller
         ]);
 
         CostCenter::create($request->all());
-
         return response()->json(['success' => true, 'message' => 'Centro de Costos creado exitosamente.']);
     }
 
@@ -47,11 +52,12 @@ class ExpenseSettingsController extends Controller
 
         $cc = CostCenter::findOrFail($id);
         $cc->update($request->all());
-
         return response()->json(['success' => true, 'message' => 'Centro de Costos actualizado.']);
     }
 
+    // =========================================================================
     // ── PROYECTOS / SUBCENTROS ──
+    // =========================================================================
 
     public function storeProject(Request $request)
     {
@@ -66,7 +72,6 @@ class ExpenseSettingsController extends Controller
         ]);
 
         Project::create($request->all());
-
         return response()->json(['success' => true, 'message' => 'Proyecto registrado exitosamente.']);
     }
 
@@ -84,7 +89,6 @@ class ExpenseSettingsController extends Controller
 
         $prj = Project::findOrFail($id);
         $prj->update($request->all());
-
         return response()->json(['success' => true, 'message' => 'Proyecto actualizado.']);
     }
 }

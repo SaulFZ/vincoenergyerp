@@ -14,11 +14,17 @@
     /* Textos */
     --texto-principal: #1e293b;
     --texto-secundario: #64748b;
-    --texto-sidebar: rgba(255, 255, 255, 0.7);
+    --texto-sidebar: rgba(255, 255, 255, 0.72);
+    --texto-sidebar-muted: rgba(255, 255, 255, 0.45);
 
     /* Sombras y transiciones */
-    --sombra-card: 0 4px 12px rgba(0, 0, 0, 0.03);
-    --transicion: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --sombra-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --transicion: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Dimensiones de layout */
+    --header-h: 64px;
+    --sidebar-w: 264px;
+    --sidebar-w-min: 76px;
 }
 
 * {
@@ -50,8 +56,21 @@ body {
     border-radius: 10px;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.15);
+}
+
+/* Foco visible (teclado) */
+.header a:focus-visible,
+.header button:focus-visible,
+.sidebar a:focus-visible,
+.sidebar button:focus-visible {
+    outline: 2px solid var(--naranja);
+    outline-offset: 2px;
 }
 
 .dashboard {
@@ -59,188 +78,327 @@ body {
     min-height: 100vh;
 }
 
-/* === HEADER === */
+/* ==========================================================
+   HEADER (NAV SUPERIOR)
+   ========================================================== */
 .header {
-    height: 70px;
+    height: var(--header-h);
     background: var(--azul-oscuro);
     position: fixed;
     top: 0;
+    left: 0;
     width: 100%;
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 0 24px 0 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* En escritorio, la zona del logo mide lo mismo que el sidebar */
 .header-left {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.brand-container {
-    cursor: pointer;
-    transition: var(--transicion);
+    position: relative;
     display: flex;
     align-items: center;
     height: 100%;
+    width: var(--sidebar-w);
+    padding: 0 24px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease;
 }
 
-/* LOGO BLANCO Y TRANSICIONES */
+/* Acento naranja bajo la zona del logo */
+@media (min-width: 769px) {
+    .header-left::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 2px;
+        background: var(--naranja);
+    }
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 100%;
+}
+
+/* El botón de menú SOLO existe en móvil */
+.menu-toggle {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--blanco);
+    font-size: 1.05rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transicion);
+}
+
+.menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.menu-toggle:active {
+    transform: scale(0.94);
+}
+
+/* El logo es un botón: en escritorio contrae/expande el menú */
+.brand-container {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.brand-container:hover {
+    opacity: 0.85;
+}
+
+.brand-container:active {
+    transform: scale(0.97);
+}
+
+/* Logos en blanco. Si tus logos ya son blancos, borra la línea del filter */
 .brand-logo {
-    height: 45px;
-    max-width: 100%;
     object-fit: contain;
-    transition: opacity 0.2s ease, transform 0.3s ease;
-    /* Pone el logo en blanco. Si tu logo ya es blanco, borra la línea de abajo */
     filter: brightness(0) invert(1);
 }
 
-.brand-logo:hover {
-    transform: scale(1.03);
+.brand-logo--full {
+    height: 36px;
+    max-width: 100%;
 }
 
-.menu-toggle {
+.brand-logo--mini {
     display: none;
-    background: transparent;
-    border: none;
-    color: var(--blanco);
-    font-size: 1.5rem;
-    cursor: pointer;
+    height: 34px;
+    width: 34px;
 }
 
-/* === SIDEBAR === */
+/* ==========================================================
+   SIDEBAR
+   ========================================================== */
 .sidebar {
-    width: 280px;
+    width: var(--sidebar-w);
     background: var(--azul-oscuro);
     position: fixed;
-    top: 70px;
+    top: var(--header-h);
     bottom: 0;
     left: 0;
     z-index: 90;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
+}
+
+.sidebar-nav {
+    flex: 1;
     overflow-y: auto;
-    transition: var(--transicion);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-x: hidden;
+    padding: 18px 14px 28px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.sidebar-content {
-    padding: 20px 16px;
-}
-
+/* --- Grupos: separados por una línea blanca fina --- */
 .nav-group {
-    margin-bottom: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.nav-group:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 .nav-header {
+    width: 100%;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    cursor: pointer;
-    color: var(--texto-sidebar);
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    border: none;
     border-radius: 8px;
+    background: transparent;
+    color: var(--blanco);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    cursor: pointer;
     transition: var(--transicion);
 }
 
 .nav-header:hover {
-    color: var(--blanco);
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.nav-header.active {
-    color: var(--blanco);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .nav-header-title {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
 }
 
 .nav-header-title i {
-    width: 22px;
+    width: 16px;
     text-align: center;
-    font-size: 1.1rem;
-    transition: color 0.3s;
-}
-
-.nav-header.active .nav-header-title i {
-    color: var(--naranja);
+    font-size: 0.82rem;
+    color: var(--blanco);
 }
 
 .arrow-icon {
-    font-size: 0.8rem;
-    transition: transform 0.3s;
-    opacity: 0.7;
+    font-size: 0.62rem;
+    opacity: 0.55;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.nav-header:hover .arrow-icon {
+    opacity: 1;
+}
+
+.nav-group.is-collapsed .arrow-icon {
+    transform: rotate(-90deg);
+}
+
+/* Colapso animado sin JS de alturas */
+.nav-collapse {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.28s ease;
+}
+
+.nav-group.is-collapsed .nav-collapse {
+    grid-template-rows: 0fr;
+}
+
+.nav-collapse>.nav-list {
+    min-height: 0;
+    overflow: hidden;
+    transition: visibility 0.28s;
+}
+
+.nav-group.is-collapsed .nav-collapse>.nav-list {
+    visibility: hidden;
 }
 
 .nav-list {
     list-style: none;
-    overflow: hidden;
-    transition: max-height 0.35s ease;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 12px;
-    margin-top: 4px;
 }
 
+/* --- Ítems con icono en ficha (acabado sobrio) --- */
 .nav-item {
-    padding: 12px 16px 12px 48px;
-    margin: 4px 8px;
-    border-radius: 8px;
+    position: relative;
     display: flex;
     align-items: center;
-    color: var(--texto-sidebar);
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: var(--transicion);
-    position: relative;
+    gap: 12px;
+    margin: 2px 0;
+    padding: 5px 12px 5px 5px;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .nav-item .nav-icon {
-    margin-right: 12px;
-    width: 20px;
-    text-align: center;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--blanco);
+    font-size: 0.85rem;
+    transition: background 0.2s ease;
+}
+
+.nav-item .nav-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .nav-item:hover {
     color: var(--blanco);
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.06);
 }
 
+.nav-item:hover .nav-icon {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+/* Activo: ficha naranja plana y fondo suave */
 .nav-item.active {
-    color: var(--naranja);
-    background: var(--naranja-suave);
+    color: var(--blanco);
+    background: rgba(255, 255, 255, 0.1);
     font-weight: 600;
 }
 
 .nav-item.active .nav-icon {
-    color: var(--naranja);
-}
-
-.nav-item.active::before {
-    content: '';
-    position: absolute;
-    left: -8px;
-    top: 15%;
-    height: 70%;
-    width: 4px;
     background: var(--naranja);
-    border-radius: 0 4px 4px 0;
 }
 
-/* === MAIN CONTENT === */
+/* --- Tooltip flotante (modo contraído) --- */
+.sidebar-tooltip {
+    position: fixed;
+    z-index: 2000;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: var(--azul-oscuro);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: var(--blanco);
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-50%) translateX(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.sidebar-tooltip.show {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* ==========================================================
+   MAIN CONTENT
+   ========================================================== */
 .main-content {
-    margin-left: 280px;
-    margin-top: 70px;
+    margin-left: var(--sidebar-w);
+    margin-top: var(--header-h);
     flex: 1;
+    min-width: 0;
     padding: 30px 40px;
-    transition: var(--transicion);
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .content-wrapper {
@@ -267,7 +425,6 @@ body {
     justify-content: center;
     align-items: center;
     height: calc(100vh - 150px);
-    /* Centra perfectamente quitando el alto del header */
 }
 
 .empty-state-card {
@@ -290,7 +447,7 @@ body {
 .icon-circle {
     width: 100px;
     height: 100px;
-    background: linear-gradient(135deg, var(--naranja-suave) 0%, rgba(255, 255, 255, 0) 100%);
+    background: var(--naranja-suave);
     border: 1px solid var(--naranja-suave);
     border-radius: 50%;
     display: inline-flex;
@@ -298,7 +455,6 @@ body {
     justify-content: center;
     margin-bottom: 30px;
     animation: pulseSoft 2.5s infinite;
-    /* Animación de pulso añadida */
 }
 
 @keyframes pulseSoft {
@@ -334,87 +490,91 @@ body {
     line-height: 1.7;
 }
 
-/* === MINIFICADO (ESCRITORIO) === */
+/* ==========================================================
+   SIDEBAR CONTRAÍDO (ESCRITORIO)
+   La clase .sidebar-minimized vive en <html> y <body>
+   ========================================================== */
 @media (min-width: 769px) {
-    body.sidebar-minimized .sidebar {
-        width: 85px;
+    .sidebar-minimized .sidebar {
+        width: var(--sidebar-w-min);
     }
 
-    body.sidebar-minimized .main-content {
-        margin-left: 85px;
-        width: calc(100% - 85px);
+    .sidebar-minimized .main-content {
+        margin-left: var(--sidebar-w-min);
+        width: calc(100% - var(--sidebar-w-min));
     }
 
-    /* Ajustes específicos para el logo en modo minificado */
-    body.sidebar-minimized .brand-container {
-        width: 60px;
-        /* Le da el espacio justo al logo pequeño */
+    /* Zona del logo: logo pequeño centrado sobre el sidebar */
+    .sidebar-minimized .header-left {
+        width: var(--sidebar-w-min);
+        padding: 0;
         justify-content: center;
     }
 
-    body.sidebar-minimized .brand-logo {
-        height: 38px;
-        /* Altura controlada para que no se corte */
-    }
-
-    body.sidebar-minimized .nav-header-title span,
-    body.sidebar-minimized .nav-text,
-    body.sidebar-minimized .arrow-icon {
+    .sidebar-minimized .brand-logo--full {
         display: none;
     }
 
-    body.sidebar-minimized .nav-header {
-        justify-content: center;
-        padding: 14px 0;
+    .sidebar-minimized .brand-logo--mini {
+        display: block;
     }
 
-    body.sidebar-minimized .nav-item {
-        justify-content: center;
-        padding: 12px 0;
+    .sidebar-minimized .sidebar-nav {
+        padding: 18px 12px 28px;
     }
 
-    body.sidebar-minimized .nav-item .nav-icon {
-        margin-right: 0;
-        font-size: 1.2rem;
+    .sidebar-minimized .nav-group {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
     }
 
-    body.sidebar-minimized .nav-item.active::before {
-        left: 0;
-        border-radius: 0 4px 4px 0;
-    }
-
-    /* Tooltips en modo minificado */
-    body.sidebar-minimized .nav-header::after,
-    body.sidebar-minimized .nav-item::after {
-        content: attr(data-name);
-        position: absolute;
-        left: 88px;
-        top: 50%;
-        transform: translateY(-50%) translateX(-10px);
-        background: var(--azul-oscuro);
-        color: var(--blanco);
-        padding: 8px 14px;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        white-space: nowrap;
-        opacity: 0;
-        visibility: hidden;
+    /* Los títulos de grupo se convierten en separadores */
+    .sidebar-minimized .nav-header {
+        height: 1px;
+        margin: 14px 14px;
+        padding: 0;
+        border-radius: 0;
+        background: rgba(255, 255, 255, 0.2);
         pointer-events: none;
-        transition: var(--transicion);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
     }
 
-    body.sidebar-minimized .nav-header:hover::after,
-    body.sidebar-minimized .nav-item:hover::after {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(-50%) translateX(0);
+    .sidebar-minimized .nav-header>* {
+        display: none;
+    }
+
+    .sidebar-minimized .nav-group:first-child .nav-header {
+        display: none;
+    }
+
+    /* Siempre desplegado para mostrar los iconos */
+    .sidebar-minimized .nav-collapse {
+        grid-template-rows: 1fr !important;
+    }
+
+    .sidebar-minimized .nav-collapse>.nav-list {
+        visibility: visible !important;
+    }
+
+    .sidebar-minimized .nav-item {
+        justify-content: center;
+        padding: 4px 0;
+    }
+
+    .sidebar-minimized .nav-item .nav-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1rem;
+    }
+
+    .sidebar-minimized .nav-item .nav-text {
+        display: none;
     }
 }
 
-/* === RESPONSIVE MÓVIL === */
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
 @media (max-width: 992px) {
     .main-content {
         padding: 24px;
@@ -422,18 +582,40 @@ body {
 }
 
 @media (max-width: 768px) {
-    .menu-toggle {
-        display: block;
+    .header {
+        padding: 0 14px;
     }
 
-    .header {
-        padding: 0 20px;
+    .header-left {
+        width: auto;
+        padding: 0;
+        gap: 12px;
+        border-right: none;
+    }
+
+    .menu-toggle {
+        display: inline-flex;
+    }
+
+    /* En móvil el logo es solo imagen (no contrae nada) y va completo */
+    .brand-container {
+        padding-left: 14px;
+        border-left: 1px solid rgba(255, 255, 255, 0.14);
+        cursor: default;
+    }
+
+    .brand-container:hover {
+        opacity: 1;
+    }
+
+    .brand-logo--full {
+        height: 34px;
     }
 
     .sidebar {
         transform: translateX(-100%);
         width: 280px;
-        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.25);
     }
 
     .sidebar.open {
@@ -443,15 +625,12 @@ body {
     .main-content {
         margin-left: 0;
         width: 100%;
-        padding: 20px;
+        padding: 20px 16px;
     }
 
     .sidebar-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        inset: 0;
         background: rgba(26, 42, 95, 0.5);
         backdrop-filter: blur(4px);
         z-index: 80;
@@ -467,5 +646,15 @@ body {
 
     .empty-state-card {
         padding: 40px 20px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
     }
 }

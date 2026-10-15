@@ -14,12 +14,16 @@ class ExpenseAdvance extends Model
     protected $fillable = [
         'folio_system',
         'user_id',
+        'created_by_id', // Nuevo campo
+        'approver_id',
         'advance_date',
+        'advance_reason',
         'advance_type',
         'description',
         'amount',
         'balance',
-        'status'
+        'status',
+        'settlement_status',
     ];
 
     protected function casts(): array
@@ -36,8 +40,21 @@ class ExpenseAdvance extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_id');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approver_id');
+    }
+
     public function expenseClaims(): HasMany
     {
         return $this->hasMany(ExpenseClaim::class, 'expense_advance_id');
     }
 }
+
+
+

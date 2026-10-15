@@ -5,11 +5,21 @@
     <meta charset="UTF-8" />
     <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VesCore</title>
+    <title>Vinco Energy Services</title>
+
+    <script>
+        // Aplica el estado del menú antes de pintar (evita parpadeo)
+        try {
+            if (localStorage.getItem('vh.sidebarMin') === '1' && window.innerWidth > 768) {
+                document.documentElement.classList.add('sidebar-minimized');
+            }
+        } catch (e) {}
+    </script>
 
     {{-- FontAwesome --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 
     {{-- CSS Principal --}}
     <link href="{{ asset('assets/css/home.css') }}" rel="stylesheet">
@@ -29,52 +39,58 @@
             --borde-suave: #e2e8f0;
             --texto-principal: #1e293b;
             --texto-secundario: #64748b;
-            --sombra-card: 0 4px 12px rgba(0, 0, 0, 0.04);
-            --transicion: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --sombra-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+            --sombra-hover: 0 8px 24px rgba(15, 23, 42, 0.08);
+            --transicion: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* Colores semánticos por tipo de publicación */
+            --tipo-aviso: #dc2626;
+            --tipo-aviso-bg: #fef2f2;
+            --tipo-noticia: #2563eb;
+            --tipo-noticia-bg: #eff6ff;
+            --tipo-folleto: #059669;
+            --tipo-folleto-bg: #ecfdf5;
+            --tipo-video: #7c3aed;
+            --tipo-video-bg: #f5f3ff;
         }
 
-        /* ========== FEED SOCIAL ========== */
+        /* Accesibilidad: foco visible */
+        .social-feed-wrapper button:focus-visible,
+        .social-feed-wrapper a:focus-visible,
+        .social-feed-wrapper input:focus-visible,
+        .modal-publicar button:focus-visible {
+            outline: 2px solid var(--azul-claro);
+            outline-offset: 2px;
+        }
+
+        /* ========== LAYOUT GENERAL DEL FEED ========== */
         .social-feed-wrapper {
-            max-width: 1300px;
+            max-width: 1180px;
             margin: 0 auto;
-            animation: feedFadeIn 0.5s ease-out;
         }
 
-        @keyframes feedFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .feed-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 300px;
+            gap: 28px;
+            align-items: start;
         }
 
-        /* --- Contenedor Superior (1 Sola Fila) --- */
-        .feed-top-container {
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            border-radius: 16px;
-            padding: 16px 24px;
-            margin-bottom: 24px;
-            box-shadow: var(--sombra-card);
-            border: 1px solid var(--borde-suave);
-            border-top: 4px solid var(--naranja);
-            transition: var(--transicion);
+        .feed-main {
+            min-width: 0;
+        }
 
-            /* Ajuste para una sola fila */
+        /* ========== TOOLBAR SUPERIOR ========== */
+        .feed-page-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 16px;
             flex-wrap: wrap;
+            margin-bottom: 20px;
         }
 
-        .feed-top-container:hover {
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
-        }
-
-        .feed-header-left {
+        .feed-page-title {
             display: flex;
             align-items: center;
             gap: 14px;
@@ -84,167 +100,336 @@
             width: 48px;
             height: 48px;
             border-radius: 12px;
+            background: var(--blanco);
+            border: 1px solid var(--borde-suave);
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
             overflow: hidden;
-            background: #fff;
-            border: 1px solid var(--borde-suave);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            flex-shrink: 0;
         }
 
         .feed-brand-icon img {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            padding: 4px;
+            padding: 6px;
         }
 
-        .feed-header-text h2 {
-            font-size: 1.35rem;
+        .feed-page-title h1 {
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--azul-oscuro);
             letter-spacing: -0.4px;
-            margin: 0;
             line-height: 1.2;
         }
 
-        /* --- Fila de Controles (Filtros a la izq, Botón a la der) --- */
-        .feed-controls-wrapper {
+        .feed-page-title p {
+            font-size: 0.85rem;
+            color: var(--texto-secundario);
+            margin-top: 2px;
+        }
+
+        .btn-publicar {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 10px;
+            background: var(--naranja);
+            color: var(--blanco);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transicion);
+            white-space: nowrap;
+        }
+
+        .btn-publicar:hover {
+            background: #bf6d1f;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(214, 126, 41, 0.3);
+        }
+
+        .btn-publicar:active {
+            transform: translateY(0);
+        }
+
+        .feed-head-actions {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             flex-wrap: wrap;
+        }
+
+        .feed-date {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border: 1px solid var(--borde-suave);
+            border-radius: 10px;
+            background: var(--blanco);
+            color: var(--texto-secundario);
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        .feed-date i {
+            color: var(--naranja);
+        }
+
+        /* ========== COMPOSER RÁPIDO ========== */
+        .feed-composer {
+            background: var(--blanco);
+            border: 1px solid var(--borde-suave);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--sombra-card);
+        }
+
+        .composer-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .composer-avatar {
+            width: 42px;
+            height: 42px;
+            font-size: 0.85rem;
+        }
+
+        .composer-input {
             flex: 1;
-            justify-content: flex-end;
+            padding: 11px 16px;
+            border: 1px solid var(--borde-suave);
+            border-radius: 10px;
+            background: var(--fondo-app);
+            color: var(--texto-secundario);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            text-align: left;
+            cursor: text;
+            transition: var(--transicion);
+        }
+
+        .composer-input:hover {
+            border-color: var(--azul-claro);
+            background: var(--blanco);
+        }
+
+        .composer-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--borde-suave);
+        }
+
+        .composer-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--texto-secundario);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transicion);
+        }
+
+        .composer-chip:hover {
+            background: var(--fondo-app);
+            color: var(--texto-principal);
+        }
+
+        /* ========== BARRA DE BÚSQUEDA + FILTROS ========== */
+        .feed-toolbar {
+            background: var(--blanco);
+            border: 1px solid var(--borde-suave);
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            box-shadow: var(--sombra-card);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .feed-search {
+            position: relative;
+        }
+
+        .feed-search i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--texto-secundario);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .feed-search input {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            border: 1px solid var(--borde-suave);
+            border-radius: 10px;
+            background: var(--fondo-app);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            color: var(--texto-principal);
+            transition: var(--transicion);
+        }
+
+        .feed-search input::placeholder {
+            color: var(--texto-secundario);
+        }
+
+        .feed-search input:focus {
+            outline: none;
+            background: var(--blanco);
+            border-color: var(--azul-claro);
+            box-shadow: 0 0 0 3px rgba(59, 87, 189, 0.12);
         }
 
         .feed-filters {
             display: flex;
             gap: 8px;
-            flex-wrap: wrap;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            scrollbar-width: none;
+        }
+
+        .feed-filters::-webkit-scrollbar {
+            display: none;
         }
 
         .feed-filter-chip {
-            padding: 8px 16px;
-            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
             border: 1px solid var(--borde-suave);
-            background: #fff;
+            border-radius: 8px;
+            background: var(--blanco);
             color: var(--texto-secundario);
+            font-family: 'Poppins', sans-serif;
             font-size: 0.85rem;
             font-weight: 500;
             cursor: pointer;
             transition: var(--transicion);
-            display: flex;
-            align-items: center;
-            gap: 6px;
             white-space: nowrap;
-            font-family: 'Poppins', sans-serif;
         }
 
         .feed-filter-chip:hover {
             border-color: var(--azul-oscuro);
             color: var(--azul-oscuro);
-            background: #f8fafc;
-            transform: translateY(-2px);
         }
 
         .feed-filter-chip.active {
             background: var(--azul-oscuro);
-            color: #fff;
             border-color: var(--azul-oscuro);
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(26, 42, 95, 0.15);
-        }
-
-        .feed-filter-chip .chip-count {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
+            color: var(--blanco);
             font-weight: 600;
         }
 
-        .feed-filter-chip:not(.active) .chip-count {
+        .chip-count {
+            min-width: 22px;
+            padding: 1px 7px;
+            border-radius: 20px;
             background: var(--fondo-app);
             color: var(--texto-secundario);
-        }
-
-        .btn-publicar {
-            padding: 10px 22px;
-            border-radius: 30px;
-            border: none;
-            background: linear-gradient(135deg, var(--naranja) 0%, #e8943f 100%);
-            color: #fff;
+            font-size: 0.72rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: var(--transicion);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Poppins', sans-serif;
-            box-shadow: 0 4px 14px rgba(214, 126, 41, 0.25);
-            white-space: nowrap;
+            text-align: center;
         }
 
-        .btn-publicar:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(214, 126, 41, 0.35);
+        .feed-filter-chip.active .chip-count {
+            background: rgba(255, 255, 255, 0.18);
+            color: var(--blanco);
         }
 
-        /* --- Grid --- */
+        /* ========== GRID DE PUBLICACIONES ========== */
         .feed-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
         }
 
-        /* --- Tarjeta --- */
         .post-card {
             background: var(--blanco);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: var(--sombra-card);
             border: 1px solid var(--borde-suave);
+            border-radius: 14px;
+            box-shadow: var(--sombra-card);
             transition: var(--transicion);
             position: relative;
         }
 
         .post-card:hover {
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
-            transform: translateY(-2px);
+            box-shadow: var(--sombra-hover);
             border-color: #cbd5e1;
         }
 
+        .post-card.is-pinned {
+            border-color: var(--naranja);
+        }
+
+        .post-card.is-removing {
+            opacity: 0;
+            transform: scale(0.97);
+        }
+
+        .pin-flag {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 24px;
+            background: var(--naranja-suave);
+            color: #9a5a17;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 13px 13px 0 0;
+            letter-spacing: 0.2px;
+        }
+
+        .post-card.is-pinned .pin-flag {
+            display: flex;
+        }
+
+        /* --- Header de tarjeta --- */
         .post-card-header {
-            padding: 20px 24px 0;
+            padding: 18px 20px 0 24px;
             display: flex;
             align-items: flex-start;
             gap: 14px;
         }
 
         .post-avatar {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--azul-medio) 0%, var(--azul-claro) 100%);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--azul-medio);
+            color: var(--blanco);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #fff;
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             flex-shrink: 0;
-            letter-spacing: -0.3px;
-            box-shadow: 0 3px 8px rgba(59, 87, 189, 0.25);
-            margin-top: 2px;
         }
 
         .post-avatar.avatar-naranja {
-            background: linear-gradient(135deg, var(--naranja) 0%, #f0a54a 100%);
-            box-shadow: 0 3px 8px rgba(214, 126, 41, 0.25);
+            background: var(--naranja);
         }
 
         .post-meta {
@@ -252,102 +437,117 @@
             min-width: 0;
         }
 
-        /* Jerarquía Superior (Área y Nombre) */
         .post-area {
-            font-weight: 700;
+            font-weight: 600;
             color: var(--texto-principal);
-            font-size: 1rem;
-            letter-spacing: -0.2px;
-            line-height: 1.2;
+            font-size: 0.98rem;
+            line-height: 1.3;
         }
 
         .post-author {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: var(--texto-secundario);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 2px;
-        }
-
-        .post-author i {
-            font-size: 0.75rem;
+            margin-top: 1px;
         }
 
         .post-time {
-            font-size: 0.8rem;
-            color: var(--texto-secundario);
             display: flex;
             align-items: center;
-            gap: 6px;
+            flex-wrap: wrap;
+            gap: 8px;
             margin-top: 6px;
+            font-size: 0.78rem;
+            color: var(--texto-secundario);
         }
 
-        /* --- Etiquetas en línea (Badge) --- */
+        .post-time i {
+            font-size: 0.72rem;
+        }
+
+        .dot-separator {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: #cbd5e1;
+        }
+
         .inline-tag {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.65rem;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 0.68rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        .inline-tag i { font-size: 0.55rem; }
-        .tag-aviso { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-        .tag-noticia { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
-        .tag-folleto { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
-        .tag-video { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.2); }
-
-        .dot-separator {
-            color: #cbd5e1;
-            font-size: 0.5rem;
+            letter-spacing: 0.4px;
         }
 
-        /* --- Menú de Opciones 3 Puntitos --- */
+        .inline-tag i {
+            font-size: 0.6rem;
+        }
+
+        .tag-aviso {
+            background: var(--tipo-aviso-bg);
+            color: var(--tipo-aviso);
+        }
+
+        .tag-noticia {
+            background: var(--tipo-noticia-bg);
+            color: var(--tipo-noticia);
+        }
+
+        .tag-folleto {
+            background: var(--tipo-folleto-bg);
+            color: var(--tipo-folleto);
+        }
+
+        .tag-video {
+            background: var(--tipo-video-bg);
+            color: var(--tipo-video);
+        }
+
+        /* --- Menú de opciones --- */
         .post-options {
             position: relative;
             margin-left: auto;
         }
 
         .btn-options {
-            background: transparent;
-            border: none;
-            color: var(--texto-secundario);
-            font-size: 1.1rem;
-            cursor: pointer;
-            padding: 8px;
             width: 36px;
             height: 36px;
-            border-radius: 50%;
-            transition: var(--transicion);
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--texto-secundario);
+            font-size: 1rem;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: var(--transicion);
         }
 
-        .btn-options:hover {
+        .btn-options:hover,
+        .btn-options[aria-expanded="true"] {
             background: var(--fondo-app);
             color: var(--texto-principal);
         }
 
         .post-dropdown {
             position: absolute;
-            top: 100%;
+            top: calc(100% + 6px);
             right: 0;
+            width: 180px;
             background: var(--blanco);
             border: 1px solid var(--borde-suave);
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 160px;
-            z-index: 10;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+            z-index: 20;
             opacity: 0;
             visibility: hidden;
-            transform: translateY(10px);
-            transition: all 0.2s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+            transform: translateY(-6px);
+            transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
         }
 
         .post-dropdown.show {
@@ -359,102 +559,119 @@
         .post-dropdown ul {
             list-style: none;
             padding: 6px;
-            margin: 0;
         }
 
-        .post-dropdown a {
+        .post-dropdown button {
+            width: 100%;
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 14px;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
             color: var(--texto-principal);
+            font-family: 'Poppins', sans-serif;
             font-size: 0.85rem;
             font-weight: 500;
-            text-decoration: none;
-            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
             transition: var(--transicion);
         }
 
-        .post-dropdown a i {
-            font-size: 1rem;
+        .post-dropdown button i {
             width: 16px;
             text-align: center;
             color: var(--texto-secundario);
         }
 
-        .post-dropdown a:hover {
+        .post-dropdown button:hover {
             background: var(--fondo-app);
             color: var(--azul-oscuro);
         }
 
-        .post-dropdown a:hover i {
+        .post-dropdown button:hover i {
             color: var(--azul-oscuro);
         }
 
-        .post-dropdown a.delete-option {
-            color: #ef4444;
+        .post-dropdown .menu-divider {
+            height: 1px;
+            background: var(--borde-suave);
+            margin: 4px 6px;
         }
 
-        .post-dropdown a.delete-option i {
-            color: #ef4444;
+        .post-dropdown button.delete-option,
+        .post-dropdown button.delete-option i {
+            color: var(--tipo-aviso);
         }
 
-        .post-dropdown a.delete-option:hover {
-            background: #fef2f2;
-            color: #dc2626;
+        .post-dropdown button.delete-option:hover {
+            background: var(--tipo-aviso-bg);
         }
 
-        /* --- Cuerpo Tarjeta --- */
+        /* --- Cuerpo --- */
         .post-card-body {
-            padding: 16px 24px 12px;
+            padding: 16px 24px 18px;
         }
 
         .post-title {
-            font-size: 1.15rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 1.12rem;
             font-weight: 700;
             color: var(--azul-oscuro);
-            margin-bottom: 8px;
-            letter-spacing: -0.3px;
+            letter-spacing: -0.2px;
             line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .post-title i {
+            margin-top: 4px;
+            font-size: 0.95rem;
         }
 
         .post-excerpt {
+            font-size: 0.93rem;
+            line-height: 1.65;
             color: var(--texto-secundario);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 8px;
         }
 
-        /* --- Imagen Única --- */
+        .post-excerpt strong {
+            color: var(--texto-principal);
+            font-weight: 600;
+        }
+
+        /* --- Imagen única --- */
         .post-media {
             position: relative;
-            width: 100%;
+            margin-top: 16px;
             overflow: hidden;
             cursor: zoom-in;
-            margin: 12px 0;
+            background: #0f172a;
         }
 
         .post-media img {
             width: 100%;
+            max-height: 420px;
             display: block;
-            transition: transform 0.5s ease;
             object-fit: cover;
-            max-height: 450px;
+            transition: transform 0.5s ease;
         }
 
-        .post-card:hover .post-media img {
+        .post-media:hover img {
             transform: scale(1.02);
         }
 
         .post-media-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(26, 42, 95, 0.2);
+            background: rgba(26, 42, 95, 0.25);
             opacity: 0;
-            transition: opacity 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: opacity 0.25s ease;
         }
 
         .post-media:hover .post-media-overlay {
@@ -462,36 +679,37 @@
         }
 
         .post-media-overlay i {
-            font-size: 2.5rem;
-            color: #fff;
-            background: rgba(255, 255, 255, 0.3);
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
-            padding: 14px;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--azul-oscuro);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* --- Galería Múltiples Imágenes --- */
+        /* --- Galería --- */
         .post-media-gallery {
             display: grid;
-            gap: 4px;
-            margin: 12px 0;
-            border-radius: 12px;
+            gap: 3px;
+            margin-top: 16px;
             overflow: hidden;
         }
 
         .gallery-2 {
             grid-template-columns: 1fr 1fr;
-            height: 280px;
+            height: 300px;
         }
 
         .gallery-3 {
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 160px 160px;
+            grid-template-columns: 1.4fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            height: 340px;
         }
 
         .gallery-3 .gallery-item:first-child {
-            grid-column: 1 / 2;
             grid-row: 1 / 3;
         }
 
@@ -499,41 +717,40 @@
             position: relative;
             overflow: hidden;
             cursor: zoom-in;
-            height: 100%;
+            background: #0f172a;
         }
 
         .gallery-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
             transition: transform 0.5s ease;
         }
 
         .gallery-item:hover img {
-            transform: scale(1.05);
+            transform: scale(1.04);
         }
 
-        .gallery-item .overlay-more {
+        .overlay-more {
             position: absolute;
             inset: 0;
-            background: rgba(0,0,0,0.55);
-            color: white;
+            background: rgba(26, 42, 95, 0.7);
+            color: var(--blanco);
+            font-size: 1.8rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
-            backdrop-filter: blur(3px);
         }
 
-        /* --- Video (miniatura) --- */
+        /* --- Video --- */
         .post-video-wrapper {
             position: relative;
-            width: 100%;
+            margin-top: 16px;
             aspect-ratio: 16 / 9;
             overflow: hidden;
             cursor: pointer;
-            margin: 12px 0;
             background: #0f172a;
         }
 
@@ -556,114 +773,128 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 2;
-            transition: opacity 0.3s ease;
         }
 
         .play-circle {
-            width: 65px;
-            height: 65px;
-            background: rgba(255, 255, 255, 0.95);
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
+            background: var(--blanco);
+            color: var(--azul-oscuro);
+            font-size: 1.3rem;
+            padding-left: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            color: var(--azul-claro);
-            transition: var(--transicion);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-            padding-left: 5px;
+            transition: var(--transicion);
         }
 
         .post-video-wrapper:hover .play-circle {
-            transform: scale(1.1);
-            background: #fff;
-            color: var(--naranja);
+            transform: scale(1.08);
+            background: var(--naranja);
+            color: var(--blanco);
         }
 
-        /* --- Folleto --- */
+        .video-duration {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            padding: 3px 9px;
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--blanco);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* --- Folleto / archivo --- */
         .post-folleto-card {
             display: flex;
             align-items: center;
-            gap: 16px;
-            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-            border: 1.5px dashed #6ee7b7;
+            gap: 14px;
+            margin-top: 16px;
+            padding: 14px 16px;
+            border: 1px solid var(--borde-suave);
             border-radius: 12px;
-            padding: 16px;
-            margin-top: 10px;
+            background: var(--fondo-app);
             cursor: pointer;
             transition: var(--transicion);
         }
 
         .post-folleto-card:hover {
-            background: linear-gradient(135deg, #d1fae5 0%, #c6f6d5 100%);
-            border-color: #34d399;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.12);
+            border-color: var(--tipo-folleto);
+            background: var(--tipo-folleto-bg);
         }
 
         .folleto-icon-box {
-            width: 48px;
-            height: 48px;
-            background: #fff;
-            border-radius: 12px;
+            width: 46px;
+            height: 46px;
+            border-radius: 10px;
+            background: var(--blanco);
+            border: 1px solid var(--borde-suave);
+            color: var(--tipo-folleto);
+            font-size: 1.3rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            color: #10b981;
-            box-shadow: 0 3px 8px rgba(16, 185, 129, 0.12);
             flex-shrink: 0;
         }
 
+        .folleto-info {
+            min-width: 0;
+        }
+
         .folleto-info strong {
-            font-size: 0.95rem;
-            color: var(--texto-principal);
             display: block;
-            margin-bottom: 2px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--texto-principal);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .folleto-info span {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--texto-secundario);
         }
 
         .folleto-download {
             width: 38px;
             height: 38px;
-            border-radius: 50%;
-            background: #10b981;
-            color: #fff;
+            margin-left: auto;
+            border-radius: 10px;
+            background: var(--tipo-folleto);
+            color: var(--blanco);
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
-            transition: var(--transicion);
             flex-shrink: 0;
-            margin-left: auto;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+            transition: var(--transicion);
         }
 
         .post-folleto-card:hover .folleto-download {
-            transform: scale(1.1);
-            background: #059669;
+            transform: translateY(-2px);
         }
 
-        /* --- Footer (Likes) --- */
+        /* --- Footer --- */
         .post-card-footer {
-            padding: 14px 24px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
+            padding: 12px 24px;
             border-top: 1px solid var(--borde-suave);
-            background: #f8fafc;
+            border-radius: 0 0 13px 13px;
         }
 
         .post-likes-info {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--texto-secundario);
             font-weight: 500;
         }
@@ -673,128 +904,275 @@
         }
 
         .like-avatar-mini {
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
+            margin-left: -7px;
             border-radius: 50%;
-            border: 2px solid #f8fafc;
-            margin-left: -8px;
+            border: 2px solid var(--blanco);
             background: var(--azul-claro);
+            color: var(--blanco);
+            font-size: 0.58rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.6rem;
-            color: #fff;
-            font-weight: 700;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .like-avatar-mini:first-child { margin-left: 0; }
+        .like-avatar-mini:first-child {
+            margin-left: 0;
+        }
 
-        /* Botón Pulgar Azul */
+        .like-avatar-mini.more {
+            background: var(--azul-oscuro);
+        }
+
         .btn-like {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: 1.5px solid var(--borde-suave);
+            gap: 8px;
+            padding: 8px 16px;
+            border: 1px solid var(--borde-suave);
+            border-radius: 8px;
             background: var(--blanco);
             color: var(--texto-secundario);
-            font-size: 1.1rem;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transicion);
         }
 
         .btn-like:hover {
             border-color: #93c5fd;
-            color: var(--azul-like);
             background: var(--azul-like-suave);
-            transform: scale(1.08);
+            color: var(--azul-like);
         }
 
         .btn-like.liked {
-            background: var(--azul-like-suave);
             border-color: #bfdbfe;
+            background: var(--azul-like-suave);
             color: var(--azul-like);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
         }
 
         .btn-like.liked i {
-            animation: thumbPop 0.45s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+            animation: thumbPop 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.49);
         }
 
         @keyframes thumbPop {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            30% { transform: scale(1.3) rotate(-15deg); }
-            60% { transform: scale(0.9) rotate(10deg); }
+
+            0%,
+            100% {
+                transform: scale(1) rotate(0);
+            }
+
+            35% {
+                transform: scale(1.3) rotate(-14deg);
+            }
+
+            65% {
+                transform: scale(0.92) rotate(8deg);
+            }
         }
 
-        /* Partículas Azules */
-        .like-particles {
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
+        /* --- Estado vacío --- */
+        .feed-empty {
+            display: none;
+            text-align: center;
+            padding: 56px 24px;
+            background: var(--blanco);
+            border: 1px dashed var(--borde-suave);
+            border-radius: 14px;
         }
 
-        .like-particle {
-            position: absolute;
-            font-size: 0.95rem;
-            animation: particleFly 0.8s ease-out forwards;
-            opacity: 0;
-            color: var(--azul-like);
+        .feed-empty.show {
+            display: block;
         }
 
-        @keyframes particleFly {
-            0% { opacity: 1; transform: translate(0, 0) scale(1); }
-            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2); }
+        .feed-empty i {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            border-radius: 50%;
+            background: var(--naranja-suave);
+            color: var(--naranja);
+            font-size: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feed-empty h3 {
+            font-size: 1.05rem;
+            color: var(--azul-oscuro);
+            margin-bottom: 4px;
+        }
+
+        .feed-empty p {
+            font-size: 0.88rem;
+            color: var(--texto-secundario);
         }
 
         /* --- Load more --- */
         .feed-load-more {
             text-align: center;
-            margin-top: 30px;
+            margin-top: 24px;
         }
 
         .btn-load-more {
-            padding: 14px 30px;
-            border-radius: 30px;
-            border: 2px solid var(--borde-suave);
-            background: var(--blanco);
-            color: var(--texto-principal);
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: var(--transicion);
-            font-family: 'Poppins', sans-serif;
             display: inline-flex;
             align-items: center;
             gap: 10px;
+            padding: 12px 26px;
+            border: 1px solid var(--borde-suave);
+            border-radius: 10px;
+            background: var(--blanco);
+            color: var(--texto-principal);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transicion);
         }
 
-        .btn-load-more:hover {
+        .btn-load-more:hover:not(:disabled) {
             border-color: var(--azul-claro);
             color: var(--azul-claro);
-            background: #f8faff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 87, 189, 0.08);
         }
 
-        /* --- Lightbox --- */
+        .btn-load-more:disabled {
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        /* ========== PANEL LATERAL DERECHO ========== */
+        .feed-aside {
+            position: sticky;
+            top: 88px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .aside-card {
+            background: var(--blanco);
+            border: 1px solid var(--borde-suave);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: var(--sombra-card);
+        }
+
+        .aside-card h2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--azul-oscuro);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .aside-card h2 i {
+            color: var(--naranja);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .stat-tile {
+            padding: 12px 8px;
+            border-radius: 10px;
+            background: var(--fondo-app);
+            text-align: center;
+        }
+
+        .stat-tile strong {
+            display: block;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--azul-oscuro);
+            line-height: 1.2;
+        }
+
+        .stat-tile span {
+            font-size: 0.68rem;
+            color: var(--texto-secundario);
+            font-weight: 500;
+        }
+
+        .area-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .area-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 10px;
+            transition: var(--transicion);
+        }
+
+        .area-list li:hover {
+            background: var(--fondo-app);
+        }
+
+        .area-dot {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: var(--azul-medio);
+            color: var(--blanco);
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .area-dot.naranja {
+            background: var(--naranja);
+        }
+
+        .area-name {
+            flex: 1;
+            font-size: 0.87rem;
+            font-weight: 500;
+            color: var(--texto-principal);
+        }
+
+        .area-count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--texto-secundario);
+            background: var(--fondo-app);
+            padding: 2px 9px;
+            border-radius: 20px;
+        }
+
+        /* ========== LIGHTBOX ========== */
         .lightbox-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.85);
             z-index: 9999;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             cursor: zoom-out;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
         .lightbox-overlay.active {
@@ -807,71 +1185,67 @@
             max-width: 90vw;
             max-height: 90vh;
             border-radius: 12px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transform: scale(0.95) translateY(20px);
-            transition: transform 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.49);
-            border: 1px solid rgba(255,255,255,0.1);
             overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            transform: scale(0.96);
+            transition: transform 0.3s ease;
+            cursor: default;
         }
 
         .lightbox-overlay.active .lightbox-content {
-            transform: scale(1) translateY(0);
+            transform: scale(1);
         }
 
-        .lightbox-content img,
-        .lightbox-content iframe {
-            width: 100%;
-            height: auto;
-            max-height: 85vh;
+        .lightbox-content img {
             display: block;
-            border-radius: 12px;
+            max-width: 90vw;
+            max-height: 85vh;
             object-fit: contain;
         }
 
         .lightbox-content iframe {
-            width: 85vw;
-            height: 48vw;
-            max-height: 80vh;
+            display: block;
+            width: min(85vw, 1100px);
+            aspect-ratio: 16 / 9;
+            border: 0;
         }
 
         .lightbox-close {
             position: absolute;
             top: 20px;
-            right: 28px;
-            font-size: 1.6rem;
-            color: #fff;
-            cursor: pointer;
-            z-index: 10;
-            width: 48px;
-            height: 48px;
+            right: 24px;
+            width: 46px;
+            height: 46px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.1);
+            color: var(--blanco);
+            font-size: 1.3rem;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: var(--transicion);
-            border: 1px solid rgba(255,255,255,0.15);
-            backdrop-filter: blur(4px);
         }
 
         .lightbox-close:hover {
             background: rgba(255, 255, 255, 0.25);
-            transform: rotate(90deg) scale(1.1);
         }
 
-        /* --- Modal Publicar --- */
+        /* ========== MODAL PUBLICAR ========== */
         .modal-publicar-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(26, 42, 95, 0.6);
-            backdrop-filter: blur(6px);
             z-index: 9998;
+            background: rgba(26, 42, 95, 0.55);
+            backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 16px;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
         }
 
         .modal-publicar-overlay.active {
@@ -880,65 +1254,110 @@
         }
 
         .modal-publicar {
-            background: var(--blanco);
-            border-radius: 20px;
-            padding: 30px;
-            width: 95%;
-            max-width: 600px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-            transform: translateY(30px);
-            transition: transform 0.35s cubic-bezier(0.17, 0.89, 0.32, 1.49);
-            max-height: 90vh;
+            width: 100%;
+            max-width: 620px;
+            max-height: 92vh;
             overflow-y: auto;
+            background: var(--blanco);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
         }
 
         .modal-publicar-overlay.active .modal-publicar {
             transform: translateY(0);
         }
 
-        .modal-publicar h3 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--azul-oscuro);
-            margin-bottom: 24px;
+        .modal-head {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--borde-suave);
         }
 
-        .modal-publicar h3 i { color: var(--naranja); }
+        .modal-head h3 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--azul-oscuro);
+        }
 
-        .form-group { margin-bottom: 18px; }
+        .modal-head h3 i {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--naranja-suave);
+            color: var(--naranja);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-x {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--texto-secundario);
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: var(--transicion);
+        }
+
+        .modal-x:hover {
+            background: var(--fondo-app);
+            color: var(--texto-principal);
+        }
+
+        #formPublicar {
+            padding: 24px 28px 28px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
 
         .form-group label {
             display: block;
+            margin-bottom: 7px;
+            font-size: 0.85rem;
             font-weight: 600;
-            font-size: 0.9rem;
             color: var(--texto-principal);
-            margin-bottom: 8px;
         }
 
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1.5px solid var(--borde-suave);
+            padding: 11px 14px;
+            border: 1px solid var(--borde-suave);
+            border-radius: 10px;
+            background: var(--fondo-app);
             font-family: 'Poppins', sans-serif;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: var(--texto-principal);
             transition: var(--transicion);
-            background: #f8fafc;
         }
 
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
+            background: var(--blanco);
             border-color: var(--naranja);
-            box-shadow: 0 0 0 4px rgba(214, 126, 41, 0.08);
-            background: #fff;
+            box-shadow: 0 0 0 3px rgba(214, 126, 41, 0.12);
         }
 
         .form-group textarea {
@@ -946,62 +1365,173 @@
             resize: vertical;
         }
 
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 24px;
+        .form-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.78rem;
+            color: var(--texto-secundario);
         }
 
-        .btn-cancelar {
-            padding: 12px 24px;
-            border-radius: 30px;
-            border: 1.5px solid var(--borde-suave);
-            background: var(--blanco);
-            color: var(--texto-secundario);
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid var(--borde-suave);
+            margin-top: 6px;
+        }
+
+        .btn-cancelar,
+        .btn-enviar {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 22px;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
             font-weight: 600;
-            font-size: 0.95rem;
             cursor: pointer;
             transition: var(--transicion);
         }
 
-        .btn-cancelar:hover { background: #f1f5f9; color: var(--texto-principal); }
+        .btn-cancelar {
+            border: 1px solid var(--borde-suave);
+            background: var(--blanco);
+            color: var(--texto-secundario);
+        }
 
-        /* --- Toast Azul --- */
+        .btn-cancelar:hover {
+            background: var(--fondo-app);
+            color: var(--texto-principal);
+        }
+
+        .btn-enviar {
+            border: none;
+            background: var(--azul-oscuro);
+            color: var(--blanco);
+        }
+
+        .btn-enviar:hover {
+            background: var(--azul-medio);
+        }
+
+        /* ========== TOAST ========== */
         .like-toast {
             position: fixed;
-            bottom: 30px;
+            bottom: 28px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: var(--azul-like);
-            color: #fff;
-            padding: 12px 26px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 0.9rem;
             z-index: 9999;
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
-            transition: transform 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+            padding: 12px 22px;
+            border-radius: 10px;
+            background: var(--azul-like);
+            color: var(--blanco);
+            font-size: 0.88rem;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
             pointer-events: none;
+            transition: transform 0.35s cubic-bezier(0.17, 0.89, 0.32, 1.2);
         }
 
-        .like-toast.show { transform: translateX(-50%) translateY(0); }
+        .like-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
 
-        /* Responsive */
+        /* ========== ANIMACIÓN DE ENTRADA ========== */
+        @keyframes feedFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 1100px) {
+            .feed-layout {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .feed-aside {
+                display: none;
+            }
+        }
+
         @media (max-width: 768px) {
-            .feed-top-container { padding: 18px; flex-direction: column; align-items: flex-start; }
-            .feed-controls-wrapper { flex-direction: column; align-items: stretch; width: 100%; }
-            .feed-filters { justify-content: flex-start; }
-            .btn-publicar { width: 100%; justify-content: center; }
-            .post-card-header { padding: 16px 16px 0; }
-            .post-card-body { padding: 12px 16px 8px; }
-            .post-card-footer { padding: 12px 16px; }
-            .gallery-2 { height: 200px; }
-            .gallery-3 { grid-template-rows: 120px 120px; }
-            .lightbox-content iframe { width: 95vw; height: 55vw; }
+            .feed-page-head {
+                align-items: stretch;
+            }
+
+            .btn-publicar {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .pin-flag {
+                padding: 7px 16px;
+            }
+
+            .feed-head-actions {
+                width: 100%;
+            }
+
+            .feed-date {
+                display: none;
+            }
+
+            .composer-chip {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .post-card-header {
+                padding: 16px 12px 0 16px;
+            }
+
+            .post-card-body {
+                padding: 14px 16px 16px;
+            }
+
+            .post-card-footer {
+                padding: 12px 16px;
+            }
+
+            .gallery-2 {
+                height: 210px;
+            }
+
+            .gallery-3 {
+                height: 250px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .modal-head,
+            #formPublicar {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
@@ -1014,13 +1544,16 @@
         {{-- HEADER --}}
         <header class="header">
             <div class="header-left">
-                <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+                <button class="menu-toggle" id="menuToggle" type="button" aria-label="Alternar menú"
+                    aria-controls="sidebar" aria-expanded="false">
                     <i class="fas fa-bars"></i>
                 </button>
-                <div class="brand-container" id="logoToggle" style="cursor:pointer" title="Minimizar/Maximizar menú">
-                    <img src="{{ asset('assets/img/logovinco1.png') }}" alt="Vinco Hub" class="brand-logo"
-                        id="mainLogo" />
-                </div>
+                <button type="button" class="brand-container" id="brandToggle" aria-label="Contraer menú"
+                    title="Contraer menú">
+                    <img src="{{ asset('assets/img/logovinco1.png') }}" alt="Vinco Hub"
+                        class="brand-logo brand-logo--full" />
+                    <img src="{{ asset('assets/img/logo.png') }}" alt="Vinco Hub" class="brand-logo brand-logo--mini" />
+                </button>
             </div>
             <div class="header-right">
                 @include('components.layouts._user-profile')
@@ -1028,179 +1561,545 @@
         </header>
 
         {{-- SIDEBAR --}}
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-content">
-                @php
-                    $userPermissions = Auth::check()
-                        ? \App\Models\Systems\UserManagement\UserPermission::getUserPermissions(Auth::id())
-                        : [];
-                @endphp
+        <aside class="sidebar" id="sidebar" aria-label="Menú principal">
+            @php
+            $userPermissions = Auth::check()
+            ? \App\Models\Systems\UserManagement\UserPermission::getUserPermissions(Auth::id())
+            : [];
 
-                @if (isset($userPermissions['administration']))
-                    <div class="nav-group">
-                        <div class="nav-header active" data-name="Administración">
-                            <div class="nav-header-title">
-                                <i class="fas fa-cogs"></i>
-                                <span>Administración</span>
-                            </div>
-                            <i class="fas fa-chevron-right arrow-icon"></i>
-                        </div>
-                        <ul class="nav-list active">
-                            @if (in_array('expense-claims', $userPermissions['administration']) || empty($userPermissions['administration']))
-                                <li class="nav-item" data-route="/administration/expense-claims"
-                                    data-name="Reembolsos">
-                                    <i class="fas fa-receipt nav-icon"></i>
-                                    <span class="nav-text">Reembolsos</span>
-                                </li>
+            // Definición del menú: grupo => título, icono e ítems (key = permiso)
+            $menu = [
+            'administration' => [
+            'title' => 'Administración',
+            'icon' => 'fa-building-columns',
+            'items' => [
+            ['key' => 'expense-claims', 'route' => '/administration/expense-claims', 'label' => 'Reembolsos', 'icon' => 'fa-hand-holding-dollar'],
+            ['key' => 'facturacion', 'route' => '/administration', 'label' => 'Facturación', 'icon' => 'fa-file-invoice-dollar'],
+            ],
+            ],
+            'rh' => [
+            'title' => 'Recursos Humanos',
+            'icon' => 'fa-users',
+            'items' => [
+            ['key' => 'loadchart', 'route' => '/rh/loadchart', 'label' => 'Mi LoadChart', 'icon' => 'fa-chart-column'],
+            ['key' => 'orgmanagement', 'route' => '/rh/orgmanagement', 'label' => 'Empleados', 'icon' => 'fa-address-card'],
+            ],
+            ],
+            'qhse' => [
+            'title' => 'QHSE',
+            'icon' => 'fa-shield-halved',
+            'items' => [
+            ['key' => 'management', 'route' => '/qhse/management', 'label' => 'VesDrive', 'icon' => 'fa-route'],
+            ['key' => 'incidents', 'route' => '/qhse/incidents', 'label' => 'Mis Incidencias', 'icon' => 'fa-triangle-exclamation'],
+            ['key' => 'vescap', 'route' => '/qhse/vescap', 'label' => 'VesCap', 'icon' => 'fa-helmet-safety'],
+            ],
+            ],
+            'systems' => [
+            'title' => 'Sistemas',
+            'icon' => 'fa-network-wired',
+            'items' => [
+            ['key' => 'user-management', 'route' => '/systems/user-management', 'label' => 'Roles y Permisos', 'icon' => 'fa-user-lock'],
+            ['key' => 'inventory-it', 'route' => '/systems/inventory-it', 'label' => 'Inventario TI', 'icon' => 'fa-boxes-stacked'],
+            ['key' => 'tickets', 'route' => '/systems/tickets', 'label' => 'Mis Tickets', 'icon' => 'fa-headset'],
+            ],
+            ],
+            'operations' => [
+            'title' => 'Operaciones',
+            'icon' => 'fa-gears',
+            'items' => [
+            ['key' => 'wells', 'route' => '/operations/wells', 'label' => 'Pozos', 'icon' => 'fa-oil-well'],
+            ['key' => 'sgc-ves', 'route' => '/operations/sgc-ves', 'label' => 'SGC VES', 'icon' => 'fa-award'],
+            ],
+            ],
+            ];
+            @endphp
+
+            <nav class="sidebar-nav" id="sidebarNav">
+
+                @foreach ($menu as $groupKey => $group)
+                @if (isset($userPermissions[$groupKey]))
+                @php $allowed = $userPermissions[$groupKey]; @endphp
+                <div class="nav-group" data-group="{{ $groupKey }}">
+                    <button type="button" class="nav-header" aria-expanded="true"
+                        aria-controls="nav-{{ $groupKey }}">
+                        <span class="nav-header-title">
+                            <i class="fas {{ $group['icon'] }}"></i>
+                            <span>{{ $group['title'] }}</span>
+                        </span>
+                        <i class="fas fa-chevron-down arrow-icon"></i>
+                    </button>
+                    <div class="nav-collapse" id="nav-{{ $groupKey }}">
+                        <ul class="nav-list">
+                            @foreach ($group['items'] as $item)
+                            @if (in_array($item['key'], $allowed) || empty($allowed))
+                            <li>
+                                <a class="nav-item" href="{{ url($item['route']) }}"
+                                    data-route="{{ $item['route'] }}" data-name="{{ $item['label'] }}">
+                                    <i class="fas {{ $item['icon'] }} nav-icon"></i>
+                                    <span class="nav-text">{{ $item['label'] }}</span>
+                                </a>
+                            </li>
                             @endif
-                            @if (in_array('facturacion', $userPermissions['administration']) || empty($userPermissions['administration']))
-                                <li class="nav-item" data-route="/administration" data-name="Facturación">
-                                    <i class="fas fa-file-invoice nav-icon"></i>
-                                    <span class="nav-text">Facturación</span>
-                                </li>
-                            @endif
+                            @endforeach
                         </ul>
                     </div>
+                </div>
                 @endif
-
-                @if (isset($userPermissions['rh']))
-                    <div class="nav-group">
-                        <div class="nav-header active" data-name="Recursos Humanos">
-                            <div class="nav-header-title">
-                                <i class="fas fa-users-cog"></i>
-                                <span>Recursos Humanos</span>
-                            </div>
-                            <i class="fas fa-chevron-right arrow-icon"></i>
-                        </div>
-                        <ul class="nav-list active">
-                            @if (in_array('loadchart', $userPermissions['rh']) || empty($userPermissions['rh']))
-                                <li class="nav-item" data-route="/rh/loadchart" data-name="Mi LoadChart">
-                                    <i class="fas fa-chart-pie nav-icon"></i>
-                                    <span class="nav-text">Mi LoadChart</span>
-                                </li>
-                            @endif
-                            @if (in_array('orgmanagement', $userPermissions['rh']) || empty($userPermissions['rh']))
-                                <li class="nav-item" data-route="/rh/orgmanagement" data-name="Altas Empleados">
-                                    <i class="fas fa-user-plus nav-icon"></i>
-                                    <span class="nav-text">Empleados</span>
-                                </li>
-                            @endif
-                        </ul>
-                    </div>
-                @endif
-
-                @if (isset($userPermissions['qhse']))
-                    <div class="nav-group">
-                        <div class="nav-header active" data-name="QHSE">
-                            <div class="nav-header-title">
-                                <i class="fas fa-shield-alt"></i>
-                                <span>QHSE</span>
-                            </div>
-                            <i class="fas fa-chevron-right arrow-icon"></i>
-                        </div>
-                        <ul class="nav-list active">
-                            @if (in_array('management', $userPermissions['qhse']) || empty($userPermissions['qhse']))
-                                <li class="nav-item" data-route="/qhse/management"
-                                    data-name="Gerenciamiento De Viajes">
-                                    <i class="fas fa-road nav-icon"></i>
-                                    <span class="nav-text">VesDrive</span>
-                                </li>
-                            @endif
-                            @if (in_array('incidencias', $userPermissions['qhse']) || empty($userPermissions['qhse']))
-                                <li class="nav-item" data-route="/qhse/incidencias" data-name="Mis Incidencias">
-                                    <i class="fas fa-exclamation-triangle nav-icon"></i>
-                                    <span class="nav-text">Mis Incidencias</span>
-                                </li>
-                            @endif
-                            @if (in_array('vescap', $userPermissions['qhse']) || empty($userPermissions['qhse']))
-                                <li class="nav-item" data-route="/qhse/vescap" data-name="VESCAP">
-                                    <i class="fas fa-fire-extinguisher nav-icon"></i>
-                                    <span class="nav-text">VesCap</span>
-                                </li>
-                            @endif
-                        </ul>
-                    </div>
-                @endif
-
-                @if (isset($userPermissions['systems']))
-                    <div class="nav-group">
-                        <div class="nav-header active" data-name="Sistemas">
-                            <div class="nav-header-title">
-                                <i class="fas fa-server"></i>
-                                <span>Sistemas</span>
-                            </div>
-                            <i class="fas fa-chevron-right arrow-icon"></i>
-                        </div>
-                        <ul class="nav-list active">
-                            @if (in_array('user-management', $userPermissions['systems']) || empty($userPermissions['systems']))
-                                <li class="nav-item" data-route="/systems/user-management"
-                                    data-name="Gestión de Roles">
-                                    <i class="fas fa-user-shield nav-icon"></i>
-                                    <span class="nav-text">Roles y Permisos</span>
-                                </li>
-                            @endif
-                            @if (in_array('tickets', $userPermissions['systems']) || empty($userPermissions['systems']))
-                                <li class="nav-item" data-route="/systems/tickets" data-name="Gestión de Tickets">
-                                    <i class="fas fa-ticket-alt nav-icon"></i>
-                                    <span class="nav-text">Mis Tickets</span>
-                                </li>
-                            @endif
-                        </ul>
-                    </div>
-                @endif
-
-                @if (isset($userPermissions['operations']))
-                    <div class="nav-group">
-                        <div class="nav-header active" data-name="Operaciones">
-                            <div class="nav-header-title">
-                                <i class="fas fa-industry"></i>
-                                <span>Operaciones</span>
-                            </div>
-                            <i class="fas fa-chevron-right arrow-icon"></i>
-                        </div>
-                        <ul class="nav-list active">
-                            @if (in_array('wells', $userPermissions['operations']) || empty($userPermissions['operations']))
-                                <li class="nav-item" data-route="/operations/wells" data-name="Pozos">
-                                    <i class="fas fa-oil-can nav-icon"></i>
-                                    <span class="nav-text">Pozos</span>
-                                </li>
-                            @endif
-                        </ul>
-                    </div>
-                @endif
-            </div>
+                @endforeach
+            </nav>
         </aside>
 
-        {{-- MAIN CONTENT --}}
+
+        {{-- MAIN CONTENT
         <main class="main-content">
             <div class="content-wrapper">
-<div class="content-wrapper">
 
+                @hasSection('content')
+                @yield('content')
+                @else
 
-                <div class="empty-state-wrapper">
-                    <div class="empty-state-card">
-                        <div class="icon-circle">
-                            <i class="fas fa-bell"></i>
+                @php
+                /*
+                |--------------------------------------------------------------------------
+                | Datos de ejemplo (reemplazar por tu consulta real: $posts del controlador)
+                |--------------------------------------------------------------------------
+                */
+                $initials = Auth::check()
+                ? collect(explode(' ', trim((string) (Auth::user()->name ?? ''))))->filter()->take(2)
+                ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->implode('')
+                : '';
+                $initials = $initials ?: 'VH';
+
+                $tipos = [
+                'aviso' => ['label' => 'Aviso', 'icon' => 'fa-circle-exclamation', 'plural' => 'Avisos'],
+                'noticia' => ['label' => 'Noticia', 'icon' => 'fa-newspaper', 'plural' => 'Noticias'],
+                'folleto' => ['label' => 'Folleto', 'icon' => 'fa-file-pdf', 'plural' => 'Folletos'],
+                'video' => ['label' => 'Video', 'icon' => 'fa-circle-play', 'plural' => 'Videos'],
+                ];
+
+                $posts = [
+                [
+                'type' => 'aviso',
+                'area' => 'Dirección General',
+                'initials' => 'DG',
+                'accent' => true,
+                'author' => 'Ing. Carlos Mendoza',
+                'time' => 'Hace 2 horas',
+                'pinned' => true,
+                'icon' => 'fa-wrench',
+                'title' => 'Mantenimiento programado – VesDrive',
+                'excerpt' => 'El próximo <strong>sábado 15 de julio</strong> de 22:00 a 04:00 hrs se realizará mantenimiento a <strong>VesDrive</strong>. El servicio no estará disponible. Planifique sus registros con anticipación.',
+                'media' => null,
+                'likes' => 15,
+                'liked' => false,
+                'likers' => ['JD', 'MR'],
+                ],
+                [
+                'type' => 'noticia',
+                'area' => 'Recursos Humanos',
+                'initials' => 'RH',
+                'accent' => false,
+                'author' => 'Lic. Ana Lucía Rojas',
+                'time' => 'Ayer a las 16:30',
+                'pinned' => false,
+                'icon' => 'fa-heart-circle-check',
+                'title' => 'Nuevo Programa de Bienestar Laboral 2026',
+                'excerpt' => 'Lanzamos <strong>"Vinco Vital"</strong>, programa integral de bienestar con horarios flexibles, mindfulness y gimnasios afiliados. Disfruta de las nuevas áreas renovadas. Inscripciones abiertas desde el próximo lunes.',
+                'media' => [
+                'kind' => 'gallery',
+                'extra' => 2,
+                'images' => [
+                'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',
+                'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400&q=80',
+                'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&q=80',
+                ],
+                ],
+                'likes' => 37,
+                'liked' => true,
+                'likers' => ['AL', 'CG'],
+                ],
+                [
+                'type' => 'video',
+                'area' => 'QHSE',
+                'initials' => 'QH',
+                'accent' => true,
+                'author' => 'Ing. Luis Paredes',
+                'time' => 'Hace 3 días',
+                'pinned' => false,
+                'icon' => 'fa-shield-halved',
+                'title' => 'Protocolo de Respuesta a Emergencias – Simulacro 2026',
+                'excerpt' => 'Revive el simulacro de emergencia. Conoce protocolos actualizados, tiempos de respuesta y mejores prácticas.',
+                'media' => [
+                'kind' => 'video',
+                'url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1',
+                'thumb' => 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&h=450&fit=crop',
+                'duration' => '04:32',
+                ],
+                'likes' => 11,
+                'liked' => false,
+                'likers' => ['LP', 'FT'],
+                ],
+                [
+                'type' => 'folleto',
+                'area' => 'Operaciones',
+                'initials' => 'OP',
+                'accent' => false,
+                'author' => 'Ing. Ricardo Muñoz',
+                'time' => 'Hace 5 días',
+                'pinned' => false,
+                'icon' => 'fa-book-open',
+                'title' => 'Manual de Operaciones – Actualización Q2 2026',
+                'excerpt' => 'Nueva versión del Manual con procedimientos actualizados, seguridad operativa y eficiencia energética.',
+                'media' => [
+                'kind' => 'file',
+                'name' => 'Manual_Operaciones_Q2_2026.pdf',
+                'meta' => '4.2 MB · 128 páginas',
+                ],
+                'likes' => 8,
+                'liked' => false,
+                'likers' => ['RM'],
+                ],
+                [
+                'type' => 'noticia',
+                'area' => 'Dirección General',
+                'initials' => 'DG',
+                'accent' => true,
+                'author' => 'Mtro. Jorge Salinas',
+                'time' => 'Hace 1 semana',
+                'pinned' => false,
+                'icon' => 'fa-solar-panel',
+                'title' => 'Vinco Energy invertirá $12M en energía solar para 2027',
+                'excerpt' => 'Inversión histórica en parques solares que abastecerán el 40% de nuestras operaciones para finales de 2027.',
+                'media' => [
+                'kind' => 'image',
+                'src' => 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&h=400&fit=crop',
+                'alt' => 'Energía renovable',
+                ],
+                'likes' => 55,
+                'liked' => false,
+                'likers' => ['JS', 'MG'],
+                ],
+                ];
+
+                // Fijados primero
+                $posts = collect($posts)->sortByDesc(fn ($p) => !empty($p['pinned']) ? 1 : 0)->values()->all();
+
+                $areas = [
+                ['name' => 'Dirección General', 'initials' => 'DG', 'accent' => true],
+                ['name' => 'Recursos Humanos', 'initials' => 'RH', 'accent' => false],
+                ['name' => 'QHSE', 'initials' => 'QH', 'accent' => true],
+                ['name' => 'Operaciones', 'initials' => 'OP', 'accent' => false],
+                ];
+                @endphp
+
+                <div class="social-feed-wrapper">
+
+                    <div class="feed-page-head">
+                        <div class="feed-page-title">
+                            <div class="feed-brand-icon">
+                                <img src="{{ asset('assets/img/logo.png') }}" alt="Vinco Energy" />
+                            </div>
+                            <div>
+                                <h1>Vinco Energy Service</h1>
+                                <p>Comunicados, noticias y recursos de toda la organización</p>
+                            </div>
                         </div>
-                        <h2 class="empty-title">Sin comunicados recientes</h2>
-                        <p class="empty-description">
-                            Aún no hay avisos, novedades o comunicados en la plataforma.
-                            Utiliza el menú lateral para gestionar los diferentes módulos de Vinco Hub.
-                        </p>
+                        <div class="feed-head-actions">
+                            <span class="feed-date" id="feedDate"><i class="far fa-calendar"></i> <span></span></span>
+                            <button class="btn-publicar" id="btnAbrirModalPublicar" type="button">
+                                <i class="fas fa-pen-to-square"></i> Nueva publicación
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="feed-layout">
+
+                        <section class="feed-main" aria-label="Publicaciones">
+
+                            <div class="feed-composer">
+                                <div class="composer-top">
+                                    <div class="post-avatar composer-avatar">{{ $initials }}</div>
+                                    <button type="button" class="composer-input" data-compose="">
+                                        ¿Qué quieres compartir con el equipo?
+                                    </button>
+                                </div>
+                                <div class="composer-actions">
+                                    @foreach ($tipos as $clave => $tipo)
+                                    <button type="button" class="composer-chip" data-compose="{{ $clave }}">
+                                        <i class="fas {{ $tipo['icon'] }}" style="color: var(--tipo-{{ $clave }});"></i>
+                                        {{ $tipo['label'] }}
+                                    </button>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="feed-toolbar">
+                                <div class="feed-search">
+                                    <i class="fas fa-magnifying-glass"></i>
+                                    <input type="search" id="feedSearch" placeholder="Buscar por título, área o contenido..."
+                                        aria-label="Buscar publicaciones" autocomplete="off" />
+                                </div>
+
+                                <div class="feed-filters" id="feedFilters" role="tablist"
+                                    aria-label="Filtrar por tipo">
+                                    <button class="feed-filter-chip active" data-filter="all" type="button"
+                                        role="tab" aria-selected="true">
+                                        <i class="fas fa-border-all"></i> Todo
+                                        <span class="chip-count" data-count-for="all">0</span>
+                                    </button>
+                                    @foreach ($tipos as $clave => $tipo)
+                                    <button class="feed-filter-chip" data-filter="{{ $clave }}" type="button"
+                                        role="tab" aria-selected="false">
+                                        <i class="fas {{ $tipo['icon'] }}"></i> {{ $tipo['plural'] }}
+                                        <span class="chip-count" data-count-for="{{ $clave }}">0</span>
+                                    </button>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="feed-grid" id="feedGrid">
+                                @foreach ($posts as $post)
+                                @php
+                                $tipo = $tipos[$post['type']];
+                                $media = $post['media'];
+                                $extraLikers = max(0, $post['likes'] - count($post['likers']));
+                                @endphp
+
+                                <article class="post-card {{ !empty($post['pinned']) ? 'is-pinned' : '' }}"
+                                    data-type="{{ $post['type'] }}" data-area="{{ $post['area'] }}">
+
+                                    <div class="pin-flag"><i class="fas fa-thumbtack"></i> Publicación fijada</div>
+
+                                    <div class="post-card-header">
+                                        <div class="post-avatar {{ $post['accent'] ? 'avatar-naranja' : '' }}">
+                                            {{ $post['initials'] }}</div>
+                                        <div class="post-meta">
+                                            <div class="post-area">{{ $post['area'] }}</div>
+                                            <div class="post-author">{{ $post['author'] }}</div>
+                                            <div class="post-time">
+                                                <span><i class="far fa-clock"></i> {{ $post['time'] }}</span>
+                                                <span class="dot-separator"></span>
+                                                <span class="inline-tag tag-{{ $post['type'] }}">
+                                                    <i class="fas {{ $tipo['icon'] }}"></i> {{ $tipo['label'] }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="post-options">
+                                            <button class="btn-options" type="button" aria-label="Opciones"
+                                                aria-haspopup="true" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <div class="post-dropdown" role="menu">
+                                                <ul>
+                                                    <li><button type="button" role="menuitem" data-action="edit"><i
+                                                                class="fas fa-pen"></i> Editar</button></li>
+                                                    <li><button type="button" role="menuitem" data-action="pin"><i
+                                                                class="fas fa-thumbtack"></i>
+                                                            <span
+                                                                class="pin-label">{{ !empty($post['pinned']) ? 'Quitar fijado' : 'Fijar' }}</span></button>
+                                                    </li>
+                                                    <li class="menu-divider" role="separator"></li>
+                                                    <li><button type="button" role="menuitem"
+                                                            class="delete-option" data-action="delete"><i
+                                                                class="fas fa-trash-can"></i> Eliminar</button></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="post-card-body">
+                                        <h3 class="post-title">
+                                            <i class="fas {{ $post['icon'] }}"
+                                                style="color: var(--tipo-{{ $post['type'] }});"></i>
+                                            <span>{{ $post['title'] }}</span>
+                                        </h3>
+                                        <p class="post-excerpt">{!! $post['excerpt'] !!}</p>
+
+                                        @if ($media && $media['kind'] === 'file')
+                                        <div class="post-folleto-card" role="button" tabindex="0">
+                                            <div class="folleto-icon-box"><i class="fas fa-file-pdf"></i></div>
+                                            <div class="folleto-info">
+                                                <strong>{{ $media['name'] }}</strong>
+                                                <span>{{ $media['meta'] }}</span>
+                                            </div>
+                                            <div class="folleto-download"><i class="fas fa-download"></i></div>
+                                        </div>
+                                        @endif
+                                    </div>
+
+                                    @if ($media && $media['kind'] === 'image')
+                                    <div class="post-media" data-lightbox style="margin-top:0;">
+                                        <img src="{{ $media['src'] }}" alt="{{ $media['alt'] }}" loading="lazy" />
+                                        <div class="post-media-overlay"><i class="fas fa-expand"></i></div>
+                                    </div>
+                                    @elseif ($media && $media['kind'] === 'gallery')
+                                    @php $total = count($media['images']); @endphp
+                                    <div class="post-media-gallery gallery-{{ $total }}" style="margin-top:0;">
+                                        @foreach ($media['images'] as $idx => $src)
+                                        <div class="gallery-item" data-lightbox>
+                                            <img src="{{ $src }}" alt="Imagen {{ $idx + 1 }}" loading="lazy" />
+                                            @if ($loop->last && !empty($media['extra']))
+                                            <div class="overlay-more">+{{ $media['extra'] }}</div>
+                                            @endif
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                    @elseif ($media && $media['kind'] === 'video')
+                                    <div class="post-video-wrapper" data-video-url="{{ $media['url'] }}" role="button"
+                                        tabindex="0" aria-label="Reproducir video" style="margin-top:0;">
+                                        <img src="{{ $media['thumb'] }}" alt="Miniatura del video" loading="lazy" />
+                                        <div class="video-play-overlay">
+                                            <div class="play-circle"><i class="fas fa-play"></i></div>
+                                        </div>
+                                        <span class="video-duration">{{ $media['duration'] }}</span>
+                                    </div>
+                                    @endif
+
+                                    <div class="post-card-footer">
+                                        <div class="post-likes-info">
+                                            <div class="post-likes-avatars">
+                                                @foreach ($post['likers'] as $liker)
+                                                <span class="like-avatar-mini">{{ $liker }}</span>
+                                                @endforeach
+                                                @if ($extraLikers > 0)
+                                                <span class="like-avatar-mini more">+{{ $extraLikers }}</span>
+                                                @endif
+                                            </div>
+                                            <span class="likes-text">{{ $post['likes'] }} personas</span>
+                                        </div>
+                                        <button type="button"
+                                            class="btn-like {{ $post['liked'] ? 'liked' : '' }}"
+                                            aria-pressed="{{ $post['liked'] ? 'true' : 'false' }}">
+                                            <i class="{{ $post['liked'] ? 'fas' : 'far' }} fa-thumbs-up"></i>
+                                            <span class="like-label">{{ $post['liked'] ? 'Te gusta' : 'Me gusta' }}</span>
+                                        </button>
+                                    </div>
+                                </article>
+                                @endforeach
+                            </div>
+
+                            <div class="feed-empty" id="feedEmpty">
+                                <i class="fas fa-inbox"></i>
+                                <h3>Sin resultados</h3>
+                                <p>No encontramos publicaciones con ese filtro o búsqueda.</p>
+                            </div>
+
+                            <div class="feed-load-more">
+                                <button class="btn-load-more" id="btnLoadMore" type="button">
+                                    <i class="fas fa-chevron-down"></i> Ver más publicaciones
+                                </button>
+                            </div>
+                        </section>
+
+                        <aside class="feed-aside" aria-label="Resumen">
+                            <div class="aside-card">
+                                <h2><i class="fas fa-chart-simple"></i> Resumen</h2>
+                                <div class="stats-grid">
+                                    <div class="stat-tile"><strong id="statPosts">0</strong><span>Publicaciones</span>
+                                    </div>
+                                    <div class="stat-tile"><strong id="statAvisos">0</strong><span>Avisos</span></div>
+                                    <div class="stat-tile"><strong id="statLikes">0</strong><span>Reacciones</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="aside-card">
+                                <h2><i class="fas fa-building"></i> Áreas que publican</h2>
+                                <ul class="area-list">
+                                    @foreach ($areas as $area)
+                                    <li>
+                                        <span class="area-dot {{ $area['accent'] ? 'naranja' : '' }}">{{ $area['initials'] }}</span>
+                                        <span class="area-name">{{ $area['name'] }}</span>
+                                        <span class="area-count" data-area-count="{{ $area['name'] }}">0</span>
+                                    </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </aside>
                     </div>
                 </div>
 
-        </div>
+                <div class="lightbox-overlay" id="lightboxOverlay" role="dialog" aria-modal="true"
+                    aria-label="Visor multimedia">
+                    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Cerrar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="lightbox-content" id="lightboxContent"></div>
+                </div>
+
+                <div class="modal-publicar-overlay" id="modalPublicarOverlay">
+                    <div class="modal-publicar" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+                        <div class="modal-head">
+                            <h3 id="modalTitulo"><i class="fas fa-pen-to-square"></i> Nueva publicación</h3>
+                            <button type="button" class="modal-x" id="btnCerrarModal" aria-label="Cerrar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <form id="formPublicar" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="postTipo">Tipo de publicación</label>
+                                    <select id="postTipo" required>
+                                        <option value="">Selecciona un tipo...</option>
+                                        @foreach ($tipos as $clave => $tipo)
+                                        <option value="{{ $clave }}">{{ $tipo['label'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="postArea">Área</label>
+                                    <select id="postArea" required>
+                                        <option value="">Selecciona tu área...</option>
+                                        <option value="Dirección General">Dirección General</option>
+                                        <option value="Recursos Humanos">Recursos Humanos</option>
+                                        <option value="QHSE">QHSE</option>
+                                        <option value="Operaciones">Operaciones</option>
+                                        <option value="Tecnología">Tecnología</option>
+                                        <option value="Marketing">Marketing</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="postTitulo">Título</label>
+                                <input type="text" id="postTitulo" placeholder="Escribe un título claro y conciso"
+                                    required />
+                            </div>
+                            <div class="form-group">
+                                <label for="postContenido">Contenido</label>
+                                <textarea id="postContenido" rows="4" placeholder="Describe tu publicación aquí..."
+                                    required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="postArchivo">Adjuntar archivos (opcional)</label>
+                                <input type="file" id="postArchivo" multiple accept="image/*,video/*,.pdf,.doc,.docx" />
+                                <span class="form-hint" id="archivoHint">Puedes seleccionar más de una imagen.</span>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn-cancelar" id="btnCancelarPublicacion">Cancelar</button>
+                                <button type="submit" class="btn-enviar">
+                                    <i class="fas fa-paper-plane"></i> Publicar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="like-toast" id="likeToast" role="status" aria-live="polite">
+                    <i class="fas fa-thumbs-up"></i> <span id="likeToastMsg"></span>
+                </div>
+                @endif
 
             </div>
         </main>
+        --}}
     </div>
 
     {{-- SCRIPTS --}}
     @if (session('swal'))
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
                 Swal.fire({
                     icon: '{{ session('swal')['icon'] }}',
                     title: '{{ session('swal')['title'] }}',
@@ -1211,7 +2110,7 @@
                     position: 'top-end',
                 });
             });
-        </script>
+    </script>
     @endif
 
     <script src="{{ asset('assets/js/sessionTimer.js') }}"></script>
@@ -1220,307 +2119,427 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            /* ========== SIDEBAR ========== */
-            const setHeight = (header) => {
-                const list = header.nextElementSibling;
-                const icon = header.querySelector('.arrow-icon');
-                if (!list) return;
-                if (header.classList.contains('active')) {
-                    list.style.maxHeight = list.scrollHeight + 'px';
-                    icon && (icon.style.transform = 'rotate(90deg)');
-                } else {
-                    list.style.maxHeight = '0px';
-                    icon && (icon.style.transform = 'rotate(0deg)');
-                }
-            };
-
-            document.querySelectorAll('.nav-header').forEach(header => {
-                setHeight(header);
-                header.addEventListener('click', () => {
-                    header.classList.toggle('active');
-                    header.nextElementSibling?.classList.toggle('active');
-                    setHeight(header);
-                });
-            });
-
-            const currentPath = window.location.pathname;
-            document.querySelectorAll('.nav-item').forEach(item => {
-                if (item.dataset.route === currentPath) {
-                    item.classList.add('active');
-                    const group = item.closest('.nav-group');
-                    const header = group?.querySelector('.nav-header');
-                    const list = group?.querySelector('.nav-list');
-                    if (header && list) {
-                        header.classList.add('active');
-                        list.classList.add('active');
-                        setTimeout(() => setHeight(header), 50);
-                    }
-                }
-                item.addEventListener('click', function() {
-                    const route = this.dataset.route;
-                    if (route) window.location.href = route;
-                });
-            });
-
-            const menuToggle = document.getElementById('menuToggle');
+            /* ========== SIDEBAR + HEADER ========== */
+            const root = document.documentElement;
             const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const toggleMobile = () => {
-                sidebar.classList.toggle('open');
-                overlay.classList.toggle('show');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const menuToggle = document.getElementById('menuToggle');
+            const brandToggle = document.getElementById('brandToggle');
+            const isDesktop = () => window.innerWidth > 768;
+            const store = {
+                get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }
             };
-            menuToggle?.addEventListener('click', toggleMobile);
-            overlay?.addEventListener('click', toggleMobile);
 
-            const logoImg = document.getElementById('mainLogo');
-            document.getElementById('logoToggle')?.addEventListener('click', () => {
-                if (window.innerWidth > 768) {
-                    document.body.classList.toggle('sidebar-minimized');
-                    logoImg.style.opacity = '0';
-                    setTimeout(() => {
-                        logoImg.src = document.body.classList.contains(
-                            'sidebar-minimized') ?
-                            "{{ asset('assets/img/logo.png') }}" :
-                            "{{ asset('assets/img/logovinco1.png') }}";
-                        logoImg.style.opacity = '1';
-                    }, 200);
-                    setTimeout(() => {
-                        document.querySelectorAll('.nav-header.active').forEach(
-                        header => {
-                            const list = header.nextElementSibling;
-                            if (list) list.style.maxHeight = list.scrollHeight +
-                                'px';
-                        });
-                    }, 360);
+            /* --- Tooltip flotante (modo contraído) --- */
+            const tip = document.createElement('div');
+            tip.className = 'sidebar-tooltip';
+            tip.setAttribute('role', 'tooltip');
+            document.body.appendChild(tip);
+
+            const hideTip = () => tip.classList.remove('show');
+            const showTip = (el) => {
+                if (!isDesktop() || !root.classList.contains('sidebar-minimized')) return;
+                const r = el.getBoundingClientRect();
+                tip.textContent = el.dataset.name || '';
+                tip.style.top = (r.top + r.height / 2) + 'px';
+                tip.style.left = (r.right + 12) + 'px';
+                tip.classList.add('show');
+            };
+
+            sidebar.addEventListener('mouseover', (e) => {
+                const el = e.target.closest('[data-name]');
+                el ? showTip(el) : hideTip();
+            });
+            sidebar.addEventListener('mouseleave', hideTip);
+            sidebar.addEventListener('focusin', (e) => {
+                const el = e.target.closest('[data-name]');
+                if (el) showTip(el);
+            });
+            sidebar.addEventListener('focusout', hideTip);
+            sidebar.addEventListener('scroll', hideTip, true);
+
+            /* --- Contraer / expandir (escritorio) --- */
+            function setMinimized(min) {
+                [root, document.body].forEach(el => el.classList.toggle('sidebar-minimized', min));
+                store.set('vh.sidebarMin', min ? '1' : '0');
+                if (brandToggle) {
+                    const label = min ? 'Expandir menú' : 'Contraer menú';
+                    brandToggle.setAttribute('aria-label', label);
+                    brandToggle.title = label;
                 }
+                hideTip();
+            }
+
+            if (store.get('vh.sidebarMin') === '1' && isDesktop()) setMinimized(true);
+
+            // El logo contrae/expande el menú (solo escritorio)
+            brandToggle?.addEventListener('click', () => {
+                if (isDesktop()) setMinimized(!root.classList.contains('sidebar-minimized'));
             });
 
-            /* ========== Opciones 3 Puntitos (Dropdown) ========== */
-            document.addEventListener('click', function(e) {
-                const isDropdownBtn = e.target.closest('.btn-options');
+            /* --- Drawer móvil --- */
+            function setDrawer(open) {
+                sidebar.classList.toggle('open', open);
+                sidebarOverlay.classList.toggle('show', open);
+                menuToggle.setAttribute('aria-expanded', String(open));
+                document.body.style.overflow = open ? 'hidden' : '';
+            }
 
-                // Cerrar todos los menús si se hace click fuera
-                if (!isDropdownBtn && e.target.closest('.post-dropdown') == null) {
-                    document.querySelectorAll('.post-dropdown.show').forEach(menu => {
-                        menu.classList.remove('show');
-                    });
-                    return;
-                }
-
-                // Si se hizo click en un botón, cerrar los demás y abrir el clickeado
-                if (isDropdownBtn) {
-                    const dropdown = isDropdownBtn.nextElementSibling;
-
-                    document.querySelectorAll('.post-dropdown.show').forEach(menu => {
-                        if (menu !== dropdown) {
-                            menu.classList.remove('show');
-                        }
-                    });
-
-                    dropdown.classList.toggle('show');
-                }
+            // El botón del header solo se muestra en móvil (abre/cierra el drawer)
+            menuToggle?.addEventListener('click', () => setDrawer(!sidebar.classList.contains('open')));
+            sidebarOverlay?.addEventListener('click', () => setDrawer(false));
+            window.addEventListener('resize', () => {
+                if (isDesktop() && sidebar.classList.contains('open')) setDrawer(false);
             });
 
-            /* ========== FEED: LIKES (Pulgar Azul) ========== */
+            /* --- Grupos colapsables (siempre inician abiertos) --- */
+            try { localStorage.removeItem('vh.navGroups'); } catch (e) {}
+
+            const setGroup = (group, collapsed) => {
+                group.classList.toggle('is-collapsed', collapsed);
+                group.querySelector('.nav-header').setAttribute('aria-expanded', String(!collapsed));
+            };
+
+            document.querySelectorAll('.nav-group').forEach(group => {
+                setGroup(group, false);
+                group.querySelector('.nav-header').addEventListener('click', () => {
+                    setGroup(group, !group.classList.contains('is-collapsed'));
+                });
+            });
+
+            /* --- Ítem activo: gana la ruta más específica --- */
+            const path = window.location.pathname.replace(/\/+$/, '') || '/';
+            let best = null;
+            document.querySelectorAll('.nav-item[data-route]').forEach(item => {
+                const route = item.dataset.route;
+                const match = route === '/' ? path === '/' : (path === route || path.startsWith(route + '/'));
+                if (match && (!best || route.length > best.dataset.route.length)) best = item;
+            });
+            if (best) {
+                best.classList.add('active');
+                best.setAttribute('aria-current', 'page');
+                const group = best.closest('.nav-group');
+                if (group) setGroup(group, false);
+            }
+
+            /* --- Cerrar drawer al navegar / con Escape --- */
+            sidebar.addEventListener('click', (e) => {
+                if (e.target.closest('.nav-item') && !isDesktop()) setDrawer(false);
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && sidebar.classList.contains('open')) setDrawer(false);
+            });
+
+            /* ========== FEED ========== */
+            const feedGrid = document.getElementById('feedGrid');
+            if (!feedGrid) return; // La vista está usando @section('content')
+
+            const feedEmpty = document.getElementById('feedEmpty');
+            const feedSearch = document.getElementById('feedSearch');
+            const filterChips = document.querySelectorAll('.feed-filter-chip');
+            const state = {
+                filter: 'all',
+                query: ''
+            };
+
+            const getPosts = () => Array.from(feedGrid.querySelectorAll('.post-card'));
+            const normalize = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+            /* --- Toast --- */
             const likeToast = document.getElementById('likeToast');
             const likeToastMsg = document.getElementById('likeToastMsg');
             let toastTimer;
 
-            function showLikeToast(message, isLiked) {
+            function showToast(message, active = true) {
                 likeToastMsg.textContent = message;
-                likeToast.style.background = isLiked ? 'var(--azul-like)' : '#64748b';
-                likeToast.querySelector('i').className = isLiked ? 'fas fa-thumbs-up' : 'far fa-thumbs-up';
+                likeToast.style.background = active ? 'var(--azul-like)' : '#64748b';
+                likeToast.querySelector('i').className = active ? 'fas fa-thumbs-up' : 'far fa-thumbs-up';
                 likeToast.classList.add('show');
                 clearTimeout(toastTimer);
                 toastTimer = setTimeout(() => likeToast.classList.remove('show'), 1800);
             }
 
-            document.querySelectorAll('.btn-like').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    const isLiked = this.classList.contains('liked');
-                    const icon = this.querySelector('i');
+            /* --- Contadores (chips, resumen, áreas) --- */
+            function updateCounts() {
+                const posts = getPosts();
+                const byType = {};
+                const byArea = {};
+                let likes = 0;
 
-                    if (isLiked) {
-                        this.classList.remove('liked');
-                        icon.className = 'far fa-thumbs-up';
-                        showLikeToast('Has quitado tu like', false);
-                    } else {
-                        this.classList.add('liked');
-                        icon.className = 'fas fa-thumbs-up';
-                        spawnLikeParticles(this);
-                        showLikeToast('¡Te gusta esta publicación!', true);
-                    }
-                    updateLikesCount(this.closest('.post-card-footer'), !isLiked);
+                posts.forEach(p => {
+                    byType[p.dataset.type] = (byType[p.dataset.type] || 0) + 1;
+                    byArea[p.dataset.area] = (byArea[p.dataset.area] || 0) + 1;
+                    likes += parseInt(p.querySelector('.btn-like')?.dataset.total || p.querySelector(
+                        '.likes-text')?.textContent.match(/\d+/)?.[0] || 0, 10);
                 });
-            });
 
-            function spawnLikeParticles(btn) {
-                const rect = btn.getBoundingClientRect();
-                const container = document.createElement('div');
-                container.className = 'like-particles';
-                container.style.left = rect.left + rect.width / 2 + 'px';
-                container.style.top = rect.top + rect.height / 2 + 'px';
-                document.body.appendChild(container);
+                document.querySelectorAll('[data-count-for]').forEach(el => {
+                    const key = el.dataset.countFor;
+                    el.textContent = key === 'all' ? posts.length : (byType[key] || 0);
+                });
+                document.querySelectorAll('[data-area-count]').forEach(el => {
+                    el.textContent = byArea[el.dataset.areaCount] || 0;
+                });
 
-                for (let i = 0; i < 6; i++) {
-                    const particle = document.createElement('span');
-                    particle.className = 'like-particle';
-                    particle.innerHTML = `<i class="fas fa-thumbs-up"></i>`;
-                    particle.style.setProperty('--dx', (Math.random() * 80 - 40) + 'px');
-                    particle.style.setProperty('--dy', (Math.random() * -80 - 20) + 'px');
-                    particle.style.animationDelay = (i * 0.05) + 's';
-                    container.appendChild(particle);
-                }
-                setTimeout(() => container.remove(), 900);
+                const set = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val;
+                };
+                set('statPosts', posts.length);
+                set('statAvisos', byType['aviso'] || 0);
+                set('statLikes', likes);
             }
 
-            function updateLikesCount(footer, increment) {
-                const likesInfo = footer?.querySelector('.post-likes-info span');
-                if (!likesInfo) return;
-                const match = likesInfo.textContent.match(/\d+/);
-                if (match) {
-                    let count = parseInt(match[0]);
-                    count = increment ? count + 1 : Math.max(0, count - 1);
-                    likesInfo.textContent = count + ' personas';
-                }
-            }
+            /* --- Filtros + búsqueda --- */
+            function applyFilters() {
+                const q = normalize(state.query.trim());
+                let visible = 0;
 
-            /* ========== FEED: FILTROS ========== */
-            const filterChips = document.querySelectorAll('.feed-filter-chip');
-            const feedPosts = document.querySelectorAll('.post-card[data-type]');
+                getPosts().forEach(post => {
+                    const matchType = state.filter === 'all' || post.dataset.type === state.filter;
+                    const matchText = !q || normalize(post.textContent).includes(q);
+                    const show = matchType && matchText;
+
+                    post.style.display = show ? '' : 'none';
+                    if (show) {
+                        post.style.animation = `feedFadeIn 0.4s ease-out ${visible * 0.05}s both`;
+                        visible++;
+                    } else {
+                        post.style.animation = '';
+                    }
+                });
+
+                feedEmpty.classList.toggle('show', visible === 0);
+            }
 
             filterChips.forEach(chip => {
                 chip.addEventListener('click', function() {
-                    filterChips.forEach(c => c.classList.remove('active'));
-                    this.classList.add('active');
-                    const filter = this.dataset.filter;
-                    feedPosts.forEach((post, index) => {
-                        if (filter === 'all' || post.dataset.type === filter) {
-                            post.style.display = '';
-                            post.style.animation =
-                                `feedFadeIn 0.4s ease-out ${index * 0.06}s both`;
-                        } else {
-                            post.style.display = 'none';
-                            post.style.animation = '';
-                        }
+                    filterChips.forEach(c => {
+                        c.classList.remove('active');
+                        c.setAttribute('aria-selected', 'false');
                     });
+                    this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
+                    state.filter = this.dataset.filter;
+                    applyFilters();
                 });
             });
 
-            /* ========== FEED: LIGHTBOX MEJORADO (Imágenes y Videos) ========== */
+            let searchTimer;
+            feedSearch?.addEventListener('input', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    state.query = this.value;
+                    applyFilters();
+                }, 160);
+            });
+
+            /* --- Menú de opciones --- */
+            function closeAllMenus(except = null) {
+                document.querySelectorAll('.post-dropdown.show').forEach(menu => {
+                    if (menu === except) return;
+                    menu.classList.remove('show');
+                    menu.previousElementSibling?.setAttribute('aria-expanded', 'false');
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                const optionsBtn = e.target.closest('.btn-options');
+                if (optionsBtn) {
+                    const dropdown = optionsBtn.nextElementSibling;
+                    closeAllMenus(dropdown);
+                    const isOpen = dropdown.classList.toggle('show');
+                    optionsBtn.setAttribute('aria-expanded', String(isOpen));
+                    return;
+                }
+
+                const actionBtn = e.target.closest('.post-dropdown [data-action]');
+                if (actionBtn) {
+                    handleMenuAction(actionBtn);
+                }
+                closeAllMenus();
+            });
+
+            function handleMenuAction(btn) {
+                const card = btn.closest('.post-card');
+                const action = btn.dataset.action;
+
+                if (action === 'edit') {
+                    showToast('Edición disponible próximamente', true);
+                }
+
+                if (action === 'pin') {
+                    const pinned = card.classList.toggle('is-pinned');
+                    btn.querySelector('.pin-label').textContent = pinned ? 'Quitar fijado' : 'Fijar';
+                    if (pinned) feedGrid.prepend(card);
+                    showToast(pinned ? 'Publicación fijada' : 'Publicación desfijada', pinned);
+                }
+
+                if (action === 'delete') {
+                    Swal.fire({
+                        title: '¿Eliminar publicación?',
+                        text: 'Esta acción no se puede deshacer.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor: '#64748b',
+                        reverseButtons: true,
+                    }).then(result => {
+                        if (!result.isConfirmed) return;
+                        card.classList.add('is-removing');
+                        setTimeout(() => {
+                            card.remove();
+                            updateCounts();
+                            applyFilters();
+                        }, 250);
+                    });
+                }
+            }
+
+            /* --- Likes --- */
+            feedGrid.addEventListener('click', (e) => {
+                const btn = e.target.closest('.btn-like');
+                if (!btn) return;
+
+                const liked = btn.classList.toggle('liked');
+                btn.setAttribute('aria-pressed', String(liked));
+                btn.querySelector('i').className = (liked ? 'fas' : 'far') + ' fa-thumbs-up';
+                btn.querySelector('.like-label').textContent = liked ? 'Te gusta' : 'Me gusta';
+
+                const text = btn.closest('.post-card-footer').querySelector('.likes-text');
+                const current = parseInt(text.textContent.match(/\d+/)?.[0] || 0, 10);
+                text.textContent = Math.max(0, current + (liked ? 1 : -1)) + ' personas';
+
+                showToast(liked ? '¡Te gusta esta publicación!' : 'Has quitado tu like', liked);
+                updateCounts();
+            });
+
+            /* --- Lightbox --- */
             const lightboxOverlay = document.getElementById('lightboxOverlay');
             const lightboxContent = document.getElementById('lightboxContent');
             const lightboxClose = document.getElementById('lightboxClose');
 
-            // Abrir lightbox para imágenes (individuales y galería)
-            document.querySelectorAll('.post-media[data-lightbox], .gallery-item[data-lightbox]').forEach(media => {
-                media.addEventListener('click', function() {
-                    const img = this.querySelector('img');
-                    if (img) {
-                        lightboxContent.innerHTML = `<img src="${img.src}" alt="${img.alt || 'Imagen'}" />`;
-                        lightboxOverlay.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                });
-            });
-
-            // Abrir lightbox para videos (reproductor a pantalla completa)
-            document.querySelectorAll('.post-video-wrapper').forEach(wrapper => {
-                wrapper.addEventListener('click', function() {
-                    const videoUrl = this.dataset.videoUrl;
-                    if (videoUrl) {
-                        lightboxContent.innerHTML = `<iframe src="${videoUrl}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;
-                        lightboxOverlay.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                });
-            });
-
-            lightboxClose?.addEventListener('click', cerrarLightbox);
-            lightboxOverlay?.addEventListener('click', function(e) {
-                if (e.target === lightboxOverlay) cerrarLightbox();
-            });
+            function openLightbox(html) {
+                lightboxContent.innerHTML = html;
+                lightboxOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                lightboxClose.focus();
+            }
 
             function cerrarLightbox() {
                 lightboxOverlay.classList.remove('active');
                 document.body.style.overflow = '';
                 setTimeout(() => {
-                    lightboxContent.innerHTML = ''; // Limpia el contenido
-                }, 400);
+                    lightboxContent.innerHTML = '';
+                }, 300);
             }
 
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && lightboxOverlay.classList.contains('active'))
-                    cerrarLightbox();
+            feedGrid.addEventListener('click', (e) => {
+                const media = e.target.closest('[data-lightbox]');
+                if (media) {
+                    const img = media.querySelector('img');
+                    if (img) openLightbox(`<img src="${img.src}" alt="${img.alt || 'Imagen'}" />`);
+                    return;
+                }
+                const video = e.target.closest('.post-video-wrapper');
+                if (video?.dataset.videoUrl) {
+                    openLightbox(
+                        `<iframe src="${video.dataset.videoUrl}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`
+                    );
+                }
             });
 
-            /* ========== FEED: FOLLETO ========== */
-            document.querySelectorAll('.post-folleto-card').forEach(folleto => {
-                folleto.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const name = this.querySelector('.folleto-info strong')
-                        ?.textContent || 'documento';
-                    Swal.fire({
-                        title: 'Descarga iniciada',
-                        text: `El archivo "${name.trim()}" se descargaría ahora.`,
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false,
-                        toast: true,
-                        position: 'top-end',
-                    });
+            feedGrid.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const target = e.target.closest('.post-video-wrapper, .post-folleto-card');
+                if (target) {
+                    e.preventDefault();
+                    target.click();
+                }
+            });
+
+            lightboxClose.addEventListener('click', cerrarLightbox);
+            lightboxOverlay.addEventListener('click', (e) => {
+                if (e.target === lightboxOverlay) cerrarLightbox();
+            });
+
+            /* --- Folleto --- */
+            feedGrid.addEventListener('click', (e) => {
+                const folleto = e.target.closest('.post-folleto-card');
+                if (!folleto) return;
+                const name = folleto.querySelector('.folleto-info strong')?.textContent.trim() || 'documento';
+                Swal.fire({
+                    title: 'Descarga iniciada',
+                    text: `El archivo "${name}" se descargaría ahora.`,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end',
                 });
             });
 
-            /* ========== FEED: LOAD MORE ========== */
+            /* --- Ver más --- */
             const btnLoadMore = document.getElementById('btnLoadMore');
             btnLoadMore?.addEventListener('click', function() {
                 this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
                 this.disabled = true;
                 setTimeout(() => {
                     this.innerHTML = '<i class="fas fa-check"></i> No hay más publicaciones';
-                    this.style.borderColor = '#10b981';
-                    this.style.color = '#10b981';
-                    this.style.background = '#f0fdf4';
+                    this.style.borderColor = '#059669';
+                    this.style.color = '#059669';
                     setTimeout(() => {
-                        this.innerHTML =
-                            '<i class="fas fa-chevron-down"></i> Ver más publicaciones';
+                        this.innerHTML = '<i class="fas fa-chevron-down"></i> Ver más publicaciones';
                         this.disabled = false;
                         this.style.borderColor = '';
                         this.style.color = '';
-                        this.style.background = '';
                     }, 2000);
                 }, 1200);
             });
 
-            /* ========== MODAL PUBLICAR ========== */
-            const modalPublicarOverlay = document.getElementById('modalPublicarOverlay');
-            const btnAbrirModalPublicar = document.getElementById('btnAbrirModalPublicar');
-            const btnCancelarPublicacion = document.getElementById('btnCancelarPublicacion');
+            /* --- Modal publicar --- */
+            const modalOverlay = document.getElementById('modalPublicarOverlay');
             const formPublicar = document.getElementById('formPublicar');
+            const archivoInput = document.getElementById('postArchivo');
+            const archivoHint = document.getElementById('archivoHint');
+            const hintDefault = archivoHint.textContent;
 
-            btnAbrirModalPublicar?.addEventListener('click', () => {
-                modalPublicarOverlay.classList.add('active');
+            function abrirModal() {
+                modalOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
-            });
-
-            function cerrarModalPublicar() {
-                modalPublicarOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-                formPublicar?.reset();
+                setTimeout(() => document.getElementById('postTipo').focus(), 150);
             }
 
-            btnCancelarPublicacion?.addEventListener('click', cerrarModalPublicar);
-            modalPublicarOverlay?.addEventListener('click', function(e) {
-                if (e.target === modalPublicarOverlay) cerrarModalPublicar();
+            function cerrarModal() {
+                modalOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+                formPublicar.reset();
+                archivoHint.textContent = hintDefault;
+            }
+
+            document.getElementById('btnAbrirModalPublicar')?.addEventListener('click', abrirModal);
+            document.getElementById('btnCancelarPublicacion')?.addEventListener('click', cerrarModal);
+            document.getElementById('btnCerrarModal')?.addEventListener('click', cerrarModal);
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) cerrarModal();
             });
 
-            formPublicar?.addEventListener('submit', function(e) {
+            archivoInput.addEventListener('change', function() {
+                const n = this.files.length;
+                archivoHint.textContent = n ?
+                    (n === 1 ? this.files[0].name : `${n} archivos seleccionados`) :
+                    hintDefault;
+            });
+
+            formPublicar.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const tipo = document.getElementById('postTipo').value;
                 const area = document.getElementById('postArea').value;
-                const titulo = document.getElementById('postTitulo').value;
-                const contenido = document.getElementById('postContenido').value;
+                const titulo = document.getElementById('postTitulo').value.trim();
+                const contenido = document.getElementById('postContenido').value.trim();
 
                 if (!tipo || !area || !titulo || !contenido) {
                     Swal.fire({
@@ -1541,14 +2560,39 @@
                     toast: true,
                     position: 'top-end',
                 });
-                cerrarModalPublicar();
+                cerrarModal();
             });
 
-            /* ========== ANIMACIÓN INICIAL ========== */
-            feedPosts.forEach((post, index) => {
-                post.style.animation = `feedFadeIn 0.5s ease-out ${index * 0.08}s both`;
+            /* --- Composer rápido: abre el modal con el tipo preseleccionado --- */
+            document.querySelectorAll('[data-compose]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    abrirModal();
+                    if (btn.dataset.compose) document.getElementById('postTipo').value = btn.dataset.compose;
+                });
             });
 
+            /* --- Fecha de hoy --- */
+            const feedDate = document.querySelector('#feedDate span');
+            if (feedDate) {
+                const txt = new Date().toLocaleDateString('es-MX', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long'
+                });
+                feedDate.textContent = txt.charAt(0).toUpperCase() + txt.slice(1);
+            }
+
+            /* --- Escape cierra lo que esté abierto --- */
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape') return;
+                closeAllMenus();
+                if (lightboxOverlay.classList.contains('active')) cerrarLightbox();
+                if (modalOverlay.classList.contains('active')) cerrarModal();
+            });
+
+            /* --- Init --- */
+            updateCounts();
+            applyFilters();
         });
     </script>
 
@@ -1556,3 +2600,14 @@
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+

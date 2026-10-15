@@ -12,35 +12,33 @@ class ReimbursementController extends Controller
 {
     public function index()
     {
-        // 1. Añadimos la relación 'expenseAdvance' al Query
         $reembolsos = ExpenseClaim::with(['beneficiary', 'expenseAdvance'])
-                    ->orderBy('created_at', 'desc')
-                    ->get();
+                        ->orderBy('created_at', 'desc')
+                        ->get();
 
         $requestsData = $reembolsos->map(function ($req) {
             return [
-                'id'            => $req->id,
-                'folioP'        => $req->folio_system,
-                'folioU'        => $req->folio_user ?? 'N/A',
-                'advance_id'    => $req->expense_advance_id,
-                'advance_folio' => $req->expenseAdvance ? $req->expenseAdvance->folio_system : null,
+                'id'             => $req->id,
+                'folioP'         => $req->folio_system,
+                'folioU'         => $req->folio_user ?? 'N/A',
+                'advance_id'     => $req->expense_advance_id,
+                'advance_folio'  => $req->expenseAdvance ? $req->expenseAdvance->folio_system : null,
                 'advance_status' => $req->expenseAdvance ? $req->expenseAdvance->status : null,
-                'fecha'         => \Carbon\Carbon::parse($req->claim_date)->format('d/m/Y'),
-                'nombre'        => $req->beneficiary ? $req->beneficiary->name : 'Usuario Desconocido',
-                'motivo'        => $req->motive,
-                'depto'         => $req->area ?? 'Sin Asignar',
-                'amount'        => (float) $req->total_amount,
-                'status'        => $req->status_review,
-                'pago'          => $req->status_payment,
-                'tipo'          => $req->request_type
+                'fecha'          => \Carbon\Carbon::parse($req->claim_date)->format('d/m/Y'),
+                'nombre'         => $req->beneficiary ? $req->beneficiary->name : 'Usuario Desconocido',
+                'motivo'         => $req->motive,
+                'depto'          => $req->area ?? 'Sin Asignar',
+                'amount'         => (float) $req->total_amount,
+                'status'         => $req->status_review,
+                'aprobacion'     => $req->status_approval,
+                'status_payment' => $req->status_payment ?? 'no_aplica',
+                'tipo'           => $req->request_type
             ];
         })->values()->toArray();
 
-        // 2. Traer el RFC activo
         $node = FslNode::where('is_live', true)->first();
         $rfcEmpresa = $node ? $node->g_id : 'NO CONFIGURADO';
 
-        // 3. Traer Usuarios
         $usersList = User::with(['employee.area'])->active()->get()->map(function($u) {
             return [
                 'id'     => $u->id,
@@ -50,7 +48,6 @@ class ReimbursementController extends Controller
             ];
         })->values()->toArray();
 
-        // 4. Traer Catálogo de Centros de Costo con Proyectos Hijos
         $costCenters = CostCenter::with(['projects' => function($q) {
             $q->where('is_active', true);
         }])->where('is_active', true)->get()->map(function($cc) {
@@ -59,21 +56,22 @@ class ReimbursementController extends Controller
                 'code' => $cc->code,
                 'name' => $cc->name,
                 'projects' => $cc->projects->map(function($p) {
-                    return [
-                        'id'   => $p->id,
-                        'code' => $p->code,
-                        'name' => $p->name,
-                    ];
+                    return ['id' => $p->id, 'code' => $p->code, 'name' => $p->name];
                 })->toArray()
             ];
         })->toArray();
 
-        return view('modules.administration.expense-claims.reimbursements', [
+        $approvers = User::active()->whereHas('directPermissions', function($query) {
+            $query->where('name', 'aprobar_anticipo');
+        })->select('id', 'name')->get()->toArray();
+
+        return view('modules.administration.expense_claims.reimbursements', [
             'reembolsos'   => $reembolsos,
             'requestsData' => $requestsData,
             'rfcEmpresa'   => $rfcEmpresa,
             'usersList'    => $usersList,
-            'costCenters'  => $costCenters // 👈 Inyectamos a la vista
+            'costCenters'  => $costCenters,
+            'approvers'    => $approvers
         ]);
     }
 }
