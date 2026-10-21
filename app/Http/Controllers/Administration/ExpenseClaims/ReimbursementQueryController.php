@@ -15,6 +15,7 @@ class ReimbursementQueryController extends Controller
             'lines',
             'beneficiary.employee.area',
             'creator',
+            'expenseAdvance',
             'logs' => function($q) {
                 $q->with('user')->orderBy('created_at', 'desc');
             }
@@ -51,3 +52,14 @@ class ReimbursementQueryController extends Controller
         ]);
     }
 }
+
+
+
+
+
+
+
+
+
+
+

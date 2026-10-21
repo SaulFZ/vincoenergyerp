@@ -68,14 +68,24 @@
                         <i class="bx bx-plus-circle"></i> Nueva Solicitud
                     </button>
 
-                    <button class="btn-notification-bell" onclick="window.toggleAdvancesDrawer()" aria-label="Ver historial de anticipos" title="Historial de Anticipos">
-                        <i class="bx bx-bell"></i>
-                        <span id="advance-bell-badge" class="notification-badge hidden">0</span>
-                    </button>
+                    @if(!empty($userPermissions['ver_notificaciones_anticipos']))
+                        <button id="btn-notification-bell" class="btn-notification-bell" onclick="window.toggleAdvancesDrawer()" aria-label="Ver historial de anticipos" title="Historial de Anticipos">
+                            <i class="bx bx-bell"></i>
+                            <span id="advance-bell-badge" class="notification-badge hidden">0</span>
+                        </button>
+                    @endif
                 </div>
             </div>
 
-            <div class="table-scroll">
+            <div class="table-scroll" id="main-table-scroll">
+                {{-- Overlay suave de actualización sin recargar la página --}}
+                <div id="table-updating-overlay" class="table-updating-overlay" aria-hidden="true">
+                    <div class="table-updating-pill">
+                        <i class="bx bx-loader-alt bx-spin"></i>
+                        <span>Actualizando...</span>
+                    </div>
+                </div>
+
                 <table class="data-table table-animated" id="main-data-table">
                     <thead>
                         <tr>
@@ -90,6 +100,7 @@
                             <th>Anticipo</th>
                             <th>Revisión</th>
                             <th>Estatus</th>
+                            <th>Conciliación</th>
                             <th class="text-right">Acciones</th>
                         </tr>
                     </thead>
@@ -221,7 +232,7 @@
                         <h4 class="fh-section-title"><i class="bx bx-slider-alt"></i> Configuración del Trámite</h4>
                         <div class="fh-row">
 
-                            <div class="col-12">
+                            <div class="col-15">
                                 <label class="input-label">Tipo de Solicitud <span class="req">*</span></label>
                                 <div class="input-group">
                                     <i class="bx bx-layer field-icon"></i>
@@ -231,20 +242,6 @@
                                         <option value="Comprobacion Electronica">Comprobación Electrónica</option>
                                         <option value="Comprobacion Directa">Comprobación Directa</option>
                                     </select>
-                                </div>
-                            </div>
-
-                            <div id="container-excedente" class="col-auto hidden">
-                                <label class="input-label">¿Excedente de anticipo?</label>
-                                <div class="radio-pill-group">
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="is_surplus" value="1" class="modal-focusable" onchange="window.handleTipoSolicitudChange()">
-                                        <i class="bx bx-check"></i> Sí
-                                    </label>
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="is_surplus" value="0" class="modal-focusable" onchange="window.handleTipoSolicitudChange()" checked>
-                                        <i class="bx bx-x"></i> No
-                                    </label>
                                 </div>
                             </div>
 
@@ -295,7 +292,7 @@
                         <div class="fh-row">
 
                             <div class="col-auto">
-                                <label class="input-label">¿Solicitar para otro?</label>
+                                <label class="input-label">Generar para otro?</label>
                                 <div class="radio-pill-group">
                                     <label class="radio-pill-label">
                                         <input type="radio" name="is_delegated" value="1" class="modal-focusable" onchange="window.handleDelegationToggle()">
@@ -322,7 +319,7 @@
                                 <label class="input-label">Área de Adscripción</label>
                                 <div class="input-group">
                                     <i class="bx bx-buildings field-icon"></i>
-                                    <input type="text" id="modal-depto" value="Desarrollo de Software" class="input-field" readonly>
+                                    <input type="text" id="modal-depto" value="{{ Auth::user()->employee->area->name ?? 'Sin Asignar' }}" class="input-field" readonly>
                                 </div>
                             </div>
 
@@ -515,32 +512,40 @@
                             <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva" class="sum-val">$0.00</span></div>
                             <div class="summary-row"><span class="sum-lbl">I.S.H. y Retenciones:</span><span id="sum-ish" class="sum-val">$0.00</span></div>
                             <div class="sum-total-row">
-                                <span class="sum-total-lbl">TOTAL A REEMBOLSAR</span>
+                                <span class="sum-total-lbl" id="sum-total-lbl">TOTAL COMPROBADO</span>
                                 <span id="sum-total" class="sum-total-val" data-value="0">$0.00</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- ★ SECCIÓN SOBRANTE DEL ANTICIPO ★ --}}
+                {{-- ★ SECCIÓN SOBRANTE DEL ANTICIPO (A favor de la empresa: Anticipo > Comprobado) ★ --}}
                 <div class="leftover-section hidden" id="leftover-section">
-                    <div class="leftover-question-bar">
+                    <div class="leftover-question-bar bar-sobrante">
                         <div class="leftover-question-left">
-                            <i class="bx bx-receipt"></i>
+                            <i class="bx bx-layer-minus"></i>
                             <div>
-                                <strong>¿Existe sobrante del anticipo?</strong>
-                                <small>Si el monto comprobado es menor al anticipo entregado, activa esta opción y registra la devolución.</small>
+                                <strong>Sobrante del anticipo detectado (A devolver a la empresa)</strong>
+                                <small id="leftover-stage-subtitle">
+                                    El monto comprobado es menor al anticipo entregado. La devolución y carga del comprobante PDF se habilitarán una vez que el trámite sea aprobado.
+                                </small>
                             </div>
                         </div>
-                        <div class="radio-pill-group">
-                            <label class="radio-pill-label">
-                                <input type="radio" name="has_leftover" value="1" class="modal-focusable" onchange="window.toggleLeftoverSection()">
-                                <i class="bx bx-check"></i> Sí
-                            </label>
-                            <label class="radio-pill-label">
-                                <input type="radio" name="has_leftover" value="0" class="modal-focusable" onchange="window.toggleLeftoverSection()" checked>
-                                <i class="bx bx-x"></i> No
-                            </label>
+                    </div>
+
+                    <div id="leftover-preapproval-banner" class="leftover-body">
+                        <div class="leftover-preapproval-box">
+                            <div class="leftover-preapproval-info">
+                                <i class="bx bx-lock-alt"></i>
+                                <div>
+                                    <div class="leftover-preapproval-title">Devolución en espera de Aprobación Final</div>
+                                    <div class="leftover-preapproval-desc">Para garantizar que transfieras el importe exacto, espera a que el revisor y el aprobador autoricen tus facturas.</div>
+                                </div>
+                            </div>
+                            <div class="leftover-preapproval-amount">
+                                <span>Sobrante estimado a devolver:</span>
+                                <strong id="leftover-preview-amount">$0.00</strong>
+                            </div>
                         </div>
                     </div>
 
@@ -552,42 +557,99 @@
                                     <label class="input-label">Método de Devolución <span class="req">*</span></label>
                                     <div class="input-group">
                                         <i class="bx bx-credit-card field-icon"></i>
-                                        <select id="leftover-method" class="input-field modal-focusable">
+                                        <select id="leftover-method" class="input-field leftover-stage-input">
                                             <option value="Transferencia" selected>Transferencia Bancaria</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div class="leftover-field">
-                                    <label class="input-label">Monto del Sobrante (MXN) <span class="req">*</span></label>
+                                    <label class="input-label">Monto del Sobrante a Devolver (MXN)</label>
                                     <div class="input-group">
                                         <i class="bx bx-dollar field-icon"></i>
-                                        <input type="number" id="leftover-amount" class="input-field modal-focusable leftover-amount-locked" step="0.01" min="0" placeholder="0.00" readonly tabindex="-1">
+                                        <input type="number" id="leftover-amount" class="input-field leftover-amount-locked" step="0.01" min="0" placeholder="0.00" readonly tabindex="-1">
                                     </div>
                                     <small style="display:block; margin-top:.35rem; font-size:.7rem; color:var(--secondary-lighter);">
-                                        <i class="bx bx-lock-alt"></i> Cálculo automático: Monto del anticipo − Total a reembolsar
+                                        <i class="bx bx-lock-alt"></i> Monto definitivo autorizado: Anticipo − Total comprobado
                                     </small>
                                 </div>
 
                                 <div class="leftover-field full">
-                                    <label class="input-label">Notas / Observaciones</label>
+                                    <label class="input-label">Notas / Referencia Bancaria</label>
                                     <div class="input-group">
-                                        <textarea id="leftover-notes" class="input-field modal-focusable" placeholder="Ej. Devolución vía transferencia a cuenta Banorte, referencia 0012345..."></textarea>
+                                        <textarea id="leftover-notes" class="input-field leftover-stage-input" placeholder="Ej. Devolución vía transferencia a cuenta Banorte, referencia 0012345..."></textarea>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="leftover-evidence">
                                 <label class="input-label">Evidencia de Devolución (PDF) <span class="req">*</span></label>
-                                <div class="leftover-evidence-panel" id="leftover-evidence-panel" onclick="if(window.isFormEditable){document.getElementById('leftover-proof-upload').click();}">
+                                <div class="leftover-evidence-panel" id="leftover-evidence-panel" onclick="if(window.isLeftoverEditable){document.getElementById('leftover-proof-upload').click();}">
                                     <i class="bx bxs-file-pdf leftover-ev-icon" id="leftover-ev-icon"></i>
                                     <h4 class="leftover-ev-title" id="leftover-ev-title">Comprobante de Devolución</h4>
-                                    <p class="leftover-ev-desc" id="leftover-ev-desc">Sube el comprobante (transferencia, ficha de depósito, etc.). PDF, máx. 10MB.</p>
+                                    <p class="leftover-ev-desc" id="leftover-ev-desc">Sube el comprobante de transferencia o ficha de depósito (PDF, máx. 10MB).</p>
                                     <button type="button" class="btn btn-secondary hidden" id="leftover-browse-btn" onclick="event.stopPropagation(); document.getElementById('leftover-proof-upload').click()">
-                                        <i class="bx bx-folder-plus"></i> <span id="leftover-browse-text">Examinar archivos</span>
+                                        <i class="bx bx-folder-plus"></i> <span id="leftover-browse-text">Examinar archivo PDF</span>
                                     </button>
                                     <input type="file" id="leftover-proof-upload" accept=".pdf" class="hidden">
                                     <div id="leftover-proof-list" class="evidence-list" onclick="event.stopPropagation()"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ★ SECCIÓN EXCEDENTE DEL ANTICIPO (A favor del colaborador: Comprobado > Anticipo) ★ --}}
+                <div class="leftover-section hidden" id="excess-section" style="margin-top: 1.25rem;">
+                    <div class="leftover-question-bar bar-excedente">
+                        <div class="leftover-question-left">
+                            <i class="bx bx-trending-up"></i>
+                            <div>
+                                <strong>Excedente a favor del colaborador detectado</strong>
+                                <small>El monto comprobado supera al anticipo entregado. La diferencia se reembolsará dentro de este mismo trámite una vez aprobado.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="leftover-body" id="excess-body">
+                        <div class="leftover-grid">
+                            <div class="leftover-fields">
+                                <div class="leftover-field">
+                                    <label class="input-label">Método de Reembolso de Excedente</label>
+                                    <div class="input-group">
+                                        <i class="bx bx-credit-card field-icon"></i>
+                                        <select id="excess-method" class="input-field modal-focusable">
+                                            <option value="Transferencia" selected>Transferencia Bancaria</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="leftover-field">
+                                    <label class="input-label">Monto del Excedente a Reembolsar (MXN)</label>
+                                    <div class="input-group">
+                                        <i class="bx bx-dollar field-icon"></i>
+                                        <input type="number" id="excess-amount" class="input-field leftover-amount-locked" step="0.01" min="0" placeholder="0.00" readonly tabindex="-1">
+                                    </div>
+                                    <small style="display:block; margin-top:.35rem; font-size:.7rem; color:var(--secondary-lighter);">
+                                        <i class="bx bx-lock-alt"></i> Cálculo automático: Total comprobado − Monto del anticipo
+                                    </small>
+                                </div>
+
+                                <div class="leftover-field full">
+                                    <label class="input-label">Comentarios / Cuenta Destino (Opcional)</label>
+                                    <div class="input-group">
+                                        <textarea id="excess-notes" class="input-field modal-focusable" placeholder="Ej. Solicito depósito de diferencia en cuenta de nómina..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="leftover-evidence">
+                                <label class="input-label">Comprobante de Pago de Tesorería</label>
+                                <div class="leftover-evidence-panel readonly-mode" id="excess-evidence-panel">
+                                    <i class="bx bx-time-five leftover-ev-icon" id="excess-ev-icon"></i>
+                                    <h4 class="leftover-ev-title" id="excess-ev-title">Pendiente de Liquidación por Tesorería</h4>
+                                    <p class="leftover-ev-desc" id="excess-ev-desc">Una vez aprobada la comprobación, Tesorería adjuntará aquí el comprobante del pago del excedente.</p>
+                                    <div id="excess-proof-list" class="evidence-list" onclick="event.stopPropagation()"></div>
                                 </div>
                             </div>
                         </div>
@@ -611,6 +673,10 @@
                     <button type="button" class="btn btn-fail-solid" onclick="window.processEvaluation('rechazado')"><i class="bx bx-x"></i> Rechazar</button>
                     <button type="button" class="btn btn-secondary btn-validate-special" id="btn-eval-validate" onclick="window.processEvaluation('validado')"><i class="bx bx-list-check"></i> Validar</button>
                     <button type="button" class="btn btn-ok-solid" id="btn-eval-approve" onclick="window.processEvaluation('aprobado')"><i class="bx bx-check-double"></i> Aprobar</button>
+                </div>
+                <div class="modal-footer-right hidden" id="footer-leftover">
+                    <button type="button" class="btn btn-cancel" onclick="window.closeModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="window.submitLeftoverProof()"><i class="bx bx-upload"></i> Enviar Comprobante de Devolución</button>
                 </div>
             </div>
         </div>
@@ -802,11 +868,17 @@
 
 <script>
     /* ==========================================================================
-       ── 1. VARIABLES GLOBALES Y ESTADO ──
+       ── 1. VARIABLES GLOBALES, PERMISOS Y ESTADO ──
        ========================================================================== */
     const rfcEmpresa = "{{ $rfcEmpresa }}";
-    const companyEmployees = {!! json_encode($usersList ?? '[]') !!};
-    const costCentersData = {!! json_encode($costCenters ?? '[]') !!};
+    const companyEmployees = {!! json_encode($usersList ?? []) !!};
+    const costCentersData = {!! json_encode($costCenters ?? []) !!};
+    let userPermissions = {!! json_encode($userPermissions ?? [
+        'validar_solicitud' => false,
+        'aprobar_solicitud' => false,
+        'ver_todo_solicitudes' => false,
+        'ver_notificaciones_anticipos' => false,
+    ]) !!};
 
     const sessionUser = {
         id: {{ Auth::id() ?? 1 }},
@@ -816,16 +888,18 @@
     };
 
     let currentActiveClaimId = null;
+    let currentClaimApprovalStatus = 'en_espera';
     let isEditMode = false;
     let tempSatData = null;
 
-    // ★ Bandera global de modo editable (crear/corregir/borrador)
+    // ★ Banderas globales de edición
     window.isFormEditable = false;
+    window.isLeftoverEditable = false;
 
-    // ★ SOBRANTE ★
+    // ★ SOBRANTE Y EXCEDENTE ★
     let leftoverProofFile = null;
     let existingLeftoverProofPath = null;
-    let removeLeftoverProofFlag = false;
+    let existingExcessProofPath = null;
     let currentAdvanceAmount = 0;
     window.advanceAmountsMap = {};
     const maxLeftoverSize = 10 * 1024 * 1024;
@@ -846,12 +920,38 @@
     document.getElementById('modal-fecha-hoy').textContent = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     /* ==========================================================================
-       ── 2. UTILIDADES Y ALERTAS ──
+       ── 2. UTILIDADES, PERMISOS Y RECARGA SILENCIOSA DE TABLA ──
        ========================================================================== */
+    window.normalizeAreaName = function(str) {
+        return String(str || '').trim().toLowerCase();
+    };
+
+    window.canUserValidateClaim = function(req) {
+        if (!req) return false;
+        if (typeof req.can_validate === 'boolean') return req.can_validate;
+        const statusReview = req.status || req.status_review;
+        if (!userPermissions.validar_solicitud || statusReview !== 'pendiente') return false;
+        if (userPermissions.ver_todo_solicitudes) return true;
+        const claimArea = req.depto || req.area || (req.beneficiary?.employee?.area?.name ?? '');
+        return window.normalizeAreaName(claimArea) === window.normalizeAreaName(sessionUser.depto);
+    };
+
+    window.canUserApproveClaim = function(req) {
+        if (!req) return false;
+        if (typeof req.can_approve === 'boolean') return req.can_approve;
+        const statusReview   = req.status || req.status_review;
+        const statusApproval = req.aprobacion || req.status_approval;
+        if (!userPermissions.aprobar_solicitud || statusReview !== 'validado' || statusApproval !== 'en_revision') {
+            return false;
+        }
+        const claimArea = req.depto || req.area || (req.beneficiary?.employee?.area?.name ?? '');
+        return window.normalizeAreaName(claimArea) === window.normalizeAreaName(sessionUser.depto);
+    };
+
     window.showAlert = function(msg, type = 'success') {
         const titles = { 'success': '¡Operación Exitosa!', 'error': 'Error en la operación', 'warning': 'Atención Requerida', 'info': 'Información' };
         const colors = { 'success': '#2d7d46', 'error': '#b91c1c', 'warning': '#b45309', 'info': '#1d4ed8' };
-        Swal.fire({
+        return Swal.fire({
             title: `<span style="font-family:'Poppins', sans-serif;">${titles[type]}</span>`,
             html: `<span style="font-family:'Poppins', sans-serif; font-size:14px; color:#64748b;">${msg}</span>`,
             icon: type,
@@ -870,17 +970,44 @@
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
     };
 
+    // ★ Actualiza los datos de la tabla con overlay oscuro "Actualizando..." sin parpadear ★
+    window.refreshTableData = async function() {
+        const overlay = document.getElementById('table-updating-overlay');
+        if (overlay) overlay.classList.add('active');
+
+        const minWait = new Promise(resolve => setTimeout(resolve, 420));
+
+        try {
+            const response = await fetch(`{{ route('expense-claims.reimbursements') }}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            await minWait;
+
+            if (data && data.success && Array.isArray(data.requestsData)) {
+                requests = data.requestsData;
+                if (data.userPermissions) {
+                    userPermissions = data.userPermissions;
+                }
+                window.renderDashboard(true);
+            }
+            if (userPermissions.ver_notificaciones_anticipos) {
+                window.fetchAdvancesHistory(true);
+            }
+        } catch (err) {
+            console.error('Error al sincronizar la tabla:', err);
+        } finally {
+            if (overlay) overlay.classList.remove('active');
+        }
+    };
+
     /* ==========================================================================
        ── 2.1. VISOR DE PDFs EN VENTANA EMERGENTE ──
        ========================================================================== */
-
-    /**
-     * Abre una ventana emergente (movible a otro monitor) que muestra los PDFs
-     * con navegación Anterior / Siguiente.
-     * @param {Array<{url:string, name:string}>} items - PDFs a mostrar
-     * @param {number} startIndex - Índice inicial
-     * @param {string} title - Título de la ventana
-     */
     window.openPdfViewerItems = function(items, startIndex = 0, title = 'Visor de PDF') {
         if (!items || items.length === 0) {
             window.showAlert('No hay archivos PDF para visualizar.', 'warning');
@@ -973,7 +1100,6 @@
         w.document.close();
     };
 
-    /** Abre el visor con las facturas (existentes + nuevas) */
     window.openEvidenceViewer = function(startIndex) {
         const items = [];
 
@@ -994,7 +1120,6 @@
         window.openPdfViewerItems(items, startIndex || 0, 'Facturas adjuntas');
     };
 
-    /** Abre el visor con el comprobante de devolución (sobrante) */
     window.openLeftoverViewer = function() {
         const items = [];
 
@@ -1015,58 +1140,103 @@
         window.openPdfViewerItems(items, 0, 'Comprobante de Devolución');
     };
 
-    /* ==========================================================================
-       ── 2.2. SOBRANTE DEL ANTICIPO ──
-       ========================================================================== */
+    window.openExcessViewer = function() {
+        if (!existingExcessProofPath) return;
+        window.openPdfViewerItems([{
+            url: `{{ url('administration/expense-claims/evidence/view') }}?path=${encodeURIComponent(existingExcessProofPath)}`,
+            name: existingExcessProofPath.split('/').pop()
+        }], 0, 'Comprobante de Pago de Excedente');
+    };
 
+    /* ==========================================================================
+       ── 2.2. CONCILIACIÓN DE DIFERENCIAS: SOBRANTE Y EXCEDENTE ──
+       ========================================================================== */
     window.isComprobacionType = function() {
         const tipo = document.getElementById('modal-tipo-solicitud').value;
         return tipo === 'Comprobacion Electronica' || tipo === 'Comprobacion Directa';
     };
 
-    window.updateLeftoverVisibility = function() {
-        const section = document.getElementById('leftover-section');
-        if (!section) return;
-
-        if (window.isComprobacionType()) {
-            section.classList.remove('hidden');
-        } else {
-            section.classList.add('hidden');
-            document.querySelector('input[name="has_leftover"][value="0"]').checked = true;
-            document.getElementById('leftover-body').classList.add('hidden');
-        }
+    let excessAlertTimer = null;
+    let excessAlertShownKey = null;
+    window.resetExcessAlert = function() {
+        clearTimeout(excessAlertTimer);
+        excessAlertTimer = null;
+        excessAlertShownKey = null;
     };
-
-    window.toggleLeftoverSection = function() {
-        const checked = document.querySelector('input[name="has_leftover"]:checked');
-        const isYes = checked && checked.value === '1';
-        const body = document.getElementById('leftover-body');
-        if (!body) return;
-        body.classList.toggle('hidden', !isYes);
-
-        if (isYes) {
-            window.recalcLeftover();
-        }
+    window.scheduleExcessAlert = function() {
+        clearTimeout(excessAlertTimer);
+        const notify = () => {
+            excessAlertTimer = null;
+            const modal = document.getElementById('reimbursement-modal');
+            const section = document.getElementById('excess-section');
+            const amount = parseFloat(document.getElementById('excess-amount').value) || 0;
+            const key = String(currentActiveClaimId || 'nuevo') + ':' + document.getElementById('modal-advance-id').value;
+            if (!modal || modal.classList.contains('hidden') || !section || section.classList.contains('hidden') || !window.isComprobacionType() || amount <= 0 || excessAlertShownKey === key) return;
+            if (Swal.isVisible()) {
+                excessAlertTimer = setTimeout(notify, 350);
+                return;
+            }
+            excessAlertShownKey = key;
+            Swal.fire({
+                icon: 'info',
+                title: 'Excedente detectado',
+                text: 'El monto comprobado supera al anticipo por ' + window.fmt(amount) + '. Esta diferencia está a favor del colaborador y se reembolsará dentro de este mismo trámite una vez aprobado.',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#152845',
+                iconColor: '#20406d'
+            });
+        };
+        excessAlertTimer = setTimeout(notify, 600);
     };
 
     window.recalcLeftover = function() {
-        const amountInput = document.getElementById('leftover-amount');
-        if (!amountInput) return;
+        const leftoverSection   = document.getElementById('leftover-section');
+        const excessSection     = document.getElementById('excess-section');
+        const leftoverInput     = document.getElementById('leftover-amount');
+        const leftoverPreview   = document.getElementById('leftover-preview-amount');
+        const preApprovalBanner = document.getElementById('leftover-preapproval-banner');
+        const leftoverBody      = document.getElementById('leftover-body');
+        const excessInput       = document.getElementById('excess-amount');
 
-        if (!window.isComprobacionType()) {
-            amountInput.value = '';
+        if (!leftoverSection || !excessSection) return;
+
+        if (!window.isComprobacionType() || currentAdvanceAmount <= 0) {
+            window.resetExcessAlert();
+            leftoverSection.classList.add('hidden');
+            excessSection.classList.add('hidden');
+            if (leftoverInput) leftoverInput.value = '';
+            if (excessInput) excessInput.value = '';
             return;
         }
 
-        const totalReembolso = parseFloat(document.getElementById('sum-total').getAttribute('data-value')) || 0;
-        const advanceAmt = parseFloat(currentAdvanceAmount) || 0;
+        const totalComprobado = parseFloat(document.getElementById('sum-total').getAttribute('data-value')) || 0;
+        const advanceAmt      = parseFloat(currentAdvanceAmount) || 0;
+        const diff            = parseFloat((advanceAmt - totalComprobado).toFixed(2));
 
-        const leftover = advanceAmt - totalReembolso;
+        if (diff >= 0) window.resetExcessAlert();
 
-        if (advanceAmt > 0 && leftover > 0) {
-            amountInput.value = leftover.toFixed(2);
+        if (diff > 0) {
+            leftoverSection.classList.remove('hidden');
+            excessSection.classList.add('hidden');
+            if (leftoverInput) leftoverInput.value = diff.toFixed(2);
+            if (leftoverPreview) leftoverPreview.textContent = window.fmt(diff);
+            if (excessInput) excessInput.value = '';
+
+            const isApproved = (currentClaimApprovalStatus === 'aprobado');
+            if (preApprovalBanner) preApprovalBanner.classList.toggle('hidden', isApproved);
+            if (leftoverBody) leftoverBody.classList.toggle('hidden', !isApproved);
+        } else if (diff < 0) {
+            leftoverSection.classList.add('hidden');
+            if (leftoverInput) leftoverInput.value = '';
+
+            excessSection.classList.remove('hidden');
+            if (excessInput) excessInput.value = Math.abs(diff).toFixed(2);
+            window.scheduleExcessAlert();
         } else {
-            amountInput.value = '';
+            leftoverSection.classList.add('hidden');
+            excessSection.classList.add('hidden');
+            if (leftoverInput) leftoverInput.value = '';
+            if (excessInput) excessInput.value = '';
         }
     };
 
@@ -1101,7 +1271,7 @@
 
     window.procesarArchivoLeftover = function(file) {
         if (!file) return;
-        if (!window.isFormEditable) return;
+        if (!window.isLeftoverEditable) return;
         if (file.type !== 'application/pdf') { window.showAlert('Solo se permiten archivos PDF.', 'warning'); return; }
         if (file.size > maxLeftoverSize) { window.showAlert('El archivo excede el límite de 10MB.', 'error'); return; }
         leftoverProofFile = file;
@@ -1110,12 +1280,6 @@
 
     window.removeLeftoverFile = function() {
         leftoverProofFile = null;
-        window.renderLeftoverFile();
-    };
-
-    window.removeExistingLeftoverProof = function() {
-        existingLeftoverProofPath = null;
-        removeLeftoverProofFlag = true;
         window.renderLeftoverFile();
     };
 
@@ -1131,30 +1295,29 @@
         const panelEl = document.getElementById('leftover-evidence-panel');
         if (!list) return;
 
-        const editable = !!window.isFormEditable;
+        const editable = !!window.isLeftoverEditable;
         const hasNew = !!leftoverProofFile;
         const hasExisting = !!existingLeftoverProofPath;
 
-        // Panel: modo read-only
         if (panelEl) panelEl.classList.toggle('readonly-mode', !editable);
 
         if (!hasNew && !hasExisting) {
             if (titleEl) titleEl.textContent = 'Comprobante de Devolución';
             if (descEl) descEl.textContent = editable
                 ? 'Sube el comprobante (transferencia, ficha de depósito, etc.). PDF, máx. 10MB.'
-                : 'Sin comprobante adjunto en esta solicitud.';
+                : 'Aún no se ha adjuntado el comprobante de devolución.';
             list.innerHTML = '';
             return;
         }
 
         if (titleEl) titleEl.textContent = 'Comprobante PDF adjuntado';
         if (descEl) descEl.textContent = editable
-            ? 'Haz clic sobre el archivo para visualizarlo.'
+            ? 'Haz clic sobre el archivo para visualizarlo o cámbialo si es necesario.'
             : 'Haz clic sobre el archivo para visualizarlo en una ventana externa.';
 
         let html = '<div class="file-grid" style="margin-top: 1rem;">';
 
-        if (hasExisting) {
+        if (hasExisting && !hasNew) {
             const name = existingLeftoverProofPath.split('/').pop();
             html += `
                 <div class="file-card existing-file clickable" onclick="event.stopPropagation(); window.openLeftoverViewer();" title="Clic para visualizar">
@@ -1165,11 +1328,6 @@
                             <i class="bx bx-check-circle"></i> PDF adjuntado
                         </span>
                     </div>
-                    ${editable ? `
-                        <button type="button" class="btn-remove-file" onclick="event.stopPropagation(); window.removeExistingLeftoverProof()" title="Quitar">
-                            <i class="bx bx-x"></i>
-                        </button>
-                    ` : ''}
                 </div>`;
         }
 
@@ -1193,6 +1351,37 @@
         list.innerHTML = html;
     };
 
+    window.renderExcessFile = function() {
+        const list    = document.getElementById('excess-proof-list');
+        const titleEl = document.getElementById('excess-ev-title');
+        const descEl  = document.getElementById('excess-ev-desc');
+        if (!list) return;
+
+        if (!existingExcessProofPath) {
+            if (titleEl) titleEl.textContent = 'Pendiente de Liquidación por Tesorería';
+            if (descEl) descEl.textContent = 'Una vez aprobada la comprobación, Tesorería adjuntará aquí el comprobante del pago del excedente.';
+            list.innerHTML = '';
+            return;
+        }
+
+        const name = existingExcessProofPath.split('/').pop();
+        if (titleEl) titleEl.textContent = 'Comprobante de Pago de Excedente';
+        if (descEl) descEl.textContent = 'Haz clic sobre el comprobante emitido por Tesorería para visualizarlo.';
+
+        list.innerHTML = `
+            <div class="file-grid" style="margin-top: 1rem;">
+                <div class="file-card existing-file clickable" onclick="event.stopPropagation(); window.openExcessViewer();" title="Clic para visualizar">
+                    <i class="bx bxs-file-pdf file-icon-lg"></i>
+                    <div class="file-info">
+                        <span class="file-name" title="${name}">${name}</span>
+                        <span class="file-size" style="color:#16a34a; font-weight:600;">
+                            <i class="bx bx-check-circle"></i> Pagado por Tesorería
+                        </span>
+                    </div>
+                </div>
+            </div>`;
+    };
+
     (function initLeftoverEvents() {
         const leftoverInput = document.getElementById('leftover-proof-upload');
         const leftoverPanel = document.getElementById('leftover-evidence-panel');
@@ -1203,7 +1392,7 @@
             this.value = '';
         });
         leftoverPanel.addEventListener('dragover', e => {
-            if (!window.isFormEditable) return;
+            if (!window.isLeftoverEditable) return;
             e.preventDefault();
             leftoverPanel.classList.add('dragover');
         });
@@ -1214,7 +1403,7 @@
         leftoverPanel.addEventListener('drop', e => {
             e.preventDefault();
             leftoverPanel.classList.remove('dragover');
-            if (!window.isFormEditable) return;
+            if (!window.isLeftoverEditable) return;
             if (e.dataTransfer.files.length) window.procesarArchivoLeftover(e.dataTransfer.files[0]);
         });
     })();
@@ -1296,7 +1485,7 @@
 
     window.animateTableRows = function(tableSelector, delayPerRow = 0.04, initialDelay = 0) {
         const table = document.querySelector(tableSelector);
-        if (!table) return;
+        if (!table || table.classList.contains('no-row-anim')) return;
         const rows = table.querySelectorAll('tbody tr');
         rows.forEach((row, index) => {
             const delay = initialDelay + index * delayPerRow;
@@ -1350,33 +1539,45 @@
     window.addEventListener('resize', closeMotivePopover);
 
     /* ==========================================================================
-       ── 6. GESTIÓN DE ANTICIPOS ──
+       ── 6. GESTIÓN DE ANTICIPOS Y BADGES DE CONCILIACIÓN ──
        ========================================================================== */
     window.getSettlementConfig = function(status) {
         const map = {
-            'no_comprobado': { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1', icon: 'bx-file-blank', label: 'Sin Comprobar' },
-            'comprobando':   { bg: '#fffbeb', color: '#b45309', border: '#fde68a', icon: 'bx-refresh', label: 'Comprobando' },
-            'comprobado':    { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'bx-check-double', label: 'Comprobado' }
+            'no_comprobado': { bg: 'var(--settle-no_comprobado-bg)', color: 'var(--settle-no_comprobado-text)', border: 'var(--settle-no_comprobado-border)', icon: 'bx-file-blank', label: 'Sin Comprobar' },
+            'comprobando': { bg: 'var(--settle-comprobando-bg)', color: 'var(--settle-comprobando-text)', border: 'var(--settle-comprobando-border)', icon: 'bx-refresh', label: 'Comprobando' },
+            'comprobado': { bg: 'var(--settle-comprobado-bg)', color: 'var(--settle-comprobado-text)', border: 'var(--settle-comprobado-border)', icon: 'bx-check-double', label: 'Comprobado' }
         };
-        return map[status] || { bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1', icon: 'bx-minus', label: status || 'N/A' };
+        return map[status] || { bg: 'var(--bal-no_aplica-bg)', color: 'var(--bal-no_aplica-text)', border: 'var(--bal-no_aplica-border)', icon: 'bx-minus', label: status || 'N/A' };
+    };
+
+    window.getBalanceBadge = function(statusBalance) {
+        const map = {
+            'no_aplica': { bg: 'var(--bal-no_aplica-bg)', color: 'var(--bal-no_aplica-text)', border: 'var(--bal-no_aplica-border)', icon: 'bx-minus',         label: 'N/A' },
+            'por_definir': { bg: 'var(--bal-por_definir-bg)', color: 'var(--bal-por_definir-text)', border: 'var(--bal-por_definir-border)', icon: 'bx-time',          label: 'Por Definir' },
+            'devolucion_pendiente': { bg: 'var(--bal-devolucion_pendiente-bg)', color: 'var(--bal-devolucion_pendiente-text)', border: 'var(--bal-devolucion_pendiente-border)', icon: 'bx-upload',        label: 'Devolución Pendiente' },
+            'por_verificar': { bg: 'var(--bal-por_verificar-bg)', color: 'var(--bal-por_verificar-text)', border: 'var(--bal-por_verificar-border)', icon: 'bx-search-alt',    label: 'Por Verificar' },
+            'devuelto': { bg: 'var(--bal-devuelto-bg)', color: 'var(--bal-devuelto-text)', border: 'var(--bal-devuelto-border)', icon: 'bx-check-circle', label: 'Devuelto' },
+            'pago_pendiente': { bg: 'var(--bal-pago_pendiente-bg)', color: 'var(--bal-pago_pendiente-text)', border: 'var(--bal-pago_pendiente-border)', icon: 'bx-wallet',        label: 'Pago Pendiente' },
+            'pagado': { bg: 'var(--bal-pagado-bg)', color: 'var(--bal-pagado-text)', border: 'var(--bal-pagado-border)', icon: 'bx-check-double', label: 'Pagado' }
+        };
+        const st = map[statusBalance] || map['no_aplica'];
+        return `<span class="status-badge" style="background:${st.bg}; color:${st.color}; border:1px solid ${st.border};"><i class="bx ${st.icon}"></i> ${st.label}</span>`;
     };
 
     let advanceFetchSeq = 0;
 
     window.handleTipoSolicitudChange = async function(preselectId = null, resetSelection = false) {
-        const selectTipo = document.getElementById('modal-tipo-solicitud');
+        const selectTipo    = document.getElementById('modal-tipo-solicitud');
         const selectAdvance = document.getElementById('modal-advance-id');
-        const iconState = document.getElementById('adv-icon-state');
-        const containerExcedente = document.getElementById('container-excedente');
-        const lblAdvance = document.getElementById('lbl-advance');
+        const iconState     = document.getElementById('adv-icon-state');
+        const lblAdvance    = document.getElementById('lbl-advance');
+        const sumTotalLbl   = document.getElementById('sum-total-lbl');
 
         if (!selectTipo || !selectAdvance) return;
 
         if (typeof preselectId !== 'string' && typeof preselectId !== 'number') preselectId = null;
 
         const tipoVal = selectTipo.value;
-        const isSurplusChecked = document.querySelector('input[name="is_surplus"]:checked');
-        const isSurplus = isSurplusChecked ? (isSurplusChecked.value === "1") : false;
 
         const setAdvanceUI = (message, iconClass, color, isDisabled = true) => {
             selectAdvance.innerHTML = `<option value="" disabled selected>${message}</option>`;
@@ -1389,24 +1590,18 @@
         };
 
         if (tipoVal === 'Reembolso') {
-            containerExcedente.classList.remove('hidden');
-            if (isSurplus) {
-                lblAdvance.innerHTML = 'Anticipo a Relacionar <span class="req">*</span>';
-            } else {
-                lblAdvance.innerHTML = 'Anticipo a Comprobar';
-            }
+            lblAdvance.innerHTML = 'Anticipo a Comprobar';
+            if (sumTotalLbl) sumTotalLbl.textContent = 'TOTAL A REEMBOLSAR';
         } else {
-            containerExcedente.classList.add('hidden');
             lblAdvance.innerHTML = 'Anticipo a Comprobar <span class="req">*</span>';
+            if (sumTotalLbl) sumTotalLbl.textContent = 'TOTAL COMPROBADO';
         }
-
-        window.updateLeftoverVisibility();
 
         if (!tipoVal) {
             setAdvanceUI('Seleccione un tipo de solicitud...', 'bx-link', 'var(--secondary-lighter)');
             currentAdvanceAmount = 0;
             window.recalcLeftover();
-        } else if (tipoVal === 'Reembolso' && !isSurplus) {
+        } else if (tipoVal === 'Reembolso') {
             setAdvanceUI('No aplica (Trámite Independiente)', 'bx-block', '#94a3b8');
             currentAdvanceAmount = 0;
             window.recalcLeftover();
@@ -1477,7 +1672,7 @@
                     }
                 });
 
-                select.disabled = false;
+                select.disabled = !window.isFormEditable;
                 if (iconState) {
                     iconState.className = 'bx bx-link field-icon';
                     iconState.style.color = 'var(--secondary-dark)';
@@ -1651,14 +1846,15 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        Swal.fire({
+                        window.closeAdvanceModal();
+                        await Swal.fire({
                             title: '¡Anticipo Solicitado!',
                             text: data.message + ' Folio Asignado: ' + data.folio,
                             icon: 'success',
                             confirmButtonColor: '#2d7d46'
                         });
-                        window.closeAdvanceModal();
                         window.handleTipoSolicitudChange();
+                        await window.refreshTableData();
                     } else {
                         window.showAlert(data.message, 'error');
                     }
@@ -1809,12 +2005,12 @@
     };
 
     /* ==========================================================================
-       ── 8. TABLA MAESTRA ──
+       ── 8. TABLA MAESTRA (SIN RECORTAR TEXTO + PERMISOS DIRECTOS) ──
        ========================================================================== */
     let requests = {!! isset($requestsData) ? json_encode($requestsData) : '[]' !!};
     let currentEvaluateId = null;
     let currentPage = 1;
-    let itemsPerPage = 8;
+    let itemsPerPage = 5;
     let activeFilter = 'all';
     let searchQuery = '';
 
@@ -1823,7 +2019,7 @@
         tableSearchInput.addEventListener('input', function() {
             searchQuery = this.value.toLowerCase().trim();
             currentPage = 1;
-            window.renderDashboard();
+            window.renderDashboard(true);
         });
     }
 
@@ -1833,7 +2029,7 @@
             this.classList.add('active');
             activeFilter = this.dataset.filter;
             currentPage = 1;
-            window.renderDashboard();
+            window.renderDashboard(true);
         });
     });
 
@@ -1841,14 +2037,20 @@
         const val = document.getElementById('page-size-select').value;
         itemsPerPage = val === 'all' ? 999999 : parseInt(val);
         currentPage = 1;
-        window.renderDashboard();
+        window.renderDashboard(true);
     };
 
-    window.renderDashboard = function() {
+    window.renderDashboard = function(skipRowAnimation = false) {
         const list = document.getElementById('dashboard-list');
+        const tableEl = document.getElementById('main-data-table');
         const emptyState = document.getElementById('empty-state');
         const tableCount = document.getElementById('table-count');
         if(!list) return;
+
+        if (tableEl) {
+            tableEl.classList.toggle('no-row-anim', !!skipRowAnimation);
+        }
+
         list.innerHTML = '';
 
         let pendCount = 0, valCount = 0, appCount = 0, rejCount = 0;
@@ -1872,10 +2074,11 @@
             else matchFilter = (req.status === activeFilter);
 
             const matchSearch = !searchQuery ||
-                                req.motivo.toLowerCase().includes(searchQuery) ||
-                                req.folioP.toLowerCase().includes(searchQuery) ||
-                                req.folioU.toLowerCase().includes(searchQuery) ||
-                                req.nombre.toLowerCase().includes(searchQuery);
+                                (req.motivo || '').toLowerCase().includes(searchQuery) ||
+                                (req.folioP || '').toLowerCase().includes(searchQuery) ||
+                                (req.folioU || '').toLowerCase().includes(searchQuery) ||
+                                (req.nombre || '').toLowerCase().includes(searchQuery) ||
+                                (req.depto || '').toLowerCase().includes(searchQuery);
             return matchFilter && matchSearch;
         });
 
@@ -1895,7 +2098,7 @@
         const paginatedData = filtered.slice(startIdx, startIdx + itemsPerPage);
 
         paginatedData.forEach((req) => {
-            let badge = '', badgeAprobacion = '', advanceBadge = '';
+            let badge = '', badgeAprobacion = '', advanceBadge = '', balanceBadge = '';
 
             if (req.status === 'validado') badge = `<span class="status-badge badge-rev-validado"><i class="bx bx-list-check"></i> Validado</span>`;
             else if (req.status === 'rechazado') badge = `<span class="status-badge badge-rev-rechazado"><i class="bx bx-x-circle"></i> Rechazado</span>`;
@@ -1908,37 +2111,44 @@
             else if (req.aprobacion === 'rechazado' || req.aprobacion === 'no_procede') badgeAprobacion = `<span class="status-badge badge-est-rechazado"><i class="bx bx-block"></i> Rechazado</span>`;
             else badgeAprobacion = `<span class="status-badge badge-est-n_a"><i class="bx bx-minus"></i> ${req.aprobacion === 'n_a' ? 'N/A' : req.aprobacion}</span>`;
 
-            if (req.advance_folio && (req.advance_id || req.related_advance_id)) {
+            balanceBadge = window.getBalanceBadge(req.status_balance || 'no_aplica');
+
+            if (req.advance_folio && req.advance_id) {
                 let advClass = '';
                 if (req.advance_status === 'pendiente') advClass = 'advance-folio-pendiente';
                 else if (req.advance_status === 'aprobado' || req.advance_status === 'comprobado') advClass = 'advance-folio-aprobado';
                 else if (req.advance_status === 'rechazado') advClass = 'advance-folio-rechazado';
 
-                let relId = req.advance_id || req.related_advance_id;
-                advanceBadge = `<span class="row-folio advance-folio ${advClass}" onclick="window.verDetalleAnticipo(${relId})" title="Clic para revisar detalles"><i class="bx bx-link"></i> ${req.advance_folio}</span>`;
+                advanceBadge = `<span class="row-folio advance-folio ${advClass}" onclick="window.verDetalleAnticipo(${req.advance_id})" title="Clic para revisar detalles"><i class="bx bx-link"></i> ${req.advance_folio}</span>`;
             } else {
                 advanceBadge = `<span class="row-text-empty">Independiente</span>`;
             }
 
-            const canEvaluate = req.status === 'pendiente' || (req.status === 'validado' && req.aprobacion === 'en_revision');
+            // ★ Evaluación estricta según permisos directos (validar_solicitud / aprobar_solicitud) ★
+            const canEvaluate = window.canUserValidateClaim(req) || window.canUserApproveClaim(req);
             const evaluateBtn = canEvaluate ?
                 `<button class="btn-icon btn-icon-evaluate" onclick="window.evaluarSolicitud(${req.id})" title="Gestionar Resolución (Dictamen)"><i class="bx bx-clipboard"></i></button>` : '';
 
-            let shortName = req.nombre.length > 15 ? req.nombre.substring(0, 15) + '...' : req.nombre;
-            let fullMotive = req.motivo || '';
-            let words = fullMotive.split(' ');
-            let shortMotive = words.length > 3 ? words.slice(0, 3).join(' ') + '...' : fullMotive;
+            const canUploadLeftover = (req.aprobacion === 'aprobado' && req.status_balance === 'devolucion_pendiente');
+            const leftoverBtn = canUploadLeftover ?
+                `<button class="btn-icon" style="background:#fffbeb; color:#d97706; border:1px solid #fde68a;" onclick="window.abrirModalSubirSobrante(${req.id})" title="Subir Comprobante de Devolución de Sobrante"><i class="bx bx-upload"></i></button>` : '';
+
+            // ★ Se muestra el Nombre y el Motivo completos sin truncar ★
+            const fullName = req.nombre || '';
+            const fullMotive = req.motivo || '';
             const fullMotiveAttr = fullMotive.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
             let viewBtnClass = 'btn-icon-view';
             let viewBtnIcon = 'bx-show';
             let viewBtnTitle = 'Inspeccionar Documento';
 
-            if (req.status === 'borrador') {
+            const isOwnRequest = req.is_own !== undefined ? req.is_own : (Number(req.user_id) === Number(sessionUser.id));
+
+            if (req.status === 'borrador' && isOwnRequest) {
                 viewBtnClass = 'btn-icon-draft';
                 viewBtnIcon = 'bx-edit-alt';
                 viewBtnTitle = 'Continuar Borrador';
-            } else if (req.status === 'rechazado' || req.aprobacion === 'rechazado' || req.aprobacion === 'no_procede') {
+            } else if ((req.status === 'rechazado' || req.aprobacion === 'rechazado' || req.aprobacion === 'no_procede') && isOwnRequest) {
                 viewBtnClass = 'btn-icon-correction';
                 viewBtnIcon = 'bx-edit';
                 viewBtnTitle = 'Corregir Solicitud Rechazada';
@@ -1949,17 +2159,19 @@
                 <td><span class="row-folio">${req.folioP}</span></td>
                 <td><span class="row-folio user-folio">${req.folioU}</span></td>
                 <td><span class="row-date">${req.fecha}</span></td>
-                <td><span class="row-name" title="${req.nombre}">${shortName}</span></td>
+                <td><span class="row-name">${fullName}</span></td>
                 <td><span class="row-depto">${req.depto}</span></td>
-                <td><span class="row-depto">${req.tipo || 'Trámite'}</span></td>
-                <td><span class="row-motive" data-full="${fullMotiveAttr}" title="${fullMotive}">${shortMotive}</span></td>
+                <td><span class="row-depto">${({ 'Comprobacion Directa': 'Comp. Directa', 'Comprobación Directa': 'Comp. Directa', 'Comprobacion Electronica': 'Comp. Electrónica', 'Comprobación Electrónica': 'Comp. Electrónica' })[req.tipo] || req.tipo || 'Trámite'}</span></td>
+                <td><span class="row-motive" data-full="${fullMotiveAttr}">${fullMotive}</span></td>
                 <td><div class="row-amount-wrap"><span class="row-amount">${window.fmt(req.amount)}</span></div></td>
                 <td>${advanceBadge}</td>
                 <td>${badge}</td>
                 <td>${badgeAprobacion}</td>
+                <td>${balanceBadge}</td>
                 <td class="cell-actions">
                     <div class="actions-wrap">
                         <button class="btn-icon ${viewBtnClass}" onclick="window.verDetalles(${req.id})" title="${viewBtnTitle}"><i class="bx ${viewBtnIcon}"></i></button>
+                        ${leftoverBtn}
                         ${evaluateBtn}
                         <button class="btn-icon btn-icon-history" onclick="window.verHistorial(${req.id})" title="Ver Historial de Movimientos"><i class="bx bx-history"></i></button>
                     </div>
@@ -1968,7 +2180,9 @@
         });
 
         window.renderPagination(totalPages);
-        window.animateTableRows('#main-data-table');
+        if (!skipRowAnimation) {
+            window.animateTableRows('#main-data-table');
+        }
     };
 
     window.renderPagination = function(totalPages) {
@@ -1981,14 +2195,14 @@
         btnPrev.className = 'page-btn';
         btnPrev.innerHTML = '<i class="bx bx-chevron-left"></i>';
         btnPrev.disabled = currentPage === 1;
-        btnPrev.onclick = () => { currentPage--; window.renderDashboard(); };
+        btnPrev.onclick = () => { currentPage--; window.renderDashboard(true); };
         container.appendChild(btnPrev);
 
         for (let i = 1; i <= totalPages; i++) {
             const btn = document.createElement('button');
             btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
             btn.textContent = i;
-            btn.onclick = () => { currentPage = i; window.renderDashboard(); };
+            btn.onclick = () => { currentPage = i; window.renderDashboard(true); };
             container.appendChild(btn);
         }
 
@@ -1996,7 +2210,7 @@
         btnNext.className = 'page-btn';
         btnNext.innerHTML = '<i class="bx bx-chevron-right"></i>';
         btnNext.disabled = currentPage === totalPages;
-        btnNext.onclick = () => { currentPage++; window.renderDashboard(); };
+        btnNext.onclick = () => { currentPage++; window.renderDashboard(true); };
         container.appendChild(btnNext);
     };
 
@@ -2346,7 +2560,6 @@
         if (evidenciaInput) evidenciaInput.files = dt.files;
     };
 
-    // ★ RENDER de evidencias (facturas) — muestra existentes + nuevas, clickeables ★
     window.renderFileList = function() {
         const listDiv = document.getElementById('evidence-list');
         const titleEl = document.getElementById('evidence-title');
@@ -2357,7 +2570,6 @@
         const total = existingEvidencePaths.length + evidenciasFiles.length;
         const editable = !!window.isFormEditable;
 
-        // Panel: modo read-only
         if (panelEl) panelEl.classList.toggle('readonly-mode', !editable);
 
         if (total === 0) {
@@ -2578,21 +2790,28 @@
        ── 11.1. VISIBILIDAD DE ACCIONES SEGÚN MODO ──
        ========================================================================== */
     window.updateActionVisibility = function() {
-        const editable = !!window.isFormEditable;
+        const editableForm = !!window.isFormEditable;
+        const editableLft  = !!window.isLeftoverEditable;
 
         const evidenceBrowseBtn = document.getElementById('evidence-browse-btn');
         const leftoverBrowseBtn = document.getElementById('leftover-browse-btn');
 
-        if (evidenceBrowseBtn) evidenceBrowseBtn.classList.toggle('hidden', !editable);
-        if (leftoverBrowseBtn) leftoverBrowseBtn.classList.toggle('hidden', !editable);
+        if (evidenceBrowseBtn) evidenceBrowseBtn.classList.toggle('hidden', !editableForm);
+        if (leftoverBrowseBtn) leftoverBrowseBtn.classList.toggle('hidden', !editableLft);
 
         const evidencePanel = document.getElementById('evidence-panel');
         const leftoverPanel = document.getElementById('leftover-evidence-panel');
-        if (evidencePanel) evidencePanel.classList.toggle('readonly-mode', !editable);
-        if (leftoverPanel) leftoverPanel.classList.toggle('readonly-mode', !editable);
+        if (evidencePanel) evidencePanel.classList.toggle('readonly-mode', !editableForm);
+        if (leftoverPanel) leftoverPanel.classList.toggle('readonly-mode', !editableLft);
+
+        document.querySelectorAll('.leftover-stage-input').forEach(el => {
+            if (editableLft) el.removeAttribute('disabled');
+            else el.setAttribute('disabled', 'true');
+        });
 
         window.renderFileList();
         window.renderLeftoverFile();
+        window.renderExcessFile();
     };
 
     /* ==========================================================================
@@ -2600,9 +2819,10 @@
        ========================================================================== */
     window.lockForm = function() {
         window.isFormEditable = false;
+        window.isLeftoverEditable = false;
 
         document.querySelectorAll('#reimbursement-modal .modal-focusable, #reimbursement-modal .cell-input').forEach(el => el.setAttribute('disabled', 'true'));
-        document.querySelectorAll('input[name="is_deductible"], input[name="is_delegated"], input[name="is_surplus"], input[name="has_leftover"]').forEach(el => el.disabled = true);
+        document.querySelectorAll('input[name="is_deductible"], input[name="is_delegated"]').forEach(el => el.disabled = true);
         document.querySelectorAll('.btn-add-row, .btn-remove-row').forEach(el => el.classList.add('hidden'));
         const actionBtn = document.querySelector('.modal-header-actions .btn-secondary');
         if(actionBtn) actionBtn.classList.add('hidden');
@@ -2616,9 +2836,10 @@
 
     window.unlockForm = function() {
         window.isFormEditable = true;
+        window.isLeftoverEditable = false;
 
         document.querySelectorAll('#reimbursement-modal .modal-focusable, #reimbursement-modal .cell-input').forEach(el => el.removeAttribute('disabled'));
-        document.querySelectorAll('input[name="is_deductible"], input[name="is_delegated"], input[name="is_surplus"], input[name="has_leftover"]').forEach(el => el.disabled = false);
+        document.querySelectorAll('input[name="is_deductible"], input[name="is_delegated"]').forEach(el => el.disabled = false);
         document.querySelectorAll('.btn-add-row, .btn-remove-row').forEach(el => el.classList.remove('hidden'));
         const actionBtn = document.querySelector('.modal-header-actions .btn-secondary');
         if(actionBtn) actionBtn.classList.remove('hidden');
@@ -2628,6 +2849,8 @@
 
         const lAmount = document.getElementById('leftover-amount');
         if (lAmount) lAmount.setAttribute('readonly', 'true');
+        const eAmount = document.getElementById('excess-amount');
+        if (eAmount) eAmount.setAttribute('readonly', 'true');
 
         const isDelegated = document.querySelector('input[name="is_delegated"]:checked').value === "1";
         if (isDelegated) {
@@ -2644,10 +2867,10 @@
         });
 
         window.updateActionVisibility();
-        window.handleTipoSolicitudChange();
     };
 
     window.resetModalForm = function() {
+        window.resetExcessAlert();
         ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
             const tbody = document.getElementById(cat);
             if (tbody) {
@@ -2676,23 +2899,23 @@
 
         document.getElementById('modal-tipo-solicitud').value = '';
         document.getElementById('modal-tipo-gasto').value = '';
-
-        document.querySelector('input[name="is_surplus"][value="0"]').checked = true;
-        document.getElementById('container-excedente').classList.add('hidden');
         document.getElementById('lbl-advance').innerHTML = 'Anticipo a Comprobar';
 
-        // ★ Reset Sobrante ★
-        document.querySelector('input[name="has_leftover"][value="0"]').checked = true;
+        currentClaimApprovalStatus = 'en_espera';
         document.getElementById('leftover-amount').value = '';
         document.getElementById('leftover-method').value = 'Transferencia';
         document.getElementById('leftover-notes').value = '';
+        document.getElementById('excess-amount').value = '';
+        document.getElementById('excess-method').value = 'Transferencia';
+        document.getElementById('excess-notes').value = '';
+
         leftoverProofFile = null;
         existingLeftoverProofPath = null;
-        removeLeftoverProofFlag = false;
+        existingExcessProofPath = null;
         currentAdvanceAmount = 0;
         window.renderLeftoverFile();
+        window.renderExcessFile();
 
-        // ★ Reset Evidencias ★
         existingEvidencePaths = [];
         evidenciasFiles = [];
         window.renderFileList();
@@ -2700,10 +2923,13 @@
 
         document.getElementById('leftover-body').classList.add('hidden');
         document.getElementById('leftover-section').classList.add('hidden');
+        document.getElementById('excess-section').classList.add('hidden');
 
         document.getElementById('sat-panel').classList.add('hidden');
         document.getElementById('sat-result-container').classList.add('hidden');
         document.getElementById('rejection-container').classList.add('hidden');
+
+        document.getElementById('footer-leftover').classList.add('hidden');
 
         tempSatData = null;
         currentActiveClaimId = null;
@@ -2729,6 +2955,7 @@
         document.getElementById('footer-create').classList.remove('hidden');
         document.getElementById('footer-view').classList.add('hidden');
         document.getElementById('footer-evaluate').classList.add('hidden');
+        document.getElementById('footer-leftover').classList.add('hidden');
         document.getElementById('reimbursement-modal').classList.remove('hidden');
     };
 
@@ -2741,6 +2968,7 @@
             if (res.success) {
                 const claim = res.data;
                 currentActiveClaimId = claim.id;
+                currentClaimApprovalStatus = claim.status_approval || 'en_espera';
 
                 document.getElementById('rejection-container').classList.add('hidden');
                 if ((claim.status_review === 'rechazado' || claim.status_approval === 'rechazado') && claim.logs && claim.logs.length > 0) {
@@ -2760,7 +2988,7 @@
                 window.handleDelegationToggle();
 
                 document.getElementById('modal-nombre').value = claim.beneficiary.name;
-                document.getElementById('modal-depto').value = claim.beneficiary.employee?.area?.name || 'Sin asignar';
+                document.getElementById('modal-depto').value = claim.beneficiary.employee?.area?.name || claim.area || 'Sin asignar';
                 document.getElementById('modal-beneficiary-id').value = claim.user_id;
 
                 const headerVal = claim.cost_center_id
@@ -2774,55 +3002,39 @@
                 document.getElementById('modal-tipo-gasto').value = claim.category || '';
                 document.querySelector(`input[name="is_deductible"][value="${claim.is_deductible ? '1' : '0'}"]`).checked = true;
 
-                if (claim.request_type === 'Reembolso' && claim.related_advance_id) {
-                    document.querySelector('input[name="is_surplus"][value="1"]').checked = true;
-                } else {
-                    document.querySelector('input[name="is_surplus"][value="0"]').checked = true;
-                }
-
-                const advanceToSelect = claim.expense_advance_id || claim.related_advance_id || null;
+                const advanceToSelect = claim.expense_advance_id || null;
                 if (advanceToSelect) {
                     const selAdv = document.getElementById('modal-advance-id');
-                    const seedLabel = (claim.advance && claim.advance.folio_system) ? claim.advance.folio_system : `Anticipo #${advanceToSelect}`;
+                    const seedLabel = (claim.expense_advance && claim.expense_advance.folio_system)
+                        ? claim.expense_advance.folio_system
+                        : `Anticipo #${advanceToSelect}`;
                     selAdv.innerHTML = `<option value="${advanceToSelect}" selected>${seedLabel}</option>`;
-                    if (claim.advance && claim.advance.amount != null) {
-                        window.advanceAmountsMap[advanceToSelect] = parseFloat(claim.advance.amount) || 0;
+                    if (claim.expense_advance && claim.expense_advance.amount != null) {
+                        window.advanceAmountsMap[advanceToSelect] = parseFloat(claim.expense_advance.amount) || 0;
+                        currentAdvanceAmount = window.advanceAmountsMap[advanceToSelect];
                     }
                 }
 
                 await window.handleTipoSolicitudChange(advanceToSelect);
 
-                // ★ Poblar SOBRANTE ★
-                const hasLft = claim.leftover_amount && parseFloat(claim.leftover_amount) > 0;
-                document.querySelector(`input[name="has_leftover"][value="${hasLft ? '1' : '0'}"]`).checked = true;
                 document.getElementById('leftover-amount').value = claim.leftover_amount || '';
                 document.getElementById('leftover-method').value = claim.leftover_method || 'Transferencia';
                 document.getElementById('leftover-notes').value = claim.leftover_notes || '';
                 existingLeftoverProofPath = claim.leftover_proof_path || null;
                 leftoverProofFile = null;
-                removeLeftoverProofFlag = false;
                 window.renderLeftoverFile();
-                window.toggleLeftoverSection();
 
-                // ★ Poblar EVIDENCIAS PRINCIPALES ★
+                document.getElementById('excess-amount').value = claim.excess_amount || '';
+                document.getElementById('excess-method').value = claim.excess_method || 'Transferencia';
+                document.getElementById('excess-notes').value = claim.excess_notes || '';
+                existingExcessProofPath = claim.excess_proof_path || null;
+                window.renderExcessFile();
+
                 existingEvidencePaths = Array.isArray(claim.evidence_documents)
                     ? claim.evidence_documents.filter(Boolean)
                     : [];
                 evidenciasFiles = [];
                 window.renderFileList();
-
-                if (advanceToSelect && !window.advanceAmountsMap[advanceToSelect]) {
-                    try {
-                        const advResp = await fetch(`{{ url('administration/expense-claims/advances') }}/${advanceToSelect}`);
-                        const advData = await advResp.json();
-                        if (advData && advData.success && advData.data) {
-                            currentAdvanceAmount = parseFloat(advData.data.amount) || 0;
-                            window.advanceAmountsMap[advanceToSelect] = currentAdvanceAmount;
-                        }
-                    } catch(e) { /* ignore */ }
-                } else if (advanceToSelect) {
-                    currentAdvanceAmount = parseFloat(window.advanceAmountsMap[advanceToSelect]) || 0;
-                }
 
                 ['cat-vuelos', 'cat-restaurantes', 'cat-combustible', 'cat-otros'].forEach(cat => {
                     document.getElementById(cat).querySelectorAll('.data-row').forEach(r => r.remove());
@@ -2883,23 +3095,101 @@
             document.getElementById('footer-create').classList.add('hidden');
             document.getElementById('footer-view').classList.remove('hidden');
             document.getElementById('footer-evaluate').classList.add('hidden');
+            document.getElementById('footer-leftover').classList.add('hidden');
 
             const viewFooter = document.getElementById('footer-view');
             viewFooter.innerHTML = '<button type="button" class="btn btn-secondary" onclick="window.closeModal()">Cerrar</button>';
 
-            if (claim.status_review === 'borrador' || claim.status_review === 'rechazado' || claim.status_approval === 'rechazado') {
+            const isOwnClaim = Number(claim.user_id) === Number(sessionUser.id) || Number(claim.created_by_id) === Number(sessionUser.id);
+
+            if (isOwnClaim && (claim.status_review === 'borrador' || claim.status_review === 'rechazado' || claim.status_approval === 'rechazado')) {
                 const btnEdit = document.createElement('button');
                 btnEdit.type = 'button';
                 btnEdit.className = 'btn btn-primary';
                 btnEdit.innerHTML = '<i class="bx bx-edit"></i> ' + ((claim.status_review === 'rechazado' || claim.status_approval === 'rechazado') ? 'Corregir y Reenviar' : 'Continuar Borrador');
                 btnEdit.onclick = () => window.habilitarEdicion(claim.status_review === 'rechazado' || claim.status_approval === 'rechazado' ? 'rechazado' : 'borrador');
                 viewFooter.appendChild(btnEdit);
+            } else if (claim.status_approval === 'aprobado' && claim.status_balance === 'devolucion_pendiente') {
+                const btnLeftover = document.createElement('button');
+                btnLeftover.type = 'button';
+                btnLeftover.className = 'btn btn-primary';
+                btnLeftover.innerHTML = '<i class="bx bx-upload"></i> Subir Devolución de Sobrante';
+                btnLeftover.onclick = () => window.habilitarSubidaSobrante();
+                viewFooter.appendChild(btnLeftover);
             }
+
             Swal.close();
             document.getElementById('reimbursement-modal').classList.remove('hidden');
         } catch(error) {
             Swal.close();
             window.showAlert('Hubo un problema cargando los datos. Intenta nuevamente.', 'error');
+        }
+    };
+
+    window.abrirModalSubirSobrante = async function(id) {
+        await window.verDetalles(id);
+        window.habilitarSubidaSobrante();
+    };
+
+    window.habilitarSubidaSobrante = function() {
+        window.lockForm();
+        window.isLeftoverEditable = true;
+        window.updateActionVisibility();
+
+        document.getElementById('main-modal-title').innerHTML = `<i class="bx bx-upload"></i> Registrar Devolución de Sobrante — <strong>${document.getElementById('modal-folio-p').textContent}</strong>`;
+
+        document.getElementById('footer-view').classList.add('hidden');
+        document.getElementById('footer-create').classList.add('hidden');
+        document.getElementById('footer-evaluate').classList.add('hidden');
+        document.getElementById('footer-leftover').classList.remove('hidden');
+
+        const leftoverSection = document.getElementById('leftover-section');
+        if (leftoverSection) {
+            leftoverSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
+    window.submitLeftoverProof = async function() {
+        if (!currentActiveClaimId) return;
+
+        const method = document.getElementById('leftover-method').value || 'Transferencia';
+        const notes  = document.getElementById('leftover-notes').value.trim();
+
+        if (!leftoverProofFile) {
+            window.showAlert('Debes adjuntar el archivo PDF del comprobante de devolución del sobrante.', 'warning');
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('leftover_method', method);
+        formData.append('leftover_notes', notes);
+        formData.append('leftover_proof', leftoverProofFile);
+
+        try {
+            Swal.fire({ title: 'Enviando comprobante...', text: 'Registrando devolución de sobrante.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const url = `{{ url('administration/expense-claims/reimbursements') }}/${currentActiveClaimId}/leftover-proof`;
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                window.closeModal();
+                await Swal.fire({
+                    title: '¡Comprobante Enviado!',
+                    html: `${data.message}<br><br><strong>Folio: ${data.folio}</strong>`,
+                    icon: 'success',
+                    confirmButtonColor: '#2d7d46'
+                });
+                await window.refreshTableData();
+            } else {
+                window.showAlert(data.message || 'No se pudo guardar el comprobante.', 'error');
+            }
+        } catch (error) {
+            window.showAlert('Error de conexión al enviar el comprobante.', 'error');
         }
     };
 
@@ -2922,6 +3212,7 @@
         document.getElementById('main-modal-title').innerHTML = `${iconHtml} ${prefixText} <strong>Folio: ${document.getElementById('modal-folio-p').textContent}</strong>`;
 
         document.getElementById('footer-view').classList.add('hidden');
+        document.getElementById('footer-leftover').classList.add('hidden');
         document.getElementById('footer-create').classList.remove('hidden');
 
         const btnEnviar = document.getElementById('btn-enviar');
@@ -2941,6 +3232,15 @@
             const claim = await window.fetchAndPopulateClaim(id);
             if (!claim) return;
 
+            const canVal = window.canUserValidateClaim(claim);
+            const canApp = window.canUserApproveClaim(claim);
+
+            if (!canVal && !canApp) {
+                Swal.close();
+                window.showAlert('No cuentas con permisos para dictaminar esta solicitud (solo lectura).', 'warning');
+                return;
+            }
+
             document.getElementById('main-modal-title').innerHTML = '<i class="bx bx-check-shield"></i> Evaluar Solicitud';
             currentEvaluateId = id;
             window.lockForm();
@@ -2949,16 +3249,12 @@
             const btnValidate = document.getElementById('btn-eval-validate');
             const btnApprove = document.getElementById('btn-eval-approve');
 
-            if (claim.status_review === 'pendiente') {
-                btnValidate.classList.remove('hidden');
-                btnApprove.classList.add('hidden');
-            } else if (claim.status_review === 'validado') {
-                btnValidate.classList.add('hidden');
-                btnApprove.classList.remove('hidden');
-            }
+            btnValidate.classList.toggle('hidden', !canVal);
+            btnApprove.classList.toggle('hidden', !canApp);
 
             document.getElementById('footer-create').classList.add('hidden');
             document.getElementById('footer-view').classList.add('hidden');
+            document.getElementById('footer-leftover').classList.add('hidden');
             document.getElementById('footer-evaluate').classList.remove('hidden');
             Swal.close();
             document.getElementById('reimbursement-modal').classList.remove('hidden');
@@ -2969,6 +3265,7 @@
     };
 
     window.closeModal = function() {
+        window.resetExcessAlert();
         document.getElementById('reimbursement-modal').classList.add('hidden');
     };
 
@@ -3007,6 +3304,7 @@
                         if (actionName.includes('rechaza')) { iconColor = '#dc2626'; iconBx = 'bx-block'; }
                         else if (actionName.includes('aprobaci') || actionName.includes('aprobado') || log.new_status === 'aprobado') { iconColor = '#059669'; iconBx = 'bx-check-double'; }
                         else if (actionName.includes('validaci') || log.new_status === 'validado') { iconColor = '#0284c7'; iconBx = 'bx-list-check'; }
+                        else if (actionName.includes('devoluci') || log.new_status === 'por_verificar') { iconColor = '#d97706'; iconBx = 'bx-upload'; }
                         else if (actionName.includes('corregid')) { iconColor = '#ea580c'; iconBx = 'bx-wrench'; }
                         else if (actionName.includes('creada')) { iconColor = '#2563eb'; iconBx = 'bx-send'; }
                         else if (actionName.includes('borrador')) { iconColor = '#64748b'; iconBx = 'bx-save'; }
@@ -3100,8 +3398,13 @@
             const data = await response.json();
 
             if (data.success) {
-                Swal.fire('¡Listo!', data.message, 'success');
-                setTimeout(() => window.location.reload(), 1500);
+                await Swal.fire({
+                    title: '¡Listo!',
+                    text: data.message,
+                    icon: 'success',
+                    confirmButtonColor: '#2d7d46'
+                });
+                await window.refreshTableData();
             } else {
                 window.showAlert(data.message, 'error');
             }
@@ -3111,7 +3414,7 @@
     };
 
     /* ==========================================================================
-       ── 13. ENVÍO FINAL Y GUARDADO ──
+       ── 13. ENVÍO FINAL Y GUARDADO (ETAPA 1 SIN RECARGAR PÁGINA) ──
        ========================================================================== */
     window.verifyAndSubmit = function() {
         const nombreBen = document.getElementById('modal-nombre').value.trim();
@@ -3120,8 +3423,6 @@
         const total = parseFloat(document.getElementById('sum-total').getAttribute('data-value'));
         const tipoSolicitud = document.getElementById('modal-tipo-solicitud').value;
         const advanceId = document.getElementById('modal-advance-id').value;
-        const isSurplusChecked = document.querySelector('input[name="is_surplus"]:checked');
-        const isSurplus = isSurplusChecked ? (isSurplusChecked.value === "1") : false;
 
         if (!tipoSolicitud) { window.showAlert('Falta seleccionar el tipo de solicitud.', 'warning'); return; }
 
@@ -3130,31 +3431,9 @@
             return;
         }
 
-        if (tipoSolicitud === 'Reembolso' && isSurplus && !advanceId) {
-            window.showAlert('Al indicar que es un excedente de anticipo, debes seleccionar el Anticipo a relacionar.', 'warning');
-            return;
-        }
-
         if (!nombreBen) { window.showAlert('Falta seleccionar al empleado beneficiario.', 'warning'); return; }
         if (!centroCosto) { window.showAlert('Falta seleccionar la Imputación (Centro de Costos) en la cabecera.', 'warning'); return; }
         if (!motivo) { window.showAlert('Debes escribir un motivo o justificación para este trámite.', 'warning'); return; }
-
-        if (window.isComprobacionType()) {
-            const hasLeftoverChecked = document.querySelector('input[name="has_leftover"]:checked');
-            const hasLeftover = hasLeftoverChecked && hasLeftoverChecked.value === '1';
-
-            if (hasLeftover) {
-                const lAmount = document.getElementById('leftover-amount').value;
-                if (!lAmount || parseFloat(lAmount) <= 0) {
-                    window.showAlert('No hay sobrante que devolver (el monto total es igual o mayor al anticipo). Verifica los importes o desactiva la opción.', 'warning');
-                    return;
-                }
-                if (!leftoverProofFile && !existingLeftoverProofPath) {
-                    window.showAlert('Debes adjuntar la evidencia (PDF) de la devolución del sobrante.', 'warning');
-                    return;
-                }
-            }
-        }
 
         let hasValidRows = false;
         let isMissingRowCc = false;
@@ -3171,7 +3450,7 @@
         });
 
         if (!hasValidRows) { window.showAlert('La tabla de gastos está vacía. Debes agregar al menos un concepto.', 'error'); return; }
-        if (total <= 0) { window.showAlert('El monto total a reembolsar no puede ser cero.', 'error'); return; }
+        if (total <= 0) { window.showAlert('El monto total comprobado no puede ser cero.', 'error'); return; }
         if (isMissingRowCc) { window.showAlert('Al elegir "VARIOS", es obligatorio asignar un Centro/Proyecto en cada fila de gasto.', 'error'); return; }
 
         Swal.fire({
@@ -3236,24 +3515,13 @@
             totalSubtotal += parseFloat(document.getElementById(id).textContent.replace(/[^0-9.-]+/g, "")) || 0;
         });
 
-        const isSurplusChecked = document.querySelector('input[name="is_surplus"]:checked');
-        const isSurplusVal = isSurplusChecked ? isSurplusChecked.value : "0";
-
         const tipoSol = document.getElementById('modal-tipo-solicitud').value;
         const isComprobacion = (tipoSol === 'Comprobacion Electronica' || tipoSol === 'Comprobacion Directa');
-        let hasLeftoverVal = '0';
-
-        if (isComprobacion) {
-            const hasLeftoverChecked = document.querySelector('input[name="has_leftover"]:checked');
-            hasLeftoverVal = hasLeftoverChecked ? hasLeftoverChecked.value : '0';
-        }
 
         let formData = new FormData();
         formData.append('_token', '{{ csrf_token() }}');
         formData.append('motivo', document.getElementById('modal-motivo').value.trim());
         formData.append('tipo_solicitud', tipoSol);
-        formData.append('is_surplus', isSurplusVal);
-        formData.append('has_leftover', hasLeftoverVal);
         formData.append('tipo_gasto', document.getElementById('modal-tipo-gasto').value);
         formData.append('is_deductible', document.querySelector('input[name="is_deductible"]:checked').value);
         formData.append('advance_id', document.getElementById('modal-advance-id').value);
@@ -3268,21 +3536,16 @@
         formData.append('total_amount', document.getElementById('sum-total').getAttribute('data-value'));
         formData.append('lineas', JSON.stringify(lineasArray));
 
-        if (isComprobacion && hasLeftoverVal === '1') {
-            formData.append('leftover_amount', document.getElementById('leftover-amount').value);
-            formData.append('leftover_method', document.getElementById('leftover-method').value || 'Transferencia');
-            formData.append('leftover_notes', document.getElementById('leftover-notes').value || '');
-            if (leftoverProofFile) {
-                formData.append('leftover_proof', leftoverProofFile);
+        if (isComprobacion) {
+            const eAmount = parseFloat(document.getElementById('excess-amount').value) || 0;
+            if (eAmount > 0) {
+                formData.append('excess_amount', eAmount);
+                formData.append('excess_method', document.getElementById('excess-method').value || 'Transferencia');
+                formData.append('excess_notes', document.getElementById('excess-notes').value || '');
             }
         }
 
         existingEvidencePaths.forEach((p, i) => formData.append(`existing_evidences[${i}]`, p));
-
-        if (removeLeftoverProofFlag) {
-            formData.append('remove_leftover_proof', '1');
-        }
-
         evidenciasFiles.forEach((file, index) => { formData.append(`evidencias[${index}]`, file); });
 
         try {
@@ -3292,21 +3555,31 @@
             const response = await fetch(fetchUrl, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             const data = await response.json();
             if (data.success) {
-                Swal.fire({ title: '¡Guardado correctamente!', html: `${data.message}<br><br><strong>Folio: ${data.folio}</strong>`, icon: 'success', confirmButtonColor: '#2d7d46' });
                 window.closeModal();
-                setTimeout(() => window.location.reload(), 2000);
-            } else { window.showAlert(data.message || 'Ocurrió un error al intentar guardar los datos.', 'error'); }
-        } catch (error) { window.showAlert('No se pudo conectar al servidor.', 'error'); }
+                await Swal.fire({
+                    title: '¡Guardado correctamente!',
+                    html: `${data.message}<br><br><strong>Folio: ${data.folio}</strong>`,
+                    icon: 'success',
+                    confirmButtonColor: '#2d7d46'
+                });
+                await window.refreshTableData();
+            } else {
+                window.showAlert(data.message || 'Ocurrió un error al intentar guardar los datos.', 'error');
+            }
+        } catch (error) {
+            window.showAlert('No se pudo conectar al servidor.', 'error');
+        }
     };
 
     /* ==========================================================================
-       ── 14. DRAWER ANTICIPOS ──
+       ── 14. DRAWER ANTICIPOS (CONDICIONADO A ver_notificaciones_anticipos) ──
        ========================================================================== */
     let advancesHistory = [];
     let drawerFilter = 'all';
     let drawerSearchQuery = '';
 
     window.fetchAdvancesHistory = async function(isInitialLoad = false) {
+        if (!userPermissions.ver_notificaciones_anticipos) return;
         try {
             const fetchUrl = `{{ route('expense-claims.advances.history') }}`;
             const response = await fetch(fetchUrl, {
@@ -3345,6 +3618,7 @@
     };
 
     window.toggleAdvancesDrawer = function() {
+        if (!userPermissions.ver_notificaciones_anticipos) return;
         const drawer = document.getElementById('advances-drawer');
         const overlay = document.getElementById('advances-drawer-overlay');
         if (!drawer || !overlay) return;
@@ -3437,6 +3711,11 @@
     };
 
     document.addEventListener('DOMContentLoaded', function() {
+        const bellBtn = document.querySelector('.btn-notification-bell');
+        if (bellBtn && !userPermissions.ver_notificaciones_anticipos) {
+            bellBtn.classList.add('hidden');
+        }
+
         const drawerSearch = document.getElementById('drawer-search');
         if (drawerSearch) {
             drawerSearch.addEventListener('input', function() {
@@ -3454,11 +3733,11 @@
             });
         });
 
-        window.fetchAdvancesHistory(true);
-        setInterval(() => window.fetchAdvancesHistory(true), 60000);
-    });
+        if (userPermissions.ver_notificaciones_anticipos) {
+            window.fetchAdvancesHistory(true);
+            setInterval(() => window.fetchAdvancesHistory(true), 60000);
+        }
 
-    document.addEventListener('DOMContentLoaded', function() {
         window.renderDashboard();
     });
 </script>

@@ -6,7 +6,7 @@ use App\Http\Controllers\Administration\ExpenseClaims\expenseAccountBalanceContr
 use App\Http\Controllers\Administration\ExpenseClaims\expenseAccountTransactionController;
 use App\Http\Controllers\Administration\ExpenseClaims\ExpenseAdvanceController;
 use App\Http\Controllers\Administration\ExpenseClaims\ExpenseSettingsController;
-use App\Http\Controllers\Administration\ExpenseClaims\ExpenseStatisticsController;
+use App\Http\Controllers\Administration\ExpenseClaims\ExpenseClaimsStatisticsController;
 use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryController;
@@ -137,8 +137,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                 // ============================
                 // ESTADÍSTICAS
                 // ============================
-                Route::controller(ExpenseStatisticsController::class)->group(function () {
-                    Route::get('/statistics', 'index')->name('expense-claims.stats-expense');
+                Route::controller(ExpenseClaimsStatisticsController::class)->group(function () {
+                    Route::get('/statistics', 'index')->name('expense-claims.statistics');
                 });
 
                 // ============================
@@ -150,13 +150,16 @@ Route::middleware(['web', 'auth'])->group(function () {
                         ->name('expense-claims.accounts-payable.reimbolsos');
                     Route::post('accounts-payable/claims/{id}/mark-paid', 'markReembolsoAsPaid')
                         ->name('expense-claims.accounts-payable.mark-paid');
+                    Route::post('accounts-payable/claims/{id}/verify-leftover', 'verifyLeftover')
+                        ->name('expense-claims.accounts-payable.verify-leftover');
+                    Route::post('accounts-payable/claims/{id}/pay-excess', 'payExcess')
+                        ->name('expense-claims.accounts-payable.pay-excess');
                     Route::post('/accounts-payable/balance-adjustment', 'registerBalanceAdjustment')
                         ->name('expense-claims.accounts-payable.adjust-balance');
-
-                    // NUEVA RUTA: Cierre de anticipos en tesorería
                     Route::post('/accounts-payable/advances/{id}/settle', 'markAdvanceAsSettled')
                         ->name('expense-claims.accounts-payable.settle-advance');
                 });
+
 
                 // ============================
                 // ── GESTIÓN DE ANTICIPOS ──
@@ -164,10 +167,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::controller(ExpenseAdvanceController::class)->group(function () {
                     Route::get('/advances', 'index')->name('expense-claims.advances');
                     Route::post('/advances/store', 'store')->name('expense-claims.advances.store');
-
                     // NUEVA RUTA PARA EL DRAWER DE NOTIFICACIONES (Debe ir antes del {id})
                     Route::get('/advances/history', 'history')->name('expense-claims.advances.history');
-
                     Route::get('/advances/user/{userId}', 'getActiveByUser')->name('expense-claims.advances.by-user');
                     Route::get('/advances/{id}', 'show')->name('expense-claims.advances.show');
                     Route::post('/advances/{id}/status', 'updateStatus')->name('expense-claims.advances.status');
@@ -184,6 +185,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                 Route::controller(ReimbursementStoreController::class)->group(function () {
                     Route::post('/reimbursements/store', 'store')->name('expense-claims.store');
                     Route::post('/reimbursements/{id}/update', 'update')->name('expense-claims.update');
+                    Route::post('/reimbursements/{id}/leftover-proof', 'submitLeftoverProof')->name('expense-claims.leftover-proof.upload');
+                    
                 });
 
                 // ESTATUS
@@ -200,9 +203,6 @@ Route::middleware(['web', 'auth'])->group(function () {
 
                 // NODOS
                 Route::controller(FslNodeController::class)->group(function () {
-                    // La vista original la puedes comentar o eliminar después,
-                    // pero el POST (store) se queda intacto.
-                    // Route::get('/sys-config-node', 'index')->name('expense-claims.node.index');
                     Route::post('/sys-config-node', 'store')->name('expense-claims.node.store');
                 });
 
@@ -227,9 +227,12 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/sat-requests', 'index')->name('expense-claims.sat-sync.index');
                     Route::post('/sat-requests/force', 'forceSync')->name('expense-claims.sat-sync.force');
                 });
+
+
             });
         });
 
+    
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS SISTEMAS
     // ===================================================
@@ -327,6 +330,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
             });
         });
+
+    
 
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS QHSE
@@ -636,7 +641,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: SUMINISTRO
     // ===================================================
     Route::get('/suministro', function () {
-        return view('modules.suministros.suministroshome');})
+        return view('modules.suministros.suministroshome');
+    })
         ->middleware('check.permission:suministro')
         ->name('modulo.suministro');
 
@@ -644,7 +650,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: ALMACÉN
     // ===================================================
     Route::get('/almacen', function () {
-        return view('modules.almacen.index');})
+        return view('modules.almacen.index');
+    })
         ->middleware('check.permission:almacen')
         ->name('modulo.almacen');
 
@@ -671,4 +678,5 @@ Route::middleware(['web', 'auth'])->group(function () {
             })
                 ->middleware('check.permission:geociencias,analisis')
                 ->name('geociencias.analisis');
-        });});
+        });
+});

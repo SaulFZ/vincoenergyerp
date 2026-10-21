@@ -28,8 +28,8 @@ return new class extends Migration
             $table->decimal('amount', 20, 2)->comment('Monto entregado al empleado');
             $table->decimal('balance', 20, 2)->default(0)->comment('Saldo remanente por comprobar');
 
-            $table->string('status')->default('pendiente')->comment('pendiente, aprobado, comprobado, rechazado');
-            
+            $table->string('status')->default('pendiente')->comment('pendiente, aprobado, rechazado');
+            $table->string('settlement_status')->default('no_comprobado')->comment('no_comprobado, comprobando, comprobado');
             $table->timestamps();
         });
     }

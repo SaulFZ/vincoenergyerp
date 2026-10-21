@@ -1,6 +1,9 @@
 <?php
+
 namespace App\Models\Auth;
 
+use App\Models\Employee;
+use App\Models\Systems\UserManagement\UserPermission;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -28,14 +31,9 @@ class User extends Authenticatable
 
     public function employee()
     {
-        return $this->belongsTo(
-            \App\Models\Employee::class,
-            "employee_id",
-            "id"
-        )->withTrashed();
+        return $this->belongsTo(Employee::class, "employee_id", "id")->withTrashed();
     }
 
-    // Agrega este método a la clase User
     public function directPermissions()
     {
         return $this->belongsToMany(Permission::class, 'user_direct_permissions')
@@ -49,7 +47,7 @@ class User extends Authenticatable
 
     public function permissions()
     {
-        return $this->hasOne(\App\Models\Systems\UserManagement\UserPermission::class);
+        return $this->hasOne(UserPermission::class);
     }
 
     public function isActive()
@@ -66,5 +64,4 @@ class User extends Authenticatable
     {
         return $query->where("status", "inactive");
     }
-
 }

@@ -21,7 +21,6 @@
             <div class="ap-metric-info">
                 <span class="ap-metric-label">Anticipos por comprobar</span>
                 <span class="ap-metric-value" id="m-adv">$0.00</span>
-                <span class="ap-metric-hint" id="m-adv-hint"></span>
             </div>
         </div>
         <div class="ap-metric m-reemb">
@@ -29,7 +28,6 @@
             <div class="ap-metric-info">
                 <span class="ap-metric-label">Reembolsos por pagar</span>
                 <span class="ap-metric-value" id="m-reemb">$0.00</span>
-                <span class="ap-metric-hint" id="m-reemb-hint"></span>
             </div>
         </div>
         <div class="ap-metric m-net">
@@ -105,8 +103,8 @@
 {{-- Tooltip flotante para conceptos largos --}}
 <div id="cc-tip" class="cc-tip" role="tooltip"></div>
 
-{{-- ═══════════════ MODAL: KARDEX ═══════════════ --}}
-<div class="md-overlay" id="md-kardex">
+{{-- ═══════════════ MODAL: KARDEX (ADAPTADO A LAPTOP) ═══════════════ --}}
+<div class="md-overlay" id="md-kardex" role="dialog" aria-modal="true" aria-label="Kardex Contable Integral" tabindex="-1">
     <div class="md-box xl">
         <div class="md-head">
             <div class="md-title"><i class="bx bx-receipt"></i> Kardex Contable Integral</div>
@@ -117,7 +115,7 @@
 </div>
 
 {{-- ═══════════════ MODAL: REEMBOLSOS ═══════════════ --}}
-<div class="md-overlay" id="md-reembolsos">
+<div class="md-overlay" id="md-reembolsos" role="dialog" aria-modal="true" aria-label="Reembolsos del Colaborador" tabindex="-1">
     <div class="md-box lg">
         <div class="md-head">
             <div class="md-title"><i class="bx bx-wallet-alt"></i> Reembolsos del Colaborador</div>
@@ -128,7 +126,7 @@
 </div>
 
 {{-- ═══════════════ MODAL: DESGLOSE DEL ANTICIPO ═══════════════ --}}
-<div class="md-overlay" id="md-advance">
+<div class="md-overlay" id="md-advance" role="dialog" aria-modal="true" aria-label="Desglose del Anticipo" tabindex="-1">
     <div class="md-box lg">
         <div class="md-head">
             <div class="md-title"><i class="bx bx-list-ul"></i> Desglose del Anticipo</div>
@@ -139,7 +137,7 @@
 </div>
 
 {{-- ═══════════════ MODAL: AJUSTE EN LIBRO MAYOR ═══════════════ --}}
-<div class="md-overlay" id="md-ajuste">
+<div class="md-overlay" id="md-ajuste" role="dialog" aria-modal="true" aria-label="Retención de Sobrante" tabindex="-1">
     <div class="md-box sm">
         <div class="md-head">
             <div class="md-title"><i class="bx bx-slider-alt"></i> Retención de Sobrante</div>
@@ -149,9 +147,9 @@
             <div class="f-banner">
                 <div class="lb">Colaborador titular</div>
                 <div class="nm" id="adj-user-name"></div>
-                <div id="adj-ref-wrap" class="hidden" style="margin-top:.6rem;">
+                <div id="adj-ref-wrap" class="hidden" style="margin-top:.5rem;">
                     <div class="lb">Anticipo vinculado</div>
-                    <span class="folio" id="adj-ref-folio"></span>
+                    <span class="folio folio-anticipo" id="adj-ref-folio"></span>
                 </div>
             </div>
 
@@ -167,7 +165,10 @@
             <div class="f-group">
                 <label class="f-lbl" for="adj-amount">Monto a retener (MXN)</label>
                 <input type="number" id="adj-amount" class="f-input" step="0.01" min="0.01">
-                <span class="f-help">Máximo: saldo pendiente del anticipo.</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.5rem;">
+                    <span class="f-help">Máximo: saldo pendiente del anticipo.</span>
+                    <button type="button" id="adj-use-total" class="f-link hidden">Usar el saldo restante exacto</button>
+                </div>
             </div>
 
             <div id="adj-effect" class="f-effect up f-group"></div>
@@ -190,10 +191,12 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     window.AP_CONFIG = {
-        employees: {!! json_encode($advancesData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
-        urlAP:     "{{ url('administration/expense-claims/accounts-payable') }}",
-        urlAdjust: "{{ route('expense-claims.accounts-payable.adjust-balance') }}",
-        csrf:      "{{ csrf_token() }}"
+        employees:   {!! json_encode($advancesData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) !!},
+        urlAP:       "{{ url('administration/expense-claims/accounts-payable') }}",
+        urlAdvances: "{{ url('administration/expense-claims/advances') }}",
+        urlAdjust:   "{{ route('expense-claims.accounts-payable.adjust-balance') }}",
+        evidenceUrl: {{ Illuminate\Support\Js::from(route('expense-claims.evidence.view')) }},
+        csrf:        "{{ csrf_token() }}"
     };
 </script>
 <script src="{{ asset('assets/js/administration/expense_claims/accounts-payable.js') }}"></script>
