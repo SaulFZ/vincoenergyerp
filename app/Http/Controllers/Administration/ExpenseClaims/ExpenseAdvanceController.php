@@ -86,13 +86,12 @@ class ExpenseAdvanceController extends Controller
 
     public function getActiveByUser($userId)
     {
-        // Solo retornamos los anticipos aprobados, con saldo pendiente y que no estén 100% comprobados
         $advances = ExpenseAdvance::where('user_id', $userId)
             ->where('status', 'aprobado')
             ->where('balance', '>', 0)
             ->whereIn('settlement_status', ['no_comprobado', 'comprobando'])
             ->orderBy('created_at', 'desc')
-            ->get(['id', 'folio_system', 'advance_type', 'advance_reason', 'balance']);
+            ->get(['id', 'folio_system', 'advance_type', 'advance_reason', 'amount', 'balance']);
 
         return response()->json($advances);
     }
@@ -112,28 +111,31 @@ class ExpenseAdvanceController extends Controller
         try {
             DB::beginTransaction();
 
-            $creatorId = Auth::id();
-            $beneficiaryId = $request->beneficiary_id ?? $creatorId;
+            $creatorUser = Auth::user()->loadMissing('directPermissions');
+            $creatorId   = $creatorUser->id;
 
-            // Lógica de Folio Mensual: ANT-YYMM-001
+            $permNames = $creatorUser->directPermissions->pluck('name')->toArray();
+            $canDelegate = in_array('delegar_anticipo', $permNames, true)
+                        || in_array('delegar_solicitudes', $permNames, true);
+
+            $beneficiaryId = ($canDelegate && $request->filled('beneficiary_id'))
+                ? (int) $request->beneficiary_id
+                : (int) $creatorId;
+
             $ym = Carbon::now()->format('ym');
             $prefix = "ANT-{$ym}-";
 
-            // Buscamos el último anticipo de este mes específico
             $lastAdv = ExpenseAdvance::where('folio_system', 'like', "{$prefix}%")
                 ->orderBy('id', 'desc')
                 ->first();
 
             if ($lastAdv) {
-                // Extraemos los últimos 3 dígitos y sumamos 1
                 $lastNum = (int) substr($lastAdv->folio_system, -3);
                 $sysNum = $lastNum + 1;
             } else {
-                // Si no hay registros en este mes, reiniciamos el contador a 1
                 $sysNum = 1;
             }
 
-            // Formateamos para que siempre tenga 3 ceros a la izquierda (ej. 001, 015, 120)
             $folioSystem = $prefix . str_pad($sysNum, 3, '0', STR_PAD_LEFT);
 
             $advance = ExpenseAdvance::create([
@@ -153,7 +155,6 @@ class ExpenseAdvanceController extends Controller
 
             DB::commit();
 
-            // Notificación por correo al autorizador
             $advance->load('user.employee.area');
             $approver = User::find($request->approver_id);
 
@@ -229,6 +230,16 @@ class ExpenseAdvanceController extends Controller
     public function history()
     {
         try {
+            $user = Auth::user()->loadMissing('directPermissions');
+            $canViewBell = $user->directPermissions->contains('name', 'ver_notificaciones_anticipos');
+
+            if (!$canViewBell) {
+                return response()->json([
+                    'success' => true,
+                    'data'    => []
+                ]);
+            }
+
             $advances = ExpenseAdvance::with(['user:id,name', 'approver:id,name'])
                 ->orderBy('created_at', 'desc')
                 ->get([

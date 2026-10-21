@@ -25,10 +25,12 @@ class ReimbursementController extends Controller
 
         $permNames = $user->directPermissions->pluck('name')->toArray();
 
-        $canValidate   = in_array('validar_solicitud', $permNames, true);
-        $canApprove    = in_array('aprobar_solicitud', $permNames, true);
-        $canViewAll    = in_array('ver_todo_solicitudes', $permNames, true);
-        $canBellAlerts = in_array('ver_notificaciones_anticipos', $permNames, true);
+        $canValidate        = in_array('validar_solicitud', $permNames, true);
+        $canApprove         = in_array('aprobar_solicitud', $permNames, true);
+        $canViewAll         = in_array('ver_todo_solicitudes', $permNames, true);
+        $canBellAlerts      = in_array('ver_notificaciones_anticipos', $permNames, true);
+        $canDelegateClaim   = in_array('delegar_solicitud', $permNames, true) || in_array('delegar_solicitudes', $permNames, true);
+        $canDelegateAdvance = in_array('delegar_anticipo', $permNames, true)  || in_array('delegar_solicitudes', $permNames, true);
 
         $userAreaName = ($user->employee && $user->employee->area)
             ? $user->employee->area->name
@@ -65,7 +67,7 @@ class ReimbursementController extends Controller
                 return $isSameArea || $isOwn;
             }
 
-            // Usuario normal: únicamente sus propias solicitudes
+            // Usuario normal: únicamente sus propias solicitudes (o donde fue capturista)
             return $isOwn;
         });
 
@@ -123,9 +125,11 @@ class ReimbursementController extends Controller
             'aprobar_solicitud'            => $canApprove,
             'ver_todo_solicitudes'         => $canViewAll,
             'ver_notificaciones_anticipos' => $canBellAlerts,
+            'delegar_solicitud'            => $canDelegateClaim,
+            'delegar_anticipo'             => $canDelegateAdvance,
         ];
 
-        // Respuesta ligera JSON para actualización de tabla sin recargar página
+        // Respuesta JSON para refrescar la tabla sin recargar toda la página
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success'         => true,

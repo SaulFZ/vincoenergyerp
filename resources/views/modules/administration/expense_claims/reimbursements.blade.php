@@ -1,864 +1,948 @@
 {{-- ════════════════════════════════════════════════════════════════════════════
-     VISTA BLADE: PANEL DE REEMBOLSOS Y ANTICIPOS (reimbursements.blade.php)
-     ════════════════════════════════════════════════════════════════════════════ --}}
+VISTA BLADE: PANEL DE REEMBOLSOS Y ANTICIPOS (reimbursements.blade.php)
+════════════════════════════════════════════════════════════════════════════ --}}
 @extends('modules.administration.expense_claims.index')
 @push('styles')
-    <link href="{{ asset('assets/css/administration/expense_claims/reimbursements.css') }}" rel="stylesheet">
+<link href="{{ asset('assets/css/administration/expense_claims/reimbursements.css') }}" rel="stylesheet">
 @endpush
 
 @section('content')
 
-    <div class="reimbursements-container">
+<div class="reimbursements-container">
 
-        <div class="metrics-grid">
-            <div class="metric-card metric-pending">
-                <div class="metric-icon-wrap"><i class="bx bx-hourglass"></i></div>
-                <div class="metric-info">
-                    <span class="metric-label">Pendientes</span>
-                    <span id="metric-pending-val" class="metric-value">0</span>
-                </div>
-            </div>
-            <div class="metric-card metric-validated">
-                <div class="metric-icon-wrap"><i class="bx bx-list-check"></i></div>
-                <div class="metric-info">
-                    <span class="metric-label">Validados</span>
-                    <span id="metric-validated-val" class="metric-value">0</span>
-                </div>
-            </div>
-            <div class="metric-card metric-approved">
-                <div class="metric-icon-wrap"><i class="bx bx-check-shield"></i></div>
-                <div class="metric-info">
-                    <span class="metric-label">Aprobados</span>
-                    <span id="metric-approved-val" class="metric-value">0</span>
-                </div>
-            </div>
-            <div class="metric-card metric-rejected">
-                <div class="metric-icon-wrap"><i class="bx bxs-shield-x"></i></div>
-                <div class="metric-info">
-                    <span class="metric-label">Rechazados</span>
-                    <span id="metric-rejected-val" class="metric-value">0</span>
-                </div>
+    <div class="metrics-grid">
+        <div class="metric-card metric-pending">
+            <div class="metric-icon-wrap"><i class="bx bx-hourglass"></i></div>
+            <div class="metric-info">
+                <span class="metric-label">Pendientes</span>
+                <span id="metric-pending-val" class="metric-value">0</span>
             </div>
         </div>
-
-        <div class="card history-card">
-            <div class="card-header">
-                <span class="card-title">
-                    <i class="bx bx-history"></i> Historial de Solicitudes
-                </span>
-
-                <div class="table-controls">
-                    <div class="search-wrap">
-                        <i class="bx bx-search search-icon"></i>
-                        <input type="text" id="table-search" class="search-input" placeholder="Buscar por motivo, solicitante o folio...">
-                    </div>
-                    <div class="filter-tabs" id="filter-tabs">
-                        <button class="filter-tab active" data-filter="all">Todos</button>
-                        <button class="filter-tab" data-filter="pendiente">Pendiente</button>
-                        <button class="filter-tab" data-filter="validado">Validado</button>
-                        <button class="filter-tab" data-filter="aprobado">Aprobado</button>
-                        <button class="filter-tab" data-filter="rechazado">Rechazado</button>
-                    </div>
-
-                    <button class="btn btn-secondary btn-new-request" onclick="window.openAdvanceModalForCreate()" aria-label="Pedir Anticipo Operativo">
-                        <i class="bx bx-money-withdraw"></i> Solicitar Anticipo
-                    </button>
-
-                    <button class="btn btn-primary btn-new-request" onclick="window.openModalForCreate()" aria-label="Crear un nuevo trámite">
-                        <i class="bx bx-plus-circle"></i> Nueva Solicitud
-                    </button>
-
-                    @if(!empty($userPermissions['ver_notificaciones_anticipos']))
-                        <button id="btn-notification-bell" class="btn-notification-bell" onclick="window.toggleAdvancesDrawer()" aria-label="Ver historial de anticipos" title="Historial de Anticipos">
-                            <i class="bx bx-bell"></i>
-                            <span id="advance-bell-badge" class="notification-badge hidden">0</span>
-                        </button>
-                    @endif
-                </div>
-            </div>
-
-            <div class="table-scroll" id="main-table-scroll">
-                {{-- Overlay suave de actualización sin recargar la página --}}
-                <div id="table-updating-overlay" class="table-updating-overlay" aria-hidden="true">
-                    <div class="table-updating-pill">
-                        <i class="bx bx-loader-alt bx-spin"></i>
-                        <span>Actualizando...</span>
-                    </div>
-                </div>
-
-                <table class="data-table table-animated" id="main-data-table">
-                    <thead>
-                        <tr>
-                            <th>Folio</th>
-                            <th>F.Usuario</th>
-                            <th>Fecha</th>
-                            <th>Solicitante</th>
-                            <th>Área</th>
-                            <th>Tipo</th>
-                            <th>Motivo</th>
-                            <th>Monto</th>
-                            <th>Anticipo</th>
-                            <th>Revisión</th>
-                            <th>Estatus</th>
-                            <th>Conciliación</th>
-                            <th class="text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dashboard-list"></tbody>
-                </table>
-            </div>
-
-            <div id="empty-state" class="empty-state hidden">
-                <i class="bx bx-file-blank empty-icon"></i>
-                <p class="empty-title">Sin resultados encontrados</p>
-                <p class="empty-desc">No hay solicitudes que coincidan con los criterios de búsqueda o filtro aplicados en este momento.</p>
-            </div>
-
-            <div class="table-footer">
-                <div class="table-footer-left">
-                    <span id="table-count" class="table-count-label">0 solicitudes registradas</span>
-                </div>
-                <div id="pagination-controls" class="pagination-controls table-footer-center"></div>
-                <div class="table-footer-right">
-                    <div class="page-size-wrap">
-                        <span>Mostrar:</span>
-                        <select id="page-size-select" class="page-size-select" onchange="window.changePageSize()">
-                            <option value="5" selected>5</option>
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="all">Todos</option>
-                        </select>
-                    </div>
-                </div>
+        <div class="metric-card metric-validated">
+            <div class="metric-icon-wrap"><i class="bx bx-list-check"></i></div>
+            <div class="metric-info">
+                <span class="metric-label">Validados</span>
+                <span id="metric-validated-val" class="metric-value">0</span>
             </div>
         </div>
-
+        <div class="metric-card metric-approved">
+            <div class="metric-icon-wrap"><i class="bx bx-check-shield"></i></div>
+            <div class="metric-info">
+                <span class="metric-label">Aprobados</span>
+                <span id="metric-approved-val" class="metric-value">0</span>
+            </div>
+        </div>
+        <div class="metric-card metric-rejected">
+            <div class="metric-icon-wrap"><i class="bx bxs-shield-x"></i></div>
+            <div class="metric-info">
+                <span class="metric-label">Rechazados</span>
+                <span id="metric-rejected-val" class="metric-value">0</span>
+            </div>
+        </div>
     </div>
 
-    {{-- DRAWER ANTICIPOS --}}
-    <div id="advances-drawer-overlay" class="drawer-overlay" onclick="window.toggleAdvancesDrawer()"></div>
+    <div class="card history-card">
+        <div class="card-header">
+            <span class="card-title">
+                <i class="bx bx-history"></i> Historial de Solicitudes
+            </span>
 
-    <aside id="advances-drawer" class="advances-drawer" aria-hidden="true">
-        <div class="drawer-header">
-            <div class="drawer-title-wrap">
-                <div class="drawer-icon-box">
-                    <i class="bx bx-money-withdraw"></i>
+            <div class="table-controls">
+                <div class="search-wrap">
+                    <i class="bx bx-search search-icon"></i>
+                    <input type="text" id="table-search" class="search-input"
+                        placeholder="Buscar por motivo, solicitante o folio...">
                 </div>
-                <div>
-                    <h3 class="drawer-title">Historial de Anticipos</h3>
-                    <span class="drawer-subtitle">Seguimiento de estados en tiempo real</span>
+                <div class="filter-tabs" id="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">Todos</button>
+                    <button class="filter-tab" data-filter="pendiente">Pendiente</button>
+                    <button class="filter-tab" data-filter="validado">Validado</button>
+                    <button class="filter-tab" data-filter="aprobado">Aprobado</button>
+                    <button class="filter-tab" data-filter="rechazado">Rechazado</button>
                 </div>
+
+                <button class="btn btn-secondary btn-new-request" onclick="window.openAdvanceModalForCreate()"
+                    aria-label="Pedir Anticipo Operativo">
+                    <i class="bx bx-money-withdraw"></i> Solicitar Anticipo
+                </button>
+
+                <button class="btn btn-primary btn-new-request" onclick="window.openModalForCreate()"
+                    aria-label="Crear un nuevo trámite">
+                    <i class="bx bx-plus-circle"></i> Nueva Solicitud
+                </button>
+
+                @if(!empty($userPermissions['ver_notificaciones_anticipos']))
+                <button id="btn-notification-bell" class="btn-notification-bell" onclick="window.toggleAdvancesDrawer()"
+                    aria-label="Ver historial de anticipos" title="Historial de Anticipos">
+                    <i class="bx bx-bell"></i>
+                    <span id="advance-bell-badge" class="notification-badge hidden">0</span>
+                </button>
+                @endif
             </div>
-            <button class="btn-close-header" onclick="window.toggleAdvancesDrawer()" aria-label="Cerrar panel">
-                <i class="bx bx-x"></i>
-            </button>
         </div>
 
-        <div class="drawer-filters">
-            <div class="search-wrap" style="width: 100%;">
-                <i class="bx bx-search search-icon"></i>
-                <input type="text" id="drawer-search" class="search-input" placeholder="Buscar por folio o solicitante..." style="width: 100%;">
+        <div class="table-scroll" id="main-table-scroll">
+            {{-- Overlay suave de actualización sin recargar la página --}}
+            <div id="table-updating-overlay" class="table-updating-overlay" aria-hidden="true">
+                <div class="table-updating-pill">
+                    <i class="bx bx-loader-alt bx-spin"></i>
+                    <span>Actualizando...</span>
+                </div>
             </div>
-            <div class="filter-tabs" id="drawer-filter-tabs" style="width: 100%; justify-content: center;">
-                <button class="drawer-tab active" data-filter="all">Todos</button>
-                <button class="drawer-tab" data-filter="pendiente">Pendientes</button>
-                <button class="drawer-tab" data-filter="aprobado">Aprobados</button>
-                <button class="drawer-tab" data-filter="rechazado">Rechazados</button>
+
+            <table class="data-table table-animated" id="main-data-table">
+                <thead>
+                    <tr>
+                        <th>Folio</th>
+                        <th>F.Usuario</th>
+                        <th>Fecha</th>
+                        <th>Solicitante</th>
+                        <th>Área</th>
+                        <th>Tipo</th>
+                        <th>Motivo</th>
+                        <th>Monto</th>
+                        <th>Anticipo</th>
+                        <th>Revisión</th>
+                        <th>Estatus</th>
+                        <th>Conciliación</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboard-list"></tbody>
+            </table>
+        </div>
+
+        <div id="empty-state" class="empty-state hidden">
+            <i class="bx bx-file-blank empty-icon"></i>
+            <p class="empty-title">Sin resultados encontrados</p>
+            <p class="empty-desc">No hay solicitudes que coincidan con los criterios de búsqueda o filtro aplicados en
+                este momento.</p>
+        </div>
+
+        <div class="table-footer">
+            <div class="table-footer-left">
+                <span id="table-count" class="table-count-label">0 solicitudes registradas</span>
+            </div>
+            <div id="pagination-controls" class="pagination-controls table-footer-center"></div>
+            <div class="table-footer-right">
+                <div class="page-size-wrap">
+                    <span>Mostrar:</span>
+                    <select id="page-size-select" class="page-size-select" onchange="window.changePageSize()">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="all">Todos</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{{-- DRAWER ANTICIPOS --}}
+<div id="advances-drawer-overlay" class="drawer-overlay" onclick="window.toggleAdvancesDrawer()"></div>
+
+<aside id="advances-drawer" class="advances-drawer" aria-hidden="true">
+    <div class="drawer-header">
+        <div class="drawer-title-wrap">
+            <div class="drawer-icon-box">
+                <i class="bx bx-money-withdraw"></i>
+            </div>
+            <div>
+                <h3 class="drawer-title">Historial de Anticipos</h3>
+                <span class="drawer-subtitle">Seguimiento de estados en tiempo real</span>
+            </div>
+        </div>
+        <button class="btn-close-header" onclick="window.toggleAdvancesDrawer()" aria-label="Cerrar panel">
+            <i class="bx bx-x"></i>
+        </button>
+    </div>
+
+    <div class="drawer-filters">
+        <div class="search-wrap" style="width: 100%;">
+            <i class="bx bx-search search-icon"></i>
+            <input type="text" id="drawer-search" class="search-input" placeholder="Buscar por folio o solicitante..."
+                style="width: 100%;">
+        </div>
+        <div class="filter-tabs" id="drawer-filter-tabs" style="width: 100%; justify-content: center;">
+            <button class="drawer-tab active" data-filter="all">Todos</button>
+            <button class="drawer-tab" data-filter="pendiente">Pendientes</button>
+            <button class="drawer-tab" data-filter="aprobado">Aprobados</button>
+            <button class="drawer-tab" data-filter="rechazado">Rechazados</button>
+        </div>
+    </div>
+
+    <div class="drawer-body" id="advances-drawer-body"></div>
+</aside>
+
+{{-- ════════════════════════════════════════════════════════════════════════
+MODAL PRINCIPAL
+═════════════════════════════════════════════════════════════════════════ --}}
+<div id="reimbursement-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
+    <div class="modal-box large">
+
+        <div class="modal-header">
+            <h2 class="modal-title" id="main-modal-title">
+                <i class="bx bx-receipt"></i> Formato de <strong>Solicitud</strong>
+            </h2>
+            <div class="modal-header-actions">
+                <button type="button" class="btn btn-secondary" onclick="window.toggleSatPanel()"
+                    title="Extraer datos desde el SAT">
+                    <i class="bx bx-barcode"></i> Cargar Factura SAT
+                </button>
+                <button class="btn-close" onclick="window.closeModal()" aria-label="Cerrar ventana">
+                    <i class="bx bx-x"></i>
+                </button>
             </div>
         </div>
 
-        <div class="drawer-body" id="advances-drawer-body"></div>
-    </aside>
+        <div class="modal-body" id="modal-body-scroll">
 
-    {{-- ════════════════════════════════════════════════════════════════════════
-         MODAL PRINCIPAL
-         ═════════════════════════════════════════════════════════════════════════ --}}
-    <div id="reimbursement-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
-        <div class="modal-box large">
-
-            <div class="modal-header">
-                <h2 class="modal-title" id="main-modal-title">
-                    <i class="bx bx-receipt"></i> Formato de <strong>Solicitud</strong>
-                </h2>
-                <div class="modal-header-actions">
-                    <button type="button" class="btn btn-secondary" onclick="window.toggleSatPanel()" title="Extraer datos desde el SAT">
-                        <i class="bx bx-barcode"></i> Cargar Factura SAT
-                    </button>
-                    <button class="btn-close" onclick="window.closeModal()" aria-label="Cerrar ventana">
-                        <i class="bx bx-x"></i>
-                    </button>
+            <div id="rejection-container" class="rejection-alert hidden">
+                <i class="bx bxs-error-circle"></i>
+                <div class="rejection-alert-content">
+                    <div class="rejection-alert-title">Motivo de Rechazo</div>
+                    <div class="rejection-alert-text" id="rejection-text"></div>
                 </div>
             </div>
 
-            <div class="modal-body" id="modal-body-scroll">
-
-                <div id="rejection-container" class="rejection-alert hidden">
-                    <i class="bx bxs-error-circle"></i>
-                    <div class="rejection-alert-content">
-                        <div class="rejection-alert-title">Motivo de Rechazo</div>
-                        <div class="rejection-alert-text" id="rejection-text"></div>
+            <div class="form-header-card">
+                <div class="fh-info-strip">
+                    <div class="fh-info-item">
+                        <span>RFC Empresa Matriz</span>
+                        <strong id="company-rfc">Cargando...</strong>
+                    </div>
+                    <div class="fh-info-item folio">
+                        <span>Folio Principal (Sistema)</span>
+                        <strong id="modal-folio-p">SIS-0000</strong>
+                    </div>
+                    <div class="fh-info-item user-folio">
+                        <span>Folio Interno del Usuario</span>
+                        <strong id="modal-folio-u">SFP-000</strong>
+                    </div>
+                    <div class="fh-info-item">
+                        <span>Lugar de Emisión</span>
+                        <div class="input-group location-group">
+                            <i class="bx bx-map field-icon"></i>
+                            <input type="text" id="modal-lugar" value="VHSA, TAB."
+                                class="input-field input-location modal-focusable">
+                        </div>
+                    </div>
+                    <div class="fh-info-item text-right">
+                        <span>Fecha del Documento</span>
+                        <strong id="modal-fecha-hoy"></strong>
                     </div>
                 </div>
 
-                <div class="form-header-card">
-                    <div class="fh-info-strip">
-                        <div class="fh-info-item">
-                            <span>RFC Empresa Matriz</span>
-                            <strong id="company-rfc">Cargando...</strong>
-                        </div>
-                        <div class="fh-info-item folio">
-                            <span>Folio Principal (Sistema)</span>
-                            <strong id="modal-folio-p">SIS-0000</strong>
-                        </div>
-                        <div class="fh-info-item user-folio">
-                            <span>Folio Interno del Usuario</span>
-                            <strong id="modal-folio-u">SFP-000</strong>
-                        </div>
-                        <div class="fh-info-item">
-                            <span>Lugar de Emisión</span>
-                            <div class="input-group location-group">
-                                <i class="bx bx-map field-icon"></i>
-                                <input type="text" id="modal-lugar" value="VHSA, TAB." class="input-field input-location modal-focusable">
-                            </div>
-                        </div>
-                        <div class="fh-info-item text-right">
-                            <span>Fecha del Documento</span>
-                            <strong id="modal-fecha-hoy"></strong>
-                        </div>
-                    </div>
+                <div class="fh-section">
+                    <h4 class="fh-section-title"><i class="bx bx-slider-alt"></i> Configuración del Trámite</h4>
+                    <div class="fh-row">
 
-                    <div class="fh-section">
-                        <h4 class="fh-section-title"><i class="bx bx-slider-alt"></i> Configuración del Trámite</h4>
-                        <div class="fh-row">
-
-                            <div class="col-15">
-                                <label class="input-label">Tipo de Solicitud <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <i class="bx bx-layer field-icon"></i>
-                                    <select id="modal-tipo-solicitud" class="input-field modal-focusable" onchange="window.handleTipoSolicitudChange()">
-                                        <option value="" disabled selected>Seleccione tipo de solicitud...</option>
-                                        <option value="Reembolso">Reembolso</option>
-                                        <option value="Comprobacion Electronica">Comprobación Electrónica</option>
-                                        <option value="Comprobacion Directa">Comprobación Directa</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-15">
-                                <label class="input-label" id="lbl-advance">Anticipo a Comprobar</label>
-                                <div class="input-group advance-select-group" id="advance-select-group">
-                                    <i class="bx bx-link field-icon" id="adv-icon-state" style="transition: all 0.3s ease;"></i>
-                                    <select id="modal-advance-id" class="input-field modal-focusable" onchange="window.toggleAdvanceViewButton(); window.onAdvanceSelected();" disabled>
-                                        <option value="" disabled selected>Seleccione un tipo de solicitud...</option>
-                                    </select>
-                                    <button type="button" id="btn-view-advance" class="btn-input-action hidden" onclick="window.openAdvanceFromSelect()" title="Ver anticipo" aria-label="Ver anticipo">
-                                        <i class="bx bx-show"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="col-15">
-                                <label class="input-label">Categoría del Gasto <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <i class="bx bx-purchase-tag field-icon"></i>
-                                    <select id="modal-tipo-gasto" class="input-field modal-focusable">
-                                        <option value="" disabled selected>Seleccione categoría de gasto...</option>
-                                        <option value="viaje">Viáticos y Viaje</option>
-                                        <option value="operacion">Operaciones y Campo</option>
-                                        <option value="otros">Diversos / Otros</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-auto">
-                                <label class="input-label">¿Es Gasto Deducible?</label>
-                                <div class="radio-pill-group">
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="is_deductible" value="1" class="modal-focusable" checked>
-                                        <i class="bx bx-check"></i> Sí
-                                    </label>
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="is_deductible" value="0" class="modal-focusable">
-                                        <i class="bx bx-x"></i> No
-                                    </label>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <div class="fh-section">
-                        <div class="fh-row">
-
-                            <div class="col-auto">
-                                <label class="input-label">Generar para otro?</label>
-                                <div class="radio-pill-group">
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="is_delegated" value="1" class="modal-focusable" onchange="window.handleDelegationToggle()">
-                                        <i class="bx bx-check"></i> Sí
-                                    </label>
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="is_delegated" value="0" class="modal-focusable" onchange="window.handleDelegationToggle()" checked>
-                                        <i class="bx bx-x"></i> No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="col-15">
-                                <label class="input-label">Nombre del Beneficiario <span class="req">*</span></label>
-                                <div class="input-group reimburse-dropdown-container">
-                                    <i class="bx bx-user field-icon" id="icon-solicitante"></i>
-                                    <input type="hidden" id="modal-beneficiary-id" value="{{ Auth::id() ?? 1 }}">
-                                    <input type="text" id="modal-nombre" value="{{ Auth::user()->name ?? 'Usuario No Definido' }}" class="input-field" readonly autocomplete="off">
-                                    <div id="employee-dropdown" class="reimburse-custom-dropdown hidden"></div>
-                                </div>
-                            </div>
-
-                            <div class="col-10">
-                                <label class="input-label">Área de Adscripción</label>
-                                <div class="input-group">
-                                    <i class="bx bx-buildings field-icon"></i>
-                                    <input type="text" id="modal-depto" value="{{ Auth::user()->employee->area->name ?? 'Sin Asignar' }}" class="input-field" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-15">
-                                <label class="input-label">Centro de Costos <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <i class="bx bx-building-house field-icon"></i>
-                                    <select id="modal-centro-costos" class="input-field modal-focusable"></select>
-                                </div>
-                            </div>
-
-                            <div class="col-25">
-                                <label class="input-label">Motivo de la Erogación <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <i class="bx bx-text field-icon"></i>
-                                    <input type="text" id="modal-motivo" class="input-field modal-focusable" placeholder="Ej. Viáticos técnicos a pozo foráneo">
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                <div id="sat-panel" class="sat-panel hidden">
-                    <div class="sat-panel-header">
-                        <div class="sat-panel-title-area">
-                            <div class="sat-icon-box"><i class="bx bx-link-external"></i></div>
-                            <div>
-                                <h4 class="sat-panel-title">Bóveda Fiscal SAT</h4>
-                                <span class="sat-panel-subtitle">Vincule comprobantes XML directamente desde el servidor</span>
-                            </div>
-                        </div>
-                        <div class="sat-tabs">
-                            <button type="button" class="sat-tab active" data-target="sat-tab-uuid">
-                                <i class="bx bx-search-alt"></i> Buscar Folio
-                            </button>
-                            <button type="button" class="sat-tab" data-target="sat-tab-xml">
-                                <i class="bx bx-cloud-upload"></i> Subir XML
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="sat-panel-body">
-                        <div id="sat-tab-uuid" class="sat-content active">
-                            <label class="sat-label">Ingrese el Folio Fiscal (UUID) o la Serie del comprobante</label>
-                            <div class="sat-search-bar-modern">
-                                <i class="bx bx-barcode search-prefix-icon"></i>
-                                <input type="text" id="search-uuid" class="sat-input-modern modal-focusable" placeholder="Ej. A102 o 25f60d40-bdd5..." autocomplete="off">
-                                <button type="button" id="btn-clear-uuid" class="btn-clear-input hidden" onclick="window.limpiarBuscadorSat()">
-                                    <i class="bx bx-x-circle"></i>
-                                </button>
-                                <button type="button" id="btn-buscar" class="btn-search-modern" onclick="window.buscarFacturaManual()">Buscar</button>
-                                <div id="uuid-dropdown" class="sat-dropdown hidden"></div>
+                        <div class="col-15">
+                            <label class="input-label">Tipo de Solicitud <span class="req">*</span></label>
+                            <div class="input-group">
+                                <i class="bx bx-layer field-icon"></i>
+                                <select id="modal-tipo-solicitud" class="input-field modal-focusable"
+                                    onchange="window.handleTipoSolicitudChange()">
+                                    <option value="" disabled selected>Seleccione tipo de solicitud...</option>
+                                    <option value="Reembolso">Reembolso</option>
+                                    <option value="Comprobacion Electronica">Comprobación Electrónica</option>
+                                    <option value="Comprobacion Directa">Comprobación Directa</option>
+                                </select>
                             </div>
                         </div>
 
-                        <div id="sat-tab-xml" class="sat-content hidden">
-                            <div id="drop-zone" class="sat-drop-zone">
-                                <div class="drop-zone-content">
-                                    <i class="bx bx-cloud-upload drop-icon"></i>
-                                    <h5>Arrastra tu archivo .XML aquí</h5>
-                                    <p>O haz clic para examinar en tu equipo</p>
-                                    <span class="drop-badge">Extracción Automática de UUID, RFC y Montos</span>
-                                </div>
-                                <input type="file" id="xml-input" accept=".xml" class="hidden">
-                            </div>
-                        </div>
-
-                        <div id="sat-result-container" class="sat-result-box hidden">
-                            <div class="sat-result-success">
-                                <div class="success-icon-wrapper"><i class="bx bx-check"></i></div>
-                                <div class="success-info">
-                                    <strong>¡Comprobante Identificado y Validado!</strong>
-                                    <span id="sat-result-uuid" class="uuid-text"></span>
-                                </div>
-                            </div>
-                            <div class="sat-result-actions">
-                                <div class="input-group sat-category-group">
-                                    <i class="bx bx-purchase-tag-alt field-icon"></i>
-                                    <select id="sat-category" class="input-field">
-                                        <option value="" disabled selected>Clasifica este gasto...</option>
-                                        <option value="cat-vuelos">Transportación, Vuelos y Peajes</option>
-                                        <option value="cat-restaurantes">Consumo de Alimentos y Restaurantes</option>
-                                        <option value="cat-combustible">Abastecimiento de Combustible</option>
-                                        <option value="cat-otros">Cargos Varios / Misceláneos</option>
-                                    </select>
-                                </div>
-                                <button type="button" class="btn btn-primary btn-integrate" onclick="window.agregarFilaDesdeSAT()">
-                                    <i class="bx bx-plus"></i> Integrar Gasto
+                        <div class="col-15">
+                            <label class="input-label" id="lbl-advance">Anticipo a Comprobar</label>
+                            <div class="input-group advance-select-group" id="advance-select-group">
+                                <i class="bx bx-link field-icon" id="adv-icon-state"
+                                    style="transition: all 0.3s ease;"></i>
+                                <select id="modal-advance-id" class="input-field modal-focusable"
+                                    onchange="window.toggleAdvanceViewButton(); window.onAdvanceSelected();" disabled>
+                                    <option value="" disabled selected>Seleccione un tipo de solicitud...</option>
+                                </select>
+                                <button type="button" id="btn-view-advance" class="btn-input-action hidden"
+                                    onclick="window.openAdvanceFromSelect()" title="Ver anticipo"
+                                    aria-label="Ver anticipo">
+                                    <i class="bx bx-show"></i>
                                 </button>
                             </div>
                         </div>
+
+                        <div class="col-15">
+                            <label class="input-label">Categoría del Gasto <span class="req">*</span></label>
+                            <div class="input-group">
+                                <i class="bx bx-purchase-tag field-icon"></i>
+                                <select id="modal-tipo-gasto" class="input-field modal-focusable">
+                                    <option value="" disabled selected>Seleccione categoría de gasto...</option>
+                                    <option value="viaje">Viáticos y Viaje</option>
+                                    <option value="operacion">Operaciones y Campo</option>
+                                    <option value="otros">Diversos / Otros</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-auto">
+                            <label class="input-label">¿Es Gasto Deducible?</label>
+                            <div class="radio-pill-group">
+                                <label class="radio-pill-label">
+                                    <input type="radio" name="is_deductible" value="1" class="modal-focusable" checked>
+                                    <i class="bx bx-check"></i> Sí
+                                </label>
+                                <label class="radio-pill-label">
+                                    <input type="radio" name="is_deductible" value="0" class="modal-focusable">
+                                    <i class="bx bx-x"></i> No
+                                </label>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                <div class="expense-card">
-                    <div class="expense-card-header">
-                        <span class="expense-card-title"><i class="bx bx-table"></i> Desglose y Análisis Analítico de Gastos</span>
-                    </div>
-                    <div class="table-scroll">
-                        <table class="expense-table" id="matrix-table">
-                            <thead>
-                                <tr class="th-group">
-                                    <th colspan="3" id="th-group-identificador" class="text-left" style="transition: all 0.3s;">Comprobante Identificador</th>
-                                    <th colspan="3" class="th-importes">Importes Subtotales</th>
-                                    <th colspan="2">Retenciones / Impuestos</th>
-                                    <th rowspan="2" class="th-total-header">Monto Total</th>
-                                    <th rowspan="2" class="th-total-empty"></th>
-                                </tr>
-                                <tr class="th-cols">
-                                    <th class="th-w-140">Fecha Factura</th>
-                                    <th class="th-w-100">Folio/Num. Fac.</th>
-                                    <th>Descripción Comercial</th>
-                                    <th class="th-w-140 th-cc-col">Centro de Costos</th>
-                                    <th class="th-w-90">Comp. Fiscal<br>(PDF + XML)</th>
-                                    <th class="th-w-90">Comp. Simple<br>No Fiscal</th>
-                                    <th class="th-w-90">Sin Comp.<br>y Propinas</th>
-                                    <th class="th-w-80">I.S.H.<br>Otros Imp.</th>
-                                    <th class="th-w-75">I.V.A.</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cat-vuelos">
-                                <tr class="cat-row">
-                                    <td colspan="10" class="cat-row-colspan">
-                                        <div class="cat-row-content">
-                                            <span><i class="bx bxs-plane-alt"></i> I. Transportación, Vuelos y Peajes</span>
-                                            <button type="button" class="btn-add-row" onclick="window.addRow('cat-vuelos')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tbody id="cat-restaurantes">
-                                <tr class="cat-row">
-                                    <td colspan="10" class="cat-row-colspan">
-                                        <div class="cat-row-content">
-                                            <span><i class="bx bx-restaurant"></i> II. Consumo de Alimentos y Restaurantes</span>
-                                            <button type="button" class="btn-add-row" onclick="window.addRow('cat-restaurantes')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tbody id="cat-combustible">
-                                <tr class="cat-row">
-                                    <td colspan="10" class="cat-row-colspan">
-                                        <div class="cat-row-content">
-                                            <span><i class="bx bxs-gas-pump"></i> III. Abastecimiento de Combustible</span>
-                                            <button type="button" class="btn-add-row" onclick="window.addRow('cat-combustible')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tbody id="cat-otros">
-                                <tr class="cat-row">
-                                    <td colspan="10" class="cat-row-colspan">
-                                        <div class="cat-row-content">
-                                            <span><i class="bx bx-package"></i> IV. Cargos Varios / Misceláneos</span>
-                                            <button type="button" class="btn-add-row" onclick="window.addRow('cat-otros')" title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div class="fh-section">
+                    <div class="fh-row">
+
+                        <div class="col-auto">
+                            <label class="input-label">Generar para otro?</label>
+                            <div class="radio-pill-group">
+                                <label class="radio-pill-label">
+                                    <input type="radio" name="is_delegated" value="1" class="modal-focusable"
+                                        onchange="window.handleDelegationToggle()">
+                                    <i class="bx bx-check"></i> Sí
+                                </label>
+                                <label class="radio-pill-label">
+                                    <input type="radio" name="is_delegated" value="0" class="modal-focusable"
+                                        onchange="window.handleDelegationToggle()" checked>
+                                    <i class="bx bx-x"></i> No
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-15">
+                            <label class="input-label">Nombre del Beneficiario <span class="req">*</span></label>
+                            <div class="input-group reimburse-dropdown-container">
+                                <i class="bx bx-user field-icon" id="icon-solicitante"></i>
+                                <input type="hidden" id="modal-beneficiary-id" value="{{ Auth::id() ?? 1 }}">
+                                <input type="text" id="modal-nombre"
+                                    value="{{ Auth::user()->name ?? 'Usuario No Definido' }}" class="input-field"
+                                    readonly autocomplete="off">
+                                <div id="employee-dropdown" class="reimburse-custom-dropdown hidden"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-10">
+                            <label class="input-label">Área de Adscripción</label>
+                            <div class="input-group">
+                                <i class="bx bx-buildings field-icon"></i>
+                                <input type="text" id="modal-depto"
+                                    value="{{ Auth::user()->employee->area->name ?? 'Sin Asignar' }}"
+                                    class="input-field" readonly>
+                            </div>
+                        </div>
+
+                        <div class="col-15">
+                            <label class="input-label">Centro de Costos <span class="req">*</span></label>
+                            <div class="input-group">
+                                <i class="bx bx-building-house field-icon"></i>
+                                <select id="modal-centro-costos" class="input-field modal-focusable"></select>
+                            </div>
+                        </div>
+
+                        <div class="col-25">
+                            <label class="input-label">Motivo de la Erogación <span class="req">*</span></label>
+                            <div class="input-group">
+                                <i class="bx bx-text field-icon"></i>
+                                <input type="text" id="modal-motivo" class="input-field modal-focusable"
+                                    placeholder="Ej. Viáticos técnicos a pozo foráneo">
+                            </div>
+                        </div>
+
                     </div>
                 </div>
+            </div>
 
-                {{-- ════════════════════════════════════════════════════════════════════════
-                     BOTTOM SECTION: PDF + SUMMARY
-                     ═════════════════════════════════════════════════════════════════════════ --}}
-                <div class="bottom-section">
-                    <div class="evidence-panel" id="evidence-panel" onclick="if(window.isFormEditable){document.getElementById('evidence-upload').click();}">
-                        <i class="bx bxs-file-pdf evidence-icon" id="evidence-icon"></i>
-                        <h4 class="evidence-title" id="evidence-title">Gestor Documental (PDF)</h4>
-                        <p class="evidence-desc" id="evidence-desc">Arrastra y suelta tus facturas, tickets y documentación probatoria aquí. Carga máxima de 10MB por archivo unitario.</p>
-                        <button type="button" class="btn btn-secondary hidden" id="evidence-browse-btn" onclick="event.stopPropagation(); document.getElementById('evidence-upload').click()">
-                            <i class="bx bx-folder-plus"></i> <span id="evidence-browse-text">Examinar archivos</span>
+            <div id="sat-panel" class="sat-panel hidden">
+                <div class="sat-panel-header">
+                    <div class="sat-panel-title-area">
+                        <div class="sat-icon-box"><i class="bx bx-link-external"></i></div>
+                        <div>
+                            <h4 class="sat-panel-title">Bóveda Fiscal SAT</h4>
+                            <span class="sat-panel-subtitle">Vincule comprobantes XML directamente desde el
+                                servidor</span>
+                        </div>
+                    </div>
+                    <div class="sat-tabs">
+                        <button type="button" class="sat-tab active" data-target="sat-tab-uuid">
+                            <i class="bx bx-search-alt"></i> Buscar Folio
                         </button>
-                        <input type="file" id="evidence-upload" accept=".pdf" multiple class="hidden">
-                        <div id="evidence-list" class="evidence-list" onclick="event.stopPropagation()"></div>
+                        <button type="button" class="sat-tab" data-target="sat-tab-xml">
+                            <i class="bx bx-cloud-upload"></i> Subir XML
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sat-panel-body">
+                    <div id="sat-tab-uuid" class="sat-content active">
+                        <label class="sat-label">Ingrese el Folio Fiscal (UUID) o la Serie del comprobante</label>
+                        <div class="sat-search-bar-modern">
+                            <i class="bx bx-barcode search-prefix-icon"></i>
+                            <input type="text" id="search-uuid" class="sat-input-modern modal-focusable"
+                                placeholder="Ej. A102 o 25f60d40-bdd5..." autocomplete="off">
+                            <button type="button" id="btn-clear-uuid" class="btn-clear-input hidden"
+                                onclick="window.limpiarBuscadorSat()">
+                                <i class="bx bx-x-circle"></i>
+                            </button>
+                            <button type="button" id="btn-buscar" class="btn-search-modern"
+                                onclick="window.buscarFacturaManual()">Buscar</button>
+                            <div id="uuid-dropdown" class="sat-dropdown hidden"></div>
+                        </div>
                     </div>
 
-                    <div class="summary-box">
-                        <div class="summary-box-header">
-                            <i class="bx bx-calculator"></i>
-                            <span>Consolidado Financiero</span>
-                        </div>
-                        <div class="summary-body">
-                            <div class="summary-row"><span class="sum-lbl">Gastos Fiscales (XML+PDF):</span><span id="sum-fiscal" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Gastos No Fiscales (Notas):</span><span id="sum-simple" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Sin Comprobante / Propinas:</span><span id="sum-propinas" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva" class="sum-val">$0.00</span></div>
-                            <div class="summary-row"><span class="sum-lbl">I.S.H. y Retenciones:</span><span id="sum-ish" class="sum-val">$0.00</span></div>
-                            <div class="sum-total-row">
-                                <span class="sum-total-lbl" id="sum-total-lbl">TOTAL COMPROBADO</span>
-                                <span id="sum-total" class="sum-total-val" data-value="0">$0.00</span>
+                    <div id="sat-tab-xml" class="sat-content hidden">
+                        <div id="drop-zone" class="sat-drop-zone">
+                            <div class="drop-zone-content">
+                                <i class="bx bx-cloud-upload drop-icon"></i>
+                                <h5>Arrastra tu archivo .XML aquí</h5>
+                                <p>O haz clic para examinar en tu equipo</p>
+                                <span class="drop-badge">Extracción Automática de UUID, RFC y Montos</span>
                             </div>
+                            <input type="file" id="xml-input" accept=".xml" class="hidden">
+                        </div>
+                    </div>
+
+                    <div id="sat-result-container" class="sat-result-box hidden">
+                        <div class="sat-result-success">
+                            <div class="success-icon-wrapper"><i class="bx bx-check"></i></div>
+                            <div class="success-info">
+                                <strong>¡Comprobante Identificado y Validado!</strong>
+                                <span id="sat-result-uuid" class="uuid-text"></span>
+                            </div>
+                        </div>
+                        <div class="sat-result-actions">
+                            <div class="input-group sat-category-group">
+                                <i class="bx bx-purchase-tag-alt field-icon"></i>
+                                <select id="sat-category" class="input-field">
+                                    <option value="" disabled selected>Clasifica este gasto...</option>
+                                    <option value="cat-vuelos">Transportación, Vuelos y Peajes</option>
+                                    <option value="cat-restaurantes">Consumo de Alimentos y Restaurantes</option>
+                                    <option value="cat-combustible">Abastecimiento de Combustible</option>
+                                    <option value="cat-otros">Cargos Varios / Misceláneos</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-integrate"
+                                onclick="window.agregarFilaDesdeSAT()">
+                                <i class="bx bx-plus"></i> Integrar Gasto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expense-card">
+                <div class="expense-card-header">
+                    <span class="expense-card-title"><i class="bx bx-table"></i> Desglose y Análisis Analítico de
+                        Gastos</span>
+                </div>
+                <div class="table-scroll">
+                    <table class="expense-table" id="matrix-table">
+                        <thead>
+                            <tr class="th-group">
+                                <th colspan="3" id="th-group-identificador" class="text-left"
+                                    style="transition: all 0.3s;">Comprobante Identificador</th>
+                                <th colspan="3" class="th-importes">Importes Subtotales</th>
+                                <th colspan="2">Retenciones / Impuestos</th>
+                                <th rowspan="2" class="th-total-header">Monto Total</th>
+                                <th rowspan="2" class="th-total-empty"></th>
+                            </tr>
+                            <tr class="th-cols">
+                                <th class="th-w-140">Fecha Factura</th>
+                                <th class="th-w-100">Folio/Num. Fac.</th>
+                                <th>Descripción Comercial</th>
+                                <th class="th-w-140 th-cc-col">Centro de Costos</th>
+                                <th class="th-w-90">Comp. Fiscal<br>(PDF + XML)</th>
+                                <th class="th-w-90">Comp. Simple<br>No Fiscal</th>
+                                <th class="th-w-90">Sin Comp.<br>y Propinas</th>
+                                <th class="th-w-80">I.S.H.<br>Otros Imp.</th>
+                                <th class="th-w-75">I.V.A.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cat-vuelos">
+                            <tr class="cat-row">
+                                <td colspan="10" class="cat-row-colspan">
+                                    <div class="cat-row-content">
+                                        <span><i class="bx bxs-plane-alt"></i> I. Transportación, Vuelos y Peajes</span>
+                                        <button type="button" class="btn-add-row" onclick="window.addRow('cat-vuelos')"
+                                            title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tbody id="cat-restaurantes">
+                            <tr class="cat-row">
+                                <td colspan="10" class="cat-row-colspan">
+                                    <div class="cat-row-content">
+                                        <span><i class="bx bx-restaurant"></i> II. Consumo de Alimentos y
+                                            Restaurantes</span>
+                                        <button type="button" class="btn-add-row"
+                                            onclick="window.addRow('cat-restaurantes')" title="Agregar Fila de Gasto"><i
+                                                class="bx bx-plus"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tbody id="cat-combustible">
+                            <tr class="cat-row">
+                                <td colspan="10" class="cat-row-colspan">
+                                    <div class="cat-row-content">
+                                        <span><i class="bx bxs-gas-pump"></i> III. Abastecimiento de Combustible</span>
+                                        <button type="button" class="btn-add-row"
+                                            onclick="window.addRow('cat-combustible')" title="Agregar Fila de Gasto"><i
+                                                class="bx bx-plus"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tbody id="cat-otros">
+                            <tr class="cat-row">
+                                <td colspan="10" class="cat-row-colspan">
+                                    <div class="cat-row-content">
+                                        <span><i class="bx bx-package"></i> IV. Cargos Varios / Misceláneos</span>
+                                        <button type="button" class="btn-add-row" onclick="window.addRow('cat-otros')"
+                                            title="Agregar Fila de Gasto"><i class="bx bx-plus"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- ════════════════════════════════════════════════════════════════════════
+            BOTTOM SECTION: PDF + SUMMARY
+            ═════════════════════════════════════════════════════════════════════════ --}}
+            <div class="bottom-section">
+                <div class="evidence-panel" id="evidence-panel"
+                    onclick="if(window.isFormEditable){document.getElementById('evidence-upload').click();}">
+                    <i class="bx bxs-file-pdf evidence-icon" id="evidence-icon"></i>
+                    <h4 class="evidence-title" id="evidence-title">Gestor Documental (PDF)</h4>
+                    <p class="evidence-desc" id="evidence-desc">Arrastra y suelta tus facturas, tickets y documentación
+                        probatoria aquí. Carga máxima de 10MB por archivo unitario.</p>
+                    <button type="button" class="btn btn-secondary hidden" id="evidence-browse-btn"
+                        onclick="event.stopPropagation(); document.getElementById('evidence-upload').click()">
+                        <i class="bx bx-folder-plus"></i> <span id="evidence-browse-text">Examinar archivos</span>
+                    </button>
+                    <input type="file" id="evidence-upload" accept=".pdf" multiple class="hidden">
+                    <div id="evidence-list" class="evidence-list" onclick="event.stopPropagation()"></div>
+                </div>
+
+                <div class="summary-box">
+                    <div class="summary-box-header">
+                        <i class="bx bx-calculator"></i>
+                        <span>Consolidado Financiero</span>
+                    </div>
+                    <div class="summary-body">
+                        <div class="summary-row"><span class="sum-lbl">Gastos Fiscales (XML+PDF):</span><span
+                                id="sum-fiscal" class="sum-val">$0.00</span></div>
+                        <div class="summary-row"><span class="sum-lbl">Gastos No Fiscales (Notas):</span><span
+                                id="sum-simple" class="sum-val">$0.00</span></div>
+                        <div class="summary-row"><span class="sum-lbl">Sin Comprobante / Propinas:</span><span
+                                id="sum-propinas" class="sum-val">$0.00</span></div>
+                        <div class="summary-row"><span class="sum-lbl">Impuesto (I.V.A.):</span><span id="sum-iva"
+                                class="sum-val">$0.00</span></div>
+                        <div class="summary-row"><span class="sum-lbl">I.S.H. y Retenciones:</span><span id="sum-ish"
+                                class="sum-val">$0.00</span></div>
+                        <div class="sum-total-row">
+                            <span class="sum-total-lbl" id="sum-total-lbl">TOTAL COMPROBADO</span>
+                            <span id="sum-total" class="sum-total-val" data-value="0">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ★ SECCIÓN SOBRANTE DEL ANTICIPO (A favor de la empresa: Anticipo > Comprobado) ★ --}}
+            <div class="leftover-section hidden" id="leftover-section">
+                <div class="leftover-question-bar bar-sobrante">
+                    <div class="leftover-question-left">
+                        <i class="bx bx-layer-minus"></i>
+                        <div>
+                            <strong>Sobrante del anticipo detectado (A devolver a la empresa)</strong>
+                            <small id="leftover-stage-subtitle">
+                                El monto comprobado es menor al anticipo entregado. La devolución y carga del
+                                comprobante PDF se habilitarán una vez que el trámite sea aprobado.
+                            </small>
                         </div>
                     </div>
                 </div>
 
-                {{-- ★ SECCIÓN SOBRANTE DEL ANTICIPO (A favor de la empresa: Anticipo > Comprobado) ★ --}}
-                <div class="leftover-section hidden" id="leftover-section">
-                    <div class="leftover-question-bar bar-sobrante">
-                        <div class="leftover-question-left">
-                            <i class="bx bx-layer-minus"></i>
+                <div id="leftover-preapproval-banner" class="leftover-body">
+                    <div class="leftover-preapproval-box">
+                        <div class="leftover-preapproval-info">
+                            <i class="bx bx-lock-alt"></i>
                             <div>
-                                <strong>Sobrante del anticipo detectado (A devolver a la empresa)</strong>
-                                <small id="leftover-stage-subtitle">
-                                    El monto comprobado es menor al anticipo entregado. La devolución y carga del comprobante PDF se habilitarán una vez que el trámite sea aprobado.
+                                <div class="leftover-preapproval-title">Devolución en espera de Aprobación Final</div>
+                                <div class="leftover-preapproval-desc">Para garantizar que transfieras el importe
+                                    exacto, espera a que el revisor y el aprobador autoricen tus facturas.</div>
+                            </div>
+                        </div>
+                        <div class="leftover-preapproval-amount">
+                            <span>Sobrante estimado a devolver:</span>
+                            <strong id="leftover-preview-amount">$0.00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="leftover-body hidden" id="leftover-body">
+                    <div class="leftover-grid">
+                        <div class="leftover-fields">
+
+                            <div class="leftover-field">
+                                <label class="input-label">Método de Devolución <span class="req">*</span></label>
+                                <div class="input-group">
+                                    <i class="bx bx-credit-card field-icon"></i>
+                                    <select id="leftover-method" class="input-field leftover-stage-input">
+                                        <option value="Transferencia" selected>Transferencia Bancaria</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="leftover-field">
+                                <label class="input-label">Monto del Sobrante a Devolver (MXN)</label>
+                                <div class="input-group">
+                                    <i class="bx bx-dollar field-icon"></i>
+                                    <input type="number" id="leftover-amount" class="input-field leftover-amount-locked"
+                                        step="0.01" min="0" placeholder="0.00" readonly tabindex="-1">
+                                </div>
+                                <small
+                                    style="display:block; margin-top:.35rem; font-size:.7rem; color:var(--secondary-lighter);">
+                                    <i class="bx bx-lock-alt"></i> Monto definitivo autorizado: Anticipo − Total
+                                    comprobado
                                 </small>
                             </div>
-                        </div>
-                    </div>
 
-                    <div id="leftover-preapproval-banner" class="leftover-body">
-                        <div class="leftover-preapproval-box">
-                            <div class="leftover-preapproval-info">
-                                <i class="bx bx-lock-alt"></i>
-                                <div>
-                                    <div class="leftover-preapproval-title">Devolución en espera de Aprobación Final</div>
-                                    <div class="leftover-preapproval-desc">Para garantizar que transfieras el importe exacto, espera a que el revisor y el aprobador autoricen tus facturas.</div>
+                            <div class="leftover-field full">
+                                <label class="input-label">Notas / Referencia Bancaria</label>
+                                <div class="input-group">
+                                    <textarea id="leftover-notes" class="input-field leftover-stage-input"
+                                        placeholder="Ej. Devolución vía transferencia a cuenta Banorte, referencia 0012345..."></textarea>
                                 </div>
-                            </div>
-                            <div class="leftover-preapproval-amount">
-                                <span>Sobrante estimado a devolver:</span>
-                                <strong id="leftover-preview-amount">$0.00</strong>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="leftover-body hidden" id="leftover-body">
-                        <div class="leftover-grid">
-                            <div class="leftover-fields">
-
-                                <div class="leftover-field">
-                                    <label class="input-label">Método de Devolución <span class="req">*</span></label>
-                                    <div class="input-group">
-                                        <i class="bx bx-credit-card field-icon"></i>
-                                        <select id="leftover-method" class="input-field leftover-stage-input">
-                                            <option value="Transferencia" selected>Transferencia Bancaria</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="leftover-field">
-                                    <label class="input-label">Monto del Sobrante a Devolver (MXN)</label>
-                                    <div class="input-group">
-                                        <i class="bx bx-dollar field-icon"></i>
-                                        <input type="number" id="leftover-amount" class="input-field leftover-amount-locked" step="0.01" min="0" placeholder="0.00" readonly tabindex="-1">
-                                    </div>
-                                    <small style="display:block; margin-top:.35rem; font-size:.7rem; color:var(--secondary-lighter);">
-                                        <i class="bx bx-lock-alt"></i> Monto definitivo autorizado: Anticipo − Total comprobado
-                                    </small>
-                                </div>
-
-                                <div class="leftover-field full">
-                                    <label class="input-label">Notas / Referencia Bancaria</label>
-                                    <div class="input-group">
-                                        <textarea id="leftover-notes" class="input-field leftover-stage-input" placeholder="Ej. Devolución vía transferencia a cuenta Banorte, referencia 0012345..."></textarea>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="leftover-evidence">
-                                <label class="input-label">Evidencia de Devolución (PDF) <span class="req">*</span></label>
-                                <div class="leftover-evidence-panel" id="leftover-evidence-panel" onclick="if(window.isLeftoverEditable){document.getElementById('leftover-proof-upload').click();}">
-                                    <i class="bx bxs-file-pdf leftover-ev-icon" id="leftover-ev-icon"></i>
-                                    <h4 class="leftover-ev-title" id="leftover-ev-title">Comprobante de Devolución</h4>
-                                    <p class="leftover-ev-desc" id="leftover-ev-desc">Sube el comprobante de transferencia o ficha de depósito (PDF, máx. 10MB).</p>
-                                    <button type="button" class="btn btn-secondary hidden" id="leftover-browse-btn" onclick="event.stopPropagation(); document.getElementById('leftover-proof-upload').click()">
-                                        <i class="bx bx-folder-plus"></i> <span id="leftover-browse-text">Examinar archivo PDF</span>
-                                    </button>
-                                    <input type="file" id="leftover-proof-upload" accept=".pdf" class="hidden">
-                                    <div id="leftover-proof-list" class="evidence-list" onclick="event.stopPropagation()"></div>
+                        <div class="leftover-evidence">
+                            <label class="input-label">Evidencia de Devolución (PDF) <span class="req">*</span></label>
+                            <div class="leftover-evidence-panel" id="leftover-evidence-panel"
+                                onclick="if(window.isLeftoverEditable){document.getElementById('leftover-proof-upload').click();}">
+                                <i class="bx bxs-file-pdf leftover-ev-icon" id="leftover-ev-icon"></i>
+                                <h4 class="leftover-ev-title" id="leftover-ev-title">Comprobante de Devolución</h4>
+                                <p class="leftover-ev-desc" id="leftover-ev-desc">Sube el comprobante de transferencia o
+                                    ficha de depósito (PDF, máx. 10MB).</p>
+                                <button type="button" class="btn btn-secondary hidden" id="leftover-browse-btn"
+                                    onclick="event.stopPropagation(); document.getElementById('leftover-proof-upload').click()">
+                                    <i class="bx bx-folder-plus"></i> <span id="leftover-browse-text">Examinar archivo
+                                        PDF</span>
+                                </button>
+                                <input type="file" id="leftover-proof-upload" accept=".pdf" class="hidden">
+                                <div id="leftover-proof-list" class="evidence-list" onclick="event.stopPropagation()">
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {{-- ★ SECCIÓN EXCEDENTE DEL ANTICIPO (A favor del colaborador: Comprobado > Anticipo) ★ --}}
-                <div class="leftover-section hidden" id="excess-section" style="margin-top: 1.25rem;">
-                    <div class="leftover-question-bar bar-excedente">
-                        <div class="leftover-question-left">
-                            <i class="bx bx-trending-up"></i>
-                            <div>
-                                <strong>Excedente a favor del colaborador detectado</strong>
-                                <small>El monto comprobado supera al anticipo entregado. La diferencia se reembolsará dentro de este mismo trámite una vez aprobado.</small>
-                            </div>
+            {{-- ★ SECCIÓN EXCEDENTE DEL ANTICIPO (A favor del colaborador: Comprobado > Anticipo) ★ --}}
+            <div class="leftover-section hidden" id="excess-section" style="margin-top: 1.25rem;">
+                <div class="leftover-question-bar bar-excedente">
+                    <div class="leftover-question-left">
+                        <i class="bx bx-trending-up"></i>
+                        <div>
+                            <strong>Excedente a favor del colaborador detectado</strong>
+                            <small>El monto comprobado supera al anticipo entregado. La diferencia se reembolsará dentro
+                                de este mismo trámite una vez aprobado.</small>
                         </div>
                     </div>
+                </div>
 
-                    <div class="leftover-body" id="excess-body">
-                        <div class="leftover-grid">
-                            <div class="leftover-fields">
-                                <div class="leftover-field">
-                                    <label class="input-label">Método de Reembolso de Excedente</label>
-                                    <div class="input-group">
-                                        <i class="bx bx-credit-card field-icon"></i>
-                                        <select id="excess-method" class="input-field modal-focusable">
-                                            <option value="Transferencia" selected>Transferencia Bancaria</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="leftover-field">
-                                    <label class="input-label">Monto del Excedente a Reembolsar (MXN)</label>
-                                    <div class="input-group">
-                                        <i class="bx bx-dollar field-icon"></i>
-                                        <input type="number" id="excess-amount" class="input-field leftover-amount-locked" step="0.01" min="0" placeholder="0.00" readonly tabindex="-1">
-                                    </div>
-                                    <small style="display:block; margin-top:.35rem; font-size:.7rem; color:var(--secondary-lighter);">
-                                        <i class="bx bx-lock-alt"></i> Cálculo automático: Total comprobado − Monto del anticipo
-                                    </small>
-                                </div>
-
-                                <div class="leftover-field full">
-                                    <label class="input-label">Comentarios / Cuenta Destino (Opcional)</label>
-                                    <div class="input-group">
-                                        <textarea id="excess-notes" class="input-field modal-focusable" placeholder="Ej. Solicito depósito de diferencia en cuenta de nómina..."></textarea>
-                                    </div>
+                <div class="leftover-body" id="excess-body">
+                    <div class="leftover-grid">
+                        <div class="leftover-fields">
+                            <div class="leftover-field">
+                                <label class="input-label">Método de Reembolso de Excedente</label>
+                                <div class="input-group">
+                                    <i class="bx bx-credit-card field-icon"></i>
+                                    <select id="excess-method" class="input-field modal-focusable">
+                                        <option value="Transferencia" selected>Transferencia Bancaria</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <div class="leftover-evidence">
-                                <label class="input-label">Comprobante de Pago de Tesorería</label>
-                                <div class="leftover-evidence-panel readonly-mode" id="excess-evidence-panel">
-                                    <i class="bx bx-time-five leftover-ev-icon" id="excess-ev-icon"></i>
-                                    <h4 class="leftover-ev-title" id="excess-ev-title">Pendiente de Liquidación por Tesorería</h4>
-                                    <p class="leftover-ev-desc" id="excess-ev-desc">Una vez aprobada la comprobación, Tesorería adjuntará aquí el comprobante del pago del excedente.</p>
-                                    <div id="excess-proof-list" class="evidence-list" onclick="event.stopPropagation()"></div>
+                            <div class="leftover-field">
+                                <label class="input-label">Monto del Excedente a Reembolsar (MXN)</label>
+                                <div class="input-group">
+                                    <i class="bx bx-dollar field-icon"></i>
+                                    <input type="number" id="excess-amount" class="input-field leftover-amount-locked"
+                                        step="0.01" min="0" placeholder="0.00" readonly tabindex="-1">
+                                </div>
+                                <small
+                                    style="display:block; margin-top:.35rem; font-size:.7rem; color:var(--secondary-lighter);">
+                                    <i class="bx bx-lock-alt"></i> Cálculo automático: Total comprobado − Monto del
+                                    anticipo
+                                </small>
+                            </div>
+
+                            <div class="leftover-field full">
+                                <label class="input-label">Comentarios / Cuenta Destino (Opcional)</label>
+                                <div class="input-group">
+                                    <textarea id="excess-notes" class="input-field modal-focusable"
+                                        placeholder="Ej. Solicito depósito de diferencia en cuenta de nómina..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="leftover-evidence">
+                            <label class="input-label">Comprobante de Pago de Tesorería</label>
+                            <div class="leftover-evidence-panel readonly-mode" id="excess-evidence-panel">
+                                <i class="bx bx-time-five leftover-ev-icon" id="excess-ev-icon"></i>
+                                <h4 class="leftover-ev-title" id="excess-ev-title">Pendiente de Liquidación por
+                                    Tesorería</h4>
+                                <p class="leftover-ev-desc" id="excess-ev-desc">Una vez aprobada la comprobación,
+                                    Tesorería adjuntará aquí el comprobante del pago del excedente.</p>
+                                <div id="excess-proof-list" class="evidence-list" onclick="event.stopPropagation()">
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
+        </div>
+
+        <div class="modal-footer">
+            <div><span class="modal-footer-note"><i class="bx bx-info-circle"></i> Para garantizar una autorización
+                    rápida, asegúrate de adjuntar el PDF de soporte.</span></div>
+            <div class="modal-footer-right" id="footer-create">
+                <button type="button" class="btn btn-cancel" onclick="window.closeModal()">Cancelar</button>
+                <button type="button" id="btn-borrador" class="btn btn-secondary" onclick="window.saveDraft()"><i
+                        class="bx bx-save"></i> Guardar Borrador</button>
+                <button type="button" id="btn-enviar" class="btn btn-primary" onclick="window.verifyAndSubmit()"><i
+                        class="bx bx-send"></i> Emitir Solicitud a Revisión</button>
+            </div>
+            <div class="modal-footer-right hidden" id="footer-view">
+                <button type="button" class="btn btn-secondary" onclick="window.closeModal()">Cerrar</button>
+            </div>
+            <div class="modal-footer-right hidden" id="footer-evaluate">
+                <button type="button" class="btn btn-secondary" onclick="window.closeModal()">Cerrar</button>
+                <button type="button" class="btn btn-fail-solid" onclick="window.processEvaluation('rechazado')"><i
+                        class="bx bx-x"></i> Rechazar</button>
+                <button type="button" class="btn btn-secondary btn-validate-special" id="btn-eval-validate"
+                    onclick="window.processEvaluation('validado')"><i class="bx bx-list-check"></i> Validar</button>
+                <button type="button" class="btn btn-ok-solid" id="btn-eval-approve"
+                    onclick="window.processEvaluation('aprobado')"><i class="bx bx-check-double"></i> Aprobar</button>
+            </div>
+            <div class="modal-footer-right hidden" id="footer-leftover">
+                <button type="button" class="btn btn-cancel" onclick="window.closeModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="window.submitLeftoverProof()"><i
+                        class="bx bx-upload"></i> Enviar Comprobante de Devolución</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL ANTICIPO --}}
+<div id="advance-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
+    <div class="modal-box medium">
+
+        <form id="form-advance" onsubmit="event.preventDefault(); window.submitAdvance();">
+
+            <div class="modal-header">
+                <h2 class="modal-title" id="adv-modal-title"><i class="bx bx-money-withdraw"></i> Solicitud de
+                    <strong>Anticipo</strong></h2>
+                <div class="modal-header-actions">
+                    <button type="button" class="btn-close" onclick="window.closeAdvanceModal()"
+                        aria-label="Cerrar ventana"><i class="bx bx-x"></i></button>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-header-card m-bottom-125">
+                    <div class="fh-info-strip">
+                        <div class="fh-info-item folio">
+                            <span>Folio del Anticipo</span>
+                            <strong id="adv-modal-folio">Nuevo Solicitud</strong>
+                        </div>
+                        <div class="fh-info-item text-center">
+                            <span>Comprobación</span>
+                            <div id="adv-modal-settlement">...</div>
+                        </div>
+                        <div class="fh-info-item text-right">
+                            <span>Autorización</span>
+                            <div id="adv-modal-status" style="margin-top: 4px;">Generando...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fh-section" style="border: none; padding-bottom: 0;">
+
+                    <div class="fh-row" style="margin-bottom: 1.25rem;">
+                        <div class="col-12">
+                            <label class="input-label">Fecha de Solicitud</label>
+                            <div class="input-group">
+                                <i class="bx bx-calendar field-icon"></i>
+                                <input type="text" id="adv-date-text" class="input-field" readonly required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fh-row" style="margin-bottom: 1.25rem;">
+                        <div class="col-auto">
+                            <label class="input-label">Capturar Otro Solicitante</label>
+                            <div class="radio-pill-group">
+                                <label class="radio-pill-label">
+                                    <input type="radio" name="adv_is_delegated" value="1" class="adv-focusable"
+                                        onchange="window.handleAdvDelegationToggle()">
+                                    <i class="bx bx-check"></i> Sí
+                                </label>
+                                <label class="radio-pill-label">
+                                    <input type="radio" name="adv_is_delegated" value="0" class="adv-focusable"
+                                        onchange="window.handleAdvDelegationToggle()" checked>
+                                    <i class="bx bx-x"></i> No
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-15">
+                            <label class="input-label">Nombre del Solicitante <span class="req">*</span></label>
+                            <div class="input-group reimburse-dropdown-container">
+                                <i class="bx bx-user field-icon" id="adv-icon-solicitante"></i>
+                                <input type="hidden" id="adv-beneficiary-id" value="{{ Auth::id() ?? 1 }}">
+                                <input type="text" id="adv-user-name" class="input-field" readonly autocomplete="off"
+                                    required>
+                                <div id="adv-employee-dropdown" class="reimburse-custom-dropdown hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fh-row" style="margin-bottom: 1.25rem;">
+                        <div class="col-12">
+                            <label class="input-label">Motivo del Anticipo <span class="req">*</span></label>
+                            <div class="input-group">
+                                <i class="bx bx-briefcase field-icon"></i>
+                                <select id="adv-reason" class="input-field adv-focusable" required>
+                                    <option value="" disabled selected>Seleccione un motivo...</option>
+                                    <option value="Viaticos">Viáticos y Hospedaje</option>
+                                    <option value="Operativos">Gastos Operativos (Campo)</option>
+                                    <option value="Caja Chica">Fondo de Caja Chica</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="input-label">Método de Entrega / Tipo <span class="req">*</span></label>
+                            <div class="input-group">
+                                <i class="bx bx-credit-card field-icon"></i>
+                                <select id="adv-type" class="input-field adv-focusable" required>
+                                    <option value="" disabled selected>Seleccione un método...</option>
+                                    <option value="Transferencia">Transferencia Bancaria</option>
+                                    <option value="Tarjeta Toka">Tarjeta de Toka</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fh-row" style="margin-bottom: 1.25rem;">
+                        <div class="col-15">
+                            <label class="input-label" style="color: var(--primary-dark);">Monto Solicitado (MXN) <span
+                                    class="req">*</span></label>
+                            <div class="input-group">
+                                <i class="bx bx-dollar field-icon icon-highlight"></i>
+                                <input type="number" id="adv-amount" class="input-field adv-focusable amount-highlight"
+                                    placeholder="Ej. 5000.00" min="1" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <div class="col-15">
+                            <label class="input-label">Autorizador Asignado <span class="req">*</span></label>
+                            <div class="input-group">
+                                <i class="bx bx-user-check field-icon"></i>
+                                <select id="adv-approver" class="input-field adv-focusable" required>
+                                    <option value="" disabled selected>Seleccione autorizador...</option>
+                                    @foreach($approvers as $appr)
+                                    <option value="{{ $appr['id'] }}">{{ $appr['name'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fh-row">
+                        <div class="col-50">
+                            <label class="input-label">Descripción / Justificación Operativa <span
+                                    class="req">*</span></label>
+                            <div class="input-group">
+                                <textarea id="adv-desc" class="input-field adv-focusable"
+                                    placeholder="Explique clara y brevemente para qué se destinarán los fondos solicitados..."
+                                    required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
             <div class="modal-footer">
-                <div><span class="modal-footer-note"><i class="bx bx-info-circle"></i> Para garantizar una autorización rápida, asegúrate de adjuntar el PDF de soporte.</span></div>
-                <div class="modal-footer-right" id="footer-create">
-                    <button type="button" class="btn btn-cancel" onclick="window.closeModal()">Cancelar</button>
-                    <button type="button" id="btn-borrador" class="btn btn-secondary" onclick="window.saveDraft()"><i class="bx bx-save"></i> Guardar Borrador</button>
-                    <button type="button" id="btn-enviar" class="btn btn-primary" onclick="window.verifyAndSubmit()"><i class="bx bx-send"></i> Emitir Solicitud a Revisión</button>
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 1rem;">
+                    <span class="modal-footer-note" id="adv-modal-note"><i class="bx bx-info-circle"></i> Los anticipos
+                        requieren validación de la gerencia financiera para su autorización.</span>
+
+                    <div id="adv-footer-create" style="display: flex; gap: 0.75rem; width: 100%;">
+                        <button type="button" class="btn btn-cancel" style="flex: 1; justify-content: center;"
+                            onclick="window.closeAdvanceModal()">
+                            <i class="bx bx-x"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
+                            <i class="bx bx-send"></i> Emitir Solicitud
+                        </button>
+                    </div>
+
+                    <div id="adv-footer-view" class="hidden"
+                        style="display: flex; gap: 0.75rem; width: 100%; justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" onclick="window.closeAdvanceModal()">Cerrar
+                            Vista</button>
+                    </div>
                 </div>
-                <div class="modal-footer-right hidden" id="footer-view">
-                    <button type="button" class="btn btn-secondary" onclick="window.closeModal()">Cerrar</button>
-                </div>
-                <div class="modal-footer-right hidden" id="footer-evaluate">
-                    <button type="button" class="btn btn-secondary" onclick="window.closeModal()">Cerrar</button>
-                    <button type="button" class="btn btn-fail-solid" onclick="window.processEvaluation('rechazado')"><i class="bx bx-x"></i> Rechazar</button>
-                    <button type="button" class="btn btn-secondary btn-validate-special" id="btn-eval-validate" onclick="window.processEvaluation('validado')"><i class="bx bx-list-check"></i> Validar</button>
-                    <button type="button" class="btn btn-ok-solid" id="btn-eval-approve" onclick="window.processEvaluation('aprobado')"><i class="bx bx-check-double"></i> Aprobar</button>
-                </div>
-                <div class="modal-footer-right hidden" id="footer-leftover">
-                    <button type="button" class="btn btn-cancel" onclick="window.closeModal()">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="window.submitLeftoverProof()"><i class="bx bx-upload"></i> Enviar Comprobante de Devolución</button>
-                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{{-- MODAL HISTORIAL --}}
+<div id="history-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
+    <div class="modal-box medium">
+        <div class="modal-header">
+            <h2 class="modal-title">
+                <i class="bx bx-history"></i> Historial del Solicitud <strong id="history-folio"></strong>
+            </h2>
+            <div class="modal-header-actions">
+                <button type="button" class="btn-close" onclick="window.closeHistoryModal()"
+                    aria-label="Cerrar ventana">
+                    <i class="bx bx-x"></i>
+                </button>
             </div>
         </div>
-    </div>
 
-    {{-- MODAL ANTICIPO --}}
-    <div id="advance-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
-        <div class="modal-box medium">
+        <div class="modal-body" style="background-color: #f8fafc;">
+            <div class="timeline" id="history-timeline"></div>
+        </div>
 
-            <form id="form-advance" onsubmit="event.preventDefault(); window.submitAdvance();">
-
-                <div class="modal-header">
-                    <h2 class="modal-title" id="adv-modal-title"><i class="bx bx-money-withdraw"></i> Solicitud de <strong>Anticipo</strong></h2>
-                    <div class="modal-header-actions">
-                        <button type="button" class="btn-close" onclick="window.closeAdvanceModal()" aria-label="Cerrar ventana"><i class="bx bx-x"></i></button>
-                    </div>
-                </div>
-
-                <div class="modal-body">
-                    <div class="form-header-card m-bottom-125">
-                        <div class="fh-info-strip">
-                            <div class="fh-info-item folio">
-                                <span>Folio del Anticipo</span>
-                                <strong id="adv-modal-folio">Nuevo Solicitud</strong>
-                            </div>
-                            <div class="fh-info-item text-center">
-                                <span>Comprobación</span>
-                                <div id="adv-modal-settlement">...</div>
-                            </div>
-                            <div class="fh-info-item text-right">
-                                <span>Autorización</span>
-                                <div id="adv-modal-status" style="margin-top: 4px;">Generando...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="fh-section" style="border: none; padding-bottom: 0;">
-
-                        <div class="fh-row" style="margin-bottom: 1.25rem;">
-                            <div class="col-12">
-                                <label class="input-label">Fecha de Solicitud</label>
-                                <div class="input-group">
-                                    <i class="bx bx-calendar field-icon"></i>
-                                    <input type="text" id="adv-date-text" class="input-field" readonly required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="fh-row" style="margin-bottom: 1.25rem;">
-                            <div class="col-auto">
-                                <label class="input-label">Capturar Otro Solicitante</label>
-                                <div class="radio-pill-group">
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="adv_is_delegated" value="1" class="adv-focusable" onchange="window.handleAdvDelegationToggle()">
-                                        <i class="bx bx-check"></i> Sí
-                                    </label>
-                                    <label class="radio-pill-label">
-                                        <input type="radio" name="adv_is_delegated" value="0" class="adv-focusable" onchange="window.handleAdvDelegationToggle()" checked>
-                                        <i class="bx bx-x"></i> No
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="col-15">
-                                <label class="input-label">Nombre del Solicitante <span class="req">*</span></label>
-                                <div class="input-group reimburse-dropdown-container">
-                                    <i class="bx bx-user field-icon" id="adv-icon-solicitante"></i>
-                                    <input type="hidden" id="adv-beneficiary-id" value="{{ Auth::id() ?? 1 }}">
-                                    <input type="text" id="adv-user-name" class="input-field" readonly autocomplete="off" required>
-                                    <div id="adv-employee-dropdown" class="reimburse-custom-dropdown hidden"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="fh-row" style="margin-bottom: 1.25rem;">
-                            <div class="col-12">
-                                <label class="input-label">Motivo del Anticipo <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <i class="bx bx-briefcase field-icon"></i>
-                                    <select id="adv-reason" class="input-field adv-focusable" required>
-                                        <option value="" disabled selected>Seleccione un motivo...</option>
-                                        <option value="Viaticos">Viáticos y Hospedaje</option>
-                                        <option value="Operativos">Gastos Operativos (Campo)</option>
-                                        <option value="Caja Chica">Fondo de Caja Chica</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="input-label">Método de Entrega / Tipo <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <i class="bx bx-credit-card field-icon"></i>
-                                    <select id="adv-type" class="input-field adv-focusable" required>
-                                        <option value="" disabled selected>Seleccione un método...</option>
-                                        <option value="Transferencia">Transferencia Bancaria</option>
-                                        <option value="Tarjeta Toka">Tarjeta de Toka</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="fh-row" style="margin-bottom: 1.25rem;">
-                            <div class="col-15">
-                                <label class="input-label" style="color: var(--primary-dark);">Monto Solicitado (MXN) <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <i class="bx bx-dollar field-icon icon-highlight"></i>
-                                    <input type="number" id="adv-amount" class="input-field adv-focusable amount-highlight" placeholder="Ej. 5000.00" min="1" step="0.01" required>
-                                </div>
-                            </div>
-
-                            <div class="col-15">
-                                <label class="input-label">Autorizador Asignado <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <i class="bx bx-user-check field-icon"></i>
-                                    <select id="adv-approver" class="input-field adv-focusable" required>
-                                        <option value="" disabled selected>Seleccione autorizador...</option>
-                                        @foreach($approvers as $appr)
-                                            <option value="{{ $appr['id'] }}">{{ $appr['name'] }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="fh-row">
-                            <div class="col-50">
-                                <label class="input-label">Descripción / Justificación Operativa <span class="req">*</span></label>
-                                <div class="input-group">
-                                    <textarea id="adv-desc" class="input-field adv-focusable" placeholder="Explique clara y brevemente para qué se destinarán los fondos solicitados..." required></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <div style="width: 100%; display: flex; flex-direction: column; gap: 1rem;">
-                        <span class="modal-footer-note" id="adv-modal-note"><i class="bx bx-info-circle"></i> Los anticipos requieren validación de la gerencia financiera para su autorización.</span>
-
-                        <div id="adv-footer-create" style="display: flex; gap: 0.75rem; width: 100%;">
-                            <button type="button" class="btn btn-cancel" style="flex: 1; justify-content: center;" onclick="window.closeAdvanceModal()">
-                                <i class="bx bx-x"></i> Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
-                                <i class="bx bx-send"></i> Emitir Solicitud
-                            </button>
-                        </div>
-
-                        <div id="adv-footer-view" class="hidden" style="display: flex; gap: 0.75rem; width: 100%; justify-content: flex-end;">
-                            <button type="button" class="btn btn-secondary" onclick="window.closeAdvanceModal()">Cerrar Vista</button>
-                        </div>
-                    </div>
-                </div>
-
-            </form>
+        <div class="modal-footer" style="justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="window.closeHistoryModal()">Cerrar
+                Historial</button>
         </div>
     </div>
-
-    {{-- MODAL HISTORIAL --}}
-    <div id="history-modal" class="modal-bg hidden" aria-hidden="true" role="dialog">
-        <div class="modal-box medium">
-            <div class="modal-header">
-                <h2 class="modal-title">
-                    <i class="bx bx-history"></i> Historial del Solicitud <strong id="history-folio"></strong>
-                </h2>
-                <div class="modal-header-actions">
-                    <button type="button" class="btn-close" onclick="window.closeHistoryModal()" aria-label="Cerrar ventana">
-                        <i class="bx bx-x"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="modal-body" style="background-color: #f8fafc;">
-                <div class="timeline" id="history-timeline"></div>
-            </div>
-
-            <div class="modal-footer" style="justify-content: flex-end;">
-                <button type="button" class="btn btn-secondary" onclick="window.closeHistoryModal()">Cerrar Historial</button>
-            </div>
-        </div>
-    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -2010,7 +2094,7 @@
     let requests = {!! isset($requestsData) ? json_encode($requestsData) : '[]' !!};
     let currentEvaluateId = null;
     let currentPage = 1;
-    let itemsPerPage = 5;
+    let itemsPerPage = 10;
     let activeFilter = 'all';
     let searchQuery = '';
 

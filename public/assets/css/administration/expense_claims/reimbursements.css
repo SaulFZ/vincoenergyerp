@@ -706,7 +706,7 @@ textarea.input-field { min-height: 80px; resize: vertical; padding-left: 0.75rem
 .adv-card-info-block { background: #f8fafc; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; color: var(--secondary-dark); line-height: 1.4; }
 .adv-card-info-block strong { display: block; color: var(--secondary-lighter); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; }
 
-/* ── Optimización de tamaños en pantallas pequeñas / Laptops (<= 1440px) ── */
+/* ── Optimización de tamaños en pantallas / Laptops (<= 1440px) ── */
 @media (max-width: 1440px) {
     .card-header { padding: 0.75rem 1rem; gap: 0.65rem; }
     .table-controls { gap: 0.5rem; }

@@ -227,8 +227,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/sat-requests', 'index')->name('expense-claims.sat-sync.index');
                     Route::post('/sat-requests/force', 'forceSync')->name('expense-claims.sat-sync.force');
                 });
-
-
             });
         });
 

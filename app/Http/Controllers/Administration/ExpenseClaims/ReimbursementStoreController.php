@@ -32,7 +32,7 @@ class ReimbursementStoreController extends Controller
 
     private function getRequestLabel($type)
     {
-        $type = mb_strtolower($type);
+        $type = mb_strtolower((string) $type);
         if (str_contains($type, 'reembolso')) return 'reembolso';
         if (str_contains($type, 'electronica') || str_contains($type, 'electrónica')) return 'comprobación electrónica';
         if (str_contains($type, 'directa')) return 'comprobación directa';
@@ -174,9 +174,6 @@ class ReimbursementStoreController extends Controller
         $totalAmount   = (float) $request->total_amount;
         $diff          = round($advanceAmount - $totalAmount, 2);
 
-        // ── CASO A: SOBRANTE (Anticipo > Comprobado -> diff > 0) ──
-        // En Etapa 1 solo calculamos el monto y dejamos status_balance en 'por_definir'
-        // hasta que el Aprobador autorice la comprobación y el monto quede firme.
         if ($diff > 0) {
             return [
                 'leftover_amount'     => $diff,
@@ -191,7 +188,6 @@ class ReimbursementStoreController extends Controller
             ];
         }
 
-        // ── CASO B: EXCEDENTE (Comprobado > Anticipo -> diff < 0) ──
         if ($diff < 0) {
             if ($existing?->leftover_proof_path && Storage::exists($existing->leftover_proof_path)) {
                 Storage::delete($existing->leftover_proof_path);
@@ -215,7 +211,6 @@ class ReimbursementStoreController extends Controller
             ];
         }
 
-        // ── CASO C: CUADRÓ EXACTO (diff == 0) ──
         if ($existing?->leftover_proof_path && Storage::exists($existing->leftover_proof_path)) {
             Storage::delete($existing->leftover_proof_path);
         }
@@ -251,10 +246,26 @@ class ReimbursementStoreController extends Controller
         try {
             DB::beginTransaction();
 
-            $isDraft       = $request->input('is_draft') == 'true';
-            $creatorId     = Auth::id();
-            $beneficiaryId = $request->beneficiary_id ?? $creatorId;
-            $beneficiary   = User::find($beneficiaryId);
+            $isDraft     = $request->input('is_draft') == 'true';
+            
+            /** @var \App\Models\Auth\User $creatorUser */
+            $creatorUser = Auth::user()->loadMissing('directPermissions');
+            $creatorId   = $creatorUser->id;
+
+            // Obtenemos los nombres de los permisos directamente desde la relación existente
+            $permNames = $creatorUser->directPermissions->pluck('name')->toArray();
+            
+            // Verificamos si el usuario tiene asignado el permiso de delegación
+            $canDelegate = in_array('delegar_solicitud', $permNames, true)
+                        || in_array('delegar_solicitudes', $permNames, true);
+
+            // Si tiene permiso y envió un beneficiario distinto, se asigna; de lo contrario, se fuerza al usuario actual
+            $beneficiaryId = ($canDelegate && $request->filled('beneficiary_id'))
+                ? (int) $request->beneficiary_id
+                : (int) $creatorId;
+
+            $beneficiary = User::with('employee.area')->findOrFail($beneficiaryId);
+            $resolvedArea = $beneficiary->employee?->area?->name ?? ($request->depto ?: 'Sin Asignar');
 
             if ($isDraft) {
                 $folioSystem = 'TMP-' . strtoupper(substr(uniqid(), -6));
@@ -299,7 +310,7 @@ class ReimbursementStoreController extends Controller
                 'expense_advance_id' => $expenseAdvanceId,
                 'user_id'            => $beneficiaryId,
                 'created_by_id'      => $creatorId,
-                'area'               => $request->depto,
+                'area'               => $resolvedArea,
                 'cost_center_id'     => $headerImputation['cc'],
                 'project_id'         => $headerImputation['prj'],
                 'emission_place'     => $request->lugar_emision ?? 'VHSA, TAB.',
@@ -633,14 +644,3 @@ class ReimbursementStoreController extends Controller
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-

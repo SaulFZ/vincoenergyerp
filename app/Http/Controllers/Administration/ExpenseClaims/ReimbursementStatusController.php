@@ -110,6 +110,7 @@ class ReimbursementStatusController extends Controller
 
                 $extraComment = '';
 
+                // Al aprobarse la comprobación, los montos quedan firmes y se dispara la Etapa 2 (Conciliación)
                 if ($claim->expense_advance_id && $claim->expenseAdvance) {
                     $leftover = (float) ($claim->leftover_amount ?? 0);
                     $excess   = (float) ($claim->excess_amount ?? 0);
@@ -123,6 +124,7 @@ class ReimbursementStatusController extends Controller
                         $updateData['status_balance'] = 'pago_pendiente';
                         $extraComment = " Queda pendiente el pago del excedente a favor del colaborador por $" . number_format($excess, 2) . ".";
                     } else {
+                        // Cuadró exacto: cierre automático
                         $updateData['status_balance'] = 'no_aplica';
                         ExpenseAdvance::where('id', $claim->expense_advance_id)->update([
                             'settlement_status' => 'comprobado',
