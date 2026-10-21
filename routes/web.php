@@ -639,8 +639,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: SUMINISTRO
     // ===================================================
     Route::get('/suministro', function () {
-        return view('modules.suministros.suministroshome');
-    })
+        return view('modules.suministros.suministroshome');})
         ->middleware('check.permission:suministro')
         ->name('modulo.suministro');
 
@@ -648,8 +647,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     // MÓDULO: ALMACÉN
     // ===================================================
     Route::get('/almacen', function () {
-        return view('modules.almacen.index');
-    })
+        return view('modules.almacen.index');})
         ->middleware('check.permission:almacen')
         ->name('modulo.almacen');
 
@@ -676,5 +674,4 @@ Route::middleware(['web', 'auth'])->group(function () {
             })
                 ->middleware('check.permission:geociencias,analisis')
                 ->name('geociencias.analisis');
-        });
-});
+        });});
