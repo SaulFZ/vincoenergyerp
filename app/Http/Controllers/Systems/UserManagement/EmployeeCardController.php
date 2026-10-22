@@ -9,43 +9,41 @@ use Illuminate\Support\Facades\Storage;
 class EmployeeCardController extends Controller
 {
     /**
-     * Busca una tarjeta accesible (activa, no expirada, empleado existente).
-     * Cualquier otro caso responde 404, nunca 500.
+     * Muestra la tarjeta de presentación pública del empleado.
      */
-    private function findAccessibleCard(string $token): EmployeeCard
-    {
-        $card = EmployeeCard::with('employee')
-            ->where('token', $token)
-            ->accessible()
-            ->first();
-
-        if (! $card || ! $card->employee) {
-            abort(404);
-        }
-
-        return $card;
-    }
-
     public function show(string $token)
     {
-        $card = $this->findAccessibleCard($token);
-        $data = $card->visibleData();
+        // Cargamos al empleado y a su usuario asociado para obtener el correo institucional
+        $card = EmployeeCard::with(['employee.user'])
+            ->whereHas('employee') // Asegurar de que la tarjeta pertenece a un empleado existente
+            ->where('token', $token)
+            ->accessible()
+            ->firstOrFail();
 
-        if (empty($data)) {
-            abort(404);
-        }
-
+        // Enviamos el modelo del empleado completo a la vista
         return view('modules.public.employee-card', [
-            'data'  => $data,
-            'token' => $token,
+            'employee' => $card->employee,
+            'token'    => $token,
         ]);
     }
 
+    /**
+     * Muestra la foto de perfil del empleado si está permitida y existe.
+     */
     public function photo(string $token)
     {
-        $card = $this->findAccessibleCard($token);
+        $card = EmployeeCard::with('employee')
+            ->whereHas('employee')
+            ->where('token', $token)
+            ->accessible()
+            ->firstOrFail();
 
-        if (! in_array('photo', $card->visible_fields ?? [], true)) {
+        // Aseguramos decodificación por si falló el cast a array
+        $visibleFields = is_string($card->visible_fields) 
+            ? json_decode($card->visible_fields, true) 
+            : ($card->visible_fields ?? []);
+
+        if (! is_array($visibleFields) || ! in_array('photo', $visibleFields, true)) {
             abort(404);
         }
 
@@ -58,54 +56,5 @@ class EmployeeCardController extends Controller
         return response()->file(Storage::disk('public')->path($path), [
             'Cache-Control' => 'public, max-age=86400',
         ]);
-    }
-
-    public function vcard(string $token)
-    {
-        $card = $this->findAccessibleCard($token);
-        $data = $card->visibleData();
-
-        if (empty($data)) {
-            abort(404);
-        }
-
-        $lines = [
-            'BEGIN:VCARD',
-            'VERSION:3.0',
-            'FN:' . $this->escapeVcard($data['full_name'] ?? 'Empleado'),
-            'ORG:Vinco Energy',
-        ];
-
-        if (! empty($data['position'])) {
-            $lines[] = 'TITLE:' . $this->escapeVcard($data['position']);
-        }
-        if (! empty($data['department'])) {
-            $lines[] = 'NOTE:' . $this->escapeVcard('Departamento: ' . $data['department']);
-        }
-        if (! empty($data['phone_work'])) {
-            $lines[] = 'TEL;TYPE=WORK:' . $this->escapeVcard($data['phone_work']);
-        }
-        if (! empty($data['email'])) {
-            $lines[] = 'EMAIL:' . $this->escapeVcard($data['email']);
-        }
-
-        $lines[] = 'END:VCARD';
-
-        return response(implode("\r\n", $lines), 200, [
-            'Content-Type'        => 'text/vcard; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $card->token . '.vcf"',
-        ]);
-    }
-
-    /**
-     * Escapa caracteres especiales de vCard (, ; \ y saltos de línea).
-     */
-    private function escapeVcard(string $value): string
-    {
-        return str_replace(
-            ['\\', ';', ',', "\r\n", "\n"],
-            ['\\\\', '\;', '\,', '\n', '\n'],
-            $value
-        );
     }
 }
