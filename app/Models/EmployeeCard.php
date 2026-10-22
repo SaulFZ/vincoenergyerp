@@ -58,23 +58,27 @@ class EmployeeCard extends Model
         )->token;
     }
 
-    /**
-     * Devuelve solo los campos que están en visible_fields
-     * Y en la whitelist fija. Si alguien manipuló la BD, no pasa.
-     */
-    public function visibleData(): array
-    {
-        $fields = array_intersect(
-            $this->visible_fields ?? self::DEFAULT_FIELDS,
-            self::ALLOWED_FIELDS
-        );
-
-        if (empty($fields)) {
-            $fields = self::DEFAULT_FIELDS;
-        }
-
-        return $this->employee->only($fields);
+   /**
+ * Devuelve solo los campos permitidos y visibles para la tarjeta pública.
+ * Si el empleado fue eliminado (o no existe), devuelve un arreglo vacío.
+ */
+public function visibleData(): array
+{
+    if (! $this->employee) {
+        return [];
     }
+
+    $fields = array_values(array_intersect(
+        $this->visible_fields ?? self::DEFAULT_FIELDS,
+        self::ALLOWED_FIELDS
+    ));
+
+    if (empty($fields)) {
+        $fields = self::DEFAULT_FIELDS;
+    }
+
+    return $this->employee->only($fields);
+}
 
     public function isAccessible(): bool
     {

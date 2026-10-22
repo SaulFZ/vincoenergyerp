@@ -366,10 +366,7 @@ public function employeeCards()
     return view('modules.systems.user-management.employee_card');
 }
 
-    /**
-     * JSON del directorio de credenciales QR (lo consume el fetch del JS).
-     * No crea tokens: solo lee el estado actual.
-     */
+
     /**
  * JSON del directorio de credenciales QR (lo consume el fetch del JS).
  * Solo lectura: 2 consultas fijas, sin importar cuántos empleados haya.
