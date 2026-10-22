@@ -95,6 +95,10 @@
                         <i class="fas fa-plus"></i>
                         <span>Nuevo Usuario</span>
                     </button>
+                    <a href="{{ route('users.employee-cards') }}" class="btn-export" title="Tarjetas QR">
+                        <i class="fas fa-qrcode"></i>
+                        <span>Tarjetas QR</span>
+                    </a>
                 </div>
             </div>
 
@@ -506,7 +510,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.js"></script>
-    <script src="{{ asset('assets/js/systems/user-management/index.js') }}?v=1.1"></script>
+    <script src="{{ asset('assets/js/systems/user-management/index.js') }}"></script>
 </body>
 
 </html>

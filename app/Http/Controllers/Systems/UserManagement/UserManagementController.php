@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Systems\UserManagement;
 
 use App\Http\Controllers\Controller;
@@ -6,6 +7,7 @@ use App\Models\Auth\Permission;
 use App\Models\Auth\Role;
 use App\Models\Auth\User;
 use App\Models\Employee;
+use App\Models\EmployeeCard;
 use App\Models\Systems\UserManagement\UserPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -126,7 +128,6 @@ class UserManagementController extends Controller
             if ($user->employee_id) {
                 $employee = Employee::find($user->employee_id);
 
-                // Guardado de la foto como archivo real (No Base64)
                 if ($employee && $request->hasFile('photo')) {
                     $file = $request->file('photo');
                     $this->deleteOldPhoto($employee->photo);
@@ -337,8 +338,6 @@ class UserManagementController extends Controller
 
     public function getEmployeePhoto($path)
     {
-        // 🚨 ESTA LÍNEA ES LA QUE QUITA EL "STALLED" 🚨
-        // Le dice a Laravel que libere la sesión para que el botón "Guardar" funcione en paralelo
         if (request()->hasSession()) {
             request()->session()->save();
         }
@@ -352,5 +351,118 @@ class UserManagementController extends Controller
         return response()->file($fullPath, [
             'Cache-Control' => 'public, max-age=2592000',
         ]);
+    }
+
+    // =================================================================
+    // TARJETAS QR DE EMPLEADOS
+    // =================================================================
+
+    /**
+ * Vista HTML del directorio de credenciales QR.
+ * No consulta empleados: el JS los carga desde employeeCardsData().
+ */
+public function employeeCards()
+{
+    return view('modules.systems.user-management.employee_card');
+}
+
+    /**
+     * JSON del directorio de credenciales QR (lo consume el fetch del JS).
+     * No crea tokens: solo lee el estado actual.
+     */
+    /**
+ * JSON del directorio de credenciales QR (lo consume el fetch del JS).
+ * Solo lectura: 2 consultas fijas, sin importar cuántos empleados haya.
+ */
+public function employeeCardsData()
+{
+    $employees = Employee::query()
+        ->select(['id', 'full_name', 'employee_number', 'position', 'employment_status'])
+        ->orderBy('full_name')
+        ->get();
+
+    $cards = EmployeeCard::query()
+        ->select(['id', 'employee_id', 'token', 'is_active'])
+        ->whereIn('employee_id', $employees->pluck('id'))
+        ->get()
+        ->keyBy('employee_id');
+
+    $data = $employees->map(function ($employee) use ($cards) {
+        $card = $cards->get($employee->id);
+
+        return [
+            'id'                => $employee->id,
+            'full_name'         => $employee->full_name,
+            'employee_number'   => $employee->employee_number,
+            'position'          => $employee->position,
+            'employment_status' => $employee->employment_status ?? 'active',
+            'qr_token'          => $card?->token,
+            'qr_enabled'        => (bool) ($card?->is_active ?? false),
+        ];
+    })->values();
+
+    return response()->json([
+        'success'   => true,
+        'employees' => $data,
+    ]);
+}
+    /**
+     * Genera (o regenera) el token QR del empleado.
+     * Al regenerar, el token anterior deja de funcionar.
+     */
+    public function generateQr(Employee $employee)
+    {
+        try {
+            $card = EmployeeCard::firstOrNew(['employee_id' => $employee->id]);
+
+            $card->token          = Str::random(40);
+            $card->visible_fields = $card->visible_fields ?: EmployeeCard::DEFAULT_FIELDS;
+            $card->is_active      = true;
+            $card->save();
+
+            return response()->json([
+                'success'    => true,
+                'message'    => 'Código QR generado correctamente',
+                'qr_token'   => $card->token,
+                'qr_enabled' => true,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar el QR: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Activa o pausa la tarjeta QR del empleado.
+     */
+    public function toggleQr(Employee $employee)
+    {
+        $card = EmployeeCard::where('employee_id', $employee->id)->first();
+
+        if (! $card || ! $card->token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El empleado no tiene QR generado.',
+            ], 404);
+        }
+
+        try {
+            $card->is_active = ! $card->is_active;
+            $card->save();
+
+            return response()->json([
+                'success'    => true,
+                'message'    => $card->is_active ? 'QR activado' : 'QR pausado',
+                'qr_token'   => $card->token,
+                'qr_enabled' => (bool) $card->is_active,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar el estado del QR: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

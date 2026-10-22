@@ -46,6 +46,8 @@ use App\Http\Controllers\Systems\Tickets\TicketStatsQueryController;
 use App\Http\Controllers\Systems\Tickets\TicketStatusController;
 use App\Http\Controllers\Systems\Tickets\TicketStoreController;
 use App\Http\Controllers\Systems\UserManagement\UserManagementController;
+use App\Http\Controllers\Systems\UserManagement\EmployeeCardController;
+
 /* CONTROLADORES DE OPERACIONES */
 use App\Http\Controllers\Operations\SgcVes\ServicesController;
 use App\Http\Controllers\Operations\SgcVes\SgcVesController;
@@ -79,6 +81,20 @@ Route::get('/', function () {
     return session()->has('auth')
         ? redirect()->route('home')
         : redirect()->route('login');
+});
+
+// ===================================================
+// TARJETAS DE CONTACTO PÚBLICAS (sin login)
+// ===================================================
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('/tarjeta/{token}', [EmployeeCardController::class, 'show'])
+        ->name('employee-card.public');
+
+    Route::get('/tarjeta/{token}/foto', [EmployeeCardController::class, 'photo'])
+        ->name('employee-card.photo');
+
+    Route::get('/tarjeta/{token}/contacto.vcf', [EmployeeCardController::class, 'vcard'])
+        ->name('employee-card.vcard');
 });
 
 // En routes/web.php
@@ -238,38 +254,58 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:systems')
         ->group(function () {
             // ===================================================
-            // GRUPO: USER MANAGEMENT (Gestión de Usuarios)
-            // Prefijo: /systems/user-management
-            // ===================================================
-            Route::prefix('user-management')->group(function () {
-                // 1. Redirección automática
-                Route::get('/', function () {
-                    return redirect()->route('systems.users.index');
-                })
-                    ->name('systems.user-management')
-                    ->middleware('check.permission:systems,user-management');
+// GRUPO: USER MANAGEMENT (Gestión de Usuarios)
+// Prefijo: /systems/user-management
+// ===================================================
+Route::prefix('user-management')->group(function () {
+    // 1. Redirección automática
+    Route::get('/', function () {
+        return redirect()->route('systems.users.index');
+    })
+        ->name('systems.user-management')
+        ->middleware('check.permission:systems,user-management');
 
-                // --- RUTAS DE RECURSOS (CRUD) ---
-                Route::resource('users', UserManagementController::class)
-                    ->names([
-                        'index' => 'systems.users.index',
-                        'create' => 'systems.users.create',
-                        'store' => 'systems.users.store',
-                        'edit' => 'systems.users.edit',
-                        'update' => 'systems.users.update',
-                        'destroy' => 'systems.users.destroy',
-                    ]);
+    // --- RUTAS AUXILIARES, DE ARCHIVOS Y TARJETAS QR ---
+    // IMPORTANTE: deben ir ANTES del resource 'users',
+    // si no, 'users/{user}' captura 'users/employee-cards'.
+    Route::controller(UserManagementController::class)->group(function () {
+        Route::get('get-permissions', 'getPermissions')->name('systems.users.permissions');
+        Route::get('get-roles', 'getRoles')->name('systems.users.list');
+        Route::get('search-employees', 'searchEmployees')->name('systems.users.search');
 
-                // --- RUTAS AUXILIARES Y DE ARCHIVOS ---
-                Route::controller(UserManagementController::class)->group(function () {
-                    Route::get('get-permissions', 'getPermissions')->name('systems.users.permissions');
-                    Route::get('get-roles', 'getRoles')->name('systems.users.list');
-                    Route::get('search-employees', 'searchEmployees')->name('systems.users.search');
+        // Servir imágenes de forma segura
+        Route::get('photo/{path}', 'getEmployeePhoto')
+            ->where('path', '.*')
+            ->name('systems.users.photo');
 
-                    // NUEVA RUTA SEGURA PARA SERVIR IMÁGENES:
-                    Route::get('photo/{path}', 'getEmployeePhoto')->where('path', '.*')->name('systems.users.photo');
-                });
-            });
+        // Vista HTML del directorio de credenciales QR
+        Route::get('users/employee-cards', 'employeeCards')
+            ->name('users.employee-cards');
+
+        // Datos JSON del directorio (consumidos por el fetch del JS)
+        Route::get('employee-cards', 'employeeCardsData')
+            ->name('systems.employee-cards.data');
+
+        // Generar / regenerar token QR de un empleado
+        Route::post('employees/{employee}/qr/generate', 'generateQr')
+            ->name('systems.employees.qr.generate');
+
+        // Activar / pausar QR de un empleado
+        Route::post('employees/{employee}/qr/toggle', 'toggleQr')
+            ->name('systems.employees.qr.toggle');
+    });
+
+    // --- RUTAS DE RECURSOS (CRUD) ---
+    Route::resource('users', UserManagementController::class)
+        ->names([
+            'index'   => 'systems.users.index',
+            'create'  => 'systems.users.create',
+            'store'   => 'systems.users.store',
+            'edit'    => 'systems.users.edit',
+            'update'  => 'systems.users.update',
+            'destroy' => 'systems.users.destroy',
+        ]);
+});
 
             // ===================================================
             // SUBSISTEMA 2: INVENTARIO TI (it-inventory)
