@@ -1,9 +1,12 @@
 <?php
+
 namespace App\Http\Controllers\RH\LoadChart;
 
+use App\Helpers\PermissionHelper;
 use App\Http\Controllers\Controller;
 use App\Mail\RH\LoadChart\CommissionNotificationMail;
 use App\Models\Auth\User;
+use App\Models\Employee;
 use App\Models\Operations\Well;
 use App\Models\RH\LoadChart\EmployeeMonthlyWorkLog;
 use App\Models\RH\LoadChart\EmployeeVacationBalance;
@@ -14,7 +17,6 @@ use App\Models\RH\LoadChart\Meal;
 use App\Models\RH\LoadChart\Services;
 use App\Models\RH\OrgManagement\Area;
 use App\Models\Supply\Procurement\SupplyContract;
-use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,13 +36,14 @@ class CalendarController extends Controller
 
         $employee = Employee::with(['user', 'area'])->find($employeeId);
 
-        if (!$employee) {
+        if (! $employee) {
             if ($isForModal) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Empleado no encontrado',
                 ], 404);
             }
+
             return redirect('/dashboard')->with('error', 'Datos de empleado no encontrados.');
         }
 
@@ -50,7 +53,7 @@ class CalendarController extends Controller
 
         $vacationBalance = EmployeeVacationBalance::firstOrNew(['employee_id' => $employee->id]);
 
-        if (!$vacationBalance->exists) {
+        if (! $vacationBalance->exists) {
             $calculatedData = $this->calculateInitialVacationData($employee);
             $vacationBalance->fill($calculatedData);
             $vacationBalance->save();
@@ -173,7 +176,7 @@ class CalendarController extends Controller
             'Operador de Campo 1', 'Operador de Campo 2', 'Operador de Campo 3',
             'Operador de Campo 4', 'Operador de Campo 5', 'Operador de Campo 6',
             'Auxiliar Mecanico', 'Auxiliar General', 'Mecánico General',
-            'Especialista en Mantenimiento de ECP y CCL','Coordinador de Mantenimiento',
+            'Especialista en Mantenimiento de ECP y CCL', 'Coordinador de Mantenimiento', ' Supervisor Operativo',
         ];
 
         $requiresBaseDescription = (
@@ -182,18 +185,21 @@ class CalendarController extends Controller
             in_array($employee->job_title, $operativosValidos)
         );
 
-        $currentUserHasServicePermission = \App\Helpers\PermissionHelper::hasDirectPermission('realiza_servicios');
+        $currentUserHasServicePermission = PermissionHelper::hasDirectPermission('realiza_servicios');
 
         $employeeHasServicePermission = false;
         if ($isForModal && $employee->user) {
-            $employeeHasServicePermission = \App\Helpers\PermissionHelper::hasDirectPermissionForUser(
+            $employeeHasServicePermission = PermissionHelper::hasDirectPermissionForUser(
                 $employee->user,
                 'realiza_servicios'
             );
         }
 
         $showServiceBonusOption = $currentUserHasServicePermission || ($isForModal && $employeeHasServicePermission);
-        $areasList = Area::where('is_active', 1)->orderBy('name')->pluck('name');
+        $areasList = Area::where('is_active', 1)
+            ->whereRaw('TRIM(name) <> ?', ['Dirección General'])
+            ->orderBy('name')
+            ->pluck('name');
 
         $viewData = [
             'employee' => $employee,
@@ -229,10 +235,11 @@ class CalendarController extends Controller
                     'html' => $html,
                 ]);
             } catch (\Exception $e) {
-                Log::error('Error loading employee calendar: ' . $e->getMessage());
+                Log::error('Error loading employee calendar: '.$e->getMessage());
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al cargar el calendario del empleado: ' . $e->getMessage(),
+                    'message' => 'Error al cargar el calendario del empleado: '.$e->getMessage(),
                 ], 500);
             }
         } else {
@@ -318,7 +325,7 @@ class CalendarController extends Controller
 
         $employee = Employee::find($employeeId);
 
-        if (!$employee) {
+        if (! $employee) {
             return response()->json(['success' => false, 'message' => 'Empleado no encontrado'], 404);
         }
 
@@ -365,7 +372,7 @@ class CalendarController extends Controller
     {
         $term = trim($request->input('q'));
 
-        if (!$term) {
+        if (! $term) {
             return response()->json([]);
         }
 
@@ -375,7 +382,7 @@ class CalendarController extends Controller
         $query = Well::where('status', 'active');
 
         foreach ($keywords as $keyword) {
-            $query->where('name', 'LIKE', '%' . $keyword . '%');
+            $query->where('name', 'LIKE', '%'.$keyword.'%');
         }
 
         $wells = $query
@@ -388,7 +395,7 @@ class CalendarController extends Controller
 
     private function isServiceRealDateUsedByAnotherDay(int $employeeId, ?string $serviceRealDate, ?string $currentActivityDate): bool
     {
-        if (!$serviceRealDate || !$currentActivityDate) {
+        if (! $serviceRealDate || ! $currentActivityDate) {
             return false;
         }
 
@@ -428,9 +435,9 @@ class CalendarController extends Controller
 
         $addEmailFromUserOrEmployee = function ($user, $empRecord, $motivo) use (&$emailsToSend) {
             $email = null;
-            if ($user && !empty(trim($user->email))) {
+            if ($user && ! empty(trim($user->email))) {
                 $email = trim($user->email);
-            } elseif ($empRecord && !empty(trim($empRecord->personal_email))) {
+            } elseif ($empRecord && ! empty(trim($empRecord->personal_email))) {
                 $email = trim($empRecord->personal_email);
             }
 
@@ -482,20 +489,20 @@ class CalendarController extends Controller
                 $query->where('name', 'recibir_notificacion_comision');
             })->get();
 
-            Log::info('Usuarios con permiso encontrados: ' . $usersWithPermission->count());
+            Log::info('Usuarios con permiso encontrados: '.$usersWithPermission->count());
 
             foreach ($usersWithPermission as $userWithPerm) {
                 $empWithPerm = $userWithPerm->employee;
                 $addEmailFromUserOrEmployee($userWithPerm, $empWithPerm, 'Permiso Especial');
             }
         } catch (\Throwable $e) {
-            Log::error('Error buscando permisos: ' . $e->getMessage());
+            Log::error('Error buscando permisos: '.$e->getMessage());
         }
 
         $uniqueEmails = $emailsToSend->unique()->values()->toArray();
         Log::info('📧 Total de correos únicos a enviar: ', $uniqueEmails);
 
-        if (!empty($uniqueEmails)) {
+        if (! empty($uniqueEmails)) {
             Mail::to($uniqueEmails)->send(
                 new CommissionNotificationMail($employee, $area, $date, $commissionActivityType)
             );
@@ -515,7 +522,7 @@ class CalendarController extends Controller
             $targetEmployeeId = $request->input('employee_id') ?? $user->employee_id;
 
             if ($targetEmployeeId != $user->employee_id) {
-                $hasPermission = \App\Models\RH\LoadChart\LoadChartAssignment::where('employee_id', $targetEmployeeId)
+                $hasPermission = LoadChartAssignment::where('employee_id', $targetEmployeeId)
                     ->where(function ($q) use ($user) {
                         $q
                             ->where('reviewer_id', $user->id)
@@ -523,13 +530,13 @@ class CalendarController extends Controller
                     })
                     ->exists();
 
-                if (!$hasPermission && !\App\Helpers\PermissionHelper::hasDirectPermission('editar_loadchart_empleado')) {
+                if (! $hasPermission && ! PermissionHelper::hasDirectPermission('editar_loadchart_empleado')) {
                     return response()->json(['success' => false, 'message' => 'No tienes permiso para editar este calendario.'], 403);
                 }
             }
 
             $employee = Employee::find($targetEmployeeId);
-            if (!$employee) {
+            if (! $employee) {
                 return response()->json(['success' => false, 'message' => 'Empleado no encontrado.'], 404);
             }
 
@@ -571,12 +578,13 @@ class CalendarController extends Controller
                 $activityData['well_name'] = $request->well_name;
 
                 if ($activityType === 'P' && $request->filled('well_name')) {
-                    $validWell = \App\Models\Operations\Well::where('name', $request->well_name)
+                    $validWell = Well::where('name', $request->well_name)
                         ->where('status', 'active')
                         ->exists();
 
-                    if (!$validWell) {
+                    if (! $validWell) {
                         DB::rollback();
+
                         return response()->json([
                             'success' => false,
                             'message' => "El pozo '{$request->well_name}' no existe o no está activo. Seleccione uno de la lista sugerida.",
@@ -607,13 +615,13 @@ class CalendarController extends Controller
                 $isWellActivity = ($activityType === 'P');
                 $isBaseSpecialActivity = ($activityType === 'B' && in_array($request->base_activity_description, ['Movimiento o eventos con gerencias', 'Mantenimiento a polvorin Vinco']));
 
-                if (!$isWellActivity) {
+                if (! $isWellActivity) {
                     $activityData['has_service_bonus'] = 'no';
 
-                    if (!$isBaseSpecialActivity && !$foodBonusLocked) {
+                    if (! $isBaseSpecialActivity && ! $foodBonusLocked) {
                         $activityData['food_bonuses'] = [];
                     }
-                    if (!$serviceLocked) {
+                    if (! $serviceLocked) {
                         $activityData['services_list'] = [];
                     }
                 }
@@ -640,7 +648,7 @@ class CalendarController extends Controller
                             'rejection_reason' => $newRejectionReason,
                         ]];
                     }
-                } else if (!$foodBonusLocked) {
+                } elseif (! $foodBonusLocked) {
                     $activityData['food_bonuses'] = [];
                 }
             }
@@ -661,8 +669,9 @@ class CalendarController extends Controller
                         ->where('employee_category', $employeeBonusCategory)
                         ->first();
 
-                    if (!$fieldBonus && !$fieldBonusLocked) {
+                    if (! $fieldBonus && ! $fieldBonusLocked) {
                         DB::rollback();
+
                         return response()->json([
                             'success' => false,
                             'message' => "El bono de campo seleccionado no es válido para su puesto ($employeeBonusCategory).",
@@ -691,7 +700,7 @@ class CalendarController extends Controller
                             'rejection_reason' => $newRejectionReason,
                         ]];
                     }
-                } else if (!$fieldBonusLocked) {
+                } elseif (! $fieldBonusLocked) {
                     $activityData['field_bonuses'] = [];
                 }
             }
@@ -718,12 +727,13 @@ class CalendarController extends Controller
                             $realDateToSave = $request->service_real_date ?? $existingService['service_real_date'] ?? null;
                         }
 
-                        if ($request->filled('service_real_date') && !$serviceLocked) {
+                        if ($request->filled('service_real_date') && ! $serviceLocked) {
                             $isDateChanged = $realDateToSave !== $request->date;
 
                             if ($isDateChanged || $existingService) {
                                 if ($this->isServiceRealDateUsedByAnotherDay($employee->id, $realDateToSave, $request->date)) {
                                     DB::rollback();
+
                                     return response()->json([
                                         'success' => false,
                                         'message' => "La fecha de servicio '{$realDateToSave}' ya está registrada para otro servicio. Un servicio por día.",
@@ -745,7 +755,7 @@ class CalendarController extends Controller
                             ]];
                         }
                     }
-                } else if (!$serviceLocked) {
+                } elseif (! $serviceLocked) {
                     $activityData['services_list'] = [];
                 }
             }
@@ -762,12 +772,12 @@ class CalendarController extends Controller
             $newVesStatus = strtolower($activityData['activity_status_vespertina'] ?? 'under_review');
 
             $isAnythingLeft = ($newType !== 'N') ||
-                (!empty($newTypeVes) && $newTypeVes !== 'N') ||
-                !empty($activityData['food_bonuses']) ||
-                !empty($activityData['field_bonuses']) ||
-                !empty($activityData['services_list']);
+                (! empty($newTypeVes) && $newTypeVes !== 'N') ||
+                ! empty($activityData['food_bonuses']) ||
+                ! empty($activityData['field_bonuses']) ||
+                ! empty($activityData['services_list']);
 
-            if (!$isAnythingLeft) {
+            if (! $isAnythingLeft) {
                 $newType = 'N';
                 $newTypeVes = 'N';
                 $newStatus = 'under_review';
@@ -776,34 +786,42 @@ class CalendarController extends Controller
 
             if ($isGuardia) {
                 // Solo cuenta como restado si estaba como VAC y NO había sido rechazado por el aprobador
-                if ($oldActivityType === 'VAC' && $oldActivityStatus !== 'rejected')
+                if ($oldActivityType === 'VAC' && $oldActivityStatus !== 'rejected') {
                     $oldVacationDays += 0.5;
-                if ($oldVespertinaType === 'VAC' && $oldVespertinaStatus !== 'rejected')
+                }
+                if ($oldVespertinaType === 'VAC' && $oldVespertinaStatus !== 'rejected') {
                     $oldVacationDays += 0.5;
+                }
 
                 // La nueva actividad siempre intentará descontar (al mandarse es under_review)
-                if ($newType === 'VAC' && $newStatus !== 'rejected')
+                if ($newType === 'VAC' && $newStatus !== 'rejected') {
                     $newVacationDays += 0.5;
-                if ($newTypeVes === 'VAC' && $newVesStatus !== 'rejected')
+                }
+                if ($newTypeVes === 'VAC' && $newVesStatus !== 'rejected') {
                     $newVacationDays += 0.5;
+                }
             } else {
-                if ($oldActivityType === 'VAC' && $oldActivityStatus !== 'rejected')
+                if ($oldActivityType === 'VAC' && $oldActivityStatus !== 'rejected') {
                     $oldVacationDays += 1;
-                if ($newType === 'VAC' && $newStatus !== 'rejected')
+                }
+                if ($newType === 'VAC' && $newStatus !== 'rejected') {
                     $newVacationDays += 1;
+                }
             }
 
             $daysDiff = $newVacationDays - $oldVacationDays;
 
             if ($daysDiff != 0) {
                 $vacationBalance = EmployeeVacationBalance::where('employee_id', $employee->id)->first();
-                if (!$vacationBalance) {
+                if (! $vacationBalance) {
                     DB::rollback();
+
                     return response()->json(['success' => false, 'message' => 'No se encontró el balance de vacaciones del empleado.'], 404);
                 }
 
                 if ($daysDiff > 0 && $vacationBalance->vacation_days_available < $daysDiff) {
                     DB::rollback();
+
                     return response()->json(['success' => false, 'message' => 'No tienes suficientes días de vacaciones disponibles.'], 422);
                 }
 
@@ -812,10 +830,11 @@ class CalendarController extends Controller
             }
             // --- FIN CÁLCULO DE VACACIONES ---
 
-            if (!$isAnythingLeft) {
+            if (! $isAnythingLeft) {
                 $monthlyLog->removeDailyActivity($request->date);
                 $monthlyLog->save();
                 DB::commit();
+
                 return response()->json(['success' => true, 'message' => 'Actividad eliminada y saldos actualizados.']);
             }
 
@@ -839,7 +858,7 @@ class CalendarController extends Controller
                         $request->commissioned_activity_type
                     );
                 } catch (\Throwable $e) {
-                    Log::error('Error al enviar correos de comisión: ' . $e->getMessage());
+                    Log::error('Error al enviar correos de comisión: '.$e->getMessage());
                 }
             }
 
@@ -850,10 +869,11 @@ class CalendarController extends Controller
             ]);
         } catch (\Throwable $e) {
             DB::rollback();
-            Log::error('Error al guardar actividad (saveActivity): ' . $e->getMessage(), [
+            Log::error('Error al guardar actividad (saveActivity): '.$e->getMessage(), [
                 'request_data' => $request->all(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json(['success' => false, 'message' => 'Error interno del servidor. Consulte el log para más detalles.'], 500);
         }
     }
@@ -864,7 +884,7 @@ class CalendarController extends Controller
             ->where('month', $month)
             ->first();
 
-        if (!$fortnightlyConfig) {
+        if (! $fortnightlyConfig) {
             return null;
         }
 
@@ -911,7 +931,7 @@ class CalendarController extends Controller
         $year = $request->input('year', date('Y'));
         $monthYear = sprintf('%04d-%02d', $year, $month);
 
-        if (!$employee) {
+        if (! $employee) {
             return response()->json(['success' => false, 'message' => 'Empleado no encontrado'], 404);
         }
 
@@ -927,7 +947,7 @@ class CalendarController extends Controller
 
     private function formatDate($date)
     {
-        if (!$date) {
+        if (! $date) {
             return 'N/A';
         }
         $months = [
@@ -947,6 +967,7 @@ class CalendarController extends Controller
         $day = date('j', strtotime($date));
         $month = $months[date('n', strtotime($date))];
         $year = date('Y', strtotime($date));
+
         return "{$day} de {$month} de {$year}";
     }
 
@@ -966,6 +987,7 @@ class CalendarController extends Controller
             11 => 'Noviembre',
             12 => 'Diciembre',
         ];
+
         return $months[$monthNumber];
     }
 
@@ -979,12 +1001,15 @@ class CalendarController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 $exchangeRate = $data['bmx']['series'][0]['datos'][0]['dato'];
+
                 return (float) $exchangeRate;
             }
-            Log::error('Banxico API Error: ' . $response->status());
+            Log::error('Banxico API Error: '.$response->status());
+
             return null;
         } catch (\Exception $e) {
-            Log::error('Error al conectar con la API de Banxico: ' . $e->getMessage());
+            Log::error('Error al conectar con la API de Banxico: '.$e->getMessage());
+
             return null;
         }
     }
@@ -1035,9 +1060,11 @@ class CalendarController extends Controller
                     ];
                 }
             }
+
             return $mandatoryHolidays;
         } catch (\Exception $e) {
-            Log::error('Error al obtener días festivos con Yasumi: ' . $e->getMessage());
+            Log::error('Error al obtener días festivos con Yasumi: '.$e->getMessage());
+
             return [];
         }
     }
@@ -1050,7 +1077,7 @@ class CalendarController extends Controller
         $hasReviewed = false;
         $totalItems = 0;
 
-        if (isset($dailyActivity['activity_type']) && !empty($dailyActivity['activity_type']) && $dailyActivity['activity_type'] !== 'N') {
+        if (isset($dailyActivity['activity_type']) && ! empty($dailyActivity['activity_type']) && $dailyActivity['activity_type'] !== 'N') {
             $totalItems++;
             $activityStatus = strtolower($dailyActivity['activity_status'] ?? 'under_review');
             if ($activityStatus == 'rejected') {
@@ -1070,7 +1097,7 @@ class CalendarController extends Controller
             }
         }
 
-        if (isset($dailyActivity['activity_type_vespertina']) && !empty($dailyActivity['activity_type_vespertina']) && $dailyActivity['activity_type_vespertina'] !== 'N') {
+        if (isset($dailyActivity['activity_type_vespertina']) && ! empty($dailyActivity['activity_type_vespertina']) && $dailyActivity['activity_type_vespertina'] !== 'N') {
             $totalItems++;
         }
 
@@ -1115,7 +1142,7 @@ class CalendarController extends Controller
             return 'approved';
         }
 
-        if ($hasReviewed && !$hasApproved && !$hasRejected && !$hasUnderReview) {
+        if ($hasReviewed && ! $hasApproved && ! $hasRejected && ! $hasUnderReview) {
             return 'reviewed';
         }
 
