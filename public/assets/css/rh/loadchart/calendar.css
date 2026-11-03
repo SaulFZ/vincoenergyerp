@@ -256,7 +256,8 @@
 
 .month-navigation button:focus-visible,
 .btn:focus-visible,
-.tab-btn:focus-visible {
+.tab-btn:focus-visible,
+.close-modal:focus-visible {
     outline: 2px solid var(--primary-orange);
     outline-offset: 2px;
 }
@@ -277,6 +278,7 @@
     cursor: pointer;
     border: 1px solid transparent;
     transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
                 box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1),
                 transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 12px;
@@ -295,8 +297,9 @@
     color: var(--white);
 }
 
+/* Hover en la misma familia de color (gris oscuro → más oscuro) */
 .btn-primary:hover {
-    background-color: var(--blue-dark);
+    background-color: #1a202c;
     box-shadow: 0 1px 2px rgba(28, 37, 54, 0.05);
 }
 
@@ -710,7 +713,7 @@
     right: 0;
     background-color: var(--white);
     border: 1px solid var(--light-gray);
-    border-radius: 8px;
+    border-radius: 10px;
     max-height: 220px;
     overflow-y: auto;
     z-index: 9999;
@@ -747,7 +750,7 @@
 .autocomplete-list li {
     padding: 10px 16px;
     cursor: pointer;
-    color: var(--medium-gray);
+    color: #1a202c;
     font-size: 13px;
     font-weight: 600;
     display: flex;
@@ -762,7 +765,7 @@
 }
 
 .autocomplete-list li strong {
-    color: var(--primary-blue);
+    color: var(--dark-gray);
     font-weight: 800;
 }
 
@@ -775,8 +778,8 @@
 }
 
 .autocomplete-list li:hover {
-    background-color: var(--background-gray);
-    color: var(--primary-blue);
+    background-color: #fdf1e4;
+    color: #1a202c;
     padding-left: 20px;
 }
 
@@ -801,16 +804,16 @@
 }
 
 .autocomplete-list li.searching-indicator {
-    color: var(--primary-blue);
+    color: var(--dark-gray);
 }
 
 .autocomplete-list li.searching-indicator i {
-    color: var(--primary-blue);
+    color: var(--primary-orange);
     animation: lc-spin 1s linear infinite;
 }
 
 .autocomplete-list li.no-results {
-    color: #8a94a6;
+    color: #4a5568;
     font-style: italic;
 }
 
@@ -820,22 +823,40 @@
 }
 
 /* =========================================================
-   MODAL
+   MODAL "REGISTRAR ACTIVIDAD"
+   ---------------------------------------------------------
+   PALETA DEL MODAL: gris oscuro + blanco + naranja.
+   El azul queda SOLO para los colores de las actividades
+   (color-indicator, activity-code, activity-tag).
+
+   - Sin scroll interno: el modal crece con su contenido.
+     Si la pantalla es más baja que el modal, scrollea el
+     overlay completo (no el cuerpo del modal).
    ========================================================= */
 
 .modal {
+    /* Tokens propios del modal */
+    --m-ink: #1a202c;               /* texto principal (alto contraste) */
+    --m-text: #2d3748;              /* texto secundario */
+    --m-muted: #4a5568;             /* placeholders / iconos (legible) */
+    --m-border: #cbd5e0;            /* bordes de campos */
+    --m-border-hover: #a0aec0;
+    --m-surface: #f7fafc;
+    --m-track: #edf2f7;             /* fondo de pestañas */
+    --m-accent: #d67e29;            /* naranja */
+    --m-accent-dark: #b8651a;
+    --m-accent-soft: #fdf1e4;       /* fondo seleccionado */
+    --m-accent-ring: rgba(214, 126, 41, 0.22);
+
     display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(20, 26, 41, 0.5);
+    inset: 0;
+    background-color: rgba(20, 26, 41, 0.55);
     z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    backdrop-filter: blur(2px);
+    padding: 20px 12px;
+    backdrop-filter: blur(3px);
+    overflow-y: auto;               /* scrollea el overlay, no el modal */
+    overscroll-behavior: contain;
 }
 
 .modal.active,
@@ -845,15 +866,14 @@
 
 .modal-content {
     background: var(--white);
-    border-radius: 12px;
-    width: 95%;
-    max-width: 500px;
-    box-shadow: 0 16px 40px rgba(28, 37, 54, 0.12);
-    overflow: hidden;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    margin: auto;                   /* centra y evita que se corte arriba */
+    box-shadow: 0 24px 60px rgba(20, 26, 41, 0.28);
     animation: lc-modal-in 0.22s ease-out;
-    max-height: 92vh;
-    display: flex;
-    flex-direction: column;
+    position: relative;
+    /* sin overflow:hidden ni max-height → el contenido nunca se recorta */
 }
 
 @keyframes lc-modal-in {
@@ -867,91 +887,125 @@
     }
 }
 
+/* Header */
 .modal-header {
     background: var(--dark-gray);
     color: var(--white);
     padding: 16px 20px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
+    gap: 12px;
+    border-radius: 16px 16px 0 0;
+    border-bottom: 3px solid var(--m-accent);
 }
 
 .header-icon {
-    font-size: 17px;
-    display: flex;
-    align-items: center;
-    color: var(--primary-orange);
-}
-
-.modal-header h3 {
-    font-size: 15.5px;
-    font-weight: 700;
-    margin: 0;
-    flex-grow: 1;
-    color: var(--white);
-}
-
-.close-modal {
-    background: none;
-    border: none;
-    color: var(--white);
-    font-size: 20px;
-    cursor: pointer;
-    padding: 2px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(214, 126, 41, 0.18);
+    color: var(--m-accent);
+    font-size: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-}
-
-.close-modal:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-    transform: rotate(90deg);
-}
-
-.modal-body {
-    padding: 0;
-    overflow-y: auto;
-}
-
-/* Pestañas */
-.form-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--light-gray);
-    padding: 0 20px;
-    background-color: var(--background-gray);
     flex-shrink: 0;
 }
 
-.tab-btn {
-    padding: 13px 14px;
-    background: none;
+.modal-header h3 {
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0;
+    flex-grow: 1;
+    color: var(--white);
+    letter-spacing: 0.1px;
+}
+
+.close-modal {
+    background: rgba(255, 255, 255, 0.1);
     border: none;
-    border-bottom: 2px solid transparent;
+    color: var(--white);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.close-modal:hover {
+    background-color: rgba(255, 255, 255, 0.22);
+    transform: rotate(90deg);
+}
+
+/* Body: sin scroll propio */
+.modal-body {
+    padding: 0;
+    overflow: visible;
+}
+
+/* ---------------------------------------------------------
+   PESTAÑAS (Actividad / Servicio) — control segmentado
+   --------------------------------------------------------- */
+.form-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 16px 20px 0;
+    padding: 4px;
+    background-color: var(--m-track);
+    border-radius: 12px;
+}
+
+.tab-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 9px;
     cursor: pointer;
     font-size: 13px;
     font-weight: 700;
-    color: #8a94a6;
-    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    margin-bottom: -1px;
+    font-family: inherit;
+    color: var(--m-muted);
+    transition: background 180ms cubic-bezier(0.4, 0, 0.2, 1),
+                color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.tab-btn:hover {
-    color: var(--dark-gray);
+.tab-btn i {
+    margin-right: 7px;
+    font-size: 12.5px;
+    color: var(--m-muted);
+    transition: color 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--m-ink);
 }
 
 .tab-btn.active {
-    color: var(--primary-blue);
-    border-bottom-color: var(--primary-orange);
+    background: var(--dark-gray);
+    color: var(--white);
+    box-shadow: 0 2px 6px rgba(28, 37, 54, 0.22);
+}
+
+.tab-btn.active i {
+    color: var(--m-accent);
 }
 
 .tab-content {
-    padding: 20px;
+    padding: 18px 20px 20px;
     display: none;
     animation: lc-fade-in 0.2s ease;
 }
@@ -970,7 +1024,7 @@
    ========================================================= */
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 16px;
     position: relative;
 }
 
@@ -978,7 +1032,7 @@
     display: block;
     margin-bottom: 6px;
     font-weight: 700;
-    color: var(--medium-gray);
+    color: var(--m-ink);
     font-size: 12.5px;
 }
 
@@ -990,109 +1044,135 @@
 
 .input-with-icon i {
     position: absolute;
-    left: 11px;
-    color: #8a94a6;
+    left: 12px;
+    color: var(--m-muted);
     z-index: 1;
     font-size: 13px;
 }
 
 .input-with-icon input {
-    padding-left: 33px !important;
+    padding-left: 34px !important;
 }
 
 .input-custom,
 .select-custom {
     width: 100%;
-    padding: 9px 11px;
-    border: 1px solid var(--light-gray);
-    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--m-border);
+    border-radius: 10px;
     font-size: 13px;
+    font-weight: 600;
     font-family: 'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif;
     transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
                 box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
     background-color: var(--white);
-    color: var(--dark-gray);
-    min-height: 38px;
+    color: var(--m-ink);
+    min-height: 42px;
+}
+
+.input-custom::placeholder {
+    color: var(--m-muted);
+    opacity: 0.85;
+    font-weight: 500;
+}
+
+.input-custom:hover:not(:disabled):not([readonly]),
+.select-custom:hover:not(:disabled) {
+    border-color: var(--m-border-hover);
 }
 
 .input-custom:focus,
 .select-custom:focus {
     outline: none;
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(51, 76, 149, 0.12);
+    border-color: var(--m-accent);
+    box-shadow: 0 0 0 3px var(--m-accent-ring);
+}
+
+.input-custom[readonly] {
+    background-color: var(--m-surface);
+    color: var(--m-ink);
 }
 
 .input-custom:disabled,
 .select-custom:disabled {
-    background-color: var(--background-gray);
-    color: #a8b0bd;
+    background-color: var(--m-surface);
+    color: #718096;
     cursor: not-allowed;
 }
 
-/* Custom select */
+/* ---------------------------------------------------------
+   SELECT PERSONALIZADO (actividades)
+   Se expande dentro del flujo y muestra TODAS las opciones,
+   sin scroll interno.
+   --------------------------------------------------------- */
 .custom-select {
     position: relative;
     width: 100%;
 }
 
 .select-header {
-    padding: 9px 11px;
-    border: 1px solid var(--light-gray);
-    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--m-border);
+    border-radius: 10px;
     font-size: 13px;
+    font-weight: 600;
+    color: var(--m-ink);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background-color: var(--white);
-    transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    min-height: 38px;
+    transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 42px;
 }
 
 .select-header:hover {
-    border-color: var(--primary-blue);
+    border-color: var(--m-accent);
 }
 
+/* Texto visible tanto vacío como ya seleccionado */
+.select-header span,
 .select-header .placeholder {
-    color: #8a94a6;
+    color: var(--m-ink);
+    font-weight: 600;
 }
 
 .select-header i {
-    color: #8a94a6;
+    color: var(--m-muted);
     font-size: 11px;
     transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
                 color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .select-header.open {
-    border-radius: 8px 8px 0 0;
-    border-color: var(--primary-blue);
-    border-bottom-color: transparent;
+    border-radius: 10px 10px 0 0;
+    border-color: var(--m-accent);
+    box-shadow: 0 0 0 3px var(--m-accent-ring);
 }
 
 .select-header.open i {
     transform: rotate(180deg);
-    color: var(--primary-blue);
+    color: var(--m-accent);
 }
 
 .select-options {
     position: relative;
     width: 100%;
     max-height: 0;
-    overflow: hidden;
+    overflow: hidden;               /* solo para la animación de cierre */
     background: var(--white);
     border: 1px solid transparent;
-    border-radius: 0 0 8px 8px;
-    box-shadow: 0 6px 20px rgba(28, 37, 54, 0.08);
+    border-radius: 0 0 10px 10px;
     z-index: 10;
-    transition: max-height 240ms cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: max-height 280ms cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 280ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .select-options.open {
-    max-height: 500px;
-    overflow-y: auto;
-    border-color: var(--primary-blue);
+    max-height: 1400px;             /* suficiente para mostrar todas las opciones */
+    overflow: hidden;               /* sin scroll interno */
+    border-color: var(--m-accent);
     border-top: none;
 }
 
@@ -1100,10 +1180,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 11px;
+    padding: 10px 12px;
     cursor: pointer;
     transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid #edf2f7;
 }
 
 .activity-option:last-child {
@@ -1111,20 +1191,22 @@
 }
 
 .activity-option:hover {
-    background-color: var(--background-gray);
+    background-color: var(--m-surface);
 }
 
+/* El indicador usa box-shadow para no desplazar el contenido */
 .activity-option.selected {
-    background-color: #eef1fa;
-    border-left: 3px solid var(--primary-blue);
+    background-color: var(--m-accent-soft);
+    box-shadow: inset 3px 0 0 var(--m-accent);
 }
 
 .option-content {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
+/* Los colores de actividad (incluido el azul) siguen viniendo de las variables */
 .color-indicator {
     width: 13px;
     height: 13px;
@@ -1134,142 +1216,170 @@
 
 .activity-label {
     font-size: 12.5px;
-    color: var(--dark-gray);
+    color: var(--m-ink);
     font-weight: 600;
 }
 
 .activity-code {
     font-size: 10.5px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 4px;
+    font-weight: 800;
+    min-width: 30px;
+    text-align: center;
+    padding: 3px 7px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
 }
 
-/* Tipo de trabajo (radio) */
-.work-type-options {
-    display: flex;
-    gap: 10px;
-    margin-top: 5px;
-}
-
-.work-type-option {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    cursor: pointer;
-    padding: 10px;
-    border: 1px solid var(--light-gray);
-    border-radius: 8px;
-    flex: 1;
-    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.work-type-option:hover {
-    border-color: var(--primary-blue);
-    background-color: #eef1fa;
-}
-
-.work-type-option.selected {
-    border-color: var(--primary-blue);
-    background-color: #eef1fa;
-}
-
-.work-type-option input[type="radio"] {
-    display: none;
-}
-
-.work-type-label {
-    font-size: 13px;
-    color: var(--medium-gray);
-    font-weight: 600;
-}
-
-.work-type-option.selected .work-type-label {
-    color: var(--primary-blue);
-}
-
-/* Bono de servicio (radio) */
+/* ---------------------------------------------------------
+   OPCIONES TIPO "TARJETA" (tipo de trabajo / bono servicio)
+   --------------------------------------------------------- */
+.work-type-options,
 .service-bonus-options {
     display: flex;
     gap: 10px;
     margin-top: 5px;
 }
 
+.work-type-option,
 .service-bonus-option {
     display: flex;
     align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    padding: 10px 14px;
-    border: 1px solid var(--light-gray);
-    border-radius: 8px;
-    flex: 1;
-    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
     justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    padding: 11px 12px;
+    border: 1px solid var(--m-border);
+    border-radius: 10px;
+    flex: 1;
+    background: var(--white);
+    transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                background 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.work-type-option:hover,
 .service-bonus-option:hover {
-    border-color: var(--primary-blue);
-    background-color: #eef1fa;
+    border-color: var(--m-accent);
+    background-color: #fffaf4;
 }
 
+.work-type-option.selected,
 .service-bonus-option.selected {
-    border-color: var(--primary-blue);
-    background-color: #eef1fa;
-    box-shadow: 0 1px 2px rgba(28, 37, 54, 0.05);
+    border-color: var(--m-accent);
+    background-color: var(--m-accent-soft);
+    box-shadow: 0 0 0 1px var(--m-accent);
 }
 
+.work-type-option input[type="radio"],
 .service-bonus-option input[type="radio"] {
     display: none;
 }
 
+.work-type-label,
 .service-bonus-label {
     font-size: 13px;
+    color: var(--m-text);
     font-weight: 700;
-    color: var(--medium-gray);
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
+.work-type-label i {
+    color: var(--m-muted);
+}
+
+.work-type-option.selected .work-type-label,
 .service-bonus-option.selected .service-bonus-label {
-    color: var(--primary-blue);
+    color: var(--m-ink);
 }
 
+.work-type-option.selected .work-type-label i {
+    color: var(--m-accent);
+}
+
+/* Íconos semánticos: No = rojo, Sí = verde (se mantienen al seleccionar) */
 .service-bonus-option[data-value="no"] .service-bonus-label i { color: var(--not-approved); }
 .service-bonus-option[data-value="si"] .service-bonus-label i { color: var(--approved); }
 
-.service-bonus-option[data-value="no"].selected .service-bonus-label i,
-.service-bonus-option[data-value="si"].selected .service-bonus-label i {
-    color: var(--primary-blue);
-}
-
 .form-help {
-    color: #8a94a6;
+    color: var(--m-muted);
     font-size: 11px;
-    margin-top: 3px;
+    margin-top: 4px;
     display: block;
     font-style: italic;
+    line-height: 1.4;
 }
 
 #well-name-field .input-with-icon i {
-    color: var(--primary-blue);
+    color: var(--m-accent);
 }
 
 #well-name:focus {
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(51, 76, 149, 0.12);
+    border-color: var(--m-accent);
+    box-shadow: 0 0 0 3px var(--m-accent-ring);
 }
 
+/* ---------------------------------------------------------
+   ACCIONES (Cancelar / Guardar)
+   --------------------------------------------------------- */
 .form-actions {
     display: flex;
     justify-content: center;
     gap: 10px;
     padding: 14px 20px;
-    background-color: var(--background-gray);
+    background-color: var(--m-surface);
     border-top: 1px solid var(--light-gray);
-    flex-shrink: 0;
+    border-radius: 0 0 16px 16px;
+}
+
+.modal .form-actions .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 11px 16px;
+    font-size: 13px;
+    border-radius: 10px;
+}
+
+/* Guardar: naranja de marca, hover naranja más oscuro */
+.modal .form-actions .btn-primary {
+    background-color: var(--m-accent);
+    border-color: var(--m-accent);
+    color: var(--white);
+}
+
+.modal .form-actions .btn-primary:hover,
+.modal .form-actions .btn-primary:focus-visible {
+    background-color: var(--m-accent-dark);
+    border-color: var(--m-accent-dark);
+    color: var(--white);
+    box-shadow: 0 4px 14px rgba(214, 126, 41, 0.35);
+}
+
+.modal .form-actions .btn-primary:active {
+    background-color: var(--m-accent-dark);
+    box-shadow: none;
+}
+
+.modal .form-actions .btn-primary:disabled,
+.modal .form-actions .btn-primary[disabled] {
+    background-color: #e3b88a;
+    border-color: #e3b88a;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* Cancelar: blanco con borde gris */
+.modal .form-actions .btn-outline {
+    background: var(--white);
+    border-color: var(--m-border);
+    color: var(--m-text);
+}
+
+.modal .form-actions .btn-outline:hover {
+    background: var(--m-track);
+    border-color: var(--m-border-hover);
+    color: var(--m-ink);
 }
 
 /* =========================================================
@@ -1284,7 +1394,7 @@
 .work-type-options.rejected-field,
 .service-bonus-options.rejected-field {
     border: 1px solid var(--not-approved) !important;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 8px 12px;
     background-color: #fdf1ee;
     box-shadow: none !important;
@@ -1406,18 +1516,21 @@
         padding: 4px;
     }
 
+    .modal {
+        padding: 8px;
+    }
+
     .modal-content {
-        margin: 5px;
-        width: calc(100% - 10px);
-        max-height: 96vh;
+        width: 100%;
+        max-width: 100%;
     }
 
     .form-tabs {
-        padding: 0 12px;
+        margin: 14px 14px 0;
     }
 
     .tab-content {
-        padding: 15px;
+        padding: 16px 14px;
     }
 
     .work-type-options,
@@ -1425,14 +1538,18 @@
         flex-direction: column;
     }
 
+    /* Guardar arriba, Cancelar abajo */
     .form-actions {
-        flex-direction: column;
+        flex-direction: column-reverse;
+        padding: 12px 14px;
+    }
+
+    .modal .form-actions .btn {
+        flex: none;
+        width: 100%;
     }
 }
 
-/* =========================================================
-   📱 MÓVIL: Iniciales en días + 2 letras en tags
-   ========================================================= */
 /* =========================================================
    📱 MÓVIL: Iniciales en días + 2 letras en tags
    ========================================================= */
@@ -1555,7 +1672,7 @@
         margin-top: 1px !important;
     }
 
-    /* Icono de estado (candrado/reloj) */
+    /* Icono de estado (candado/reloj) */
     .status-icon {
         font-size: 11px;
         opacity: 0.95;

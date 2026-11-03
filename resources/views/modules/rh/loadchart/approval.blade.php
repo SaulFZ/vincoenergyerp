@@ -1,5 +1,7 @@
 @extends('modules.rh.loadchart.index')
-
+@push('styles')
+    <link href="{{ asset('assets/css/rh/loadchart/approval.css') }}" rel="stylesheet">
+@endpush
 @section('content')
     <div id="approvalView">
         <div class="approval-container">
