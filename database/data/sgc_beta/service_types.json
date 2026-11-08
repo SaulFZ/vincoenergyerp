@@ -1,0 +1,302 @@
+[
+  {
+    "legacy_id": 1,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "REGISTRO_PT",
+    "name": "Registro PT",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 2,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "REGISTRO_PLT",
+    "name": "Registro PLT",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 3,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "REGISTRO_PNN_PNG",
+    "name": "Registro PNN/PNG",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 4,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "REGISTRO_DE_PUNTO_LIBRE",
+    "name": "Registro de Punto Libre",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 5,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "REGISTRO_CBL_VDL",
+    "name": "Registro CBL-VDL",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 6,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "SERVICIO_DE_TECNOLOGIA_PUNCHER_MCR",
+    "name": "Servicio de tecnología Puncher MCR",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 7,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "SERVICIO_DE_TECNOLOGIA_CORTE_MCR",
+    "name": "Servicio de tecnología Corte MCR",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 8,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "SERVICIO_DE_TECNOLOGIA_CORTE_MCR_EMA",
+    "name": "Servicio de tecnología Corte MCR + EMA",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 9,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "PUNCHER_TXC",
+    "name": "Puncher TXC",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 10,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "REGISTRO_WI",
+    "name": "Registro WI",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 11,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "CALIBRACION",
+    "name": "Calibración",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 12,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:08",
+    "updated_at": "2026-04-24 14:38:08",
+    "code": "RENTA_DE_HERRAMIENTA",
+    "name": "Renta de Herramienta",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 13,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "SUMINISTRO",
+    "name": "Suministro",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 14,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "SERVICIO_DE_PRESTA_CABLE",
+    "name": "Servicio de Presta cable",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 15,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "COLOCACION_DE_TAPON_DE_CEMENTO",
+    "name": "Colocación de tapón de cemento",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 16,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "DISPAROS_DE_ABANDONO",
+    "name": "Disparos de Abandono",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 17,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "DISPARO_PUNCHER",
+    "name": "Disparo Puncher",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 18,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "DISPAROS_DE_PRODUCCION",
+    "name": "Disparos de Producción",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 19,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "TCP",
+    "name": "TCP",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 20,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "PESCA_DE_HERRAMIENTA_CON_TUBERIA_FLEXIBLE",
+    "name": "PESCA DE HERRAMIENTA CON TUBERIA FLEXIBLE",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 21,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "ACTIVO",
+    "name": "ACTIVO",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 22,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "PESCA_DE_HERRAMIENTA",
+    "name": "PESCA DE HERRAMIENTA",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 23,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "CORRELACION",
+    "name": "Correlacion",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 24,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "CANCELACION",
+    "name": "CANCELACION",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 25,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "REGISTRO_EN_AGUJERO_DESCUBIERTO",
+    "name": "Registro en agujero descubierto",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 26,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "SERVICIO_DE_PASA_CABLE",
+    "name": "Servicio de pasa cable",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 27,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "SUMINISTRO_DE_OPERACIONES",
+    "name": "Suministro de Operaciones",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 28,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "RENTA_DE_EQUIPO",
+    "name": "Renta de equipo",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 29,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "REGISTRO_CALIPER_OH",
+    "name": "Registro caliper OH",
+    "description": null,
+    "is_active": true
+  },
+  {
+    "legacy_id": 30,
+    "source": "sgc_beta",
+    "created_at": "2026-04-24 14:38:09",
+    "updated_at": "2026-04-24 14:38:09",
+    "code": "CORTE_CON_EXPLOSIVOS",
+    "name": "Corte con explosivos",
+    "description": null,
+    "is_active": true
+  }
+]

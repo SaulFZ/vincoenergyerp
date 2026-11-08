@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Operations\Sgc;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Operations\Well;
 use App\Models\Employee;
 use App\Models\Core\VehicleUnit;
@@ -22,8 +23,26 @@ class SgcServicesController extends Controller
             return redirect()->route('operations.sgc.services', ['view' => 'list']);
         }
 
+        if ($view === 'new_service' && $request->query('catalog') === 'employee-training') {
+            $request->validate(['employee_id' => 'required|integer|exists:employees,id']);
+            $employee = Employee::findOrFail($request->integer('employee_id'));
+            $records = DB::table('employee_training_records as records')
+                ->join('training_courses as courses', 'courses.id', '=', 'records.training_course_id')
+                ->where('records.employee_id', $employee->id)
+                ->orderBy('courses.name')
+                ->get(['courses.name', 'courses.category', 'records.issue_date', 'records.expiration_date', 'records.status']);
+
+            return response()->json(['employee' => $employee->full_name, 'records' => $records]);
+        }
+
         if ($view === 'new_service') {
             return view('modules.operations.sgc.tabs.serv.new_service', [
+                'clients' => DB::table('clients')->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+                'serviceTypes' => DB::table('service_types')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'equipment' => DB::table('equipment')->orderBy('code')->get(['id', 'code', 'name', 'category', 'status', 'serial_number'])->groupBy('category'),
+                'toolFamilies' => DB::table('tool_families')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'tools' => DB::table('tools')->orderBy('name')->get(['id', 'tool_family_id', 'code', 'name', 'serial_number', 'status']),
+                'cables' => DB::table('cables')->orderBy('code')->get(['id', 'code', 'drum_code', 'current_unit_id', 'status']),
                 'wells' => Well::where('status', 'active')->orderBy('name')->get(['id', 'name']),
                 'employees' => Employee::where('employment_status', 'active')->orderBy('full_name')->get(['id', 'full_name', 'position']),
                 'units' => VehicleUnit::orderBy('economic_number')->get(['id', 'economic_number', 'vehicle_type', 'status', 'serial_number']),

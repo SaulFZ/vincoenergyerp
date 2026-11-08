@@ -1,0 +1,23 @@
+{
+  "source": "SGC beta / prisma/dev.db",
+  "exported_at": "2026-11-08",
+  "counts": {
+    "clients": 24,
+    "equipment": 55,
+    "tool_families": 20,
+    "tools": 312,
+    "service_types": 30,
+    "cables": 121,
+    "training_courses": 259
+  },
+  "excluded": {
+    "vehicles": "No se importan URE, grúas, pickups, planas ni unidades adicionales.",
+    "employees": "No se crean ni actualizan empleados.",
+    "wells": "No se crean ni actualizan pozos.",
+    "employee_training_records": "6972 registros requieren correspondencia de empleados.",
+    "tool_catalog": "No se mezcla ToolCatalog con LabTool, consultado por el formulario de OS.",
+    "historical_services": "Se importa ServiceType; las combinaciones históricas de OS no se convierten en catálogo."
+  },
+  "tools_without_family": 0,
+  "cables_without_unit_id": 121
+}

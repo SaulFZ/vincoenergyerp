@@ -1,0 +1,182 @@
+[
+  {
+    "legacy_id": 1,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:08:50",
+    "updated_at": "2026-08-11 03:23:50",
+    "name": "PNN Plus",
+    "description": "Inventario de herramientas.xlsx / PNN Plus",
+    "is_active": true
+  },
+  {
+    "legacy_id": 2,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:07",
+    "updated_at": "2026-08-11 03:23:51",
+    "name": "GR CCL (para correlación)",
+    "description": "Inventario de herramientas.xlsx / GR CCL  (para correlación)",
+    "is_active": true
+  },
+  {
+    "legacy_id": 3,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:51",
+    "name": "PNN Plus PERENCO",
+    "description": "Inventario de herramientas.xlsx / PNN Plus PERENCO",
+    "is_active": true
+  },
+  {
+    "legacy_id": 4,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:51",
+    "name": "CBL",
+    "description": "Inventario de herramientas.xlsx / CBL",
+    "is_active": true
+  },
+  {
+    "legacy_id": 5,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:51",
+    "name": "WELL INTEGRITY",
+    "description": "Inventario de herramientas.xlsx / WELL INTEGRITY",
+    "is_active": true
+  },
+  {
+    "legacy_id": 6,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:51",
+    "name": "FREE POINT",
+    "description": "Inventario de herramientas.xlsx / FREE POINT",
+    "is_active": true
+  },
+  {
+    "legacy_id": 7,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:51",
+    "name": "PLT SPARTEK",
+    "description": "Inventario de herramientas.xlsx / PLT SPARTEK",
+    "is_active": true
+  },
+  {
+    "legacy_id": 8,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:51",
+    "name": "PT de Memoria SPARTEK",
+    "description": "Inventario de herramientas.xlsx / PT de  Memoria SPARTEK",
+    "is_active": true
+  },
+  {
+    "legacy_id": 9,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:51",
+    "name": "TAPONERA NEO NEST",
+    "description": "Inventario de herramientas.xlsx / TAPONERA NEO NEST",
+    "is_active": true
+  },
+  {
+    "legacy_id": 10,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:52",
+    "name": "HERRAMIENTAS MCR",
+    "description": "Inventario de herramientas.xlsx / HERRAMIENTAS MCR",
+    "is_active": true
+  },
+  {
+    "legacy_id": 11,
+    "source": "sgc_beta",
+    "created_at": "2026-08-11 03:19:08",
+    "updated_at": "2026-08-11 03:23:52",
+    "name": "GDT (OPEN HOLE Y PLT)",
+    "description": "Inventario de herramientas.xlsx / GDT (OPEN HOLE Y PLT)",
+    "is_active": true
+  },
+  {
+    "legacy_id": 12,
+    "source": "sgc_beta",
+    "created_at": "2026-08-13 03:56:15",
+    "updated_at": "2026-08-13 03:56:15",
+    "name": "BARRAS DE PESO",
+    "description": "Importado desde inventario Barras/CCL",
+    "is_active": true
+  },
+  {
+    "legacy_id": 13,
+    "source": "sgc_beta",
+    "created_at": "2026-08-13 03:56:16",
+    "updated_at": "2026-08-13 03:56:16",
+    "name": "CCL",
+    "description": "Importado desde inventario Barras/CCL",
+    "is_active": true
+  },
+  {
+    "legacy_id": null,
+    "source": "sgc_beta",
+    "name": "GR/CCL",
+    "description": "Familia del formulario de herramientas de SGC beta.",
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "legacy_id": null,
+    "source": "sgc_beta",
+    "name": "SPINNER",
+    "description": "Familia del formulario de herramientas de SGC beta.",
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "legacy_id": null,
+    "source": "sgc_beta",
+    "name": "CALIPER",
+    "description": "Familia del formulario de herramientas de SGC beta.",
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "legacy_id": null,
+    "source": "sgc_beta",
+    "name": "MFC",
+    "description": "Familia del formulario de herramientas de SGC beta.",
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "legacy_id": null,
+    "source": "sgc_beta",
+    "name": "PUNCHER",
+    "description": "Familia del formulario de herramientas de SGC beta.",
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "legacy_id": null,
+    "source": "sgc_beta",
+    "name": "CORTE MCR",
+    "description": "Familia del formulario de herramientas de SGC beta.",
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "legacy_id": null,
+    "source": "sgc_beta",
+    "name": "OTRA",
+    "description": "Familia del formulario de herramientas de SGC beta.",
+    "is_active": true,
+    "created_at": null,
+    "updated_at": null
+  }
+]

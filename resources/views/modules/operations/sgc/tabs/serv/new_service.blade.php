@@ -123,7 +123,7 @@
             <div id="progress-bar" class="stepper-progress-bar" style="width: 14%"></div>
         </div>
     </div>
-<form id="wizard-form">
+<form id="wizard-form" data-catalogs="{{ json_encode(['serviceTypes' => $serviceTypes, 'families' => $toolFamilies, 'tools' => $tools, 'cables' => $cables]) }}" data-training-url="{{ route('operations.sgc.services', ['view' => 'new_service', 'catalog' => 'employee-training']) }}">
 @csrf
 @if ($serviceId)<input type="hidden" name="service_id" value="{{ $serviceId }}">@endif
 <div id="step-1" class="step-content active">
@@ -153,13 +153,12 @@
     <option value="{{ $unit->id }}" data-status="{{ $unit->status }}" data-serial="{{ $unit->serial_number }}">{{ $unit->economic_number }}{{ $unit->vehicle_type ? ' · '.$unit->vehicle_type : '' }}{{ $unit->status ? ' · '.$unit->status : '' }}</option>
 @endforeach</select>
 </div><div class="form-field">
-    <label class="form-label" for="svc-cliente">Cliente</label>
-    <input id="svc-cliente" name="cliente" type="text" class="form-input" placeholder="Escribe cliente..." list="clientes-sugeridos">
-</div><datalist id="clientes-sugeridos"><option value="PEMEX">PEMEX</option>
-<option value="SLB">SLB</option>
-<option value="HALLIBURTON">HALLIBURTON</option>
-<option value="WDEA/H. ENERGY">WDEA/H. ENERGY</option>
-<option value="GEOTERMIA">GEOTERMIA</option></datalist><div class="form-field">
+    <label class="form-label" for="svc-client_id">Cliente</label>
+    <select id="svc-client_id" name="client_id" class="form-select" data-catalog data-empty-message="No hay clientes activos. Registra o activa un cliente antes de asignarlo.">
+        <option value="">Seleccionar cliente</option>
+        @foreach ($clients as $client)<option value="{{ $client->id }}">{{ $client->name }}</option>@endforeach
+    </select>
+</div><div class="form-field">
     <label class="form-label" for="svc-well_id">Pozo</label>
     <select id="svc-well_id" name="well_id" class="form-select" data-catalog><option value="">Seleccionar pozo</option>@foreach ($wells as $well)<option value="{{ $well->id }}">{{ $well->name }}</option>@endforeach</select>
 </div><div class="form-field form-field-full">
@@ -173,9 +172,10 @@
 <section class="form-card">
     <div class="form-card-header"><div><h2 class="form-card-title">Servicios planeados</h2><p class="form-card-subtitle">Selecciona los servicios que se ejecutarán dentro de esta OS.</p></div></div>
     <div class="form-card-body"><div class="svc-checkbox-grid">
-@foreach (['ACTIVO', 'CALIBRACIÓN', 'REGISTRO PLT', 'REGISTRO CBL-VDL', 'DISPARO PUNCHER', 'COLOCACIÓN DE TAPÓN DE CEMENTO'] as $svc)
-<label class="svc-checkbox"><input type="checkbox" name="servicios[]" value="{{ $svc }}" class="svc-checkbox-input"><span class="svc-checkbox-box"><i class="fas fa-check svc-checkbox-mark"></i></span><span class="svc-checkbox-label">{{ $svc }}</span></label>
+@foreach ($serviceTypes as $type)
+<label class="svc-checkbox"><input type="checkbox" name="service_type_ids[]" value="{{ $type->id }}" data-service-name="{{ $type->name }}" class="svc-checkbox-input"><span class="svc-checkbox-box"><i class="fas fa-check svc-checkbox-mark"></i></span><span class="svc-checkbox-label">{{ $type->name }}</span></label>
 @endforeach
+@if ($serviceTypes->isEmpty())<p class="form-card-subtitle">No hay tipos de servicio activos. Registra o activa uno en el catálogo antes de continuar.</p>@endif
 </div></div>
 </section>
 </div>
@@ -189,12 +189,14 @@
 @foreach ($employees as $employee)
     <option value="{{ $employee->id }}">{{ $employee->full_name }}{{ $employee->position ? ' · '.$employee->position : '' }}</option>
 @endforeach</select>
+<button type="button" class="btn btn-outline btn-sm no-print" data-training-for="engineer_id">Ver cursos</button>
 </div><div class="form-field">
     <label class="form-label" for="svc-trainee_id">Trainee / apoyo técnico</label>
     <select id="svc-trainee_id" name="trainee_id" class="form-select" data-catalog><option value="">Sin asignar</option>
 @foreach ($employees as $employee)
     <option value="{{ $employee->id }}">{{ $employee->full_name }}{{ $employee->position ? ' · '.$employee->position : '' }}</option>
 @endforeach</select>
+<button type="button" class="btn btn-outline btn-sm no-print" data-training-for="trainee_id">Ver cursos</button>
 </div><div class="form-field">
     <label class="form-label" for="svc-crane_unit_id">Grúa</label>
     <select id="svc-crane_unit_id" name="crane_unit_id" class="form-select" data-catalog><option value="">Sin asignar</option>
@@ -208,27 +210,46 @@
     <option value="{{ $unit->id }}" data-status="{{ $unit->status }}" data-serial="{{ $unit->serial_number }}">{{ $unit->economic_number }}{{ $unit->vehicle_type ? ' · '.$unit->vehicle_type : '' }}{{ $unit->status ? ' · '.$unit->status : '' }}</option>
 @endforeach</select>
 </div><div class="form-field">
-    <label class="form-label" for="svc-ecp_unit_id">ECP</label>
-    <select id="svc-ecp_unit_id" name="ecp_unit_id" class="form-select" data-catalog><option value="">Sin asignar</option>
-@foreach ($units as $unit)
-    <option value="{{ $unit->id }}" data-status="{{ $unit->status }}" data-serial="{{ $unit->serial_number }}">{{ $unit->economic_number }}{{ $unit->vehicle_type ? ' · '.$unit->vehicle_type : '' }}{{ $unit->status ? ' · '.$unit->status : '' }}</option>
-@endforeach</select>
+    <label class="form-label" for="svc-ecp_equipment_id">ECP</label>
+    <select id="svc-ecp_equipment_id" name="ecp_equipment_id" class="form-select" data-catalog data-empty-message="No hay equipos de ecp registrados. Regístralos en el catálogo antes de asignarlos.">
+        <option value="">Sin asignar</option>
+        @foreach ($equipment->get('ecp', collect()) as $item)
+            <option value="{{ $item->id }}">{{ $item->code }} · {{ $item->name }}{{ $item->serial_number ? ' · '.$item->serial_number : '' }} · {{ $item->status }}</option>
+        @endforeach
+    </select>
 </div><div class="form-field">
-    <label class="form-label" for="svc-generador">Generador</label>
-    <input id="svc-generador" name="generador" type="text" class="form-input" placeholder="Código o descripción" >
+    <label class="form-label" for="svc-generator_equipment_id">Generador</label>
+    <select id="svc-generator_equipment_id" name="generator_equipment_id" class="form-select" data-catalog data-empty-message="No hay equipos de generador registrados. Regístralos en el catálogo antes de asignarlos.">
+        <option value="">Sin asignar</option>
+        @foreach ($equipment->get('generador', collect()) as $item)
+            <option value="{{ $item->id }}">{{ $item->code }} · {{ $item->name }}{{ $item->serial_number ? ' · '.$item->serial_number : '' }} · {{ $item->status }}</option>
+        @endforeach
+    </select>
 </div><div class="form-field">
-    <label class="form-label" for="svc-caja">Cajas / Contenedor</label>
-    <input id="svc-caja" name="caja" type="text" class="form-input" placeholder="Código o descripción" >
+    <label class="form-label" for="svc-box_equipment_id">Cajas / Contenedor</label>
+    <select id="svc-box_equipment_id" name="box_equipment_id" class="form-select" data-catalog data-empty-message="No hay equipos de cajas / contenedor registrados. Regístralos en el catálogo antes de asignarlos.">
+        <option value="">Sin asignar</option>
+        @foreach ($equipment->get('caja', collect()) as $item)
+            <option value="{{ $item->id }}">{{ $item->code }} · {{ $item->name }}{{ $item->serial_number ? ' · '.$item->serial_number : '' }} · {{ $item->status }}</option>
+        @endforeach
+    </select>
 </div><div class="form-field">
-    <label class="form-label" for="svc-chip">Chip</label>
-    <input id="svc-chip" name="chip" type="text" class="form-input" placeholder="Código o descripción" >
+    <label class="form-label" for="svc-chip_equipment_id">Chip</label>
+    <select id="svc-chip_equipment_id" name="chip_equipment_id" class="form-select" data-catalog data-empty-message="No hay equipos de chip registrados. Regístralos en el catálogo antes de asignarlos.">
+        <option value="">Sin asignar</option>
+        @foreach ($equipment->get('chip', collect()) as $item)
+            <option value="{{ $item->id }}">{{ $item->code }} · {{ $item->name }}{{ $item->serial_number ? ' · '.$item->serial_number : '' }} · {{ $item->status }}</option>
+        @endforeach
+    </select>
 </div><div class="form-field">
     <label class="form-label" for="svc-additional_unit_id">Unidad adicional</label>
     <select id="svc-additional_unit_id" name="additional_unit_id" class="form-select" data-catalog><option value="">Sin asignar</option>
 @foreach ($units as $unit)
     <option value="{{ $unit->id }}" data-status="{{ $unit->status }}" data-serial="{{ $unit->serial_number }}">{{ $unit->economic_number }}{{ $unit->vehicle_type ? ' · '.$unit->vehicle_type : '' }}{{ $unit->status ? ' · '.$unit->status : '' }}</option>
 @endforeach</select>
-</div></div></div>
+</div></div>
+<div id="employee-training-panel" class="unit-summary" hidden aria-live="polite"></div>
+</div>
 </section>
 </div>
 
@@ -246,9 +267,12 @@
     <label class="form-label" for="svc-ure_selected">URE seleccionada</label>
     <input id="svc-ure_selected" type="text" class="form-input" placeholder="Primero selecciona la URE" readonly data-display-only>
 </div><div class="form-field">
-    <label class="form-label" for="svc-cable">Cable</label>
-    <input id="svc-cable" name="cable" type="text" class="form-input" placeholder="Código de cable" list="service-cable-options">
-</div><datalist id="service-cable-options"></datalist><div class="form-field">
+    <label class="form-label" for="svc-cable_id">Cable</label>
+    <select id="svc-cable_id" name="cable_id" class="form-select" data-catalog data-empty-message="No hay cables registrados. Registra un cable antes de asignarlo.">
+        <option value="">Seleccionar cable</option>
+        @foreach ($cables as $cable)<option value="{{ $cable->id }}">{{ $cable->code }} · {{ $cable->status }}</option>@endforeach
+    </select>
+</div><div class="form-field">
     <label class="form-label" for="svc-tambor">Tambor</label>
     <input id="svc-tambor" name="tambor" type="text" class="form-input" placeholder="Tambor" >
 </div><div class="form-field">

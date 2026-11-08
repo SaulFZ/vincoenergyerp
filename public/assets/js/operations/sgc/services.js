@@ -25,10 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initialize(mode) {
         const form = content.querySelector('#wizard-form');
+        const catalogs = JSON.parse(form.dataset.catalogs);
         const catalogMessages = new Set();
+        if (!catalogs.serviceTypes.length) catalogMessages.add('No hay tipos de servicio activos. Registra o activa uno en el catálogo.');
+        if (!catalogs.families.length) catalogMessages.add('No hay familias de herramientas activas. Regístralas antes de asignar herramientas.');
+        if (!catalogs.tools.length) catalogMessages.add('No hay herramientas registradas. Regístralas en el catálogo antes de asignarlas.');
         form.querySelectorAll('select[data-catalog]').forEach(field => {
             if ([...field.options].some(option => option.value !== '')) return;
-            if (field.name === 'well_id') catalogMessages.add('No hay pozos activos. Registra un pozo o activa uno existente.');
+            if (field.dataset.emptyMessage) catalogMessages.add(field.dataset.emptyMessage);
+            else if (field.name === 'well_id') catalogMessages.add('No hay pozos activos. Registra un pozo o activa uno existente.');
             else if (['engineer_id', 'trainee_id'].includes(field.name)) catalogMessages.add('No hay empleados activos. Registra o activa al personal antes de asignarlo.');
             else catalogMessages.add('No hay unidades registradas. Registra las unidades antes de asignarlas como URE o recursos.');
         });
@@ -48,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     [...field.options].forEach(option => { option.selected = ids.includes(option.value); });
                     if (!field.multiple && ![...field.options].some(option => option.selected)) field.value = '';
                 } else if (field.type === 'checkbox' || field.type === 'radio') {
-                    field.checked = (Array.isArray(value) ? value : [value]).includes(field.value);
+                    field.checked = (Array.isArray(value) ? value : [value]).map(String).includes(field.value);
                 } else {
                     if (field.tagName === 'SELECT') {
                         const option = [...field.options].find(option => option.value.toLowerCase() === String(value).toLowerCase());
@@ -68,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alertItems.append(item);
         });
         alert.hidden = catalogMessages.size === 0;
-        initializeServiceOperations(form, mode, service.operations || []);
+        initializeServiceOperations(form, mode, service.operations || [], catalogs);
         const syncNpt = () => {
             const hasNpt = form.elements.namedItem('tiene_npt').value === 'SI';
             const hours = form.elements.namedItem('horas_npt');
@@ -82,20 +87,62 @@ document.addEventListener('DOMContentLoaded', () => {
         form.elements.namedItem('tiene_npt').addEventListener('change', syncNpt);
         syncNpt();
         const ure = form.elements.namedItem('ure_unit_id');
-        const syncUre = () => {
+        const cableSelect = form.elements.namedItem('cable_id');
+        const syncCable = () => {
+            const cable = catalogs.cables.find(item => String(item.id) === cableSelect.value);
+            form.elements.namedItem('tambor').value = cable?.drum_code || '';
+        };
+        const syncUre = (preload = false) => {
             const selected = ure.selectedOptions[0];
             const hasUnit = Boolean(ure.value);
             form.querySelector('#svc-ure_selected').value = hasUnit ? selected.textContent.trim() : '';
             content.querySelector('#ure-linked-summary').hidden = !hasUnit;
+            const linked = hasUnit ? catalogs.cables.filter(item => String(item.current_unit_id) === ure.value) : [];
             content.querySelector('[data-ure-status]').textContent = selected?.dataset.status || 'Sin dato';
-            content.querySelector('[data-ure-cable]').textContent = selected?.dataset.cable || 'Sin cable ligado';
-            content.querySelector('[data-ure-drum]').textContent = selected?.dataset.drum || 'Sin tambor';
-            // Se precarga únicamente cuando exista una relación real de cable/tambor.
-            if (selected?.dataset.cable) form.elements.namedItem('cable').value = selected.dataset.cable;
-            if (selected?.dataset.drum) form.elements.namedItem('tambor').value = selected.dataset.drum;
+            content.querySelector('[data-ure-cable]').textContent = linked.length ? linked.map(item => item.code).join(', ') : 'Sin cable ligado';
+            content.querySelector('[data-ure-drum]').textContent = linked.length ? linked.map(item => item.drum_code || 'Sin tambor').join(', ') : 'Sin tambor';
+            if (preload && linked.length === 1) { cableSelect.value = String(linked[0].id); syncCable(); }
         };
-        ure.addEventListener('change', syncUre);
-        syncUre();
+        ure.addEventListener('change', () => syncUre(true));
+        cableSelect.addEventListener('change', syncCable);
+        syncUre(mode === 'create');
+        if (cableSelect.value) syncCable();
+        let trainingRequest;
+        form.querySelectorAll('[data-training-for]').forEach(button => {
+            button.addEventListener('click', async () => {
+                const panel = form.querySelector('#employee-training-panel');
+                const employeeId = form.elements.namedItem(button.dataset.trainingFor).value;
+                panel.hidden = false;
+                trainingRequest?.abort();
+                if (!employeeId) { panel.textContent = 'Selecciona primero un empleado para consultar sus cursos.'; return; }
+                const request = new AbortController(); trainingRequest = request;
+                const url = new URL(form.dataset.trainingUrl, window.location.origin);
+                url.searchParams.set('employee_id', employeeId);
+                panel.textContent = 'Consultando cursos…';
+                try {
+                    const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: request.signal });
+                    if (!response.ok) throw new Error('No se pudieron consultar los cursos.');
+                    const data = await response.json();
+                    if (request.signal.aborted) return;
+                    panel.replaceChildren();
+                    const heading = document.createElement('h3'); heading.className = 'form-card-title';
+                    heading.textContent = 'Cursos de ' + data.employee; panel.append(heading);
+                    if (!data.records.length) {
+                        const message = document.createElement('p');
+                        message.textContent = 'Este empleado no tiene cursos asignados. Registra sus asignaciones antes de utilizar esta consulta.';
+                        panel.append(message);
+                    } else {
+                        const list = document.createElement('ul');
+                        data.records.forEach(record => {
+                            const item = document.createElement('li');
+                            item.textContent = [record.name, record.category, record.status, 'Emisión: ' + (record.issue_date || 'Sin fecha'), 'Vencimiento: ' + (record.expiration_date || 'Sin fecha')].filter(Boolean).join(' · ');
+                            list.append(item);
+                        });
+                        panel.append(list);
+                    }
+                } catch (error) { if (error.name !== 'AbortError') panel.textContent = 'No se pudieron consultar los cursos. Inténtalo de nuevo.'; }
+            });
+        });
         const totalSteps = content.querySelectorAll('.step-content').length;
         let step = 1;
         const showStep = next => {
@@ -170,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Jerarquía TRIH: servicio, corridas y filas de herramientas, como el alta de SGC beta.
-function initializeServiceOperations(form, mode, savedOperations = []) {
+function initializeServiceOperations(form, mode, savedOperations = [], catalogs) {
     const container = form.querySelector('#service-operations');
     const empty = form.querySelector('#operations-empty');
     const addOperation = form.querySelector('#add-trih-operation');
@@ -202,20 +249,20 @@ function initializeServiceOperations(form, mode, savedOperations = []) {
         wrapper.append(create('span', 'form-label', title), control);
         return wrapper;
     };
-    const serviceOptions = () => [...form.querySelectorAll('[name="servicios[]"]')].map(checkbox => checkbox.value);
+    const serviceOptions = catalogs.serviceTypes;
     const updateEmpty = () => { empty.hidden = [...container.children].some(block => !block.hidden); };
     function createOperation(data = {}, plannedName = null) {
         const prefix = `operations[${operationIndex++}]`;
         const block = create('section', 'operation-card');
         const header = create('div', 'operation-heading');
         const serviceName = create('select', 'form-select');
-        serviceName.name = `${prefix}[service_name]`; serviceName.disabled = readOnly;
+        serviceName.name = `${prefix}[service_type_id]`; serviceName.disabled = readOnly;
         serviceName.add(new Option('Seleccionar servicio', ''));
-        [...new Set([...serviceOptions(), data.service_name].filter(Boolean))].forEach(name => serviceName.add(new Option(name, name)));
-        serviceName.value = data.service_name || '';
+        serviceOptions.forEach(type => serviceName.add(new Option(type.name, String(type.id))));
+        serviceName.value = data.service_type_id == null ? '' : String(data.service_type_id);
         header.append(label('Servicio', serviceName), action('Quitar servicio', () => {
             if (plannedName) {
-                const checkbox = [...form.querySelectorAll('[name="servicios[]"]')].find(control => control.value === plannedName);
+                const checkbox = [...form.querySelectorAll('[name="service_type_ids[]"]')].find(control => control.value === plannedName);
                 if (checkbox) checkbox.checked = false;
                 plannedBlocks.delete(plannedName);
             }
@@ -246,13 +293,35 @@ function initializeServiceOperations(form, mode, savedOperations = []) {
                     ['fluid', 'Fluido'], ['exposure_time', 'Exposición'], ['failed', 'Falla', 'checkbox'],
                     ['fishing', 'Pesca', 'checkbox'], ['notes', 'Notas'],
                 ];
+                const familySelect = create('select', 'form-select');
+                familySelect.name = toolPrefix + '[tool_family_id]'; familySelect.disabled = readOnly;
+                familySelect.add(new Option('Seleccionar familia', ''));
+                catalogs.families.forEach(family => familySelect.add(new Option(family.name, String(family.id))));
+                const toolSelect = create('select', 'form-select');
+                toolSelect.name = toolPrefix + '[tool_id]'; toolSelect.disabled = readOnly;
+                const selectedTool = catalogs.tools.find(tool => String(tool.id) === String(data.tool_id));
+                familySelect.value = String(data.tool_family_id ?? selectedTool?.tool_family_id ?? '');
+                const serial = input(toolPrefix + '[serial]', data.serial ?? selectedTool?.serial_number ?? '');
+                serial.readOnly = true;
+                const populateTools = (selectedId = '') => {
+                    toolSelect.replaceChildren(new Option('Seleccionar herramienta', ''));
+                    catalogs.tools.filter(tool => !familySelect.value || String(tool.tool_family_id) === familySelect.value)
+                        .forEach(tool => toolSelect.add(new Option([tool.code, tool.name, tool.serial_number].filter(Boolean).join(' · '), String(tool.id))));
+                    toolSelect.value = String(selectedId);
+                };
+                populateTools(data.tool_id ?? '');
+                familySelect.addEventListener('change', () => { populateTools(); serial.value = ''; });
+                toolSelect.addEventListener('change', () => {
+                    const tool = catalogs.tools.find(item => String(item.id) === toolSelect.value);
+                    if (tool?.tool_family_id) familySelect.value = String(tool.tool_family_id);
+                    serial.value = tool?.serial_number || '';
+                });
                 fields.forEach(([key, title, type]) => {
                     const cell = create('td');
-                    const control = input(`${toolPrefix}[${key}]`, data[key], type || 'text');
+                    const control = key === 'family' ? familySelect : key === 'tool_name' ? toolSelect : key === 'serial' ? serial : input(`${toolPrefix}[${key}]`, data[key], type || 'text');
                     control.setAttribute('aria-label', title);
                     if (key.endsWith('_percent')) control.max = '100';
                     if (key === 'max_temperature_c') control.removeAttribute('min');
-                    // Familia/herramienta siguen siendo captura libre hasta contar con catálogo.
                     cell.append(control); row.append(cell);
                 });
                 const actions = create('td');
@@ -279,22 +348,22 @@ function initializeServiceOperations(form, mode, savedOperations = []) {
         updateEmpty();
         return block;
     }
-    const checkboxFor = name => [...form.querySelectorAll('[name="servicios[]"]')].find(control => control.value === name);
+    const checkboxFor = name => [...form.querySelectorAll('[name="service_type_ids[]"]')].find(control => control.value === name);
     savedOperations.forEach(data => {
-        const checkbox = checkboxFor(data.service_name);
+        const checkbox = checkboxFor(String(data.service_type_id));
         if (checkbox) checkbox.checked = true;
-        createOperation(data, checkbox && !plannedBlocks.has(data.service_name) ? data.service_name : null);
+        createOperation(data, checkbox && !plannedBlocks.has(String(data.service_type_id)) ? String(data.service_type_id) : null);
     });
     function syncPlanned() {
-        const selected = [...form.querySelectorAll('[name="servicios[]"]:checked')].map(control => control.value);
-        selected.forEach(name => { if (!plannedBlocks.has(name)) createOperation({service_name: name}, name); });
+        const selected = [...form.querySelectorAll('[name="service_type_ids[]"]:checked')].map(control => control.value);
+        selected.forEach(name => { if (!plannedBlocks.has(name)) createOperation({service_type_id: name}, name); });
         plannedBlocks.forEach((block, name) => {
             block.hidden = !selected.includes(name);
             block.querySelectorAll('input, select, button').forEach(control => { control.disabled = readOnly || block.hidden; });
         });
         updateEmpty();
     }
-    form.querySelectorAll('[name="servicios[]"]').forEach(checkbox => checkbox.addEventListener('change', syncPlanned));
+    form.querySelectorAll('[name="service_type_ids[]"]').forEach(checkbox => checkbox.addEventListener('change', syncPlanned));
     addOperation.hidden = readOnly; addOperation.disabled = readOnly;
     addOperation.addEventListener('click', () => createOperation());
     syncPlanned();
