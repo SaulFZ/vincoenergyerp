@@ -11,6 +11,13 @@ class SgcServicesController extends Controller
     {
         // 1. Obtenemos qué pestaña quieren ver (por defecto 'list')
         $view = $request->query('view', 'list');
+        abort_unless(in_array($view, ['list', 'staff', 'new_service'], true), 404);
+        abort_unless(in_array($request->query('mode', 'create'), ['create', 'edit', 'view'], true), 422);
+
+        // para crear, editar o visualizar un servcio se abre un modal fullscreen
+        if ($view === 'new_service' && !$request->ajax()) {
+            return redirect()->route('operations.sgc.services', ['view' => 'list']);
+        }
 
         // 2. LA MAGIA AQUÍ: Si la petición viene por Javascript (AJAX)
         if ($request->ajax()) {

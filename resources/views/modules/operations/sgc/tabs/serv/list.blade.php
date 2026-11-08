@@ -1,3 +1,9 @@
+<div class="services-list-toolbar no-print">
+    <a href="{{ route('operations.sgc.services', ['view' => 'new_service']) }}" class="btn btn-primary service-modal-trigger">
+        <i class="fas fa-plus" aria-hidden="true"></i> Nuevo Servicio
+    </a>
+</div>
+
 
 {{-- ========================================== --}}
 {{-- 1. FILTROS EXCLUSIVOS DE LA VISTA: LISTA   --}}
@@ -124,7 +130,7 @@
             </thead>
             <tbody>
                 @forelse($servicios ?? [] as $s)
-                    <tr>
+                    <tr data-service="{{ json_encode($s) }}">
                         <td class="td-bold">{{ $s->os }}</td>
                         <td>{{ $s->inicio_op }}</td>
                         <td class="td-dark">{{ $s->fin_op ?? '-' }}</td>
@@ -153,9 +159,9 @@
                         <td class="td-sticky no-print">
                             <div class="actions">
                                 <a href="{{ route('operations.sgc.services', ['view' => 'new_service', 'mode' => 'view', 'id' => $s->id]) }}"
-                                    class="btn-row btn-row-outline tab-link">Ver</a>
+                                    class="btn-row btn-row-outline service-modal-trigger">Ver</a>
                                 <a href="{{ route('operations.sgc.services', ['view' => 'new_service', 'mode' => 'edit', 'id' => $s->id]) }}"
-                                    class="btn-row btn-row-blue tab-link">Editar</a>
+                                    class="btn-row btn-row-blue service-modal-trigger">Editar</a>
                                 <a href="/evidencias/nuevas?serviceId={{ $s->id }}"
                                     class="btn-row btn-row-dark">Evidencias</a>
                             </div>
@@ -183,9 +189,9 @@
                         <td class="td-sticky no-print">
                             <div class="actions">
                                 <a href="{{ route('operations.sgc.services', ['view' => 'new_service', 'mode' => 'view', 'id' => 141]) }}"
-                                    class="btn-row btn-row-outline tab-link">Ver</a>
+                                    class="btn-row btn-row-outline service-modal-trigger">Ver</a>
                                 <a href="{{ route('operations.sgc.services', ['view' => 'new_service', 'mode' => 'edit', 'id' => 141]) }}"
-                                    class="btn-row btn-row-blue tab-link">Editar</a>
+                                    class="btn-row btn-row-blue service-modal-trigger">Editar</a>
                                 <a href="/evidencias/nuevas?serviceId=141"
                                     class="btn-row btn-row-dark">Evidencias</a>
                             </div>
@@ -213,9 +219,9 @@
                         <td class="td-sticky no-print">
                             <div class="actions">
                                 <a href="{{ route('operations.sgc.services', ['view' => 'new_service', 'mode' => 'view', 'id' => 138]) }}"
-                                    class="btn-row btn-row-outline tab-link">Ver</a>
+                                    class="btn-row btn-row-outline service-modal-trigger">Ver</a>
                                 <a href="{{ route('operations.sgc.services', ['view' => 'new_service', 'mode' => 'edit', 'id' => 138]) }}"
-                                    class="btn-row btn-row-blue tab-link">Editar</a>
+                                    class="btn-row btn-row-blue service-modal-trigger">Editar</a>
                                 <a href="/evidencias/nuevas?serviceId=138"
                                     class="btn-row btn-row-dark">Evidencias</a>
                             </div>

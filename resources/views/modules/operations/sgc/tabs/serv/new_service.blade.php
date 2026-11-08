@@ -11,14 +11,14 @@
 {{-- ========================================== --}}
 <section class="filter-section no-print">
     <div class="view-toolbar">
-        <a href="{{ route('operations.sgc.services', ['view' => 'list']) }}" class="btn btn-outline btn-sm tab-link">
+        <a href="{{ route('operations.sgc.services', ['view' => 'list']) }}" class="btn btn-outline btn-sm service-modal-close">
             <i class="fas fa-arrow-left"></i> Volver a servicios
         </a>
 
         <div class="view-toolbar-actions">
             @if ($isView)
                 <a href="{{ route('operations.sgc.services', ['view' => 'new_service', 'mode' => 'edit', 'id' => $serviceId]) }}"
-                    class="btn btn-primary btn-sm tab-link">
+                    class="btn btn-primary btn-sm service-modal-trigger">
                     <i class="fas fa-pen"></i> Editar este servicio
                 </a>
                 <button type="button" onclick="window.print()" class="btn btn-outline btn-sm">
@@ -371,12 +371,12 @@
         {{-- FOOTER --}}
         <div class="wizard-footer no-print">
             @if ($isView)
-                <a href="{{ route('operations.sgc.services', ['view' => 'list']) }}" class="btn btn-outline tab-link">
+                <a href="{{ route('operations.sgc.services', ['view' => 'list']) }}" class="btn btn-outline service-modal-close">
                     <i class="fas fa-arrow-left"></i> Volver a la lista
                 </a>
                 <div class="wizard-footer-right">
                     <a href="{{ route('operations.sgc.services', ['view' => 'new_service', 'mode' => 'edit', 'id' => $serviceId]) }}"
-                        class="btn btn-primary tab-link">
+                        class="btn btn-primary service-modal-trigger">
                         <i class="fas fa-pen"></i> Editar Servicio
                     </a>
                 </div>
@@ -386,7 +386,7 @@
                 </button>
 
                 <div class="wizard-footer-right">
-                    <a href="{{ route('operations.sgc.services', ['view' => 'list']) }}" class="btn btn-outline tab-link">Cancelar</a>
+                    <a href="{{ route('operations.sgc.services', ['view' => 'list']) }}" class="btn btn-outline service-modal-close">Cancelar</a>
 
                     <button type="button" id="btn-next" class="btn btn-primary">
                         Siguiente <i class="fas fa-arrow-right"></i>

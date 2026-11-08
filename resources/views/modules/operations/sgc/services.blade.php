@@ -17,15 +17,12 @@
             <a href="{{ route('operations.sgc.services', ['view' => 'staff']) }}"
                 class="tab-btn tab-link {{ $view === 'staff' ? 'active' : '' }}">Por Personal</a>
 
-            <a href="{{ route('operations.sgc.services', ['view' => 'new_service']) }}"
-                class="tab-btn tab-link {{ $view === 'new_service' ? 'active' : '' }}">Nuevo Servicio</a>
+
         </div>
 
         {{-- Cuerpo dinámico --}}
         <div class="tab-body">
-            @if ($view === 'new_service')
-                @include('modules.operations.sgc.tabs.serv.new_service')
-            @elseif ($view === 'staff')
+            @if ($view === 'staff')
                 @include('modules.operations.sgc.tabs.serv.staff')
             @else
                 @include('modules.operations.sgc.tabs.serv.list')
@@ -33,4 +30,18 @@
         </div>
 
     </div>
+    <!-- modal fullscreen para crear, ver o editar un servicio -->
+    <dialog id="service-modal" class="service-modal" aria-label="Servicio">
+        <div class="service-modal-bar no-print">
+            <span>Orden de servicio</span>
+            <button type="button" class="btn btn-outline btn-sm" data-service-close aria-label="Cerrar modal">
+                <i class="fas fa-times" aria-hidden="true"></i> Cerrar
+            </button>
+        </div>
+        <div id="service-modal-content" class="service-modal-content" aria-live="polite"></div>
+    </dialog>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('assets/js/operations/sgc/services.js') }}"></script>
+@endpush
