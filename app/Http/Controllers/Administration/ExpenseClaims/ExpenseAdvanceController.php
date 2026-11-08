@@ -21,7 +21,7 @@ class ExpenseAdvanceController extends Controller
         $advances = ExpenseAdvance::with(['user.employee.area'])
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function($adv) {
+            ->map(function ($adv) {
                 return [
                     'id'                => $adv->id,
                     'folio'             => $adv->folio_system,
@@ -34,7 +34,7 @@ class ExpenseAdvanceController extends Controller
                     'monto'             => (float) $adv->amount,
                     'saldo'             => (float) $adv->balance,
                     'status'            => $adv->status,
-                    'settlement_status' => $adv->settlement_status ?? 'no_comprobado'
+                    'settlement_status' => $adv->settlement_status ?? 'no_comprobado',
                 ];
             });
 
@@ -46,7 +46,7 @@ class ExpenseAdvanceController extends Controller
         if (!$id || $id === 'null') {
             return response()->json([
                 'success' => false,
-                'message' => 'El ID del anticipo no es válido o se perdió la referencia en la vista.'
+                'message' => 'El ID del anticipo no es válido o se perdió la referencia en la vista.',
             ], 400);
         }
 
@@ -60,7 +60,7 @@ class ExpenseAdvanceController extends Controller
             $advance = ExpenseAdvance::findOrFail($id);
             $advance->update([
                 'status'      => $request->new_status,
-                'approver_id' => Auth::id()
+                'approver_id' => Auth::id(),
             ]);
 
             DB::commit();
@@ -72,28 +72,73 @@ class ExpenseAdvanceController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'El anticipo ha sido ' . $request->new_status . ' correctamente.'
+                'message' => 'El anticipo ha sido ' . $request->new_status . ' correctamente.',
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Error al procesar: ' . $e->getMessage()
+                'message' => 'Error al procesar: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    public function getActiveByUser($userId)
+    public function getActiveByUser(Request $request, $userId)
     {
-        $advances = ExpenseAdvance::where('user_id', $userId)
-            ->where('status', 'aprobado')
-            ->where('balance', '>', 0)
-            ->whereIn('settlement_status', ['no_comprobado', 'comprobando'])
-            ->orderBy('created_at', 'desc')
-            ->get(['id', 'folio_system', 'advance_type', 'advance_reason', 'amount', 'balance']);
+        $excludeClaimId   = $request->query('exclude_claim_id');
+        $includeAdvanceId = $request->query('include_advance_id');
 
-        return response()->json($advances);
+        $advances = ExpenseAdvance::where('user_id', $userId)
+            ->where(function ($q) use ($includeAdvanceId) {
+                $q->where(function ($sub) {
+                    $sub->where('status', 'aprobado')
+                        ->where('balance', '>', 0)
+                        ->whereIn('settlement_status', ['no_comprobado', 'comprobando']);
+                });
+                if ($includeAdvanceId) {
+                    $q->orWhere('id', (int) $includeAdvanceId);
+                }
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $result = $advances->map(function ($adv) use ($excludeClaimId) {
+            $pendingClaimsQuery = ExpenseClaim::where('expense_advance_id', $adv->id)
+                ->whereNotIn('status_review', ['borrador', 'rechazado'])
+                ->whereNotIn('status_approval', ['rechazado', 'no_procede', 'aprobado']);
+
+            if ($excludeClaimId) {
+                $pendingClaimsQuery->where('id', '!=', (int) $excludeClaimId);
+            }
+
+            $pendingClaims = $pendingClaimsQuery->get();
+            $willReturn    = $pendingClaims->contains('will_return_leftover', 1);
+
+            if ($willReturn) {
+                $available = 0;
+            } else {
+                $inTransit = $pendingClaims->sum('total_amount');
+                $available = round((float) $adv->balance - (float) $inTransit, 2);
+            }
+
+            return [
+                'id'                => $adv->id,
+                'folio_system'      => $adv->folio_system,
+                'advance_type'      => $adv->advance_type,
+                'advance_reason'    => $adv->advance_reason,
+                'amount'            => (float) $adv->amount,
+                'balance'           => (float) $adv->balance,
+                'available_balance' => max(0, $available),
+            ];
+        })->filter(function ($adv) use ($includeAdvanceId) {
+            if ($includeAdvanceId && (int) $adv['id'] === (int) $includeAdvanceId) {
+                return true;
+            }
+            return $adv['available_balance'] > 0;
+        })->values();
+
+        return response()->json($result);
     }
 
     public function store(Request $request)
@@ -105,7 +150,7 @@ class ExpenseAdvanceController extends Controller
             'amount'         => 'required|numeric|min:0.01',
             'description'    => 'required|string|max:500',
             'approver_id'    => 'required|exists:users,id',
-            'beneficiary_id' => 'nullable|exists:users,id'
+            'beneficiary_id' => 'nullable|exists:users,id',
         ]);
 
         try {
@@ -114,7 +159,7 @@ class ExpenseAdvanceController extends Controller
             $creatorUser = Auth::user()->loadMissing('directPermissions');
             $creatorId   = $creatorUser->id;
 
-            $permNames = $creatorUser->directPermissions->pluck('name')->toArray();
+            $permNames   = $creatorUser->directPermissions->pluck('name')->toArray();
             $canDelegate = in_array('delegar_anticipo', $permNames, true)
                         || in_array('delegar_solicitudes', $permNames, true);
 
@@ -122,7 +167,7 @@ class ExpenseAdvanceController extends Controller
                 ? (int) $request->beneficiary_id
                 : (int) $creatorId;
 
-            $ym = Carbon::now()->format('ym');
+            $ym     = Carbon::now()->format('ym');
             $prefix = "ANT-{$ym}-";
 
             $lastAdv = ExpenseAdvance::where('folio_system', 'like', "{$prefix}%")
@@ -131,7 +176,7 @@ class ExpenseAdvanceController extends Controller
 
             if ($lastAdv) {
                 $lastNum = (int) substr($lastAdv->folio_system, -3);
-                $sysNum = $lastNum + 1;
+                $sysNum  = $lastNum + 1;
             } else {
                 $sysNum = 1;
             }
@@ -150,7 +195,7 @@ class ExpenseAdvanceController extends Controller
                 'amount'            => $request->amount,
                 'balance'           => $request->amount,
                 'status'            => 'pendiente',
-                'settlement_status' => 'no_comprobado'
+                'settlement_status' => 'no_comprobado',
             ]);
 
             DB::commit();
@@ -165,22 +210,45 @@ class ExpenseAdvanceController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Solicitud de anticipo generada con éxito.',
-                'folio'   => $folioSystem
+                'folio'   => $folioSystem,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Error al generar anticipo: ' . $e->getMessage()
+                'message' => 'Error al generar anticipo: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
+        $excludeClaimId = $request->query('exclude_claim_id');
+
         $advance = ExpenseAdvance::with(['user.employee.area', 'expenseClaims'])
             ->findOrFail($id);
+
+        $pendingClaimsQuery = ExpenseClaim::where('expense_advance_id', $advance->id)
+            ->whereNotIn('status_review', ['borrador', 'rechazado'])
+            ->whereNotIn('status_approval', ['rechazado', 'no_procede', 'aprobado']);
+
+        if ($excludeClaimId) {
+            $pendingClaimsQuery->where('id', '!=', (int) $excludeClaimId);
+        }
+
+        $pendingClaims = $pendingClaimsQuery->get();
+        $willReturn    = $pendingClaims->contains('will_return_leftover', 1);
+
+        if ($willReturn) {
+            $available = 0;
+        } else {
+            $inTransit = $pendingClaims->sum('total_amount');
+            $available = round((float) $advance->balance - (float) $inTransit, 2);
+        }
+
+        $advance->available_balance = max(0, $available);
+
         return response()->json(['success' => true, 'data' => $advance]);
     }
 
@@ -190,32 +258,32 @@ class ExpenseAdvanceController extends Controller
 
         $advances = ExpenseAdvance::where('user_id', $userId)
             ->where('status', 'aprobado')
-            ->get()->map(function($item) {
+            ->get()->map(function ($item) {
                 return [
                     'concepto' => 'Anticipo: ' . $item->folio_system,
                     'fecha'    => Carbon::parse($item->advance_date)->format('d/m/y'),
                     'monto'    => (float) $item->amount,
                     'tipo'     => 'cargo',
-                    'orden'    => Carbon::parse($item->advance_date)->timestamp
+                    'orden'    => Carbon::parse($item->advance_date)->timestamp,
                 ];
             });
 
         $claims = ExpenseClaim::where('user_id', $userId)
             ->whereNotNull('expense_advance_id')
             ->where('status_approval', 'aprobado')
-            ->get()->map(function($item) {
+            ->get()->map(function ($item) {
                 return [
                     'concepto' => 'Comprobación: ' . $item->folio_system,
                     'fecha'    => Carbon::parse($item->claim_date)->format('d/m/y'),
                     'monto'    => -((float) $item->total_amount),
                     'tipo'     => 'abono',
-                    'orden'    => Carbon::parse($item->claim_date)->timestamp
+                    'orden'    => Carbon::parse($item->claim_date)->timestamp,
                 ];
             });
 
         $ledger = $advances->concat($claims)->sortBy('orden')->values()->toArray();
 
-        $saldoTotal = array_reduce($ledger, function($carry, $item) {
+        $saldoTotal = array_reduce($ledger, function ($carry, $item) {
             return $carry + $item['monto'];
         }, 0);
 
@@ -223,20 +291,20 @@ class ExpenseAdvanceController extends Controller
             'success' => true,
             'user'    => $user->name,
             'saldo'   => $saldoTotal,
-            'ledger'  => $ledger
+            'ledger'  => $ledger,
         ]);
     }
 
     public function history()
     {
         try {
-            $user = Auth::user()->loadMissing('directPermissions');
+            $user        = Auth::user()->loadMissing('directPermissions');
             $canViewBell = $user->directPermissions->contains('name', 'ver_notificaciones_anticipos');
 
             if (!$canViewBell) {
                 return response()->json([
                     'success' => true,
-                    'data'    => []
+                    'data'    => [],
                 ]);
             }
 
@@ -245,17 +313,17 @@ class ExpenseAdvanceController extends Controller
                 ->get([
                     'id', 'folio_system', 'user_id', 'approver_id', 'advance_date',
                     'advance_reason', 'advance_type', 'description',
-                    'amount', 'status', 'settlement_status'
+                    'amount', 'status', 'settlement_status',
                 ]);
 
             return response()->json([
                 'success' => true,
-                'data'    => $advances
+                'data'    => $advances,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener el historial de anticipos.'
+                'message' => 'Error al obtener el historial de anticipos.',
             ], 500);
         }
     }

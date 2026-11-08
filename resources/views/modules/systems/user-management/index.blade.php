@@ -432,7 +432,7 @@
                                     </div>
                                     <div class="mod-card-body" id="operations-body">
                                         <label class="perm-row">
-                                            <input type="checkbox" name="permissions[operations][sgc-ves]">
+                                            <input type="checkbox" name="permissions[operations][sgc]">
                                             <span class="perm-check-icon"><i class="fas fa-check"></i></span>
                                             <span>SGC VES</span>
                                         </label>

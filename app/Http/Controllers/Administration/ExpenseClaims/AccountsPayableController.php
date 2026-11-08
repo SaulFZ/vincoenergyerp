@@ -22,11 +22,21 @@ class AccountsPayableController extends Controller
     private const DECREASE_TYPES = ['Liquidacion_Caja'];
     private const LEGACY_TYPES   = ['Reembolso_Pagado'];
 
+    // ★ Acciones unificadas en minúsculas con guion bajo ★
+    private const ACTION_REEMBOLSO_PAGADO            = 'reembolso_pagado';
+    private const ACTION_EXCEDENTE_PAGADO            = 'excedente_pagado';
+    private const ACTION_SOBRANTE_VERIFICADO         = 'sobrante_verificado';
+    private const ACTION_ANTICIPO_LIQUIDADO          = 'anticipo_liquidado';
+    private const ACTION_RETENCION_SOBRANTE_APLICADA = 'retencion_sobrante_aplicada';
+
     public function index(Request $request)
     {
         $allAdvances = ExpenseAdvance::all();
         $allClaims   = ExpenseClaim::with(['logs' => function ($q) {
-            $q->whereIn('action', ['pago_reembolso', 'pago_excedente'])->latest('id');
+            $q->whereIn('action', [
+                self::ACTION_REEMBOLSO_PAGADO,
+                self::ACTION_EXCEDENTE_PAGADO,
+            ])->latest('id');
         }])->get();
         $balances    = ExpenseAccountBalance::all()->keyBy('user_id');
         $ledgers     = ExpenseAccountTransaction::with(['advance:id,folio_system', 'claim:id,folio_system'])
@@ -69,6 +79,7 @@ class AccountsPayableController extends Controller
             $conteo          = ['anticipos' => 0, 'comprobaciones' => 0];
             $movements       = collect();
 
+            // Solo contabiliza Reembolsos Puros
             $reemb = [
                 'n'           => 0,
                 'total'       => 0.0,
@@ -82,7 +93,7 @@ class AccountsPayableController extends Controller
             // ── A) ANTICIPOS (cargo) ──
             foreach ($userAdvances as $adv) {
                 $st      = $this->norm($adv->status);
-                $counted = !in_array($st, ['Pendiente', 'Rechazado', 'Borrador']);
+                $counted = !in_array($st, ['Pendiente', 'Rechazado', 'Borrador'], true);
 
                 if ($counted) {
                     $saldoAnticipos += (float) $adv->balance;
@@ -90,7 +101,7 @@ class AccountsPayableController extends Controller
                 if ($st === 'Pendiente') {
                     $pendientes++;
                 }
-                if ($st === 'Pendiente' || ($counted && (float) $adv->balance > 0)) {
+                if ($st === 'Pendiente' || ($counted && $adv->settlement_status !== 'comprobado')) {
                     $tramitesActivos++;
                 }
                 $conteo['anticipos']++;
@@ -177,49 +188,40 @@ class AccountsPayableController extends Controller
                 $conteo['comprobaciones']++;
 
                 if ($st === 'Pendiente') $pendientes++;
-                if (!in_array($st, ['Aprobado', 'Rechazado', 'Borrador']) && !in_array($stApp, ['Aprobado', 'Rechazado'])) {
+                if (!in_array($st, ['Aprobado', 'Rechazado', 'Borrador'], true) && !in_array($stApp, ['Aprobado', 'Rechazado'], true)) {
                     $tramitesActivos++;
                 }
 
-                $leftoverAmount = (float) ($claim->leftover_amount ?? 0);
-                $excessAmount   = (float) ($claim->excess_amount ?? 0);
-                $statusBalance  = $claim->status_balance ?: 'no_aplica';
-
-                if ($excessAmount > 0 && $st === 'Validado' && $stApp === 'Aprobado') {
-                    $reemb['n']++;
-                    $reemb['total'] += $excessAmount;
-                    if ($statusBalance === 'pagado') {
-                        $reemb['pagado'] += $excessAmount;
-                        $reemb['pagado_n']++;
-                    } elseif ($statusBalance === 'pago_pendiente') {
-                        $reemb['por_pagar'] += $excessAmount;
-                        $reemb['por_pagar_n']++;
-                    }
-                }
+                $willReturnLeftover = (bool) ($claim->will_return_leftover ?? false);
+                $rawLeftoverAmount  = (float) ($claim->leftover_amount ?? 0);
+                $leftoverAmount     = $willReturnLeftover ? $rawLeftoverAmount : 0.0;
+                $excessAmount       = (float) ($claim->excess_amount ?? 0);
+                $statusBalance      = $claim->status_balance ?: 'no_aplica';
 
                 $movements->push([
-                    'id'                  => $claim->id,
-                    'folio'               => $claim->folio_system,
-                    'fecha_raw'           => Carbon::parse($claim->claim_date)->timestamp,
-                    'fecha'               => Carbon::parse($claim->claim_date)->format('d/m/Y'),
-                    'tipo'                => $claim->request_type,
-                    'descripcion'         => $claim->motive,
-                    'monto'               => (float) $claim->total_amount,
-                    'saldo'               => null,
-                    'status'              => $st,
-                    'status_approval'     => $stApp,
-                    'status_balance'      => $statusBalance,
-                    'origen'              => 'comprobacion',
-                    'subtipo'             => $isElectronic ? 'electronica' : 'directa',
-                    'metodo'              => $isElectronic ? 'Tarjeta Toka' : 'Transferencia',
-                    'vinculo'             => $claim->expense_advance_id ? ($advanceFolios->get($claim->expense_advance_id) ?? 'Vinculado') : 'Sin anticipo',
-                    'advance_id'          => $claim->expense_advance_id,
-                    'signo'               => 'abono',
-                    'leftover_amount'     => $leftoverAmount,
-                    'leftover_method'     => $claim->leftover_method,
-                    'leftover_proof_path' => $claim->leftover_proof_path,
-                    'leftover_notes'      => $claim->leftover_notes,
-                    'leftover'            => ($leftoverAmount > 0) ? [
+                    'id'                   => $claim->id,
+                    'folio'                => $claim->folio_system,
+                    'fecha_raw'            => Carbon::parse($claim->claim_date)->timestamp,
+                    'fecha'                => Carbon::parse($claim->claim_date)->format('d/m/Y'),
+                    'tipo'                 => $claim->request_type,
+                    'descripcion'          => $claim->motive,
+                    'monto'                => (float) $claim->total_amount,
+                    'saldo'                => null,
+                    'status'               => $st,
+                    'status_approval'      => $stApp,
+                    'status_balance'       => $statusBalance,
+                    'will_return_leftover' => $willReturnLeftover,
+                    'origen'               => 'comprobacion',
+                    'subtipo'              => $isElectronic ? 'electronica' : 'directa',
+                    'metodo'               => $isElectronic ? 'Tarjeta Toka' : 'Transferencia',
+                    'vinculo'              => $claim->expense_advance_id ? ($advanceFolios->get($claim->expense_advance_id) ?? 'Vinculado') : 'Sin anticipo',
+                    'advance_id'           => $claim->expense_advance_id,
+                    'signo'                => 'abono',
+                    'leftover_amount'      => $leftoverAmount,
+                    'leftover_method'      => $claim->leftover_method,
+                    'leftover_proof_path'  => $claim->leftover_proof_path,
+                    'leftover_notes'       => $claim->leftover_notes,
+                    'leftover'             => ($leftoverAmount > 0) ? [
                         'amount'         => $leftoverAmount,
                         'method'         => $claim->leftover_method,
                         'notes'          => $claim->leftover_notes,
@@ -227,11 +229,11 @@ class AccountsPayableController extends Controller
                         'has_proof'      => !empty($claim->leftover_proof_path),
                         'status_balance' => $statusBalance,
                     ] : null,
-                    'excess_amount'       => $excessAmount,
-                    'excess_method'       => $claim->excess_method,
-                    'excess_proof_path'   => $claim->excess_proof_path,
-                    'excess_notes'        => $claim->excess_notes,
-                    'excess'              => ($excessAmount > 0) ? [
+                    'excess_amount'        => $excessAmount,
+                    'excess_method'        => $claim->excess_method,
+                    'excess_proof_path'    => $claim->excess_proof_path,
+                    'excess_notes'         => $claim->excess_notes,
+                    'excess'               => ($excessAmount > 0) ? [
                         'amount'         => $excessAmount,
                         'method'         => $claim->excess_method,
                         'notes'          => $claim->excess_notes,
@@ -307,41 +309,44 @@ class AccountsPayableController extends Controller
         try {
             $user = User::findOrFail($userId);
             $claims = ExpenseClaim::where('user_id', $userId)
-                ->with(['expenseAdvance:id,folio_system', 'logs' => function ($q) {
-                    $q->whereIn('action', ['pago_reembolso', 'pago_excedente'])->latest('id')->with('user:id,name');
+                ->with(['logs' => function ($q) {
+                    $q->whereIn('action', [self::ACTION_REEMBOLSO_PAGADO])
+                        ->latest('id')
+                        ->with('user:id,name');
                 }])
                 ->orderBy('claim_date', 'desc')
                 ->get()
-                ->filter(fn ($c) => $this->isReimbursement($c) || ((float) $c->excess_amount > 0 && $this->norm($c->status_approval) === 'Aprobado'))
+                ->filter(fn ($c) => $this->isReimbursement($c))
                 ->values();
 
             $data = $claims->map(function ($claim) {
-                $isExcess = !$this->isReimbursement($claim) && (float) $claim->excess_amount > 0;
-                $state    = $isExcess
-                    ? ($claim->status_balance === 'pagado' ? 'pagado' : 'no_pagado')
-                    : $this->paymentState($claim);
-                $log      = $claim->logs->first();
-                $monto    = $isExcess ? (float) $claim->excess_amount : (float) $claim->total_amount;
-                $payMeta  = $isExcess ? null : $this->extractReimbursementPaymentMeta($claim);
+                $state   = $this->paymentState($claim);
+                $log     = $claim->logs->first();
+                $monto   = (float) $claim->total_amount;
+                $payMeta = $this->extractReimbursementPaymentMeta($claim);
+
+                $cleanComment = $log && $log->comments
+                    ? trim(preg_replace('/\s*\[PROOF:[^\]]+\]/', '', $log->comments))
+                    : null;
 
                 return [
                     'id'                       => $claim->id,
                     'folio'                    => $claim->folio_system,
                     'fecha'                    => Carbon::parse($claim->claim_date)->format('d/m/Y'),
-                    'tipo'                     => $isExcess ? 'Excedente de anticipo' : $claim->request_type,
+                    'tipo'                     => $claim->request_type,
                     'motivo'                   => $claim->motive,
                     'monto'                    => $monto,
                     'status'                   => $this->norm($claim->status_review),
                     'status_approval'          => $this->norm($claim->status_approval),
-                    'origen'                   => $isExcess ? 'excedente' : 'reembolso',
-                    'advance_id'               => $claim->expense_advance_id,
-                    'advance_folio'            => $claim->expenseAdvance?->folio_system,
+                    'origen'                   => 'reembolso',
+                    'advance_id'               => null,
+                    'advance_folio'            => null,
                     'status_payment'           => $state,
-                    'status_balance'           => $claim->status_balance ?? 'no_aplica',
-                    'puede_pagar'              => $isExcess ? $this->canPayExcess($claim) : $this->canBePaid($claim),
+                    'status_balance'           => 'no_aplica',
+                    'puede_pagar'              => $this->canBePaid($claim),
                     'pagado_el'                => ($state === 'pagado' && $log) ? Carbon::parse($log->created_at)->format('d/m/Y') : null,
                     'pagado_por'               => ($state === 'pagado' && $log && $log->user) ? $log->user->name : null,
-                    'pago_detalle'             => ($state === 'pagado' && $log) ? $log->comments : null,
+                    'pago_detalle'             => ($state === 'pagado') ? $cleanComment : null,
                     'reimbursement_proof_path' => $payMeta['proof_path'] ?? null,
                 ];
             });
@@ -363,9 +368,14 @@ class AccountsPayableController extends Controller
     public function markReembolsoAsPaid(Request $request, $id)
     {
         $request->validate([
-            'payment_method'      => 'required|in:Transferencia,Efectivo,Tarjeta Toka',
-            'reference'           => 'nullable|string|max:120',
-            'reimbursement_proof' => 'nullable|file|mimes:pdf|max:10240',
+            'payment_method'      => 'required|in:Transferencia',
+            'reference'           => 'required|string|max:120',
+            'reimbursement_proof' => 'required|file|mimes:pdf|max:10240',
+        ], [
+            'payment_method.in'            => 'El método de pago debe ser Transferencia.',
+            'reference.required'           => 'Debes ingresar la referencia bancaria de la transferencia.',
+            'reimbursement_proof.required' => 'Es obligatorio adjuntar el comprobante PDF de pago.',
+            'reimbursement_proof.mimes'    => 'El comprobante debe ser un archivo en formato PDF.',
         ]);
 
         try {
@@ -377,14 +387,17 @@ class AccountsPayableController extends Controller
                 return response()->json(['success' => false, 'message' => 'Solo se pueden pagar reembolsos validados, aprobados y pendientes de pago.'], 422);
             }
 
-            $proofPath = $claim->reimbursement_proof_path ?? $claim->payment_proof_path ?? null;
-            if ($request->hasFile('reimbursement_proof')) {
-                if ($proofPath && Storage::exists($proofPath)) {
-                    Storage::delete($proofPath);
+            $folder = "private/administration/expense-claims/pdf/{$claim->folio_system}/reimbursements";
+            if (Storage::exists($folder)) {
+                foreach (Storage::files($folder) as $oldFile) {
+                    Storage::delete($oldFile);
                 }
+            }
+
+            $proofPath = null;
+            if ($request->hasFile('reimbursement_proof')) {
                 $folioClean = strtoupper(trim(preg_replace('/[^A-Za-z0-9\-_]+/', '_', $claim->folio_system), '_'));
                 $filename   = "{$folioClean}_REEMB_" . Carbon::now()->format('Ymd') . '_' . Str::random(6) . '.pdf';
-                $folder     = "private/administration/expense-claims/pdf/{$claim->folio_system}/reimbursements";
                 $proofPath  = $request->file('reimbursement_proof')->storeAs($folder, $filename);
             }
 
@@ -398,33 +411,30 @@ class AccountsPayableController extends Controller
                 $claim->payment_proof_path = $proofPath;
             }
             if (Schema::hasColumn($table, 'reimbursement_method')) {
-                $claim->reimbursement_method = $request->payment_method;
+                $claim->reimbursement_method = 'Transferencia';
             }
-            if (Schema::hasColumn($table, 'reimbursement_notes') && $request->filled('reference')) {
+            if (Schema::hasColumn($table, 'reimbursement_notes')) {
                 $claim->reimbursement_notes = trim($request->reference);
             }
 
             $claim->save();
 
-            $comment = "Pago de reembolso vía {$request->payment_method}";
-            if ($request->filled('reference')) {
-                $comment .= ' · Ref: ' . trim($request->reference);
-            }
-            if ($proofPath) {
-                $comment .= " [PROOF:{$proofPath}]";
-            }
+            // ★ Comentario limpio sin ruta de PDF ni mención de área ★
+            $amountFormatted = number_format((float) $claim->total_amount, 2);
+            $refClean        = trim($request->reference);
+            $comment         = "Reembolso liquidado por \${$amountFormatted} vía Transferencia · Ref: {$refClean}";
 
             ExpenseClaimLog::create([
                 'expense_claim_id' => $claim->id,
                 'user_id'          => Auth::id() ?? 1,
-                'action'           => 'pago_reembolso',
+                'action'           => self::ACTION_REEMBOLSO_PAGADO,
                 'previous_status'  => $previous,
                 'new_status'       => 'pagado',
                 'comments'         => Str::limit($comment, 255, ''),
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Reembolso marcado como pagado.']);
+            return response()->json(['success' => true, 'message' => 'Reembolso pagado y registrado en el historial correctamente.']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -437,9 +447,20 @@ class AccountsPayableController extends Controller
             DB::beginTransaction();
             $claim = ExpenseClaim::lockForUpdate()->findOrFail($id);
 
-            if ((float) $claim->leftover_amount <= 0 || $this->norm($claim->status_approval) !== 'Aprobado') {
+            $willReturn = (bool) ($claim->will_return_leftover ?? false);
+            if (!$willReturn || (float) $claim->leftover_amount <= 0 || $this->norm($claim->status_approval) !== 'Aprobado') {
                 DB::rollBack();
-                return response()->json(['success' => false, 'message' => 'Esta comprobación no tiene un sobrante aprobado por verificar.'], 422);
+                return response()->json(['success' => false, 'message' => 'Esta comprobación no tiene una devolución de sobrante aprobada por verificar.'], 422);
+            }
+
+            if (empty($claim->leftover_proof_path)) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'El colaborador aún no ha adjuntado el comprobante PDF de la devolución.'], 422);
+            }
+
+            if ($claim->status_balance === 'devuelto') {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'Esta devolución de sobrante ya fue verificada anteriormente.'], 422);
             }
 
             $previous = $claim->status_balance ?: 'por_verificar';
@@ -448,22 +469,28 @@ class AccountsPayableController extends Controller
 
             if ($claim->expense_advance_id) {
                 $adv = ExpenseAdvance::lockForUpdate()->find($claim->expense_advance_id);
-                if ($adv && $this->remainingCents($adv) <= 0) {
-                    $adv->update(['settlement_status' => 'comprobado', 'balance' => 0]);
+                if ($adv) {
+                    $remCents = $this->remainingCents($adv);
+                    $newBal   = max(0, round($remCents / 100, 2));
+
+                    $adv->update([
+                        'balance'           => $newBal,
+                        'settlement_status' => 'comprobando',
+                    ]);
                 }
             }
 
             ExpenseClaimLog::create([
                 'expense_claim_id' => $claim->id,
                 'user_id'          => Auth::id() ?? 1,
-                'action'           => 'Sobrante Verificado en Tesorería',
+                'action'           => self::ACTION_SOBRANTE_VERIFICADO,
                 'previous_status'  => $previous,
                 'new_status'       => 'devuelto',
-                'comments'         => 'Tesorería verificó y confirmó el ingreso de la devolución del sobrante ($' . number_format((float) $claim->leftover_amount, 2) . ').',
+                'comments'         => 'Se verificó y confirmó el ingreso de la devolución del sobrante ($' . number_format((float) $claim->leftover_amount, 2) . '). Ya puedes marcar el anticipo como comprobado.',
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Devolución de sobrante verificada y conciliada.']);
+            return response()->json(['success' => true, 'message' => 'Devolución de sobrante verificada. Ahora puedes marcar el anticipo como comprobado.']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -473,9 +500,14 @@ class AccountsPayableController extends Controller
     public function payExcess(Request $request, $id)
     {
         $request->validate([
-            'excess_method' => 'required|in:Transferencia,Efectivo,Tarjeta Toka',
-            'excess_notes'  => 'nullable|string|max:500',
-            'excess_proof'  => 'nullable|file|mimes:pdf|max:10240',
+            'excess_method' => 'required|in:Transferencia',
+            'excess_notes'  => 'required|string|max:500',
+            'excess_proof'  => 'required|file|mimes:pdf|max:10240',
+        ], [
+            'excess_method.in'      => 'El método de pago debe ser Transferencia.',
+            'excess_notes.required' => 'Debes ingresar la referencia bancaria de la transferencia.',
+            'excess_proof.required' => 'Es obligatorio adjuntar el comprobante PDF de pago del excedente.',
+            'excess_proof.mimes'    => 'El comprobante debe ser un archivo en formato PDF.',
         ]);
 
         try {
@@ -500,35 +532,35 @@ class AccountsPayableController extends Controller
 
             $previous = $claim->status_balance ?: 'pago_pendiente';
             $claim->update([
-                'excess_method'     => $request->excess_method,
-                'excess_notes'      => $request->excess_notes ?: $claim->excess_notes,
+                'excess_method'     => 'Transferencia',
+                'excess_notes'      => trim($request->excess_notes),
                 'excess_proof_path' => $proofPath,
                 'status_balance'    => 'pagado',
             ]);
 
             if ($claim->expense_advance_id) {
                 $adv = ExpenseAdvance::lockForUpdate()->find($claim->expense_advance_id);
-                if ($adv && $this->remainingCents($adv) <= 0) {
-                    $adv->update(['settlement_status' => 'comprobado', 'balance' => 0]);
+                if ($adv) {
+                    $adv->update([
+                        'balance'           => 0,
+                        'settlement_status' => 'comprobando',
+                    ]);
                 }
             }
 
-            $comment = "Pago de excedente ($" . number_format((float) $claim->excess_amount, 2) . ") vía {$request->excess_method}";
-            if ($request->filled('excess_notes')) {
-                $comment .= ' · ' . trim($request->excess_notes);
-            }
+            $comment = "Excedente liquidado a favor del colaborador ($" . number_format((float) $claim->excess_amount, 2) . ") vía Transferencia · Ref: " . trim($request->excess_notes);
 
             ExpenseClaimLog::create([
                 'expense_claim_id' => $claim->id,
                 'user_id'          => Auth::id() ?? 1,
-                'action'           => 'pago_excedente',
+                'action'           => self::ACTION_EXCEDENTE_PAGADO,
                 'previous_status'  => $previous,
                 'new_status'       => 'pagado',
                 'comments'         => Str::limit($comment, 255, ''),
             ]);
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Excedente pagado y conciliado correctamente.']);
+            return response()->json(['success' => true, 'message' => 'Excedente pagado correctamente. Ya puedes marcar el anticipo como comprobado.']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -543,10 +575,39 @@ class AccountsPayableController extends Controller
                 return response()->json(['success' => false, 'message' => 'El anticipo aún no puede cerrarse.'], 422);
             }
             if ($this->remainingCents($adv) > 0) {
-                return response()->json(['success' => false, 'message' => 'Existe saldo por comprobar, devolver o retener.'], 422);
+                return response()->json(['success' => false, 'message' => 'Aún existe saldo por comprobar, devolver o retener en este anticipo.'], 422);
             }
+
+            $hasUnresolvedBalance = ExpenseClaim::where('expense_advance_id', $adv->id)
+                ->where('status_approval', 'aprobado')
+                ->whereIn('status_balance', ['devolucion_pendiente', 'por_verificar', 'pago_pendiente'])
+                ->exists();
+
+            if ($hasUnresolvedBalance) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede cerrar el anticipo porque aún tiene una devolución de sobrante por verificar o un excedente pendiente de pago.',
+                ], 422);
+            }
+
             $adv->update(['settlement_status' => 'comprobado', 'balance' => 0]);
-            return response()->json(['success' => true, 'message' => 'El anticipo ha quedado registrado y cerrado en tesorería.']);
+
+            $lastClaim = ExpenseClaim::where('expense_advance_id', $adv->id)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($lastClaim) {
+                ExpenseClaimLog::create([
+                    'expense_claim_id' => $lastClaim->id,
+                    'user_id'          => Auth::id() ?? 1,
+                    'action'           => self::ACTION_ANTICIPO_LIQUIDADO,
+                    'previous_status'  => 'comprobando',
+                    'new_status'       => 'comprobado',
+                    'comments'         => "Se confirmó el cierre contable definitivo del anticipo {$adv->folio_system} (Saldo $0.00).",
+                ]);
+            }
+
+            return response()->json(['success' => true, 'message' => 'El anticipo ha quedado registrado como comprobado y cerrado.']);
         });
     }
 
@@ -554,15 +615,25 @@ class AccountsPayableController extends Controller
     {
         $claims = ExpenseClaim::where('expense_advance_id', $advance->id)->get();
         $used = 0;
+
         foreach ($claims as $claim) {
             if ($this->norm($claim->status_review) !== 'Validado'
-                || $this->norm($claim->status_approval) !== 'Aprobado') continue;
+                || $this->norm($claim->status_approval) !== 'Aprobado') {
+                continue;
+            }
+
             $used += (int) round((float) $claim->total_amount * 100);
-            $used += (int) round((float) $claim->leftover_amount * 100);
+
+            $willReturn = (bool) ($claim->will_return_leftover ?? false);
+            if ($willReturn && $claim->status_balance === 'devuelto') {
+                $used += (int) round((float) $claim->leftover_amount * 100);
+            }
         }
+
         $retained = ExpenseAccountTransaction::where('expense_advance_id', $advance->id)
             ->whereIn('movement_type', ['Abono_Retencion', 'Liquidacion_Caja'])->get()
             ->sum(fn ($row) => (int) round((float) $row->amount * 100));
+
         return (int) round((float) $advance->amount * 100) - $used - $retained;
     }
 
@@ -586,14 +657,14 @@ class AccountsPayableController extends Controller
             if (in_array($this->norm($advance->status), ['Pendiente', 'Borrador', 'Rechazado'], true)
                 || $advance->settlement_status === 'comprobado') {
                 DB::rollBack();
-                return response()->json(['success' => false, 'message' => 'El anticipo no admite una retención.'], 422);
+                return response()->json(['success' => false, 'message' => 'El anticipo ya está cerrado o no admite una retención.'], 422);
             }
 
             $available = $this->remainingCents($advance);
             $requested = (int) round((float) $request->amount * 100);
             if ($requested > $available) {
                 DB::rollBack();
-                return response()->json(['success' => false, 'message' => 'El monto supera el sobrante disponible. Actualiza la página.'], 422);
+                return response()->json(['success' => false, 'message' => 'El monto supera el sobrante disponible por comprobar. Actualiza la página.'], 422);
             }
 
             $balance = ExpenseAccountBalance::lockForUpdate()->firstOrCreate(
@@ -607,10 +678,15 @@ class AccountsPayableController extends Controller
 
             $folioSystem = $this->buildFolio('BAL', (int) $request->user_id);
 
+            $lastClaim = ExpenseClaim::where('expense_advance_id', $advance->id)
+                ->orderBy('id', 'desc')
+                ->first();
+
             ExpenseAccountTransaction::create([
                 'user_id'            => $request->user_id,
                 'created_by_id'      => Auth::id() ?? 1,
-                'expense_advance_id' => $request->expense_advance_id ?: null,
+                'expense_advance_id' => $advance->id,
+                'expense_claim_id'   => $lastClaim?->id,
                 'folio_system'       => $folioSystem,
                 'movement_type'      => $request->movement_type,
                 'amount'             => $amount,
@@ -624,11 +700,37 @@ class AccountsPayableController extends Controller
                 'last_movement_at' => Carbon::now(),
             ]);
 
+            $remAfter  = max(0, $available - $requested);
+            $isZeroRem = ($remAfter <= 0);
+            $advance->update([
+                'balance'           => round($remAfter / 100, 2),
+                'settlement_status' => 'comprobando',
+            ]);
+
+            if ($lastClaim) {
+                if ($isZeroRem && in_array($lastClaim->status_balance, ['devolucion_pendiente', 'por_definir'], true)) {
+                    $lastClaim->update(['status_balance' => 'no_aplica']);
+                }
+
+                $amtFmt = number_format($amount, 2);
+
+                ExpenseClaimLog::create([
+                    'expense_claim_id' => $lastClaim->id,
+                    'user_id'          => Auth::id() ?? 1,
+                    'action'           => self::ACTION_RETENCION_SOBRANTE_APLICADA,
+                    'previous_status'  => $lastClaim->status_balance,
+                    'new_status'       => 'retenido',
+                    'comments'         => Str::limit("Se registró retención ({$folioSystem}) por \${$amtFmt} sobre el anticipo {$advance->folio_system}. Motivo: {$request->description}.", 255, ''),
+                ]);
+            }
+
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'La retención fue registrada exitosamente.',
+                'message' => $isZeroRem
+                    ? 'Retención registrada. Ya puedes marcar el anticipo como comprobado.'
+                    : 'La retención fue registrada exitosamente.',
                 'folio'   => $folioSystem,
             ]);
         } catch (\Exception $e) {
@@ -645,7 +747,7 @@ class AccountsPayableController extends Controller
         $notes     = $claim->reimbursement_notes ?? '';
 
         $log = $claim->relationLoaded('logs')
-            ? $claim->logs->firstWhere('action', 'pago_reembolso')
+            ? $claim->logs->first(fn ($l) => in_array($l->action, [self::ACTION_REEMBOLSO_PAGADO], true))
             : null;
 
         if ($log && $log->comments) {
@@ -658,6 +760,17 @@ class AccountsPayableController extends Controller
                 $method = trim($m[1]);
                 if (!empty($m[2])) {
                     $notes = trim($m[2]);
+                }
+            }
+        }
+
+        // ★ Si no está en columna ni en comentario, buscamos el PDF directamente en su carpeta privada del folio ★
+        if (!$proofPath && $claim->status_payment === 'pagado') {
+            $folder = "private/administration/expense-claims/pdf/{$claim->folio_system}/reimbursements";
+            if (Storage::exists($folder)) {
+                $files = Storage::files($folder);
+                if (!empty($files)) {
+                    $proofPath = end($files);
                 }
             }
         }

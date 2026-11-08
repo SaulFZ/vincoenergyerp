@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Operations\SgcVes;
+namespace App\Http\Controllers\Operations\Sgc;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class SgcVesController extends Controller
+class SgcController extends Controller
 {
     public function index(Request $request)
     {
@@ -14,11 +14,11 @@ class SgcVesController extends Controller
 
         // 2. LA MAGIA AQUÍ: Si la petición viene por Javascript (AJAX)
         if ($request->ajax()) {
-            // Devolvemos SOLAMENTE el blade del tab específico, sin el menú ni los filtros
-            return view("modules.operations.sgc-ves.tabs.{$view}");
+            // CORRECCIÓN: Se agregó ".dash." a la ruta para que coincida con tus includes
+            return view("modules.operations.sgc.tabs.dash.{$view}");
         }
 
         // 3. Si es carga normal (F5 o entrar por primera vez), devolvemos toda la página
-        return view('modules.operations.sgc-ves.dashboard', compact('view'));
+        return view('modules.operations.sgc.dashboard', compact('view'));
     }
 }

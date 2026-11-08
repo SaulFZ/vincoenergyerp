@@ -9,7 +9,7 @@ function initApp() {
     }
 
     // 2. Lógica de Navegación Activa
-    const currentPath = window.location.pathname.split('/').pop() || 'sgc-ves'; // Ruta por defecto si no hay ruta específica
+    const currentPath = window.location.pathname.split('/').pop() || 'sgc'; // Ruta por defecto si no hay ruta específica
 
     // Seleccionamos todos los enlaces de navegación
     const navLinks = document.querySelectorAll('.nav-link');
@@ -29,7 +29,7 @@ function initApp() {
             e.preventDefault();
             const route = this.getAttribute('data-route');
             if (route) {
-                window.location.href = `/operations/sgc-ves/${route}`;
+                window.location.href = `/operations/sgc/${route}`;
             }
         });
     });

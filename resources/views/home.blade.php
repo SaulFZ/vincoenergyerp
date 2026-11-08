@@ -1608,7 +1608,7 @@
             'icon' => 'fa-gears',
             'items' => [
             ['key' => 'wells', 'route' => '/operations/wells', 'label' => 'Pozos', 'icon' => 'fa-oil-well'],
-            ['key' => 'sgc-ves', 'route' => '/operations/sgc-ves', 'label' => 'SGC VES', 'icon' => 'fa-award'],
+            ['key' => 'sgc', 'route' => '/operations/sgc', 'label' => 'SGC', 'icon' => 'fa-award'],
             ],
             ],
             ];

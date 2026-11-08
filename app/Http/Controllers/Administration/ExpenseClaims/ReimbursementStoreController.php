@@ -17,10 +17,6 @@ use Carbon\Carbon;
 
 class ReimbursementStoreController extends Controller
 {
-    /* ==========================================================================
-       ── HELPERS ──
-       ========================================================================== */
-
     private function parseCostCenter($value)
     {
         if (!$value || $value === 'VARIOS') return ['cc' => null, 'prj' => null];
@@ -61,9 +57,7 @@ class ReimbursementStoreController extends Controller
                     if ($min === null || $f->lt($min)) {
                         $min = $f;
                     }
-                } catch (\Exception $e) {
-                    // Ignorar fechas mal formateadas
-                }
+                } catch (\Exception $e) { }
             }
         }
         return $min ? $min->toDateString() : null;
@@ -94,45 +88,35 @@ class ReimbursementStoreController extends Controller
         $baseOld = "private/administration/expense-claims/pdf/{$oldFolio}";
         $baseNew = "private/administration/expense-claims/pdf/{$newFolio}";
 
-        // 1. FACTURAS (invoices)
         $newEvidencePaths = [];
         $oldEvidence = is_array($claim->evidence_documents) ? $claim->evidence_documents : [];
 
         foreach ($oldEvidence as $oldPath) {
-            if (!$oldPath) continue;
-            if (!Storage::exists($oldPath)) continue;
-
+            if (!$oldPath || !Storage::exists($oldPath)) continue;
             $basename = basename($oldPath);
             $newName = preg_replace('/^' . preg_quote($oldFolio, '/') . '/', $newFolio, $basename);
             $newPath = "{$baseNew}/invoices/{$newName}";
-
             Storage::move($oldPath, $newPath);
             $newEvidencePaths[] = $newPath;
         }
-
         $claim->evidence_documents = $newEvidencePaths;
 
-        // 2. SOBRANTE (leftovers)
         if ($claim->leftover_proof_path && Storage::exists($claim->leftover_proof_path)) {
             $basename = basename($claim->leftover_proof_path);
             $newName = preg_replace('/^' . preg_quote($oldFolio, '/') . '/', $newFolio, $basename);
             $newProof = "{$baseNew}/leftovers/{$newName}";
-
             Storage::move($claim->leftover_proof_path, $newProof);
             $claim->leftover_proof_path = $newProof;
         }
 
-        // 3. EXCEDENTE (excesses)
         if ($claim->excess_proof_path && Storage::exists($claim->excess_proof_path)) {
             $basename = basename($claim->excess_proof_path);
             $newName = preg_replace('/^' . preg_quote($oldFolio, '/') . '/', $newFolio, $basename);
             $newExcessProof = "{$baseNew}/excesses/{$newName}";
-
             Storage::move($claim->excess_proof_path, $newExcessProof);
             $claim->excess_proof_path = $newExcessProof;
         }
 
-        // 4. Limpiar carpetas viejas si quedaron vacías
         foreach (["{$baseOld}/invoices", "{$baseOld}/leftovers", "{$baseOld}/excesses", $baseOld] as $dir) {
             if (Storage::exists($dir)) {
                 $files = Storage::files($dir);
@@ -144,10 +128,6 @@ class ReimbursementStoreController extends Controller
         }
     }
 
-    /* ==========================================================================
-       ── CÁLCULO DE DIFERENCIAS EN ETAPA 1 (Sin exigir PDF hasta Aprobación) ──
-       ========================================================================== */
-
     private function buildBalancePayload(Request $request, ?ExpenseClaim $existing = null): array
     {
         $isComprobacion = in_array($request->tipo_solicitud, ['Comprobacion Electronica', 'Comprobacion Directa']);
@@ -157,34 +137,63 @@ class ReimbursementStoreController extends Controller
                 Storage::delete($existing->leftover_proof_path);
             }
             return [
-                'leftover_amount'     => null,
-                'leftover_method'     => null,
-                'leftover_notes'      => null,
-                'leftover_proof_path' => null,
-                'excess_amount'       => null,
-                'excess_method'       => null,
-                'excess_notes'        => null,
-                'excess_proof_path'   => null,
-                'status_balance'      => 'no_aplica',
+                'leftover_amount'      => null,
+                'leftover_method'      => null,
+                'leftover_notes'       => null,
+                'leftover_proof_path'  => null,
+                'will_return_leftover' => null,
+                'excess_amount'        => null,
+                'excess_method'        => null,
+                'excess_notes'         => null,
+                'excess_proof_path'    => null,
+                'status_balance'       => 'no_aplica',
             ];
         }
 
-        $advance       = ExpenseAdvance::find($request->advance_id);
-        $advanceAmount = $advance ? (float) $advance->amount : 0;
+        $advance = ExpenseAdvance::find($request->advance_id);
+        if (!$advance) {
+            $usableAdvance = 0;
+        } else {
+            $pendingClaimsQuery = ExpenseClaim::where('expense_advance_id', $advance->id)
+                ->whereNotIn('status_review', ['borrador', 'rechazado'])
+                ->whereNotIn('status_approval', ['rechazado', 'no_procede', 'aprobado']);
+
+            if ($existing) {
+                $pendingClaimsQuery->where('id', '!=', $existing->id);
+            }
+
+            $pendingClaims = $pendingClaimsQuery->get();
+            $willReturn    = $pendingClaims->contains('will_return_leftover', 1);
+
+            if ($willReturn) {
+                $usableAdvance = 0;
+            } else {
+                $inTransit     = $pendingClaims->sum('total_amount');
+                $usableAdvance = round((float) $advance->balance - (float) $inTransit, 2);
+            }
+        }
+
+        $usableAdvance = max(0, $usableAdvance);
         $totalAmount   = (float) $request->total_amount;
-        $diff          = round($advanceAmount - $totalAmount, 2);
+        $diff          = round($usableAdvance - $totalAmount, 2);
 
         if ($diff > 0) {
+            // ★ Por defecto will_return_leftover es FALSE (No / Comprobación Parcial) ★
+            $willReturnLeftover = $request->has('will_return_leftover')
+                ? $request->boolean('will_return_leftover')
+                : false;
+
             return [
-                'leftover_amount'     => $diff,
-                'leftover_method'     => $existing?->leftover_method,
-                'leftover_notes'      => $existing?->leftover_notes,
-                'leftover_proof_path' => $existing?->leftover_proof_path,
-                'excess_amount'       => null,
-                'excess_method'       => null,
-                'excess_notes'        => null,
-                'excess_proof_path'   => null,
-                'status_balance'      => 'por_definir',
+                'leftover_amount'      => $diff,
+                'leftover_method'      => $existing?->leftover_method,
+                'leftover_notes'       => $existing?->leftover_notes,
+                'leftover_proof_path'  => $existing?->leftover_proof_path,
+                'will_return_leftover' => $willReturnLeftover,
+                'excess_amount'        => null,
+                'excess_method'        => null,
+                'excess_notes'         => null,
+                'excess_proof_path'    => null,
+                'status_balance'       => $willReturnLeftover ? 'por_definir' : 'no_aplica',
             ];
         }
 
@@ -199,15 +208,16 @@ class ReimbursementStoreController extends Controller
             ]);
 
             return [
-                'leftover_amount'     => null,
-                'leftover_method'     => null,
-                'leftover_notes'      => null,
-                'leftover_proof_path' => null,
-                'excess_amount'       => abs($diff),
-                'excess_method'       => $request->excess_method ?? 'Transferencia',
-                'excess_notes'        => $request->excess_notes,
-                'excess_proof_path'   => $existing?->excess_proof_path,
-                'status_balance'      => 'por_definir',
+                'leftover_amount'      => null,
+                'leftover_method'      => null,
+                'leftover_notes'       => null,
+                'leftover_proof_path'  => null,
+                'will_return_leftover' => null,
+                'excess_amount'        => abs($diff),
+                'excess_method'        => $request->excess_method ?? 'Transferencia',
+                'excess_notes'         => $request->excess_notes,
+                'excess_proof_path'    => $existing?->excess_proof_path,
+                'status_balance'       => 'por_definir',
             ];
         }
 
@@ -216,55 +226,49 @@ class ReimbursementStoreController extends Controller
         }
 
         return [
-            'leftover_amount'     => null,
-            'leftover_method'     => null,
-            'leftover_notes'      => null,
-            'leftover_proof_path' => null,
-            'excess_amount'       => null,
-            'excess_method'       => null,
-            'excess_notes'        => null,
-            'excess_proof_path'   => null,
-            'status_balance'      => 'no_aplica',
+            'leftover_amount'      => null,
+            'leftover_method'      => null,
+            'leftover_notes'       => null,
+            'leftover_proof_path'  => null,
+            'will_return_leftover' => null,
+            'excess_amount'        => null,
+            'excess_method'        => null,
+            'excess_notes'         => null,
+            'excess_proof_path'    => null,
+            'status_balance'       => 'no_aplica',
         ];
     }
-
-    /* ==========================================================================
-       ── STORE ──
-       ========================================================================== */
 
     public function store(Request $request)
     {
         $request->validate([
-            'motivo'        => 'required|string|max:255',
-            'centro_costo'  => 'required|string',
-            'tipo_gasto'    => 'required|string',
-            'total_amount'  => 'required|numeric|min:0.01',
-            'lineas'        => 'required|json',
-            'is_deductible' => 'required|boolean',
+            'motivo'             => 'required|string|max:255',
+            'centro_costo'       => 'required|string',
+            'tipo_gasto'         => 'required|string',
+            'total_amount'       => 'required|numeric|min:0.01',
+            'lineas'             => 'required|json',
+            'deductibility_mode' => 'required|string|in:deducible,no_deducible,mixta',
         ]);
 
         try {
             DB::beginTransaction();
 
             $isDraft     = $request->input('is_draft') == 'true';
-            
+
             /** @var \App\Models\Auth\User $creatorUser */
             $creatorUser = Auth::user()->loadMissing('directPermissions');
             $creatorId   = $creatorUser->id;
 
-            // Obtenemos los nombres de los permisos directamente desde la relación existente
             $permNames = $creatorUser->directPermissions->pluck('name')->toArray();
-            
-            // Verificamos si el usuario tiene asignado el permiso de delegación
+
             $canDelegate = in_array('delegar_solicitud', $permNames, true)
                         || in_array('delegar_solicitudes', $permNames, true);
 
-            // Si tiene permiso y envió un beneficiario distinto, se asigna; de lo contrario, se fuerza al usuario actual
             $beneficiaryId = ($canDelegate && $request->filled('beneficiary_id'))
                 ? (int) $request->beneficiary_id
                 : (int) $creatorId;
 
-            $beneficiary = User::with('employee.area')->findOrFail($beneficiaryId);
+            $beneficiary  = User::with('employee.area')->findOrFail($beneficiaryId);
             $resolvedArea = $beneficiary->employee?->area?->name ?? ($request->depto ?: 'Sin Asignar');
 
             if ($isDraft) {
@@ -276,7 +280,7 @@ class ReimbursementStoreController extends Controller
                 $sysNum      = $lastSys ? (int) str_replace('VES-', '', $lastSys->folio_system) + 1 : 1;
                 $folioSystem = 'VES-' . str_pad($sysNum, 2, '0', STR_PAD_LEFT);
 
-                $words = explode(' ', trim($beneficiary->name));
+                $words    = explode(' ', trim($beneficiary->name));
                 $initials = '';
                 foreach ($words as $w) { $initials .= strtoupper(substr($w, 0, 1)); }
 
@@ -306,7 +310,7 @@ class ReimbursementStoreController extends Controller
                 'claim_date'         => Carbon::now()->toDateString(),
                 'request_type'       => $request->tipo_solicitud,
                 'category'           => $request->tipo_gasto,
-                'is_deductible'      => $request->boolean('is_deductible'),
+                'deductibility_mode' => $request->deductibility_mode,
                 'expense_advance_id' => $expenseAdvanceId,
                 'user_id'            => $beneficiaryId,
                 'created_by_id'      => $creatorId,
@@ -327,11 +331,11 @@ class ReimbursementStoreController extends Controller
 
             if (!$isDraft && $expenseAdvanceId) {
                 ExpenseAdvance::where('id', $expenseAdvanceId)->update([
-                    'settlement_status' => 'comprobando'
+                    'settlement_status' => 'comprobando',
                 ]);
             }
 
-            $lineas = json_decode($request->input('lineas'), true) ?: [];
+            $lineas          = json_decode($request->input('lineas'), true) ?: [];
             $fechaFacturaIso = $this->getEarliestExpenseDate($lineas);
 
             $rutasPdf = [];
@@ -339,7 +343,7 @@ class ReimbursementStoreController extends Controller
                 $carpetaInvoices = "private/administration/expense-claims/pdf/{$folioSystem}/invoices";
                 $i = 1;
                 foreach ($request->file('evidencias') as $pdf) {
-                    $filename = $this->buildPdfFilename($folioSystem, 'FAC', $fechaFacturaIso, $i);
+                    $filename   = $this->buildPdfFilename($folioSystem, 'FAC', $fechaFacturaIso, $i);
                     $rutasPdf[] = $pdf->storeAs($carpetaInvoices, $filename);
                     $i++;
                 }
@@ -365,6 +369,7 @@ class ReimbursementStoreController extends Controller
                     'line_total'       => $linea['total_linea'] ?? 0,
                     'cost_center_id'   => $lineImputation['cc'],
                     'project_id'       => $lineImputation['prj'],
+                    'is_deductible'    => $linea['is_deductible'] ?? false,
                 ]);
             }
 
@@ -399,18 +404,15 @@ class ReimbursementStoreController extends Controller
         }
     }
 
-    /* ==========================================================================
-       ── UPDATE ──
-       ========================================================================== */
-
     public function update(Request $request, $id)
     {
         $request->validate([
-            'motivo'       => 'required|string|max:255',
-            'centro_costo' => 'required|string',
-            'tipo_gasto'   => 'required|string',
-            'total_amount' => 'required|numeric|min:0.01',
-            'lineas'       => 'required|json',
+            'motivo'             => 'required|string|max:255',
+            'centro_costo'       => 'required|string',
+            'tipo_gasto'         => 'required|string',
+            'total_amount'       => 'required|numeric|min:0.01',
+            'lineas'             => 'required|json',
+            'deductibility_mode' => 'required|string|in:deducible,no_deducible,mixta',
         ]);
 
         try {
@@ -428,14 +430,14 @@ class ReimbursementStoreController extends Controller
 
             if ($oldStatus === 'borrador' && !$isDraft) {
                 $beneficiary = User::find($claim->user_id);
-                $oldFolio = $claim->folio_system;
+                $oldFolio    = $claim->folio_system;
 
                 $lastSys = ExpenseClaim::where('folio_system', 'like', 'VES-%')
                     ->orderByRaw('CAST(SUBSTRING(folio_system, 5) AS UNSIGNED) DESC')->first();
-                $sysNum = $lastSys ? (int) str_replace('VES-', '', $lastSys->folio_system) + 1 : 1;
+                $sysNum              = $lastSys ? (int) str_replace('VES-', '', $lastSys->folio_system) + 1 : 1;
                 $claim->folio_system = 'VES-' . str_pad($sysNum, 2, '0', STR_PAD_LEFT);
 
-                $words = explode(' ', trim($beneficiary->name));
+                $words    = explode(' ', trim($beneficiary->name));
                 $initials = '';
                 foreach ($words as $w) { $initials .= strtoupper(substr($w, 0, 1)); }
 
@@ -443,7 +445,7 @@ class ReimbursementStoreController extends Controller
                     ->where('folio_user', 'like', $initials . '-%')
                     ->orderByRaw('CAST(SUBSTRING(folio_user, LENGTH("' . $initials . '") + 2) AS UNSIGNED) DESC')
                     ->first();
-                $userNum = $lastUser ? (int) str_replace($initials . '-', '', $lastUser->folio_user) + 1 : 1;
+                $userNum           = $lastUser ? (int) str_replace($initials . '-', '', $lastUser->folio_user) + 1 : 1;
                 $claim->folio_user = $initials . '-' . str_pad($userNum, 2, '0', STR_PAD_LEFT);
 
                 $this->migrateDraftFilesToFinalFolio($claim, $oldFolio, $claim->folio_system);
@@ -455,7 +457,7 @@ class ReimbursementStoreController extends Controller
                 ? $request->advance_id
                 : null;
 
-            $lineas = json_decode($request->input('lineas'), true) ?: [];
+            $lineas          = json_decode($request->input('lineas'), true) ?: [];
             $fechaFacturaIso = $this->getEarliestExpenseDate($lineas);
 
             $balancePayload = $this->buildBalancePayload($request, $claim);
@@ -463,7 +465,7 @@ class ReimbursementStoreController extends Controller
             $claim->update(array_merge([
                 'request_type'       => $request->tipo_solicitud,
                 'category'           => $request->tipo_gasto,
-                'is_deductible'      => $request->boolean('is_deductible'),
+                'deductibility_mode' => $request->deductibility_mode,
                 'expense_advance_id' => $expenseAdvanceId,
                 'cost_center_id'     => $headerImputation['cc'],
                 'project_id'         => $headerImputation['prj'],
@@ -480,7 +482,7 @@ class ReimbursementStoreController extends Controller
 
             if (!$isDraft && $expenseAdvanceId) {
                 ExpenseAdvance::where('id', $expenseAdvanceId)->update([
-                    'settlement_status' => 'comprobando'
+                    'settlement_status' => 'comprobando',
                 ]);
             }
 
@@ -494,7 +496,7 @@ class ReimbursementStoreController extends Controller
                 $carpetaInvoices = "private/administration/expense-claims/pdf/{$claim->folio_system}/invoices";
 
                 foreach ($request->file('evidencias') as $pdf) {
-                    $filename = $this->buildPdfFilename($claim->folio_system, 'FAC', $fechaFacturaIso, $nextIndex);
+                    $filename   = $this->buildPdfFilename($claim->folio_system, 'FAC', $fechaFacturaIso, $nextIndex);
                     $rutasPdf[] = $pdf->storeAs($carpetaInvoices, $filename);
                     $nextIndex++;
                 }
@@ -532,6 +534,7 @@ class ReimbursementStoreController extends Controller
                     'line_total'       => $linea['total_linea'] ?? 0,
                     'cost_center_id'   => $lineImputation['cc'],
                     'project_id'       => $lineImputation['prj'],
+                    'is_deductible'    => $linea['is_deductible'] ?? false,
                 ]);
             }
 
@@ -570,10 +573,6 @@ class ReimbursementStoreController extends Controller
         }
     }
 
-    /* ==========================================================================
-       ── ETAPA 2: SUBIDA DEL COMPROBANTE DE SOBRANTE (POST-APROBACIÓN) ──
-       ========================================================================== */
-
     public function submitLeftoverProof(Request $request, $id)
     {
         $request->validate([
@@ -590,14 +589,14 @@ class ReimbursementStoreController extends Controller
             if ($claim->status_approval !== 'aprobado') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La comprobación debe estar aprobada antes de adjuntar el comprobante de devolución del sobrante.'
+                    'message' => 'La comprobación debe estar aprobada antes de adjuntar el comprobante de devolución del sobrante.',
                 ], 422);
             }
 
             if ((float) ($claim->leftover_amount ?? 0) <= 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Este expediente no registra un monto sobrante por devolver.'
+                    'message' => 'Este expediente no registra un monto sobrante por devolver.',
                 ], 422);
             }
 
@@ -624,14 +623,14 @@ class ReimbursementStoreController extends Controller
                 'action'           => 'Devolución de Sobrante Enviada',
                 'previous_status'  => $oldBalance,
                 'new_status'       => 'por_verificar',
-                'comments'         => 'Se adjuntó el comprobante PDF de devolución del sobrante ($' . number_format((float)$claim->leftover_amount, 2) . '). En espera de verificación por Tesorería.',
+                'comments'         => 'Se adjuntó el comprobante PDF de devolución del sobrante ($' . number_format((float) $claim->leftover_amount, 2) . '). En espera de verificación.',
             ]);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'El comprobante de devolución fue registrado y enviado a Tesorería para su verificación.',
+                'message' => 'El comprobante de devolución fue registrado y enviado para su verificación.',
                 'folio'   => $claim->folio_system,
             ]);
 
@@ -639,7 +638,7 @@ class ReimbursementStoreController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar el comprobante: ' . $e->getMessage()
+                'message' => 'Error al guardar el comprobante: ' . $e->getMessage(),
             ], 500);
         }
     }

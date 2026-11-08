@@ -1,12 +1,11 @@
 <?php
+
 /* CONTROLADORES DE RECURSOS Generañ */
 use App\Http\Controllers\Administration\ExpenseClaims\AccountsPayableController;
 use App\Http\Controllers\Administration\ExpenseClaims\CfdiController;
-use App\Http\Controllers\Administration\ExpenseClaims\expenseAccountBalanceController;
-use App\Http\Controllers\Administration\ExpenseClaims\expenseAccountTransactionController;
 use App\Http\Controllers\Administration\ExpenseClaims\ExpenseAdvanceController;
-use App\Http\Controllers\Administration\ExpenseClaims\ExpenseSettingsController;
 use App\Http\Controllers\Administration\ExpenseClaims\ExpenseClaimsStatisticsController;
+use App\Http\Controllers\Administration\ExpenseClaims\ExpenseSettingsController;
 use App\Http\Controllers\Administration\ExpenseClaims\FslNodeController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryController;
@@ -17,14 +16,16 @@ use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Core\MediaController;
 /* CONTROLADORES DE RECURSOS QHSE */
+use App\Http\Controllers\Operations\Sgc\SgcController;
+use App\Http\Controllers\Operations\Sgc\SgcServicesController;
 use App\Http\Controllers\Qhse\Incidents\IncidentController;
 use App\Http\Controllers\Qhse\Management\DriverLicenseController;
 use App\Http\Controllers\Qhse\Management\JourneyController;
+/* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\Qhse\Management\JourneyQueryController;
 use App\Http\Controllers\Qhse\Management\JourneyStatusController;
 use App\Http\Controllers\Qhse\Management\JourneyStoreController;
 use App\Http\Controllers\Qhse\Management\StatsController;
-/* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\RH\LoadChart\ApprovalController;
 use App\Http\Controllers\RH\LoadChart\AssignmentController;
 use App\Http\Controllers\RH\LoadChart\CalendarController;
@@ -32,25 +33,21 @@ use App\Http\Controllers\RH\LoadChart\EmployeeVacationBalanceController;
 use App\Http\Controllers\RH\LoadChart\FieldBonusController;
 use App\Http\Controllers\RH\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RH\LoadChart\HistoryController;
+/* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\RH\LoadChart\InfoServicesController;
 use App\Http\Controllers\RH\LoadChart\SquadController;
 use App\Http\Controllers\RH\LoadChart\StatsLoadController;
-use App\Http\Controllers\RH\OrgManagement\AreaController;
-use App\Http\Controllers\RH\OrgManagement\DepartmentController;
 use App\Http\Controllers\RH\OrgManagement\EmployeeController;
-/* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\Systems\InventoryIT\InventoryITController;
 use App\Http\Controllers\Systems\Tickets\TicketController;
 use App\Http\Controllers\Systems\Tickets\TicketQueryController;
 use App\Http\Controllers\Systems\Tickets\TicketStatsQueryController;
+/* CONTROLADORES DE OPERACIONES */
 use App\Http\Controllers\Systems\Tickets\TicketStatusController;
 use App\Http\Controllers\Systems\Tickets\TicketStoreController;
-use App\Http\Controllers\Systems\UserManagement\UserManagementController;
+/* CONTROLADORES DE OTROS */
 use App\Http\Controllers\Systems\UserManagement\EmployeeCardController;
-
-/* CONTROLADORES DE OPERACIONES */
-use App\Http\Controllers\Operations\SgcVes\ServicesController;
-use App\Http\Controllers\Operations\SgcVes\SgcVesController;
+use App\Http\Controllers\Systems\UserManagement\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 // ===================================================
@@ -176,7 +173,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                         ->name('expense-claims.accounts-payable.settle-advance');
                 });
 
-
                 // ============================
                 // ── GESTIÓN DE ANTICIPOS ──
                 // ============================
@@ -202,7 +198,7 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::post('/reimbursements/store', 'store')->name('expense-claims.store');
                     Route::post('/reimbursements/{id}/update', 'update')->name('expense-claims.update');
                     Route::post('/reimbursements/{id}/leftover-proof', 'submitLeftoverProof')->name('expense-claims.leftover-proof.upload');
-                    
+
                 });
 
                 // ESTATUS
@@ -246,7 +242,6 @@ Route::middleware(['web', 'auth'])->group(function () {
             });
         });
 
-    
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS SISTEMAS
     // ===================================================
@@ -254,58 +249,58 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:systems')
         ->group(function () {
             // ===================================================
-// GRUPO: USER MANAGEMENT (Gestión de Usuarios)
-// Prefijo: /systems/user-management
-// ===================================================
-Route::prefix('user-management')->group(function () {
-    // 1. Redirección automática
-    Route::get('/', function () {
-        return redirect()->route('systems.users.index');
-    })
-        ->name('systems.user-management')
-        ->middleware('check.permission:systems,user-management');
+            // GRUPO: USER MANAGEMENT (Gestión de Usuarios)
+            // Prefijo: /systems/user-management
+            // ===================================================
+            Route::prefix('user-management')->group(function () {
+                // 1. Redirección automática
+                Route::get('/', function () {
+                    return redirect()->route('systems.users.index');
+                })
+                    ->name('systems.user-management')
+                    ->middleware('check.permission:systems,user-management');
 
-    // --- RUTAS AUXILIARES, DE ARCHIVOS Y TARJETAS QR ---
-    // IMPORTANTE: deben ir ANTES del resource 'users',
-    // si no, 'users/{user}' captura 'users/employee-cards'.
-    Route::controller(UserManagementController::class)->group(function () {
-        Route::get('get-permissions', 'getPermissions')->name('systems.users.permissions');
-        Route::get('get-roles', 'getRoles')->name('systems.users.list');
-        Route::get('search-employees', 'searchEmployees')->name('systems.users.search');
+                // --- RUTAS AUXILIARES, DE ARCHIVOS Y TARJETAS QR ---
+                // IMPORTANTE: deben ir ANTES del resource 'users',
+                // si no, 'users/{user}' captura 'users/employee-cards'.
+                Route::controller(UserManagementController::class)->group(function () {
+                    Route::get('get-permissions', 'getPermissions')->name('systems.users.permissions');
+                    Route::get('get-roles', 'getRoles')->name('systems.users.list');
+                    Route::get('search-employees', 'searchEmployees')->name('systems.users.search');
 
-        // Servir imágenes de forma segura
-        Route::get('photo/{path}', 'getEmployeePhoto')
-            ->where('path', '.*')
-            ->name('systems.users.photo');
+                    // Servir imágenes de forma segura
+                    Route::get('photo/{path}', 'getEmployeePhoto')
+                        ->where('path', '.*')
+                        ->name('systems.users.photo');
 
-        // Vista HTML del directorio de credenciales QR
-        Route::get('users/employee-cards', 'employeeCards')
-            ->name('users.employee-cards');
+                    // Vista HTML del directorio de credenciales QR
+                    Route::get('users/employee-cards', 'employeeCards')
+                        ->name('users.employee-cards');
 
-        // Datos JSON del directorio (consumidos por el fetch del JS)
-        Route::get('employee-cards', 'employeeCardsData')
-            ->name('systems.employee-cards.data');
+                    // Datos JSON del directorio (consumidos por el fetch del JS)
+                    Route::get('employee-cards', 'employeeCardsData')
+                        ->name('systems.employee-cards.data');
 
-        // Generar / regenerar token QR de un empleado
-        Route::post('employees/{employee}/qr/generate', 'generateQr')
-            ->name('systems.employees.qr.generate');
+                    // Generar / regenerar token QR de un empleado
+                    Route::post('employees/{employee}/qr/generate', 'generateQr')
+                        ->name('systems.employees.qr.generate');
 
-        // Activar / pausar QR de un empleado
-        Route::post('employees/{employee}/qr/toggle', 'toggleQr')
-            ->name('systems.employees.qr.toggle');
-    });
+                    // Activar / pausar QR de un empleado
+                    Route::post('employees/{employee}/qr/toggle', 'toggleQr')
+                        ->name('systems.employees.qr.toggle');
+                });
 
-    // --- RUTAS DE RECURSOS (CRUD) ---
-    Route::resource('users', UserManagementController::class)
-        ->names([
-            'index'   => 'systems.users.index',
-            'create'  => 'systems.users.create',
-            'store'   => 'systems.users.store',
-            'edit'    => 'systems.users.edit',
-            'update'  => 'systems.users.update',
-            'destroy' => 'systems.users.destroy',
-        ]);
-});
+                // --- RUTAS DE RECURSOS (CRUD) ---
+                Route::resource('users', UserManagementController::class)
+                    ->names([
+                        'index' => 'systems.users.index',
+                        'create' => 'systems.users.create',
+                        'store' => 'systems.users.store',
+                        'edit' => 'systems.users.edit',
+                        'update' => 'systems.users.update',
+                        'destroy' => 'systems.users.destroy',
+                    ]);
+            });
 
             // ===================================================
             // SUBSISTEMA 2: INVENTARIO TI (it-inventory)
@@ -364,8 +359,6 @@ Route::prefix('user-management')->group(function () {
                 });
             });
         });
-
-    
 
     // ===================================================
     // MÓDULO: SISTEMAS Y SUBSISTEMAS QHSE
@@ -596,7 +589,8 @@ Route::prefix('user-management')->group(function () {
                     Route::delete('/employees/{id}', 'destroy')->name('orgmanagement.employees.destroy');
                 });
             });
-        });  // ===================================================
+        });
+
     // ===================================================
     // MÓDULO: OPERACIONES Y SUBSISTEMAS
     // ===================================================
@@ -605,39 +599,30 @@ Route::prefix('user-management')->group(function () {
         ->group(function () {
             // ===================================================
             // SUBSISTEMA 1: SGC VES (Sistema de Gestión de la Calidad)
-            // Prefijo: /operations/sgc-ves
             // ===================================================
-            Route::prefix('sgc-ves')->group(function () {
+            Route::prefix('sgc')->group(function () {
+
                 // 1. Redirección / Vista principal del subsistema
                 Route::get('/', function () {
-                    return redirect()->route('operations.sgc-ves.index');
+                    return redirect()->route('operations.sgc.index');
                 })
-                    ->name('operations.sgc-ves')
-                    ->middleware('check.permission:operations,sgc-ves');
+                    ->name('operations.sgc')
+                    ->middleware('check.permission:operations,sgc');
 
-                // 2. Vistas y Dashboard principal
-                Route::controller(SgcVesController::class)->group(function () {
-                    Route::get('/dashboard', 'index')->name('operations.sgc-ves.index');
-                    Route::get('/stats', 'stats')->name('operations.sgc-ves.stats');
+                // 2. Vistas y Dashboard principal (SgcController)
+                Route::controller(SgcController::class)->group(function () {
+                    Route::get('/dashboard', 'index')->name('operations.sgc.index');
+                    Route::get('/stats', 'stats')->name('operations.sgc.stats');
                 });
 
-                // 3. Consultas de Datos (AJAX / Tablas)
-                Route::controller(SgcVesQueryController::class)->group(function () {
-                    Route::get('/get-records', 'getRecords')->name('operations.sgc-ves.get');
-                    Route::get('/show/{id}', 'show')->name('operations.sgc-ves.show');
+                // 3. Servicios (SgcServicesController)
+                Route::controller(SgcServicesController::class)->group(function () {
+                    // NOTA: Se cambió el nombre a 'operations.sgc.services'
+                    Route::get('/services', 'index')->name('operations.sgc.services');
                 });
 
-                // 4. Guardado y Edición (Transaccional)
-                Route::controller(SgcVesStoreController::class)->group(function () {
-                    Route::post('/store', 'store')->name('operations.sgc-ves.store');
-                    Route::put('/update/{id}', 'update')->name('operations.sgc-ves.update');
-                    Route::delete('/destroy/{id}', 'destroy')->name('operations.sgc-ves.destroy');
-                });
 
-                // 5. Servicios (controlador nuevo)
-                Route::controller(ServicesController::class)->group(function () {
-                    Route::get('/services', 'index')->name('operations.sgc-ves.services.services');
-                });
+
             });
         });
     // ===================================================
@@ -675,7 +660,8 @@ Route::prefix('user-management')->group(function () {
     // MÓDULO: SUMINISTRO
     // ===================================================
     Route::get('/suministro', function () {
-        return view('modules.suministros.suministroshome');})
+        return view('modules.suministros.suministroshome');
+    })
         ->middleware('check.permission:suministro')
         ->name('modulo.suministro');
 
@@ -683,7 +669,8 @@ Route::prefix('user-management')->group(function () {
     // MÓDULO: ALMACÉN
     // ===================================================
     Route::get('/almacen', function () {
-        return view('modules.almacen.index');})
+        return view('modules.almacen.index');
+    })
         ->middleware('check.permission:almacen')
         ->name('modulo.almacen');
 
@@ -710,4 +697,5 @@ Route::prefix('user-management')->group(function () {
             })
                 ->middleware('check.permission:geociencias,analisis')
                 ->name('geociencias.analisis');
-        });});
+        });
+});

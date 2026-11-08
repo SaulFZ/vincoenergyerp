@@ -8,14 +8,13 @@
     <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <!-- CSS del Layout Principal SGC -->
-    <link href="{{ asset('assets/css/operations/sgc-ves/index.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/css/operations/sgc-ves/dashboard.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/css/operations/sgc-ves/services.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/operations/sgc/index.css') }}" rel="stylesheet">
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @stack('styles')
@@ -34,7 +33,7 @@
         <nav class="nav-main">
             {{-- Menú adaptado al SGC --}}
             <a href="#" class="nav-link" data-route="dashboard">
-                <i class="fas fa-home"></i> Principal
+                <i class="fas fa-home"></i> Dashboard
             </a>
 
             <a href="#" class="nav-link" data-route="services">
@@ -45,8 +44,18 @@
                 <i class="fas fa-folder-open"></i> Evidencias
             </a>
 
+            <a href="#" class="nav-link" data-route="personal">
+                <i class="fas fa-users"></i> Personal
+            </a>
+
             <a href="#" class="nav-link" data-route="mantenimientos">
                 <i class="fas fa-tools"></i> Mantenimientos
+            </a>
+            <a heref="#" class="nav-link" data-route="Opereacion">
+                <i class="fas fa-chart-line"></i> Operación
+            </a>
+            <a href="#" class="nav-link" data-route="catalogos">
+                <i class="fas fa-book"></i> Catálogos
             </a>
         </nav>
 
@@ -68,8 +77,8 @@
     <script src="{{ asset('assets/js/sessionTimer.js') }}"></script>
 
     <!-- JS General del módulo (si lo llegas a usar para control del menú activo) -->
-    <script src="{{ asset('assets/js/operations/sgc-ves/index.js') }}"></script>
-
+    <script src="{{ asset('assets/js/operations/sgc/index.js') }}"></script>
+    <script src="{{ asset('assets/js/operations/sgc/sgc-tabs.js') }}"></script>
     @stack('scripts')
 </body>
 

@@ -36,6 +36,7 @@ class ReimbursementStatusController extends Controller
         try {
             DB::beginTransaction();
 
+            /** @var \App\Models\Auth\User $user */
             $user = Auth::user()->loadMissing(['employee.area', 'directPermissions']);
             $permNames = $user->directPermissions->pluck('name')->toArray();
 
@@ -110,26 +111,60 @@ class ReimbursementStatusController extends Controller
 
                 $extraComment = '';
 
-                // Al aprobarse la comprobación, los montos quedan firmes y se dispara la Etapa 2 (Conciliación)
                 if ($claim->expense_advance_id && $claim->expenseAdvance) {
-                    $leftover = (float) ($claim->leftover_amount ?? 0);
-                    $excess   = (float) ($claim->excess_amount ?? 0);
+                    $leftover     = (float) ($claim->leftover_amount ?? 0);
+                    $excess       = (float) ($claim->excess_amount ?? 0);
+                    $advanceModel = ExpenseAdvance::lockForUpdate()->find($claim->expense_advance_id);
 
                     if ($leftover > 0) {
-                        $updateData['status_balance'] = $claim->leftover_proof_path
-                            ? 'por_verificar'
-                            : 'devolucion_pendiente';
-                        $extraComment = " Se habilitó el registro de devolución del sobrante por $" . number_format($leftover, 2) . ".";
+                        if ($claim->will_return_leftover === false || $claim->will_return_leftover === 0) {
+                            // COMPROBACIÓN PARCIAL: Queda abierto con el saldo restante
+                            $updateData['status_balance'] = 'no_aplica';
+                            $extraComment = " Al ser una comprobación parcial, el anticipo continúa abierto con un saldo por comprobar de $" . number_format($leftover, 2) . ".";
+
+                            if ($advanceModel) {
+                                $newBalance = max(0, round((float) $advanceModel->balance - (float) $claim->total_amount, 2));
+                                $advanceModel->update([
+                                    'balance'           => $newBalance,
+                                    'settlement_status' => 'comprobando',
+                                ]);
+                            }
+                        } else {
+                            // SOBRANTE A DEVOLVER: Espera el PDF del depósito y la verificación.
+                            $updateData['status_balance'] = $claim->leftover_proof_path
+                                ? 'por_verificar'
+                                : 'devolucion_pendiente';
+                            $extraComment = " Se habilitó el registro de devolución del sobrante por $" . number_format($leftover, 2) . ".";
+
+                            if ($advanceModel) {
+                                $newBalance = max(0, round((float) $advanceModel->balance - (float) $claim->total_amount, 2));
+                                $advanceModel->update([
+                                    'balance'           => $newBalance,
+                                    'settlement_status' => 'comprobando',
+                                ]);
+                            }
+                        }
                     } elseif ($excess > 0) {
+                        // EXCEDENTE A FAVOR DEL EMPLEADO: Balance del anticipo en 0, en espera de pago de excedente y cierre.
                         $updateData['status_balance'] = 'pago_pendiente';
-                        $extraComment = " Queda pendiente el pago del excedente a favor del colaborador por $" . number_format($excess, 2) . ".";
+                        $extraComment = "Queda pendiente el pago del excedente a favor del colaborador por $" . number_format($excess, 2) . ".";
+                        if ($advanceModel) {
+                            $advanceModel->update([
+                                'balance'           => 0,
+                                'settlement_status' => 'comprobando',
+                            ]);
+                        }
                     } else {
-                        // Cuadró exacto: cierre automático
+                        // CUADRE EXACTO: Balance en 0, pero permanece en 'comprobando' hasta se dé clic en "Marcar como comprobado"
                         $updateData['status_balance'] = 'no_aplica';
-                        ExpenseAdvance::where('id', $claim->expense_advance_id)->update([
-                            'settlement_status' => 'comprobado',
-                            'balance'           => 0,
-                        ]);
+                        $extraComment = " El monto comprobado cubrió el total del anticipo. Listo para cierre final.";
+
+                        if ($advanceModel) {
+                            $advanceModel->update([
+                                'balance'           => 0,
+                                'settlement_status' => 'comprobando',
+                            ]);
+                        }
                     }
                 }
 

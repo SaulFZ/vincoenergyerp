@@ -1,19 +1,126 @@
+<!-- ========================================== -->
+<!-- 1. FILTROS EXCLUSIVOS DE LA VISTA: EXECUTIVE -->
+<!-- ========================================== -->
+<section class="filter-section no-print">
+    <form id="filter-form" action="{{ route('operations.sgc.index') }}" method="GET">
+        <div class="filter-grid">
+
+            <div class="filter-group">
+                <label class="filter-label">Módulo</label>
+                <select name="view" class="filter-input">
+                    <!-- Seleccionado por defecto 'executive' -->
+                    <option value="executive" selected>Dashboard Ejecutivo</option>
+                    <option value="npt">NPT / No Productivo</option>
+                    <option value="compliance">Cumplimiento SGC</option>
+                    <option value="crew">Cuadrilla + Satisfacción</option>
+                    <option value="shots">Disparos / MCR</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Compañía</label>
+                <select name="client" class="filter-input">
+                    <option value="TODOS" selected>Todas las compañías</option>
+                    <option value="PEMEX">PEMEX</option>
+                    <option value="SLB">SLB</option>
+                    <option value="HALLIBURTON">HALLIBURTON</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Servicio</label>
+                <select name="serviceType" class="filter-input">
+                    <option value="TODOS" selected>Todos los tipos</option>
+                    <option value="Registros Geofísicos">Registros Geofísicos</option>
+                    <option value="Disparos de Producción">Disparos de Producción</option>
+                </select>
+            </div>
+
+            <div class="filter-group custom-dropdown">
+                <label class="filter-label">Años</label>
+                <div class="filter-input dropdown-trigger" id="year-dropdown-btn">
+                    <span>Seleccionar años</span>
+                    <i class="fas fa-chevron-down text-slate-400"></i>
+                </div>
+                <div class="dropdown-menu" id="year-dropdown-menu">
+                    <label class="dropdown-item"><input type="checkbox" name="year[]" value="2026" checked> 2026</label>
+                    <label class="dropdown-item"><input type="checkbox" name="year[]" value="2025"> 2025</label>
+                    <label class="dropdown-item"><input type="checkbox" name="year[]" value="2024"> 2024</label>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Periodo</label>
+                <select name="period" class="filter-input">
+                    <option value="ANUAL" selected>Anual</option>
+                    <option value="Q1">Q1 · Ene-Mar</option>
+                    <option value="Q2">Q2 · Abr-Jun</option>
+                    <option value="Q3">Q3 · Jul-Sep</option>
+                    <option value="Q4">Q4 · Oct-Dic</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Mes comp.</label>
+                <select name="compareMonth" class="filter-input">
+                    <option value="TODOS" selected>Todos los meses</option>
+                    <option value="ACTUAL">Mes actual vs años</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Tipo NPT</label>
+                <select name="eventType" class="filter-input">
+                    <option value="TODOS" selected>Todos</option>
+                    <option value="Falla de herramienta">Falla de herramienta</option>
+                    <option value="Falla de cable">Falla de cable</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Cálculo SQIR</label>
+                <select name="sqirMode" class="filter-input">
+                    <option value="os" selected>Por trabajos</option>
+                    <option value="horas">Por horas</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" style="opacity: 0;">Acciones</label>
+                <div class="filter-actions">
+                    <button type="button" onclick="window.print()" class="btn-icon btn-pdf" title="Exportar a PDF">
+                        <i class="fas fa-file-pdf"></i> &nbsp;PDF
+                    </button>
+                    <!-- El botón de limpiar apunta a la ruta general con la vista executive -->
+                    <a href="{{ route('operations.sgc.index') }}?view=executive" class="btn-icon btn-clear" title="Limpiar filtros">
+                        <i class="fas fa-undo-alt"></i>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</section>
+
+<!-- ========================================== -->
+<!-- 2. CONTENIDO DE LA VISTA                   -->
+<!-- ========================================== -->
 <div class="tab-executive">
 
     <!-- BLOQUE: COMPARATIVO AÑO Y TOTALES -->
-    <div class="panel year-card" style="padding: 20px;">
+    <div class="panel year-card">
         <div class="year-card-header">
             <div>
-                <p style="font-size: 11px; font-weight: 900; color: #64748b; letter-spacing: 0.22em; text-transform: uppercase;">Indicadores del año seleccionado</p>
-                <h3 style="font-size: 26px; font-weight: 900; color: var(--primary-dark); margin-top:2px;">AÑO 2026</h3>
+                <p class="module-subtitle">Indicadores del año seleccionado</p>
+                <h3 class="module-title">AÑO 2026</h3>
             </div>
             <div class="sqir-pill">
-                <p style="font-size: 10px; opacity: 0.7; text-transform: uppercase; margin-bottom: -2px;">SQIR</p>
-                <p style="font-size: 24px; font-weight: 900;">91.7%</p>
+                <p class="sqir-pill-label">SQIR</p>
+                <p class="sqir-pill-value">91.7%</p>
             </div>
         </div>
 
-        <div class="kpi-grid mb-3">
+        <div class="kpi-grid">
             <div class="kpi-card kpi-blue">
                 <p class="kpi-card-title">Trabajos realizados</p>
                 <p class="kpi-card-value">121</p>
@@ -26,12 +133,12 @@
             </div>
             <div class="kpi-card kpi-blue">
                 <p class="kpi-card-title">Horas Operativas</p>
-                <p class="kpi-card-value">3623.0 <span style="font-size: 16px;">h</span></p>
+                <p class="kpi-card-value">3623.0 <span class="kpi-card-value-small">h</span></p>
                 <p class="kpi-card-note">suma operativa</p>
             </div>
             <div class="kpi-card kpi-rose">
                 <p class="kpi-card-title">Horas NPT</p>
-                <p class="kpi-card-value">68.0 <span style="font-size: 16px;">h</span></p>
+                <p class="kpi-card-value">68.0 <span class="kpi-card-value-small">h</span></p>
                 <p class="kpi-card-note">1.8% del total</p>
             </div>
             <div class="kpi-card kpi-amber">
@@ -46,7 +153,7 @@
             </div>
         </div>
 
-        <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 16px;">
+        <div class="kpi-grid kpi-grid-three">
             <div class="kpi-card kpi-white">
                 <p class="kpi-card-title">Servicios operativos</p>
                 <p class="kpi-card-value">100</p>
@@ -153,53 +260,6 @@
             <div class="chart-bar-item"><div class="chart-bar-labels"><strong>VH-209</strong> <strong>513.5 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 51.1%;"></div></div></div>
             <div class="chart-bar-item"><div class="chart-bar-labels"><strong>SIN URE</strong> <strong>350.0 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 34.8%;"></div></div></div>
             <div class="chart-bar-item"><div class="chart-bar-labels"><strong>VH-212</strong> <strong>289.5 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 28.8%;"></div></div></div>
-        </div>
-    </div>
-
-    <!-- GRÁFICAS: MES -->
-    <div class="grid-2-cols page-break">
-        <div class="panel">
-            <h2 class="panel-title">Horas operativas por mes</h2>
-            <div class="chart-bar-item"><div class="chart-bar-labels"><strong>junio</strong> <strong>922.5 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 100%;"></div></div></div>
-            <div class="chart-bar-item"><div class="chart-bar-labels"><strong>marzo</strong> <strong>667.5 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 72.4%;"></div></div></div>
-            <div class="chart-bar-item"><div class="chart-bar-labels"><strong>febrero</strong> <strong>632.5 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 68.6%;"></div></div></div>
-            <div class="chart-bar-item"><div class="chart-bar-labels"><strong>abril</strong> <strong>617.5 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 66.9%;"></div></div></div>
-        </div>
-
-        <div class="panel">
-            <h2 class="panel-title">Horas NPT por mes</h2>
-            <div class="chart-bar-item"><div class="chart-bar-labels"><strong>mayo</strong> <strong>30.0 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 100%;"></div></div></div>
-            <div class="chart-bar-item"><div class="chart-bar-labels"><strong>junio</strong> <strong>14.0 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 46.7%;"></div></div></div>
-            <div class="chart-bar-item"><div class="chart-bar-labels"><strong>abril</strong> <strong>9.0 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 30%;"></div></div></div>
-            <div class="chart-bar-item"><div class="chart-bar-labels"><strong>julio</strong> <strong>9.0 h</strong></div><div class="chart-bar-track"><div class="chart-bar-fill bg-c1" style="width: 30%;"></div></div></div>
-        </div>
-    </div>
-
-    <!-- TABLA DE NPT -->
-    <div class="panel page-break">
-        <h2 class="panel-title">Tabla de servicios con falla / NPT</h2>
-        <div class="table-wrap">
-            <table class="npt-table">
-                <thead>
-                    <tr>
-                        <th>OS</th><th>Fecha</th><th>Cliente</th><th>Pozo</th><th>URE</th><th>Servicio</th><th>Tipo evento</th><th>NPT</th><th>Origen</th><th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>VES-WL-OS-1607</strong></td><td>07/07/2026</td><td>PERENCO</td><td>SANTUARIO 505</td><td>VH-202</td><td>COLOCACIÓN DE TAPÓN</td><td><strong>Sin clasificar</strong></td><td style="color: #dc2626; font-weight: 900;">4.0 h</td><td>nptHours</td><td><span class="status-badge">TERMINADO</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>VES-WL-OS-1603</strong></td><td>05/07/2026</td><td>PERENCO</td><td>SANTUARIO 304</td><td>VH-202</td><td>TECNOLOGÍA CORTE MCR</td><td><strong>Sin clasificar</strong></td><td style="color: #dc2626; font-weight: 900;">3.0 h</td><td>Tiempo NPT</td><td><span class="status-badge">TERMINADO</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>VES-WL-OS-1601</strong></td><td>03/07/2026</td><td>DIXTONE</td><td>EL GOLPE 41T</td><td>VH-202</td><td>REGISTRO PNN/PNG</td><td><strong>Sin clasificar</strong></td><td style="color: #dc2626; font-weight: 900;">2.0 h</td><td>Tiempo NPT</td><td><span class="status-badge">TERMINADO</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>VES-WL-OS-1587</strong></td><td>20/06/2026</td><td>DIXTONE</td><td>SANTUARIO 603</td><td>VH-202</td><td>COLOCACIÓN DE TAPÓN</td><td><strong>Sin clasificar</strong></td><td style="color: #dc2626; font-weight: 900;">14.0 h</td><td>Tiempo NPT</td><td><span class="status-badge">TERMINADO</span></td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
     </div>
 

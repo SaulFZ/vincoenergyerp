@@ -659,6 +659,29 @@ textarea.input-field { min-height: 80px; resize: vertical; padding-left: 0.75rem
 .leftover-ev-title { font-size: 0.9rem; font-weight: 700; color: var(--secondary-dark); margin: 0 0 .2rem 0; }
 .leftover-ev-desc { font-size: 0.72rem; color: var(--secondary-lighter); margin: 0 0 0.5rem 0; line-height: 1.3; }
 
+/* ── Estilos para el interruptor de Comprobación Parcial o Devolución de Sobrante ── */
+.leftover-decision-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px dashed rgba(0, 0, 0, 0.12);
+    flex-wrap: wrap;
+}
+.leftover-decision-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--leftover-warm-text);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.leftover-decision-label i {
+    font-size: 1rem;
+}
+
 .btn-notification-bell { position: relative; width: 2.6rem; height: 2.6rem; border-radius: 0.65rem; background: var(--surface); border: 1px solid #e2e8f0; color: var(--secondary-dark); display: inline-flex; align-items: center; justify-content: center; font-size: 1.4rem; cursor: pointer; transition: all .2s ease; flex-shrink: 0; }
 .btn-notification-bell:hover { background: var(--surface-alt); border-color: #cbd5e1; transform: translateY(-1px); }
 .notification-badge { position: absolute; top: -5px; right: -5px; min-width: 1.2rem; height: 1.2rem; padding: 0 .3rem; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.65rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
@@ -706,7 +729,7 @@ textarea.input-field { min-height: 80px; resize: vertical; padding-left: 0.75rem
 .adv-card-info-block { background: #f8fafc; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; color: var(--secondary-dark); line-height: 1.4; }
 .adv-card-info-block strong { display: block; color: var(--secondary-lighter); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; }
 
-/* ── Optimización de tamaños en pantallas / Laptops (<= 1440px) ── */
+/* ── Optimización de tamaños en pantallas pequeñas / Laptops (<= 1440px) ── */
 @media (max-width: 1440px) {
     .card-header { padding: 0.75rem 1rem; gap: 0.65rem; }
     .table-controls { gap: 0.5rem; }

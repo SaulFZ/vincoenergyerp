@@ -41,19 +41,16 @@ class ReimbursementController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Filtrado de visibilidad según permisos directos
         $visibleClaims = $reembolsos->filter(function (ExpenseClaim $req) use (
             $user, $userAreaNorm, $canValidate, $canApprove, $canViewAll
         ) {
             $isOwn = ((int) $req->user_id === (int) $user->id)
                   || ((int) $req->created_by_id === (int) $user->id);
 
-            // Los borradores privados de otros usuarios no se muestran hasta que se envían
             if ($req->status_review === 'borrador' && !$isOwn) {
                 return false;
             }
 
-            // Si tiene permiso global de visualización
             if ($canViewAll) {
                 return true;
             }
@@ -62,12 +59,10 @@ class ReimbursementController extends Controller
                 ?: ($req->beneficiary?->employee?->area?->name ?? 'Sin Asignar');
             $isSameArea = ($userAreaNorm !== '' && $this->normalizeArea($claimAreaName) === $userAreaNorm);
 
-            // Revisor o Aprobador sin ver_todo_solicitudes: ve las de su área + las propias
             if ($canValidate || $canApprove) {
                 return $isSameArea || $isOwn;
             }
 
-            // Usuario normal: únicamente sus propias solicitudes (o donde fue capturista)
             return $isOwn;
         });
 
@@ -80,43 +75,42 @@ class ReimbursementController extends Controller
             $isOwn      = ((int) $req->user_id === (int) $user->id)
                        || ((int) $req->created_by_id === (int) $user->id);
 
-            // Regla para Validar: requiere validar_solicitud y (misma área o ver_todo_solicitudes)
             $canValidateThis = $canValidate
                 && $req->status_review === 'pendiente'
                 && ($canViewAll || $isSameArea);
 
-            // Regla para Aprobar: requiere aprobar_solicitud y SIEMPRE ser de su misma área
             $canApproveThis = $canApprove
                 && $req->status_review === 'validado'
                 && $req->status_approval === 'en_revision'
                 && $isSameArea;
 
             return [
-                'id'              => $req->id,
-                'user_id'         => $req->user_id,
-                'created_by_id'   => $req->created_by_id,
-                'is_own'          => $isOwn,
-                'is_same_area'    => $isSameArea,
-                'can_validate'    => $canValidateThis,
-                'can_approve'     => $canApproveThis,
-                'can_evaluate'    => ($canValidateThis || $canApproveThis),
-                'folioP'          => $req->folio_system,
-                'folioU'          => $req->folio_user ?? 'N/A',
-                'advance_id'      => $req->expense_advance_id,
-                'advance_folio'   => $req->expenseAdvance ? $req->expenseAdvance->folio_system : null,
-                'advance_status'  => $req->expenseAdvance ? $req->expenseAdvance->status : null,
-                'fecha'           => Carbon::parse($req->claim_date)->format('d/m/Y'),
-                'nombre'          => $req->beneficiary ? $req->beneficiary->name : 'Usuario Desconocido',
-                'motivo'          => $req->motive,
-                'depto'           => $claimAreaName,
-                'amount'          => (float) $req->total_amount,
-                'leftover_amount' => (float) ($req->leftover_amount ?? 0),
-                'excess_amount'   => (float) ($req->excess_amount ?? 0),
-                'status'          => $req->status_review,
-                'aprobacion'      => $req->status_approval,
-                'status_payment'  => $req->status_payment ?? 'no_aplica',
-                'status_balance'  => $req->status_balance ?? 'no_aplica',
-                'tipo'            => $req->request_type,
+                'id'                   => $req->id,
+                'user_id'              => $req->user_id,
+                'created_by_id'        => $req->created_by_id,
+                'is_own'               => $isOwn,
+                'is_same_area'         => $isSameArea,
+                'can_validate'         => $canValidateThis,
+                'can_approve'          => $canApproveThis,
+                'can_evaluate'         => ($canValidateThis || $canApproveThis),
+                'folioP'               => $req->folio_system,
+                'folioU'               => $req->folio_user ?? 'N/A',
+                'advance_id'           => $req->expense_advance_id,
+                'advance_folio'        => $req->expenseAdvance ? $req->expenseAdvance->folio_system : null,
+                'advance_status'       => $req->expenseAdvance ? $req->expenseAdvance->status : null,
+                'fecha'                => Carbon::parse($req->claim_date)->format('d/m/Y'),
+                'nombre'               => $req->beneficiary ? $req->beneficiary->name : 'Usuario Desconocido',
+                'motivo'               => $req->motive,
+                'depto'                => $claimAreaName,
+                'amount'               => (float) $req->total_amount,
+                'leftover_amount'      => (float) ($req->leftover_amount ?? 0),
+                'excess_amount'        => (float) ($req->excess_amount ?? 0),
+                'status'               => $req->status_review,
+                'aprobacion'           => $req->status_approval,
+                'status_payment'       => $req->status_payment ?? 'no_aplica',
+                'status_balance'       => $req->status_balance ?? 'no_aplica',
+                'will_return_leftover' => $req->will_return_leftover,
+                'tipo'                 => $req->request_type,
             ];
         })->values()->toArray();
 
@@ -129,7 +123,6 @@ class ReimbursementController extends Controller
             'delegar_anticipo'             => $canDelegateAdvance,
         ];
 
-        // Respuesta JSON para refrescar la tabla sin recargar toda la página
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success'         => true,

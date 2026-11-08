@@ -37,16 +37,16 @@ return new class extends Migration
 
             // ── IMPUTACIÓN CONTABLE A NIVEL CABECERA ──
             $table->foreignId('cost_center_id')
-                  ->nullable()
-                  ->constrained('cost_centers')
-                  ->restrictOnDelete()
-                  ->comment('Centro de costos global. Si es NULL, la asignación es multilínea (VARIOS)');
+                ->nullable()
+                ->constrained('cost_centers')
+                ->restrictOnDelete()
+                ->comment('Centro de costos global. Si es NULL, la asignación es multilínea (VARIOS)');
 
             $table->foreignId('project_id')
-                  ->nullable()
-                  ->constrained('projects')
-                  ->restrictOnDelete()
-                  ->comment('Proyecto operativo asociado al centro de costos');
+                ->nullable()
+                ->constrained('projects')
+                ->restrictOnDelete()
+                ->comment('Proyecto operativo asociado al centro de costos');
 
             // ── MOTIVO Y CONSOLIDACIÓN FINANCIERA ──
             $table->string('motive')->comment('Justificación u objeto del gasto');
@@ -54,9 +54,14 @@ return new class extends Migration
             $table->decimal('total_iva', 20, 2)->default(0)->comment('Impuesto al Valor Agregado consolidado');
             $table->decimal('total_ish', 20, 2)->default(0)->comment('Impuestos locales y hospedaje consolidados');
             $table->decimal('total_amount', 20, 2)->comment('Importe final neto comprobado');
-   
+
             // ── GESTOR DOCUMENTAL ──
             $table->json('evidence_documents')->nullable()->comment('Rutas de almacenamiento de comprobantes PDF');
+
+            $table->boolean('will_return_leftover')
+                ->nullable()
+                ->default(true)
+                ->comment('TRUE = el sobrante se devolverá a la empresa; FALSE = comprobación parcial (se seguirá comprobando); NULL = no aplica (reembolso puro)');
 
             // ── GESTIÓN DE SOBRANTES (A favor de la empresa: Anticipo > Comprobado) ──
             $table->decimal('leftover_amount', 25, 2)->nullable()->comment('Sobrante del anticipo a devolver');
@@ -67,10 +72,9 @@ return new class extends Migration
             // ── GESTIÓN DE EXCEDENTES (A favor del empleado: Comprobado > Anticipo) ──
             $table->decimal('excess_amount', 25, 2)->nullable()->comment('Excedente del anticipo a favor del empleado');
             $table->string('excess_method')->nullable()->comment('Método de pago: Transferencia');
-            $table->string('excess_proof_path')->nullable()->comment('Ruta del PDF del comprobante de pago (tesorería)');
+            $table->string('excess_proof_path')->nullable()->comment('Ruta del PDF del comprobante de pago.');
             $table->text('excess_notes')->nullable()->comment('Comentarios o cuenta destino del pago de excedente');
 
-         
             // ── MÁQUINA DE ESTADOS (CUÁDRUPLE DESACOPLADA) ──
             $table->string('status_review')->default('pendiente')->index()->comment('Revisión Técnica/Fiscal: borrador, pendiente, validado, rechazado');
             $table->string('status_approval')->default('en_espera')->index()->comment('Aprobación Gerencial: n_a, en_espera, en_revision, aprobado, rechazado');

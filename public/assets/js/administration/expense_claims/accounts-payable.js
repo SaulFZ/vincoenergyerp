@@ -10,6 +10,7 @@
     const URL_ADJUST   = CFG.urlAdjust || '';
     const EVIDENCE_URL = CFG.evidenceUrl || '';
     const CSRF         = CFG.csrf || '';
+    const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10 MB
 
     const MOVEMENTS = {
         Abono_Retencion: { label: 'Retención de sobrante', icon: 'bx bx-slider-alt', sign: 1 }
@@ -30,7 +31,7 @@
         kxSize: '5',
         kxLimit: 5,
         kxExpanded: new Set(),
-        // Reembolsos
+        // Reembolsos (Exclusivamente Reembolsos Puros)
         reembUid: null,
         reembQ: '',
         reembFilter: 'all',
@@ -104,6 +105,13 @@
     const esc      = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const humanize = s => String(s || '').replace(/_/g, ' ');
     const findEmp  = id => EMPLOYEES.find(e => Number(e.user_id) === Number(id));
+
+    const formatBytes = (bytes, decimals = 2) => {
+        if (!+bytes) return '0 Bytes';
+        const k = 1024, dm = decimals < 0 ? 0 : decimals, sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    };
 
     const initials = name => {
         if (!name) return 'U';
@@ -308,11 +316,15 @@
 
     function sobranteOf(k) {
         if (k.origen !== 'comprobacion') return null;
+        if (!k.will_return_leftover) return null;
+
         const lo = k.leftover || {};
         const amount = num(lo.amount ?? k.leftover_amount);
         if (amount <= 0) return null;
         const proofPath = lo.proof_path ?? k.leftover_proof_path ?? null;
         const stBal = lo.status_balance || k.status_balance || (proofPath ? 'por_verificar' : 'devolucion_pendiente');
+        if (stBal === 'no_aplica') return null;
+
         return {
             origen: 'sobrante',
             id: `s${k.id}`,
@@ -382,13 +394,20 @@
         const comprobado = sumCents(approved) / 100;
 
         const devuelto = approved.reduce((s, x) => {
+            if (!x.will_return_leftover) return s;
             const loAmt = num(x.leftover ? x.leftover.amount : x.leftover_amount);
             const stBal = norm(x.status_balance).toLowerCase();
-            if (loAmt > 0 && (stBal === 'devuelto' || stBal === 'por_verificar' || x.leftover_proof_path)) {
+            if (loAmt > 0 && stBal === 'devuelto') {
                 return s + Math.round(loAmt * 100);
             }
             return s;
         }, 0) / 100;
+
+        // ★ Detectar si aún existe una devolución sin verificar o un excedente sin pagar ★
+        const hasPendingConciliation = approved.some(x => {
+            const stBal = norm(x.status_balance).toLowerCase();
+            return ['devolucion_pendiente', 'por_verificar', 'pago_pendiente'].includes(stBal);
+        });
 
         const retenido = sumCents(
             kids.filter(x => x.origen === 'ajuste_balance' && ['Abono_Retencion', 'Liquidacion_Caja'].includes(x.tipo))
@@ -411,7 +430,7 @@
             Math.round(retenido * 100)
         ) / 100;
 
-        return { kids, comprobado, devuelto, retenido, saldo, pendiente, excedente, totalConciliado };
+        return { kids, comprobado, devuelto, retenido, saldo, pendiente, excedente, totalConciliado, hasPendingConciliation };
     }
 
     const activeAdvances = emp =>
@@ -421,20 +440,17 @@
         const movs = e.movimientos || [];
         const advs = activeAdvances(e);
 
-        const payablesReemb  = movs.filter(isPayableReemb);
-        const payablesExcess = movs.map(excedenteOf).filter(Boolean).filter(isPayableExcess);
-
-        const totalReembPagar = payablesReemb.reduce((s, m) => s + num(m.monto), 0)
-                              + payablesExcess.reduce((s, x) => s + num(x.monto), 0);
+        const payablesReemb   = movs.filter(isPayableReemb);
+        const totalReembPagar = payablesReemb.reduce((s, m) => s + num(m.monto), 0);
 
         e._pend        = movs.filter(m => m.origen !== 'ajuste_balance' && isPending(m)).length;
         e._advBal      = advs.reduce((s, a) => s + advanceSummary(e, a).pendiente, 0);
         e._advN        = advs.filter(a => advanceSummary(e, a).pendiente > 0).length;
         e._reembPagar  = totalReembPagar;
-        e._reembPagarN = payablesReemb.length + payablesExcess.length;
+        e._reembPagarN = payablesReemb.length;
         e._nAnt        = movs.filter(m => m.origen === 'anticipo' && !isRejected(m)).length;
         e._nComp       = movs.filter(m => m.origen === 'comprobacion' && !isRejected(m)).length;
-        e._nReemb      = movs.filter(m => m.origen === 'reembolso' && !isRejected(m)).length + movs.map(excedenteOf).filter(Boolean).length;
+        e._nReemb      = movs.filter(m => m.origen === 'reembolso' && !isRejected(m)).length;
         return e;
     }
 
@@ -588,7 +604,7 @@
                         <div class="ap-chips">
                             <span class="ap-chip" title="Anticipos"><i class="bx bx-up-arrow-circle"></i>${e._nAnt}</span>
                             <span class="ap-chip" title="Comprobaciones"><i class="bx bx-check-double"></i>${e._nComp}</span>
-                            <span class="ap-chip" title="Reembolsos y Excedentes"><i class="bx bx-money"></i>${e._nReemb}</span>
+                            <span class="ap-chip" title="Reembolsos"><i class="bx bx-money"></i>${e._nReemb}</span>
                         </div>
                     </div>
                 </td>
@@ -597,10 +613,10 @@
                 <td class="m-td t-right"><span class="ap-money ${balCls}">${balTxt}</span></td>
                 <td class="m-td">
                     <div class="ap-actions">
-                        <button type="button" class="ap-btn ap-btn-kardex" data-action="kardex" data-uid="${e.user_id}" title="Kardex de anticipos y comprobaciones">
+                        <button type="button" class="ap-btn ap-btn-kardex" data-action="kardex" data-uid="${e.user_id}" title="Kardex de anticipos, comprobaciones, devoluciones y excedentes">
                             <i class="bx bx-receipt"></i> Kardex
                         </button>
-                        <button type="button" class="ap-btn ap-btn-reemb ${e._nReemb ? '' : 'off'}" data-action="reembolsos" data-uid="${e.user_id}" title="${e._nReemb ? 'Revisar o pagar reembolsos y excedentes' : 'Sin reembolsos'}">
+                        <button type="button" class="ap-btn ap-btn-reemb ${e._nReemb ? '' : 'off'}" data-action="reembolsos" data-uid="${e.user_id}" title="${e._nReemb ? 'Revisar o pagar reembolsos del colaborador' : 'Sin reembolsos'}">
                             <i class="bx bx-money"></i> Reembolsos
                             ${e._reembPagarN ? `<span class="ap-btn-badge">${e._reembPagarN}</span>` : ''}
                         </button>
@@ -693,7 +709,7 @@
     function buildChildActionBtn(m) {
         if (m.origen === 'sobrante' && isApproved(m) && norm(m.status_balance).toLowerCase() === 'por_verificar') {
             const proof = m.leftover_proof_path || '';
-            return `<button type="button" class="btn-pay btn-verify" data-action="verify-leftover" data-id="${m.claim_id}" data-folio="${esc(m.folio)}" data-monto="${num(m.monto)}" data-proof="${esc(proof)}" title="Confirmar ingreso de devolución en Tesorería"><i class="bx bx-check-shield"></i> Verificar</button>`;
+            return `<button type="button" class="btn-pay btn-verify" data-action="verify-leftover" data-id="${m.claim_id}" data-folio="${esc(m.folio)}" data-monto="${num(m.monto)}" data-proof="${esc(proof)}" title="Confirmar ingreso de devolución"><i class="bx bx-check-shield"></i> Verificar</button>`;
         }
         if (m.origen === 'excedente' && isApproved(m) && norm(m.status_balance).toLowerCase() === 'pago_pendiente') {
             return `<button type="button" class="btn-pay" data-action="pay-excess" data-id="${m.claim_id}" data-folio="${esc(m.folio)}" data-monto="${num(m.monto)}" title="Liquidar excedente al colaborador"><i class="bx bx-dollar-circle"></i> Pagar</button>`;
@@ -851,7 +867,8 @@
         const acts = [
             `<button type="button" class="ic-btn" data-action="advance" data-uid="${uid}" data-id="${m.id}" title="Ver desglose"><i class="bx bx-list-ul"></i></button>`
         ];
-        if (eligible && s.pendiente === 0) {
+        // ★ Solo permite cerrar manualmente si pendiente === 0 Y no hay excedentes/devoluciones pendientes ★
+        if (eligible && s.pendiente === 0 && !s.hasPendingConciliation) {
             acts.push(`<button type="button" class="ic-btn ok" data-action="settle" data-id="${m.id}" title="Marcar como comprobado"><i class="bx bx-check-double"></i></button>`);
         }
         if (eligible && s.pendiente > 0) {
@@ -1110,7 +1127,7 @@
                 </select>
             </div>
         </div>
-        <p class="kx-note">Haz clic sobre cualquier anticipo para desplegar u ocultar sus comprobaciones y el resumen contable.</p>`;
+        <p class="kx-note">Haz clic sobre cualquier anticipo para desplegar u ocultar sus comprobaciones, devoluciones de sobrante, excedentes y el resumen contable.</p>`;
 
         renderKardexTableSection();
     }
@@ -1206,12 +1223,12 @@
     }
 
     /* ════════════════════════════════════════════════════════════════
-       REEMBOLSOS Y EXCEDENTES (BUSCADOR + PAGINADOR DE 10 POR PÁGINA)
+       MODAL DE REEMBOLSOS DEL COLABORADOR (EXCLUSIVAMENTE REEMBOLSOS PUROS)
        ════════════════════════════════════════════════════════════════ */
     function getReembolsosData(emp) {
-        const reembs   = emp.movimientos.filter(m => m.origen === 'reembolso');
-        const excesses = emp.movimientos.map(excedenteOf).filter(Boolean);
-        return [...reembs, ...excesses].sort((a, b) => byTime(b, a));
+        return emp.movimientos
+            .filter(m => m.origen === 'reembolso')
+            .sort((a, b) => byTime(b, a));
     }
 
     function renderReembolsosTableSection() {
@@ -1225,10 +1242,8 @@
         const filtered = allData.filter(r => {
             const matchQ = !q || [r.folio, r.descripcion, r.tipo, r.fecha, tipoText(r)].some(v => String(v || '').toLowerCase().includes(q));
             if (!matchQ) return false;
-            if (flt === 'por_pagar') return isPayableReemb(r) || isPayableExcess(r);
+            if (flt === 'por_pagar') return isPayableReemb(r);
             if (flt === 'pagado')    return isPaid(r);
-            if (flt === 'reembolso') return r.origen === 'reembolso';
-            if (flt === 'excedente') return r.origen === 'excedente';
             return true;
         });
 
@@ -1243,22 +1258,18 @@
             let payBtn = '<span class="c-mute">—</span>';
             if (isPayableReemb(r)) {
                 payBtn = `<button type="button" class="btn-pay" data-action="pay" data-id="${r.id}" data-folio="${esc(r.folio)}" data-monto="${num(r.monto)}"><i class="bx bx-dollar-circle"></i> Pagar</button>`;
-            } else if (isPayableExcess(r)) {
-                payBtn = `<button type="button" class="btn-pay" data-action="pay-excess" data-id="${r.claim_id}" data-folio="${esc(r.folio)}" data-monto="${num(r.monto)}"><i class="bx bx-dollar-circle"></i> Pagar excedente</button>`;
-            } else if (r.origen === 'excedente' && isPaid(r)) {
-                payBtn = `<button type="button" class="btn-pay btn-view" data-action="view-excess" data-folio="${esc(r.folio)}" data-monto="${num(r.monto)}" data-method="${esc(r.excess_method || '')}" data-notes="${esc(r.excess_notes || '')}" data-proof="${esc(r.excess_proof_path || '')}"><i class="bx bx-show"></i> Ver</button>`;
-            } else if (r.origen === 'reembolso' && isPaid(r)) {
+            } else if (isPaid(r)) {
                 payBtn = `<button type="button" class="btn-pay btn-view" data-action="view-reemb" data-folio="${esc(r.folio)}" data-monto="${num(r.monto)}" data-method="${esc(r.payment_method || r.metodo || '')}" data-notes="${esc(r.payment_notes || '')}" data-proof="${esc(r.reimbursement_proof_path || '')}"><i class="bx bx-show"></i> Ver</button>`;
             }
 
-            const proofUrl = r.origen === 'reembolso' ? r.reimbursement_proof_path : r.excess_proof_path;
+            const proofUrl = r.reimbursement_proof_path;
             const evidence = (proofUrl && EVIDENCE_URL)
                 ? `<a class="evidence-link" href="${EVIDENCE_URL}?path=${encodeURIComponent(proofUrl)}" target="_blank" rel="noopener"><i class="bx bxs-file-pdf"></i> Comprobante</a>`
                 : '';
 
             return `
             <tr>
-                <td class="c-center">${folioCell(r.folio, r.origen)}</td>
+                <td class="c-center">${folioCell(r.folio, 'reembolso')}</td>
                 <td class="c-center date-cell">${esc(formatDate(r.fecha))}</td>
                 <td>${concept(r.descripcion)}${evidence}</td>
                 <td class="c-center">${opBadge(r)}</td>
@@ -1268,7 +1279,7 @@
                 <td class="c-center">${payBadge(r)}</td>
                 <td class="c-center">${payBtn}</td>
             </tr>`;
-        }).join('') : `<tr><td colspan="9" class="kx-empty">${q || flt !== 'all' ? 'No hay reembolsos que coincidan con el filtro.' : 'Este colaborador no tiene reembolsos ni excedentes registrados.'}</td></tr>`;
+        }).join('') : `<tr><td colspan="9" class="kx-empty">${q || flt !== 'all' ? 'No hay reembolsos que coincidan con el filtro.' : 'Este colaborador no tiene reembolsos registrados.'}</td></tr>`;
 
         const tbody = document.getElementById('reemb-tbody');
         if (tbody) tbody.innerHTML = rows;
@@ -1277,7 +1288,7 @@
         const shownTo   = start + pageItems.length;
 
         const infoEl = document.getElementById('reemb-foot-info');
-        if (infoEl) infoEl.textContent = `Mostrando ${shownFrom}–${shownTo} de ${filtered.length} registro(s) · Página ${STATE.reembPage} de ${totalPages}`;
+        if (infoEl) infoEl.textContent = `Mostrando ${shownFrom}–${shownTo} de ${filtered.length} reembolso(s) · Página ${STATE.reembPage} de ${totalPages}`;
 
         const clearBtn = document.getElementById('reemb-search-clear');
         if (clearBtn) clearBtn.classList.toggle('hidden', !q);
@@ -1297,7 +1308,7 @@
         const data     = getReembolsosData(emp);
         const active   = data.filter(r => !isRejected(r));
         const total    = active.reduce((s, r) => s + num(r.monto), 0);
-        const porPagar = data.filter(r => isPayableReemb(r) || isPayableExcess(r)).reduce((s, r) => s + num(r.monto), 0);
+        const porPagar = data.filter(isPayableReemb).reduce((s, r) => s + num(r.monto), 0);
         const pagado   = data.filter(r => isPaid(r) && !isRejected(r)).reduce((s, r) => s + num(r.monto), 0);
 
         document.getElementById('md-reembolsos-body').innerHTML = `
@@ -1306,7 +1317,7 @@
                 <div class="kx-avatar">${esc(initials(emp.nombre))}</div>
                 <div>
                     <div class="kx-user-name">${esc(emp.nombre)}</div>
-                    <div class="kx-user-depto">${esc(emp.depto)} · Reembolsos y excedentes</div>
+                    <div class="kx-user-depto">${esc(emp.depto)} · Reembolsos del colaborador</div>
                 </div>
             </div>
             <div class="kx-stats">
@@ -1319,15 +1330,13 @@
         <div class="kx-toolbar">
             <div class="kx-search-box">
                 <i class="bx bx-search"></i>
-                <input type="text" id="reemb-search-input" value="${esc(STATE.reembQ)}" placeholder="Buscar por folio, motivo, método o fecha...">
+                <input type="text" id="reemb-search-input" value="${esc(STATE.reembQ)}" placeholder="Buscar reembolso por folio, motivo, método o fecha...">
                 <button type="button" id="reemb-search-clear" class="kx-search-clear ${STATE.reembQ ? '' : 'hidden'}" title="Limpiar búsqueda"><i class="bx bx-x"></i></button>
             </div>
             <select id="reemb-filter-select" class="kx-filter-select">
-                <option value="all" ${STATE.reembFilter === 'all' ? 'selected' : ''}>Todos los registros</option>
+                <option value="all" ${STATE.reembFilter === 'all' ? 'selected' : ''}>Todos los reembolsos</option>
                 <option value="por_pagar" ${STATE.reembFilter === 'por_pagar' ? 'selected' : ''}>Pendientes de pago</option>
                 <option value="pagado" ${STATE.reembFilter === 'pagado' ? 'selected' : ''}>Pagados</option>
-                <option value="reembolso" ${STATE.reembFilter === 'reembolso' ? 'selected' : ''}>Solo reembolsos</option>
-                <option value="excedente" ${STATE.reembFilter === 'excedente' ? 'selected' : ''}>Solo excedentes</option>
             </select>
         </div>
 
@@ -1379,37 +1388,160 @@
     }
 
     /* ════════════════════════════════════════════════════════════════
-       ACCIONES CON SWEETALERT2 Y COMPROBANTE PDF EN REEMBOLSO
+       HELPER DE DROPZONE PDF PARA FORMULARIOS
+       ════════════════════════════════════════════════════════════════ */
+    function setupPdfDropzone(dropzoneId, inputId, emptyId, previewId, onFileChanged) {
+        const dz      = document.getElementById(dropzoneId);
+        const input   = document.getElementById(inputId);
+        const empty   = document.getElementById(emptyId);
+        const preview = document.getElementById(previewId);
+        if (!dz || !input || !empty || !preview) return;
+
+        let currentFile = null;
+
+        const renderState = () => {
+            if (!currentFile) {
+                empty.classList.remove('hidden');
+                preview.classList.add('hidden');
+                preview.innerHTML = '';
+            } else {
+                empty.classList.add('hidden');
+                preview.classList.remove('hidden');
+                preview.innerHTML = `
+                    <div class="pay-file-info">
+                        <i class="bx bxs-file-pdf"></i>
+                        <div class="pay-file-meta">
+                            <span class="pay-file-name" title="${esc(currentFile.name)}">${esc(currentFile.name)}</span>
+                            <span class="pay-file-size">${formatBytes(currentFile.size)} · PDF listo</span>
+                        </div>
+                    </div>
+                    <button type="button" class="pay-file-remove" title="Quitar archivo"><i class="bx bx-x"></i></button>
+                `;
+                preview.querySelector('.pay-file-remove')?.addEventListener('click', ev => {
+                    ev.stopPropagation();
+                    currentFile = null;
+                    input.value = '';
+                    onFileChanged(null);
+                    renderState();
+                });
+            }
+        };
+
+        const handleFile = file => {
+            if (!file) return;
+            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                window.Swal?.showValidationMessage('Solo se permiten archivos en formato PDF.');
+                return;
+            }
+            if (file.size > MAX_PDF_SIZE) {
+                window.Swal?.showValidationMessage('El archivo PDF supera el límite máximo de 10 MB.');
+                return;
+            }
+            window.Swal?.resetValidationMessage();
+            currentFile = file;
+            onFileChanged(file);
+            renderState();
+        };
+
+        dz.addEventListener('click', () => input.click());
+        input.addEventListener('change', e => {
+            if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+        });
+        dz.addEventListener('dragover', e => {
+            e.preventDefault();
+            dz.classList.add('dragover');
+        });
+        dz.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dz.classList.remove('dragover');
+        });
+        dz.addEventListener('drop', e => {
+            e.preventDefault();
+            dz.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       ACCIONES CON SWEETALERT2 Y COMPROBANTE PDF (DRAG & DROP)
        ════════════════════════════════════════════════════════════════ */
     async function payReembolso(id, folio, monto) {
+        let selectedPdf = null;
+
         const { isConfirmed, value: formData } = await swalFire({
             title: 'Registrar pago de reembolso',
             html: `
                 <div class="payment-form">
-                    <div class="sum">${folioCell(folio, 'reembolso')}<br>Monto a pagar: <strong>${fmt(monto)}</strong></div>
-                    <label for="payment-method">Método de pago</label>
-                    <select id="payment-method">
-                        <option value="Transferencia">Transferencia</option>
-                        <option value="Tarjeta Toka">Tarjeta Toka</option>
-                        <option value="Efectivo">Efectivo</option>
-                    </select>
-                    <label for="payment-ref">Referencia (opcional)</label>
-                    <input id="payment-ref" type="text" maxlength="120" placeholder="Clave de rastreo, folio de transferencia...">
-                    <label for="payment-file">Comprobante PDF de pago (opcional, máx. 10MB)</label>
-                    <input id="payment-file" type="file" accept=".pdf,application/pdf">
+                    <div class="pay-summary-card">
+                        <div class="pay-summary-left">
+                            <span class="pay-summary-lbl">Folio de solicitud</span>
+                            <div>${folioCell(folio, 'reembolso')}</div>
+                        </div>
+                        <div class="pay-summary-right">
+                            <span class="pay-summary-lbl">Monto a pagar</span>
+                            <div class="pay-summary-amount">${fmt(monto)}</div>
+                        </div>
+                    </div>
+
+                    <div class="pay-field-group">
+                        <label class="pay-field-lbl" for="payment-method">Método de pago <span class="req">*</span></label>
+                        <div class="pay-input-wrap">
+                            <i class="bx bx-transfer pay-ico"></i>
+                            <select id="payment-method">
+                                <option value="Transferencia" selected>Transferencia</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pay-field-group">
+                        <label class="pay-field-lbl" for="payment-ref">Referencia <span class="req">*</span></label>
+                        <div class="pay-input-wrap">
+                            <i class="bx bx-hash pay-ico"></i>
+                            <input id="payment-ref" type="text" maxlength="120" placeholder="Clave de rastreo o folio de transferencia bancaria...">
+                        </div>
+                    </div>
+
+                    <div class="pay-field-group">
+                        <label class="pay-field-lbl">Comprobante PDF de pago <span class="req">*</span></label>
+                        <div class="pay-dropzone" id="pay-reemb-dropzone">
+                            <div class="pay-dropzone-empty" id="pay-reemb-empty">
+                                <i class="bx bxs-cloud-upload"></i>
+                                <span class="pay-dropzone-title">Arrastra y suelta el comprobante PDF aquí</span>
+                                <span class="pay-dropzone-sub">O haz clic para examinar en tu equipo (Máx. 10 MB)</span>
+                            </div>
+                            <div class="pay-file-preview hidden" id="pay-reemb-preview"></div>
+                            <input id="payment-file" type="file" accept=".pdf,application/pdf" class="hidden">
+                        </div>
+                    </div>
                 </div>`,
             showCancelButton: true,
             confirmButtonText: 'Confirmar pago',
             cancelButtonText: 'Cancelar',
+            didOpen: () => {
+                setupPdfDropzone('pay-reemb-dropzone', 'payment-file', 'pay-reemb-empty', 'pay-reemb-preview', file => {
+                    selectedPdf = file;
+                });
+            },
             preConfirm: () => {
+                const method = document.getElementById('payment-method').value;
+                const ref    = document.getElementById('payment-ref').value.trim();
+
+                if (!ref) {
+                    window.Swal.showValidationMessage('Debes capturar la referencia bancaria de la transferencia.');
+                    return false;
+                }
+                if (!selectedPdf) {
+                    window.Swal.showValidationMessage('Debes adjuntar el comprobante PDF de pago.');
+                    return false;
+                }
+
                 const fd = new FormData();
                 fd.append('_token', CSRF);
-                fd.append('payment_method', document.getElementById('payment-method').value);
-                fd.append('reference', document.getElementById('payment-ref').value.trim());
-                const fileInput = document.getElementById('payment-file');
-                if (fileInput && fileInput.files[0]) {
-                    fd.append('reimbursement_proof', fileInput.files[0]);
-                }
+                fd.append('payment_method', method);
+                fd.append('reference', ref);
+                fd.append('reimbursement_proof', selectedPdf);
                 return fd;
             }
         });
@@ -1447,12 +1579,21 @@
             title: 'Detalle del pago de reembolso',
             html: `
                 <div class="payment-form">
-                    <div class="sum">${folioCell(folio, 'reembolso')}<br>Monto pagado: <strong>${fmt(monto)}</strong></div>
+                    <div class="pay-summary-card">
+                        <div class="pay-summary-left">
+                            <span class="pay-summary-lbl">Folio liquidado</span>
+                            <div>${folioCell(folio, 'reembolso')}</div>
+                        </div>
+                        <div class="pay-summary-right">
+                            <span class="pay-summary-lbl">Monto pagado</span>
+                            <div class="pay-summary-amount">${fmt(monto)}</div>
+                        </div>
+                    </div>
                     <div class="excess-detail">
                         <div class="row"><span class="k">Método de pago</span><span class="v">${esc(method || 'Transferencia')}</span></div>
                         <div class="row"><span class="k">Referencia</span><span class="v">${esc(notes || '—')}</span></div>
                     </div>
-                    <div style="margin-top:.9rem; text-align:left;">
+                    <div style="margin-top:.2rem; text-align:left;">
                         ${proofLink
                             ? `<a class="evidence-link" href="${proofLink}" target="_blank" rel="noopener"><i class="bx bxs-file-pdf"></i> Ver comprobante PDF de pago</a>`
                             : `<span class="c-mute" style="display:inline-flex; align-items:center; gap:.35rem; font-size:.78rem;"><i class="bx bx-info-circle"></i> Sin comprobante PDF adjunto.</span>`}
@@ -1468,8 +1609,17 @@
                 icon: 'warning',
                 title: 'No se puede verificar la devolución',
                 html: `<div class="payment-form">
-                    <div class="sum">${folioCell(folio, 'sobrante')}<br>Sobrante: <strong>${fmt(monto)}</strong></div>
-                    <p class="dialog-note" style="margin-top:.85rem;">El colaborador <strong>no ha cargado el comprobante de transferencia</strong> del sobrante. No es posible confirmar el ingreso en Tesorería sin dicho comprobante.</p>
+                    <div class="pay-summary-card">
+                        <div class="pay-summary-left">
+                            <span class="pay-summary-lbl">Comprobación</span>
+                            <div>${folioCell(folio, 'sobrante')}</div>
+                        </div>
+                        <div class="pay-summary-right">
+                            <span class="pay-summary-lbl">Sobrante</span>
+                            <div class="pay-summary-amount">${fmt(monto)}</div>
+                        </div>
+                    </div>
+                    <p class="dialog-note" style="margin:0;">El colaborador <strong>no ha cargado el comprobante de transferencia</strong> del sobrante. No es posible confirmar el ingreso sin dicho comprobante.</p>
                 </div>`,
                 confirmButtonText: 'Entendido'
             });
@@ -1481,10 +1631,19 @@
             icon: 'question',
             title: 'Verificar devolución de sobrante',
             html: `<div class="payment-form">
-                <div class="sum">${folioCell(folio, 'sobrante')}<br>Sobrante devuelto por el colaborador: <strong>${fmt(monto)}</strong></div>
-                <p class="dialog-note" style="margin-top:.85rem;">¿Confirmas que el depósito o transferencia del sobrante ya fue verificado en la cuenta bancaria de la empresa?</p>
-                <div style="margin-top:.85rem;">
-                    <a class="evidence-link" href="${proofLink}" target="_blank" rel="noopener"><i class="bx bxs-file-pdf"></i> Ver comprobante de transferencia</a>
+                <div class="pay-summary-card">
+                    <div class="pay-summary-left">
+                        <span class="pay-summary-lbl">Comprobación</span>
+                        <div>${folioCell(folio, 'sobrante')}</div>
+                    </div>
+                    <div class="pay-summary-right">
+                        <span class="pay-summary-lbl">Sobrante devuelto</span>
+                        <div class="pay-summary-amount">${fmt(monto)}</div>
+                    </div>
+                </div>
+                <p class="dialog-note" style="margin:0;">¿Confirmas que la transferencia del sobrante ya fue verificada en la cuenta bancaria de la empresa?</p>
+                <div>
+                    <a class="evidence-link" href="${proofLink}" target="_blank" rel="noopener"><i class="bx bxs-file-pdf"></i> Ver comprobante PDF de transferencia</a>
                 </div>
             </div>`,
             showCancelButton: true,
@@ -1512,34 +1671,80 @@
     }
 
     async function payExcess(claimId, folio, monto) {
+        let selectedPdf = null;
+
         const { isConfirmed, value: formData } = await swalFire({
             title: 'Liquidar excedente al colaborador',
             html: `
                 <div class="payment-form">
-                    <div class="sum">${folioCell(folio, 'excedente')}<br>Excedente a reembolsar: <strong>${fmt(monto)}</strong></div>
-                    <label for="exc-pay-method">Método de pago</label>
-                    <select id="exc-pay-method">
-                        <option value="Transferencia">Transferencia</option>
-                        <option value="Tarjeta Toka">Tarjeta Toka</option>
-                        <option value="Efectivo">Efectivo</option>
-                    </select>
-                    <label for="exc-pay-notes">Referencia (opcional)</label>
-                    <input id="exc-pay-notes" type="text" maxlength="250" placeholder="Clave de rastreo, folio de transferencia...">
-                    <label for="exc-pay-file">Comprobante PDF de pago (opcional, máx. 10MB)</label>
-                    <input id="exc-pay-file" type="file" accept=".pdf,application/pdf">
+                    <div class="pay-summary-card">
+                        <div class="pay-summary-left">
+                            <span class="pay-summary-lbl">Folio de comprobación</span>
+                            <div>${folioCell(folio, 'excedente')}</div>
+                        </div>
+                        <div class="pay-summary-right">
+                            <span class="pay-summary-lbl">Excedente a pagar</span>
+                            <div class="pay-summary-amount">${fmt(monto)}</div>
+                        </div>
+                    </div>
+
+                    <div class="pay-field-group">
+                        <label class="pay-field-lbl" for="exc-pay-method">Método de pago <span class="req">*</span></label>
+                        <div class="pay-input-wrap">
+                            <i class="bx bx-transfer pay-ico"></i>
+                            <select id="exc-pay-method">
+                                <option value="Transferencia" selected>Transferencia</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pay-field-group">
+                        <label class="pay-field-lbl" for="exc-pay-notes">Referencia <span class="req">*</span></label>
+                        <div class="pay-input-wrap">
+                            <i class="bx bx-hash pay-ico"></i>
+                            <input id="exc-pay-notes" type="text" maxlength="250" placeholder="Clave de rastreo o folio de transferencia bancaria...">
+                        </div>
+                    </div>
+
+                    <div class="pay-field-group">
+                        <label class="pay-field-lbl">Comprobante PDF de pago <span class="req">*</span></label>
+                        <div class="pay-dropzone" id="pay-exc-dropzone">
+                            <div class="pay-dropzone-empty" id="pay-exc-empty">
+                                <i class="bx bxs-cloud-upload"></i>
+                                <span class="pay-dropzone-title">Arrastra y suelta el comprobante PDF aquí</span>
+                                <span class="pay-dropzone-sub">O haz clic para examinar en tu equipo (Máx. 10 MB)</span>
+                            </div>
+                            <div class="pay-file-preview hidden" id="pay-exc-preview"></div>
+                            <input id="exc-pay-file" type="file" accept=".pdf,application/pdf" class="hidden">
+                        </div>
+                    </div>
                 </div>`,
             showCancelButton: true,
-            confirmButtonText: 'Registrar pago de excedente',
+            confirmButtonText: 'Confirmar pago',
             cancelButtonText: 'Cancelar',
+            didOpen: () => {
+                setupPdfDropzone('pay-exc-dropzone', 'exc-pay-file', 'pay-exc-empty', 'pay-exc-preview', file => {
+                    selectedPdf = file;
+                });
+            },
             preConfirm: () => {
+                const method = document.getElementById('exc-pay-method').value;
+                const notes  = document.getElementById('exc-pay-notes').value.trim();
+
+                if (!notes) {
+                    window.Swal.showValidationMessage('Debes capturar la referencia bancaria de la transferencia.');
+                    return false;
+                }
+                if (!selectedPdf) {
+                    window.Swal.showValidationMessage('Debes adjuntar el comprobante PDF de pago del excedente.');
+                    return false;
+                }
+
                 const fd = new FormData();
                 fd.append('_token', CSRF);
-                fd.append('excess_method', document.getElementById('exc-pay-method').value);
-                fd.append('excess_notes', document.getElementById('exc-pay-notes').value.trim());
-                const fileInput = document.getElementById('exc-pay-file');
-                if (fileInput && fileInput.files[0]) {
-                    fd.append('excess_proof', fileInput.files[0]);
-                }
+                fd.append('excess_method', method);
+                fd.append('excess_notes', notes);
+                fd.append('excess_proof', selectedPdf);
                 return fd;
             }
         });
@@ -1573,14 +1778,23 @@
             title: 'Detalle del pago de excedente',
             html: `
                 <div class="payment-form">
-                    <div class="sum">${folioCell(folio, 'excedente')}<br>Excedente: <strong>${fmt(monto)}</strong></div>
-                    <div class="excess-detail">
-                        <div class="row"><span class="k">Método de pago</span><span class="v">${esc(method || '—')}</span></div>
-                        <div class="row"><span class="k">Referencia / Comentarios</span><span class="v">${esc(notes || '—')}</span></div>
+                    <div class="pay-summary-card">
+                        <div class="pay-summary-left">
+                            <span class="pay-summary-lbl">Folio liquidado</span>
+                            <div>${folioCell(folio, 'excedente')}</div>
+                        </div>
+                        <div class="pay-summary-right">
+                            <span class="pay-summary-lbl">Excedente pagado</span>
+                            <div class="pay-summary-amount">${fmt(monto)}</div>
+                        </div>
                     </div>
-                    <div style="margin-top:.9rem; text-align:left;">
+                    <div class="excess-detail">
+                        <div class="row"><span class="k">Método de pago</span><span class="v">${esc(method || 'Transferencia')}</span></div>
+                        <div class="row"><span class="k">Referencia</span><span class="v">${esc(notes || '—')}</span></div>
+                    </div>
+                    <div style="margin-top:.2rem; text-align:left;">
                         ${proofLink
-                            ? `<a class="evidence-link" href="${proofLink}" target="_blank" rel="noopener"><i class="bx bxs-file-pdf"></i> Ver comprobante de transferencia</a>`
+                            ? `<a class="evidence-link" href="${proofLink}" target="_blank" rel="noopener"><i class="bx bxs-file-pdf"></i> Ver comprobante PDF de pago</a>`
                             : `<span class="c-mute" style="display:inline-flex; align-items:center; gap:.35rem; font-size:.78rem;"><i class="bx bx-info-circle"></i> Sin comprobante adjunto.</span>`}
                     </div>
                 </div>`,
@@ -1592,7 +1806,7 @@
         const { isConfirmed } = await swalFire({
             icon: 'question',
             title: '¿Cerrar anticipo?',
-            html: '<p class="dialog-note">Esto marcará el anticipo como <strong>comprobado/saldado</strong>. Tesorería ya no esperará comprobantes ni devoluciones para este folio.</p>',
+            html: '<p class="dialog-note">Esto marcará el anticipo como <strong>comprobado/saldado</strong> y dejará constancia en el historial. Ya no esperará más comprobaciones ni devoluciones para este folio.</p>',
             showCancelButton: true,
             confirmButtonText: 'Sí, marcar como comprobado',
             cancelButtonText: 'Cancelar'
@@ -1608,7 +1822,7 @@
             const j = await res.json();
             if (j.success) {
                 await refreshAppData();
-                await swalToast(j.message || 'Anticipo cerrado en tesorería.');
+                await swalToast(j.message || 'Anticipo cerrado.');
             } else {
                 await swalFire({ icon: 'error', title: 'Error', text: j.message || 'No se pudo cerrar el anticipo.' });
             }
@@ -1663,7 +1877,7 @@
         box.innerHTML = `
             <i class="bx bx-trending-up"></i>
             <div>
-                Esta retención <strong>sumará ${fmt(amount)}</strong> al saldo en libro mayor.
+                Esta retención <strong>sumará ${fmt(amount)}</strong> al saldo en libro mayor y se registrará en la bitácora.
                 <div class="eff-row">
                     <span>Saldo actual <b>${fmt(current)}</b></span>
                     <i class="bx bx-right-arrow-alt"></i>
@@ -1899,7 +2113,7 @@
             }
         });
 
-        // Eventos del modal de Reembolsos
+        // Eventos del modal de Reembolsos (Exclusivamente Reembolsos Puros)
         const rb = document.getElementById('md-reembolsos-body');
         rb.addEventListener('click', e => {
             if (e.target.closest('#reemb-search-clear')) {
@@ -1914,10 +2128,8 @@
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
             const d = btn.dataset;
-            if (d.action === 'pay')         return payReembolso(d.id, d.folio, num(d.monto));
-            if (d.action === 'view-reemb')  return viewReembolsoPayment(d.folio, num(d.monto), d.method, d.notes, d.proof);
-            if (d.action === 'pay-excess')  return payExcess(d.id, d.folio, num(d.monto));
-            if (d.action === 'view-excess') return viewExcessPayment(d.folio, num(d.monto), d.method, d.notes, d.proof);
+            if (d.action === 'pay')        return payReembolso(d.id, d.folio, num(d.monto));
+            if (d.action === 'view-reemb') return viewReembolsoPayment(d.folio, num(d.monto), d.method, d.notes, d.proof);
         });
 
         rb.addEventListener('input', e => {
