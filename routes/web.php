@@ -16,8 +16,7 @@ use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Core\MediaController;
 /* CONTROLADORES DE RECURSOS QHSE */
-use App\Http\Controllers\Operations\Sgc\SgcController;
-use App\Http\Controllers\Operations\Sgc\SgcServicesController;
+
 use App\Http\Controllers\Qhse\Incidents\IncidentController;
 use App\Http\Controllers\Qhse\Management\DriverLicenseController;
 use App\Http\Controllers\Qhse\Management\JourneyController;
@@ -42,9 +41,14 @@ use App\Http\Controllers\Systems\InventoryIT\InventoryITController;
 use App\Http\Controllers\Systems\Tickets\TicketController;
 use App\Http\Controllers\Systems\Tickets\TicketQueryController;
 use App\Http\Controllers\Systems\Tickets\TicketStatsQueryController;
-/* CONTROLADORES DE OPERACIONES */
+
 use App\Http\Controllers\Systems\Tickets\TicketStatusController;
 use App\Http\Controllers\Systems\Tickets\TicketStoreController;
+
+/* CONTROLADORES DE OPERACIONES */
+use App\Http\Controllers\Operations\Sgc\SgcController;
+use App\Http\Controllers\Operations\Sgc\SgcServicesController;
+use App\Http\Controllers\Operations\Sgc\SgcMaintenanceController;
 /* CONTROLADORES DE OTROS */
 use App\Http\Controllers\Systems\UserManagement\EmployeeCardController;
 use App\Http\Controllers\Systems\UserManagement\UserManagementController;
@@ -591,40 +595,47 @@ Route::middleware(['web', 'auth'])->group(function () {
             });
         });
 
-    // ===================================================
-    // MÓDULO: OPERACIONES Y SUBSISTEMAS
-    // ===================================================
-    Route::prefix('operations')
-        ->middleware(['auth', 'check.permission:operations'])
-        ->group(function () {
-            // ===================================================
-            // SUBSISTEMA 1: SGC VES (Sistema de Gestión de la Calidad)
-            // ===================================================
-            Route::prefix('sgc')->group(function () {
+// ===================================================
+// MÓDULO: OPERACIONES Y SUBSISTEMAS
+// ===================================================
+Route::prefix('operations')
+    ->middleware(['auth', 'check.permission:operations'])
+    ->group(function () {
 
-                // 1. Redirección / Vista principal del subsistema
-                Route::get('/', function () {
-                    return redirect()->route('operations.sgc.index');
-                })
-                    ->name('operations.sgc')
-                    ->middleware('check.permission:operations,sgc');
+        // ===================================================
+        // SUBSISTEMA 1: SGC VES
+        // ===================================================
+        Route::prefix('sgc')->group(function () {
 
-                // 2. Vistas y Dashboard principal (SgcController)
-                Route::controller(SgcController::class)->group(function () {
-                    Route::get('/dashboard', 'index')->name('operations.sgc.index');
-                    Route::get('/stats', 'stats')->name('operations.sgc.stats');
-                });
+            // 1. Redirección / Vista principal del subsistema
+            Route::get('/', function () {
+                return redirect()->route('operations.sgc.index');
+            })
+                ->name('operations.sgc')
+                ->middleware('check.permission:operations,sgc');
 
-                // 3. Servicios (SgcServicesController)
-                Route::controller(SgcServicesController::class)->group(function () {
-                    // NOTA: Se cambió el nombre a 'operations.sgc.services'
-                    Route::get('/services', 'index')->name('operations.sgc.services');
-                });
+            // 2. Vistas y Dashboard principal
+            Route::controller(SgcController::class)->group(function () {
+                Route::get('/dashboard', 'index')
+                    ->name('operations.sgc.index');
 
+                Route::get('/stats', 'stats')
+                    ->name('operations.sgc.stats');
+            });
 
+            // 3. Servicios
+            Route::controller(SgcServicesController::class)->group(function () {
+                Route::get('/services', 'index')
+                    ->name('operations.sgc.services');
+            });
 
+            // 4. Mantenimientos
+            Route::controller(SgcMaintenanceController::class)->group(function () {
+                Route::get('/maintenance', 'index')
+                    ->name('operations.sgc.maintenance');
             });
         });
+    });
     // ===================================================
     // MÓDULO: VENTAS Y SUBSISTEMAS
     // ===================================================
