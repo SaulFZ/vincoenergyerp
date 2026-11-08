@@ -646,3 +646,36 @@ body.service-modal-open { overflow: hidden; }
     .service-modal[open] { position: static; height: auto; overflow: visible; }
     .service-modal-content { overflow: visible; padding: 0; }
 }
+
+.operations-stack { display: flex; flex-direction: column; gap: 16px; }
+.operation-card, .operation-run { border: 1px solid var(--c-border); border-radius: 12px; padding: 16px; }
+.operation-card { background: #f8fafc; }
+.operation-run { background: var(--c-white); margin-top: 12px; }
+.operation-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.operation-card > .form-field, .operation-run > .form-field { margin-bottom: 12px; }
+#service-operations [hidden], #operations-empty[hidden] { display: none !important; }
+
+/* Siete pasos independientes con navegación horizontal en pantallas pequeñas. */
+.service-modal .stepper-track { overflow-x: auto; padding: 4px; }
+.service-modal .step-nav { min-width: 96px; width: 112px; }
+.service-modal .step-label { line-height: 1.4; }
+.service-modal .step-line { min-width: 16px; }
+.personnel-fields { display: flex; flex-direction: column; gap: 16px; max-width: 720px; }
+.trih-table-wrap { overflow-x: auto; border: 1px solid var(--c-border); border-radius: 8px; margin: 12px 0; }
+.trih-tools-table { width: 100%; min-width: 2350px; border-collapse: collapse; }
+.trih-tools-table th, .trih-tools-table td { padding: 8px; border: 1px solid #e2e8f0; text-align: left; font-size: 12px; }
+.trih-tools-table th { background: #f1f5f9; white-space: nowrap; }
+.trih-tools-table .form-input { min-width: 105px; }
+.trih-tools-table input[type="checkbox"] { min-width: 20px; width: 20px; height: 20px; accent-color: var(--primary-dark); }
+.npt-description-grid { margin-top: 16px; }
+.npt-description-grid > .form-field { grid-column: auto; }
+.unit-summary { margin-top: 20px; padding: 16px; border: 1px solid var(--c-border); border-radius: 8px; background: #f8fafc; }
+.unit-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px; font-size: 13px; }
+.unit-summary-grid dt { color: var(--c-slate-500); }
+.unit-summary-grid dd { font-weight: 600; }
+@media (max-width: 768px) { .unit-summary-grid { grid-template-columns: 1fr; } }
+
+.service-modal [hidden] { display: none !important; }
+
+.service-catalog-alert { padding: 16px 20px; border: 1px solid #f59e0b; border-radius: 12px; background: #fffbeb; color: #92400e; font-size: 13px; }
+.service-catalog-alert ul { margin: 8px 0; padding-left: 20px; }

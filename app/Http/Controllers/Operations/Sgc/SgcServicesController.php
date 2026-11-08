@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Operations\Sgc;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Operations\Well;
+use App\Models\Employee;
+use App\Models\Core\VehicleUnit;
 
 class SgcServicesController extends Controller
 {
@@ -17,6 +20,14 @@ class SgcServicesController extends Controller
         // para crear, editar o visualizar un servcio se abre un modal fullscreen
         if ($view === 'new_service' && !$request->ajax()) {
             return redirect()->route('operations.sgc.services', ['view' => 'list']);
+        }
+
+        if ($view === 'new_service') {
+            return view('modules.operations.sgc.tabs.serv.new_service', [
+                'wells' => Well::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+                'employees' => Employee::where('employment_status', 'active')->orderBy('full_name')->get(['id', 'full_name', 'position']),
+                'units' => VehicleUnit::orderBy('economic_number')->get(['id', 'economic_number', 'vehicle_type', 'status', 'serial_number']),
+            ]);
         }
 
         // 2. LA MAGIA AQUÍ: Si la petición viene por Javascript (AJAX)
