@@ -48,10 +48,10 @@
                 <i class="fas fa-users"></i> Personal
             </a>
 
-            <a href="#" class="nav-link" data-route="mantenimientos">
+            <a href="#" class="nav-link" data-route="maintenance">
                 <i class="fas fa-tools"></i> Mantenimientos
             </a>
-            <a heref="#" class="nav-link" data-route="Opereacion">
+            <a heref="#" class="nav-link" data-route="operations">
                 <i class="fas fa-chart-line"></i> Operación
             </a>
             <a href="#" class="nav-link" data-route="catalogos">

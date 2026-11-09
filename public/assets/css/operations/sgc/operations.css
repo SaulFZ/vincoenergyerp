@@ -1,0 +1,299 @@
+/* ============================================================
+   SGC · Flujo de Operaciones y Calidad
+   Complementa services.css.
+   ============================================================ */
+
+.sgc-operations {
+    width: 100%;
+    min-width: 0;
+    color: #081735;
+}
+
+.sgc-operations .op-page-header {
+    margin-bottom: 16px;
+}
+
+.sgc-operations .op-page-header h1 {
+    margin: 0 0 6px;
+    color: #081735;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.sgc-operations .op-page-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.sgc-operations .op-maintenance-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border: 1px solid #f2cf78;
+    border-radius: 12px;
+    background: #fff9e8;
+}
+
+.sgc-operations .op-maintenance-banner strong {
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.sgc-operations .op-maintenance-banner p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.sgc-operations .op-actions,
+.sgc-operations .op-filter-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sgc-operations .op-actions .btn-row {
+    gap: 6px;
+    padding: 7px 10px;
+}
+
+.sgc-operations .filter-group {
+    min-width: 0;
+}
+
+.sgc-operations .filter-input:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: default;
+}
+
+.sgc-operations .op-service-picker {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+}
+
+.sgc-operations .op-filter-actions {
+    margin-top: 12px;
+}
+
+.sgc-operations .op-filter-count {
+    margin: 12px 0 0;
+    color: #475569;
+    font-size: 12px;
+}
+
+.sgc-operations .op-data-notice {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.sgc-operations .op-selected-service {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 16px 0;
+    padding: 12px 14px;
+    border: 1px solid #c7d9f5;
+    border-radius: 12px;
+    background: #eff6ff;
+    font-size: 12px;
+}
+
+.sgc-operations .op-selected-service > span:first-child {
+    font-weight: 700;
+}
+
+.sgc-operations .op-separator {
+    color: #94a3b8;
+}
+
+.sgc-operations .op-flow-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px;
+}
+
+.sgc-operations .op-phase {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #d7deea;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(8, 23, 53, 0.04);
+}
+
+.sgc-operations .op-phase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 14px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.sgc-operations .op-phase-header h2 {
+    margin: 0;
+    color: #081735;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.sgc-operations .op-phase-header > span {
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.sgc-operations .op-phase-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+}
+
+.sgc-operations .op-activity {
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.sgc-operations .op-activity-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.sgc-operations .op-activity-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #081735;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.sgc-operations .op-activity-heading h3 {
+    margin: 0 0 5px;
+    color: #081735;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.5;
+}
+
+.sgc-operations .op-activity-heading p {
+    margin: 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.sgc-operations .op-activity-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.sgc-operations .op-activity-actions .btn-row {
+    padding: 6px 8px;
+    font-size: 10px;
+}
+
+.sgc-operations .op-button-amber {
+    border: 1px solid #ffb000;
+    background: #ffb000;
+    color: #081735;
+}
+
+.sgc-operations .op-button-blue {
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.sgc-operations .op-button-green {
+    border: 1px solid #a7f3d0;
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.sgc-operations .op-empty {
+    padding: 36px 16px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.sgc-operations .op-empty > i {
+    margin-bottom: 12px;
+    color: #94a3b8;
+    font-size: 26px;
+}
+
+.sgc-operations .op-empty h2 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.sgc-operations .op-empty p {
+    margin: 0 0 14px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+    .sgc-operations .op-flow-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .sgc-operations .op-page-header h1 {
+        font-size: 19px;
+    }
+
+    .sgc-operations .op-maintenance-banner {
+        align-items: flex-start;
+    }
+
+    .sgc-operations .op-phase-body {
+        padding: 10px;
+    }
+}
+
+@media print {
+    .sgc-operations .no-print {
+        display: none !important;
+    }
+
+    .sgc-operations .op-flow-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sgc-operations .op-phase {
+        margin-bottom: 14px;
+        box-shadow: none;
+    }
+
+    .sgc-operations .op-activity {
+        break-inside: avoid;
+    }
+}

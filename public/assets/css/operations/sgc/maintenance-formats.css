@@ -1,0 +1,376 @@
+/* SGC · Formatos. Se apoya en las clases de services.css. */
+
+.maintenance-formats [hidden] {
+    display: none !important;
+}
+
+.maintenance-formats .filter-group,
+.maintenance-formats .form-field {
+    min-width: 0;
+}
+
+.maintenance-formats .maintenance-format-page-title {
+    margin: 0 0 6px;
+    color: #081735;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.maintenance-formats .maintenance-format-description,
+.maintenance-formats .maintenance-format-help {
+    margin: 0 0 14px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.maintenance-formats .maintenance-format-help {
+    margin: 10px 0 0;
+    font-size: 11px;
+}
+
+.maintenance-formats .maintenance-format-toolbar {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(160px, 1.5fr) minmax(220px, 2fr) auto;
+    align-items: end;
+    gap: 10px;
+}
+
+.maintenance-formats .maintenance-format-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.maintenance-formats .maintenance-format-actions > button {
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.maintenance-formats .maintenance-format-print-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid #ffb000;
+    background: #ffb000;
+    color: #081735;
+}
+
+.maintenance-formats button:disabled,
+.maintenance-formats select:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.maintenance-formats .maintenance-format-feedback {
+    margin: 10px 0 0;
+    color: #334155;
+    font-size: 12px;
+}
+
+.maintenance-formats .maintenance-format-feedback:empty {
+    display: none;
+}
+
+.maintenance-formats .maintenance-format-feedback[data-kind="success"] {
+    color: #15803d;
+}
+
+.maintenance-formats .maintenance-format-feedback[data-kind="error"] {
+    color: #be123c;
+}
+
+.maintenance-formats .maintenance-format-notice {
+    padding: 14px 16px;
+    border: 1px solid #f2cf78;
+    border-radius: 12px;
+    background: #fff9e8;
+    color: #6b4a00;
+    font-size: 13px;
+}
+
+.maintenance-formats .maintenance-print-card {
+    padding: 20px;
+    border: 1px solid #d7deea;
+    border-radius: 12px;
+    background: #fff;
+    color: #081735;
+}
+
+.maintenance-formats .maintenance-format-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1.2fr;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 2px solid #081735;
+}
+
+.maintenance-formats .maintenance-format-brand {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.maintenance-formats .maintenance-format-heading {
+    text-align: center;
+}
+
+.maintenance-formats .maintenance-format-heading h2 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.maintenance-formats .maintenance-format-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    text-align: right;
+}
+
+.maintenance-formats .maintenance-format-fields {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0;
+    margin: 0 0 20px;
+    border: 0;
+    min-width: 0;
+}
+
+.maintenance-formats .maintenance-format-field-wide {
+    grid-column: span 2;
+}
+
+.maintenance-formats .maintenance-format-section-title {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.maintenance-formats .maintenance-format-checklist-wrap {
+    overflow-x: auto;
+}
+
+.maintenance-formats .maintenance-format-checklist {
+    width: 100%;
+    min-width: 650px;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.maintenance-formats .maintenance-format-checklist th,
+.maintenance-formats .maintenance-format-checklist td {
+    padding: 8px;
+    border: 1px solid #cbd5e1;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.maintenance-formats .maintenance-format-checklist th {
+    background: #f8fafc;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.maintenance-formats .maintenance-format-checklist .maintenance-check-column {
+    width: 44px;
+    text-align: center;
+}
+
+.maintenance-formats .maintenance-check-column input {
+    width: 16px;
+    height: 16px;
+    accent-color: #081735;
+    cursor: pointer;
+}
+
+.maintenance-formats .maintenance-check-observation {
+    width: 100%;
+    min-width: 140px;
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #081735;
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.maintenance-formats .maintenance-check-observation:focus {
+    outline: 2px solid #d7deea;
+}
+
+.maintenance-formats .maintenance-format-observations {
+    margin-top: 16px;
+}
+
+.maintenance-formats .maintenance-format-signatures {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 52px;
+}
+
+.maintenance-formats .maintenance-format-signature {
+    padding-top: 8px;
+    border-top: 1px solid #081735;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.maintenance-formats .maintenance-format-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+@media (max-width: 1200px) {
+    .maintenance-formats .maintenance-format-toolbar {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .maintenance-formats .maintenance-format-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 760px) {
+    .maintenance-formats .maintenance-format-toolbar,
+    .maintenance-formats .maintenance-format-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .maintenance-formats .maintenance-format-toolbar > .filter-group:nth-child(3) {
+        grid-column: 1 / -1;
+    }
+
+    .maintenance-formats .maintenance-format-header {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .maintenance-formats .maintenance-format-brand,
+    .maintenance-formats .maintenance-format-meta {
+        text-align: center;
+    }
+
+    .maintenance-formats .maintenance-print-card {
+        padding: 12px;
+    }
+
+    .maintenance-formats .maintenance-format-signatures {
+        gap: 12px;
+    }
+
+    .maintenance-formats .maintenance-format-signature {
+        font-size: 10px;
+    }
+}
+
+@media print {
+    body.sgc-maintenance-formats-active,
+    body.sgc-maintenance-formats-active .main-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
+
+    body.sgc-maintenance-formats-active .header-main,
+    body.sgc-maintenance-formats-active .footer-main,
+    body.sgc-maintenance-formats-active .no-print {
+        display: none !important;
+    }
+
+    .maintenance-formats .maintenance-print-card {
+        padding: 10px;
+        border: 1px solid #000;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .maintenance-formats .maintenance-format-header {
+        grid-template-columns: 1fr 2fr 1.2fr;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+    }
+
+    .maintenance-formats .maintenance-format-brand {
+        font-size: 20px;
+        text-align: left;
+    }
+
+    .maintenance-formats .maintenance-format-heading h2 {
+        font-size: 13px;
+    }
+
+    .maintenance-formats .maintenance-format-meta {
+        font-size: 9px;
+        text-align: right;
+    }
+
+    .maintenance-formats .maintenance-format-fields {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .maintenance-formats .form-label {
+        font-size: 9px;
+    }
+
+    .maintenance-formats .form-input,
+    .maintenance-formats .form-select,
+    .maintenance-formats .form-textarea {
+        padding: 4px;
+        border: 0;
+        border-bottom: 1px solid #000;
+        border-radius: 0;
+        font-size: 10px;
+        background: #fff;
+    }
+
+    .maintenance-formats .maintenance-format-checklist-wrap {
+        overflow: visible;
+    }
+
+    .maintenance-formats .maintenance-format-checklist {
+        min-width: 0;
+        font-size: 10px;
+    }
+
+    .maintenance-formats .maintenance-format-checklist th,
+    .maintenance-formats .maintenance-format-checklist td {
+        padding: 5px;
+        border-color: #000;
+    }
+
+    .maintenance-formats .maintenance-check-observation {
+        min-width: 0;
+        padding: 2px;
+        font-size: 10px;
+    }
+
+    .maintenance-formats .maintenance-format-signatures {
+        margin-top: 36px;
+        break-inside: avoid;
+    }
+
+    .maintenance-formats .maintenance-format-checklist tr {
+        break-inside: avoid;
+    }
+}

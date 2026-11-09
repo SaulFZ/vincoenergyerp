@@ -17,10 +17,14 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Core\MediaController;
 /* CONTROLADORES DE RECURSOS QHSE */
 
+use App\Http\Controllers\Operations\Sgc\SgcController;
+use App\Http\Controllers\Operations\Sgc\SgcMaintenanceController;
+use App\Http\Controllers\Operations\Sgc\SgcOperationsController;
+/* CONTROLADORES DE RECURSOS HUMANOS */
+use App\Http\Controllers\Operations\Sgc\SgcServicesController;
 use App\Http\Controllers\Qhse\Incidents\IncidentController;
 use App\Http\Controllers\Qhse\Management\DriverLicenseController;
 use App\Http\Controllers\Qhse\Management\JourneyController;
-/* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\Qhse\Management\JourneyQueryController;
 use App\Http\Controllers\Qhse\Management\JourneyStatusController;
 use App\Http\Controllers\Qhse\Management\JourneyStoreController;
@@ -28,27 +32,22 @@ use App\Http\Controllers\Qhse\Management\StatsController;
 use App\Http\Controllers\RH\LoadChart\ApprovalController;
 use App\Http\Controllers\RH\LoadChart\AssignmentController;
 use App\Http\Controllers\RH\LoadChart\CalendarController;
+/* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\RH\LoadChart\EmployeeVacationBalanceController;
 use App\Http\Controllers\RH\LoadChart\FieldBonusController;
 use App\Http\Controllers\RH\LoadChart\FortnightlyConfigController;
 use App\Http\Controllers\RH\LoadChart\HistoryController;
-/* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\RH\LoadChart\InfoServicesController;
 use App\Http\Controllers\RH\LoadChart\SquadController;
 use App\Http\Controllers\RH\LoadChart\StatsLoadController;
 use App\Http\Controllers\RH\OrgManagement\EmployeeController;
 use App\Http\Controllers\Systems\InventoryIT\InventoryITController;
 use App\Http\Controllers\Systems\Tickets\TicketController;
+/* CONTROLADORES DE OPERACIONES */
 use App\Http\Controllers\Systems\Tickets\TicketQueryController;
 use App\Http\Controllers\Systems\Tickets\TicketStatsQueryController;
-
 use App\Http\Controllers\Systems\Tickets\TicketStatusController;
 use App\Http\Controllers\Systems\Tickets\TicketStoreController;
-
-/* CONTROLADORES DE OPERACIONES */
-use App\Http\Controllers\Operations\Sgc\SgcController;
-use App\Http\Controllers\Operations\Sgc\SgcServicesController;
-use App\Http\Controllers\Operations\Sgc\SgcMaintenanceController;
 /* CONTROLADORES DE OTROS */
 use App\Http\Controllers\Systems\UserManagement\EmployeeCardController;
 use App\Http\Controllers\Systems\UserManagement\UserManagementController;
@@ -595,47 +594,53 @@ Route::middleware(['web', 'auth'])->group(function () {
             });
         });
 
-// ===================================================
-// MÓDULO: OPERACIONES Y SUBSISTEMAS
-// ===================================================
-Route::prefix('operations')
-    ->middleware(['auth', 'check.permission:operations'])
-    ->group(function () {
+    // ===================================================
+    // MÓDULO: OPERACIONES Y SUBSISTEMAS
+    // ===================================================
+    Route::prefix('operations')
+        ->middleware(['auth', 'check.permission:operations'])
+        ->group(function () {
 
-        // ===================================================
-        // SUBSISTEMA 1: SGC VES
-        // ===================================================
-        Route::prefix('sgc')->group(function () {
+            // ===================================================
+            // SUBSISTEMA 1: SGC VES
+            // ===================================================
+            Route::prefix('sgc')->group(function () {
 
-            // 1. Redirección / Vista principal del subsistema
-            Route::get('/', function () {
-                return redirect()->route('operations.sgc.index');
-            })
-                ->name('operations.sgc')
-                ->middleware('check.permission:operations,sgc');
+                // 1. Redirección / Vista principal del subsistema
+                Route::get('/', function () {
+                    return redirect()->route('operations.sgc.index');
+                })
+                    ->name('operations.sgc')
+                    ->middleware('check.permission:operations,sgc');
 
-            // 2. Vistas y Dashboard principal
-            Route::controller(SgcController::class)->group(function () {
-                Route::get('/dashboard', 'index')
-                    ->name('operations.sgc.index');
+                // 2. Vistas y Dashboard principal
+                Route::controller(SgcController::class)->group(function () {
+                    Route::get('/dashboard', 'index')
+                        ->name('operations.sgc.index');
 
-                Route::get('/stats', 'stats')
-                    ->name('operations.sgc.stats');
-            });
+                    Route::get('/stats', 'stats')
+                        ->name('operations.sgc.stats');
+                });
 
-            // 3. Servicios
-            Route::controller(SgcServicesController::class)->group(function () {
-                Route::get('/services', 'index')
-                    ->name('operations.sgc.services');
-            });
+                // 3. Servicios
+                Route::controller(SgcServicesController::class)->group(function () {
+                    Route::get('/services', 'index')
+                        ->name('operations.sgc.services');
+                });
 
-            // 4. Mantenimientos
-            Route::controller(SgcMaintenanceController::class)->group(function () {
-                Route::get('/maintenance', 'index')
-                    ->name('operations.sgc.maintenance');
+                // 4. Mantenimientos
+                Route::controller(SgcMaintenanceController::class)->group(function () {
+                    Route::get('/maintenance', 'index')
+                        ->name('operations.sgc.maintenance');
+                });
+
+                // 5. Operaciones
+                Route::controller(SgcOperationsController::class)->group(function () {
+                    Route::get('/operations', 'index')
+                        ->name('operations.sgc.operations');
+                });
             });
         });
-    });
     // ===================================================
     // MÓDULO: VENTAS Y SUBSISTEMAS
     // ===================================================
