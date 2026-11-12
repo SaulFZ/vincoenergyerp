@@ -32,19 +32,16 @@
 
         <nav class="nav-main">
             <!-- Menú adaptado a Inventario TI -->
-            <a href="#" class="nav-link" data-route="dashboard">
+            <a href="{{ route('systems.inventory-it.index') }}" class="nav-link active" data-route="dashboard">
                 <i class="fas fa-home"></i> Principal
             </a>
 
-            <a href="#" class="nav-link" data-route="equipment">
+            <a href="#" class="nav-link" data-route="equipos">
                 <i class="fas fa-laptop"></i> Equipos
             </a>
 
-            <a href="#" class="nav-link" data-route="assignments">
+            <a href="#" class="nav-link" data-route="asignaciones">
                 <i class="fas fa-user-tag"></i> Asignaciones
-            </a>
-            <a href="#" class="nav-link" data-route="maintenance">
-                <i class="fas fa-cogs"></i> Mantenimiento
             </a>
 
             <a href="#" class="nav-link" data-route="reportes">
