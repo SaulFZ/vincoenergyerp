@@ -2,7 +2,6 @@
 
 @push('styles')
     <link href="{{ asset('assets/css/systems/inventoryit/dashboard.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/css/systems/inventoryit/inventory.css') }}" rel="stylesheet">
 @endpush
 
 @section('content')
@@ -283,6 +282,3 @@
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 @endsection
 
-@push('scripts')
-    <script src="{{ asset('assets/js/systems/inventoryit/inventory.js') }}"></script>
-@endpush
