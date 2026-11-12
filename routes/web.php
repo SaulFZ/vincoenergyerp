@@ -1,6 +1,13 @@
 <?php
 
-/* CONTROLADORES DE RECURSOS Generañ */
+use Illuminate\Support\Facades\Route;
+
+/* CONTROLADORES GENERALES Y NÚCLEO (CORE) */
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Core\MediaController;
+
+/* CONTROLADORES DE ADMINISTRACIÓN */
+/* Módulo: Expense Claims */
 use App\Http\Controllers\Administration\ExpenseClaims\AccountsPayableController;
 use App\Http\Controllers\Administration\ExpenseClaims\CfdiController;
 use App\Http\Controllers\Administration\ExpenseClaims\ExpenseAdvanceController;
@@ -12,27 +19,31 @@ use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementQueryControll
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStatusController;
 use App\Http\Controllers\Administration\ExpenseClaims\ReimbursementStoreController;
 use App\Http\Controllers\Administration\ExpenseClaims\SatRequestsController;
-/* CONTROLADORES DE RECURSOS administration */
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Core\MediaController;
-/* CONTROLADORES DE RECURSOS QHSE */
 
+/* CONTROLADORES DE OPERACIONES */
+/* Módulo: SGC */
 use App\Http\Controllers\Operations\Sgc\SgcController;
 use App\Http\Controllers\Operations\Sgc\SgcMaintenanceController;
 use App\Http\Controllers\Operations\Sgc\SgcOperationsController;
-/* CONTROLADORES DE RECURSOS HUMANOS */
 use App\Http\Controllers\Operations\Sgc\SgcServicesController;
+
+/* CONTROLADORES DE QHSE */
+/* Módulo: Incidents */
 use App\Http\Controllers\Qhse\Incidents\IncidentController;
+
+/* Módulo: Management */
 use App\Http\Controllers\Qhse\Management\DriverLicenseController;
 use App\Http\Controllers\Qhse\Management\JourneyController;
 use App\Http\Controllers\Qhse\Management\JourneyQueryController;
 use App\Http\Controllers\Qhse\Management\JourneyStatusController;
 use App\Http\Controllers\Qhse\Management\JourneyStoreController;
 use App\Http\Controllers\Qhse\Management\StatsController;
+
+/* CONTROLADORES DE RECURSOS HUMANOS (RH) */
+/* Módulo: Load Chart */
 use App\Http\Controllers\RH\LoadChart\ApprovalController;
 use App\Http\Controllers\RH\LoadChart\AssignmentController;
 use App\Http\Controllers\RH\LoadChart\CalendarController;
-/* CONTROLADORES DE SISTEMAS */
 use App\Http\Controllers\RH\LoadChart\EmployeeVacationBalanceController;
 use App\Http\Controllers\RH\LoadChart\FieldBonusController;
 use App\Http\Controllers\RH\LoadChart\FortnightlyConfigController;
@@ -40,18 +51,26 @@ use App\Http\Controllers\RH\LoadChart\HistoryController;
 use App\Http\Controllers\RH\LoadChart\InfoServicesController;
 use App\Http\Controllers\RH\LoadChart\SquadController;
 use App\Http\Controllers\RH\LoadChart\StatsLoadController;
+
+/* Módulo: Org Management */
 use App\Http\Controllers\RH\OrgManagement\EmployeeController;
-use App\Http\Controllers\Systems\InventoryIT\InventoryITController;
+
+/* CONTROLADORES DE SISTEMAS */
+/* Módulo: Inventory IT */
+use App\Http\Controllers\Systems\InventoryIt\InventoryitController;
+use App\Http\Controllers\Systems\InventoryIt\EquipmentController;
+use App\Http\Controllers\Systems\InventoryIt\EquipmentAssignmentController;
+
+/* Módulo: Tickets */
 use App\Http\Controllers\Systems\Tickets\TicketController;
-/* CONTROLADORES DE OPERACIONES */
 use App\Http\Controllers\Systems\Tickets\TicketQueryController;
 use App\Http\Controllers\Systems\Tickets\TicketStatsQueryController;
 use App\Http\Controllers\Systems\Tickets\TicketStatusController;
 use App\Http\Controllers\Systems\Tickets\TicketStoreController;
-/* CONTROLADORES DE OTROS */
+
+/* Módulo: User Management */
 use App\Http\Controllers\Systems\UserManagement\EmployeeCardController;
 use App\Http\Controllers\Systems\UserManagement\UserManagementController;
-use Illuminate\Support\Facades\Route;
 
 // ===================================================
 // RUTAS DE AUTENTICACIÓN
@@ -252,7 +271,80 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:systems')
         ->group(function () {
             // ===================================================
-            // GRUPO: USER MANAGEMENT (Gestión de Usuarios)
+            // SUBSISTEMA 1: INVENTARIO TI (it-inventory)
+            // Prefijo: /systems/inventory-it
+            // ===================================================
+          Route::prefix('inventory-it')->group(function () {
+
+                Route::get('/', function () {
+                    return redirect()->route('systems.inventory-it.dashboard');
+                })
+                    ->name('systems.inventory-it')
+                    ->middleware('check.permission:systems,inventory-it');
+
+                Route::controller(InventoryitController::class)->group(function () {
+                    Route::get('/dashboard', 'index')
+                        ->name('systems.inventory-it.dashboard');
+                });
+
+                Route::controller(EquipmentController::class)->group(function () {
+                    Route::get('/equipment', 'index')
+                        ->name('systems.inventory-it.equipment');
+
+                    Route::post('/equipment', 'store')
+                        ->name('systems.inventory-it.equipment.store');
+                });
+
+                Route::controller(EquipmentAssignmentController::class)->group(function () {
+                    Route::get('/assignments', 'index')
+                        ->name('systems.inventory-it.assignments');
+                });
+
+            });
+
+
+            // ===================================================
+            // SUBSISTEMA 2: GESTIÓN DE TICKETS (SOPORTE TI)
+            // Prefijo: /systems/tickets
+            // ===================================================
+            Route::prefix('tickets')->group(function () {
+                // Redirección automática a la vista principal
+                Route::get('/', function () {
+                    return redirect()->route('systems.tickets.index');
+                })
+                    ->name('systems.tickets')
+                    ->middleware('check.permission:systems,tickets');
+
+                // 1. VISTAS PRINCIPALES
+                Route::controller(TicketController::class)->group(function () {
+                    Route::get('/management-tickets', 'index')->name('systems.tickets.index');
+                    Route::get('/stats', 'stats')->name('systems.tickets.stats');
+                });
+
+                // 2. CONSULTAS DE DATOS (AJAX)
+                Route::controller(TicketQueryController::class)->group(function () {
+                    Route::get('/get-tickets', 'getTickets')->name('systems.tickets.get');
+                    Route::get('/show/{id}', 'show')->name('systems.tickets.show');
+                });
+
+                // 3. CREACIÓN DE REGISTROS
+                Route::controller(TicketStoreController::class)->group(function () {
+                    Route::post('/store', 'store')->name('systems.tickets.store');
+                });
+
+                // 4. ACTUALIZACIÓN DE ESTADOS
+                Route::controller(TicketStatusController::class)->group(function () {
+                    Route::put('/update-status/{id}', 'update')->name('systems.tickets.update');
+                });
+
+                // 5. CONSULTAS DE ESTADÍSTICAS
+                Route::controller(TicketStatsQueryController::class)->group(function () {
+                    Route::get('/get-global-stats', 'getGlobalStats')->name('systems.tickets.stats.data');
+                });
+            });
+
+            // ===================================================
+            // GRUPO: USER MANAGEMENT (Gestión de Usuarios)3
             // Prefijo: /systems/user-management
             // ===================================================
             Route::prefix('user-management')->group(function () {
@@ -303,63 +395,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                         'update' => 'systems.users.update',
                         'destroy' => 'systems.users.destroy',
                     ]);
-            });
-
-            // ===================================================
-            // SUBSISTEMA 2: INVENTARIO TI (it-inventory)
-            // Prefijo: /systems/inventory-it
-            // ===================================================
-            Route::prefix('inventory-it')->group(function () {
-                Route::get('/', function () {
-                    return redirect()->route('systems.inventory-it.index');
-                })
-                    ->name('systems.inventory-it')
-                    ->middleware('check.permission:systems,inventory-it');
-
-                Route::controller(InventoryITController::class)->group(function () {
-                    Route::get('/index', 'index')->name('systems.inventory-it.index');
-                    Route::get('/equipos', 'equipos')->name('systems.inventory-it.equipos');
-                });
-            });
-
-            // ===================================================
-            // SUBSISTEMA 2: GESTIÓN DE TICKETS (SOPORTE TI)
-            // Prefijo: /systems/tickets
-            // ===================================================
-            Route::prefix('tickets')->group(function () {
-                // Redirección automática a la vista principal
-                Route::get('/', function () {
-                    return redirect()->route('systems.tickets.index');
-                })
-                    ->name('systems.tickets')
-                    ->middleware('check.permission:systems,tickets');
-
-                // 1. VISTAS PRINCIPALES
-                Route::controller(TicketController::class)->group(function () {
-                    Route::get('/management-tickets', 'index')->name('systems.tickets.index');
-                    Route::get('/stats', 'stats')->name('systems.tickets.stats');
-                });
-
-                // 2. CONSULTAS DE DATOS (AJAX)
-                Route::controller(TicketQueryController::class)->group(function () {
-                    Route::get('/get-tickets', 'getTickets')->name('systems.tickets.get');
-                    Route::get('/show/{id}', 'show')->name('systems.tickets.show');
-                });
-
-                // 3. CREACIÓN DE REGISTROS
-                Route::controller(TicketStoreController::class)->group(function () {
-                    Route::post('/store', 'store')->name('systems.tickets.store');
-                });
-
-                // 4. ACTUALIZACIÓN DE ESTADOS
-                Route::controller(TicketStatusController::class)->group(function () {
-                    Route::put('/update-status/{id}', 'update')->name('systems.tickets.update');
-                });
-
-                // 5. CONSULTAS DE ESTADÍSTICAS
-                Route::controller(TicketStatsQueryController::class)->group(function () {
-                    Route::get('/get-global-stats', 'getGlobalStats')->name('systems.tickets.stats.data');
-                });
             });
         });
 
