@@ -278,15 +278,12 @@ Route::middleware(['web', 'auth'])->group(function () {
           Route::prefix('inventory-it')->group(function () {
 
                 Route::get('/', function () {
-                    return redirect()->route('systems.inventory-it.dashboard');
+                    return redirect()->route('systems.inventory-it.equipment');
                 })
                     ->name('systems.inventory-it')
                     ->middleware('check.permission:systems,inventory-it');
 
-                Route::controller(InventoryitController::class)->group(function () {
-                    Route::get('/dashboard', 'index')
-                        ->name('systems.inventory-it.dashboard');
-                });
+
 
                 Route::controller(EquipmentController::class)->group(function () {
                     Route::get('/equipment', 'index')
