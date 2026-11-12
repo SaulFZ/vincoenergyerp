@@ -19,8 +19,6 @@ class InventoryITController extends Controller
      public function equipos()
     {
 
-        return view('modules.systems.inventory-it.equipos', [
 
-        ]);
     }
 }
