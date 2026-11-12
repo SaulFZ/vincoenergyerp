@@ -284,7 +284,6 @@ Route::middleware(['web', 'auth'])->group(function () {
                     ->middleware('check.permission:systems,inventory-it');
 
 
-
                 Route::controller(EquipmentController::class)->group(function () {
                     Route::get('/equipment', 'index')
                         ->name('systems.inventory-it.equipment');
