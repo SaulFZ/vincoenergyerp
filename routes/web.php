@@ -72,6 +72,7 @@ use App\Http\Controllers\Systems\Tickets\TicketStoreController;
 use App\Http\Controllers\Systems\UserManagement\EmployeeCardController;
 use App\Http\Controllers\Systems\UserManagement\UserManagementController;
 
+
 // ===================================================
 // RUTAS DE AUTENTICACIÓN
 // ===================================================
