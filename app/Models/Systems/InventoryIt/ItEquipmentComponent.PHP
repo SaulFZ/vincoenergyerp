@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ItEquipmentComponent extends Model
+
 {
     protected $table = 'it_equipment_components';
 
