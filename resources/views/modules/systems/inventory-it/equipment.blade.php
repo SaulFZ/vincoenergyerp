@@ -38,7 +38,7 @@
                     <i class="fas fa-screwdriver-wrench" aria-hidden="true"></i>
                 </div>
 
-                <div class="equipment-summary-info">
+                 <div class="equipment-summary-info">
                     <h2>Mantenimiento y garantía</h2>
                     <div class="equipment-summary-value" id="statMantenimiento">0</div>
                     <p>En revisión o con el proveedor</p>
