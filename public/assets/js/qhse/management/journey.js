@@ -254,13 +254,8 @@ function renderTablaViajes(viajes, container) {
                 </span>`;
         }
 
-        // Mostrar desde que el viaje está "En Curso" hasta que finaliza o se cancela
-        if (
-            viaje.estado_viaje.texto === "En Curso" ||
-            viaje.estado_viaje.texto === "Detenido" ||
-            viaje.estado_viaje.texto === "Finalizado" ||
-            viaje.estado_viaje.texto === "Cancelado"
-        ) {
+        // Se muestra en cualquier estado (las ediciones ocurren desde que el GV está Pendiente)
+        if (viaje.logs_count > 0) {
             if (viaje.can_see_history) {
                 botonesAccion += `
                     <button class="btn-action-small btn-history"
@@ -414,9 +409,9 @@ async function abrirModalViaje(idViaje) {
     }
 }
 // ── CARGA Y BLOQUEO COMPLETO ──────────────────────────────────────────
-async function cargarModalEnModoLectura(viaje, authData) {
+async function cargarModalEnModoLectura(viaje, authData, esEdicion = false) {
     limpiarFormulario();
-    modoLectura = true;
+    modoLectura = true; // En edición también arrancamos así para suprimir alertas mientras se inyectan los datos
 
     const modal = document.getElementById("modalFormulario");
     if (!modal) return;
@@ -483,6 +478,9 @@ async function cargarModalEnModoLectura(viaje, authData) {
             const inp = paradaEl.querySelector('input[type="text"]');
             if (sel) sel.value = p.motivo || "";
             if (inp) inp.value = p.lugar || "";
+
+            // En modo edición la parada se queda editable (con su botón de eliminar)
+            if (esEdicion) return;
 
             // 🔥 LÓGICA: PINTAR CHECK SI YA SE REALIZÓ 🔥
             const isCompleted = logs.some(l => l.event_type === "parada" && l.description.includes(p.lugar));
@@ -671,6 +669,12 @@ async function cargarModalEnModoLectura(viaje, authData) {
             btnReunion.style.opacity = "1";
             btnReunion.setAttribute("onclick", "abrirReunionLectura()");
         }
+    }
+
+    // ── MODO EDICIÓN: se desbloquea todo y se termina aquí ───────────
+    if (esEdicion) {
+        await _prepararModoEdicion(viaje, authData);
+        return;
     }
 
     // ── AUTORIZADOR ───────────────────────────────────────────────────
@@ -1044,6 +1048,19 @@ function _reemplazarFooter(modal, viaje, authData) {
             `;
         }
 
+        // ── ✏️ BOTÓN EDITAR GV ───────────────────────────────────────
+        if (authData.can_edit) {
+            const textoEditar =
+                viaje.approval_status === "approved" ? "Modificar GV" : "Editar GV";
+            botonesHTML += `
+                <button onclick="editarDesdeLectura(${viaje.id})"
+                    style="background: #0f766e; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                    onmouseover="this.style.background='#115e59'" onmouseout="this.style.background='#0f766e'">
+                    <i class="fas fa-pen-to-square"></i> ${textoEditar}
+                </button>
+            `;
+        }
+
         // ── BOTÓN CANCELAR (GLOBAL PARA TODOS LOS INVOLUCRADOS) ──────
         // Creador, Aprobador, Conductores y Pasajeros pueden abortar el viaje si surge una eventualidad.
         if (authData.can_approve || authData.is_creator || authData.is_participant) {
@@ -1193,6 +1210,205 @@ async function abrirModalCambiarAprobador(viajeId, nivelRiesgo) {
         Swal.fire("Error de red", e.message, "error");
     }
 }
+// ====================================================================
+// ✏️ MODO EDICIÓN DE GV (REUTILIZA EL MISMO MODAL DEL FORMULARIO)
+//   - Pendiente: lo editan el Solicitante y los Pasajeros/Conductores
+//   - Aprobado : solo lo modifica el Aprobador (el aprobador no cambia)
+// ====================================================================
+let viajeEnEdicion = null;
+
+// Desde el botón de la tabla
+async function abrirModalEdicion(idViaje) {
+    Swal.fire({
+        title: "Cargando GV",
+        html: "Preparando el formulario para edición...<br><b style='color:#0f766e;'>Por favor espere.</b>",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+        const response = await fetch(`/qhse/management/journeys/${idViaje}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            Swal.fire("Error", result.message || "No se pudo cargar el viaje", "error");
+            return;
+        }
+
+        if (!result.auth || !result.auth.can_edit) {
+            const msg =
+                result.data.approval_status === "approved"
+                    ? "Este GV ya fue aprobado. Solo el aprobador asignado puede modificarlo."
+                    : "Solo el solicitante y los pasajeros pueden editar el GV mientras está Pendiente.";
+            Swal.fire("Sin permiso", msg, "warning");
+            return;
+        }
+
+        Swal.close();
+        await cargarModalEnModoLectura(result.data, result.auth, true);
+    } catch (e) {
+        Swal.fire("Error de conexión", e.message, "error");
+    }
+}
+
+// Desde el botón "Editar GV" del modo lectura
+function editarDesdeLectura(idViaje) {
+    cerrarModalLectura();
+    setTimeout(() => abrirModalEdicion(idViaje), 300);
+}
+
+// Se ejecuta al final de cargarModalEnModoLectura(..., true)
+async function _prepararModoEdicion(viaje, authData) {
+    const esAprobado = viaje.approval_status === "approved";
+
+    viajeEnEdicion = {
+        id: viaje.id,
+        folio: viaje.folio,
+        approval_status: viaje.approval_status,
+        approver_id: viaje.approver_id,
+        bloquearAprobador: esAprobado,
+        approver_nombre:
+            viaje.approver?.employee?.full_name ||
+            viaje.approver?.name ||
+            (viaje.approver_id ? `Autorizador #${viaje.approver_id}` : "Sin aprobador"),
+        approver_puesto: viaje.approver?.employee?.position || "Aprobador",
+    };
+
+    const modal = document.getElementById("modalFormulario");
+
+    // 1. Volver a crear los calendarios/relojes que se destruyeron al inyectar valores
+    //    (sin minDate para no borrar fechas que ya pasaron en un GV aprobado)
+    const configFechaEdicion = {
+        dateFormat: "d/m/Y",
+        locale: "es",
+        disableMobile: true,
+        allowInput: true,
+        clickOpens: true,
+        nextArrow: '<i class="fas fa-chevron-right"></i>',
+        prevArrow: '<i class="fas fa-chevron-left"></i>',
+    };
+    ["fechaInicioViaje", "fechaFinViaje"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el._flatpickr) el._flatpickr.destroy();
+        flatpickr(el, { ...configFechaEdicion, defaultDate: el.value || null });
+    });
+    ["horaInicioViaje", "horaFinViaje"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el._flatpickr) el._flatpickr.destroy();
+        flatpickr(el, configHora);
+    });
+
+    for (let i = 1; i <= contadorUnidades; i++) {
+        [`dormir-${i}`, `levantar-${i}`].forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (el._flatpickr) el._flatpickr.destroy();
+            flatpickr(el, configHora);
+        });
+
+        // 2. Los botones de inspección vuelven a abrir la inspección EDITABLE
+        const btnInsp = document.getElementById(`btn-inspeccion-${i}`);
+        if (btnInsp) btnInsp.setAttribute("onclick", `abrirInspeccion(${i})`);
+    }
+
+    // 3. Evaluación y Reunión Pre-convoy en modo editable
+    const btnEval = document.getElementById("btnEvaluacionRiesgo");
+    if (btnEval) {
+        btnEval.setAttribute("onclick", "gestionarModalEvaluacion(true)");
+        btnEval.disabled = false;
+    }
+    const btnReunion = document.getElementById("btnReunionPreConvoy");
+    if (btnReunion) btnReunion.setAttribute("onclick", "gestionarModalPreConvoy(true)");
+
+    // Quitar el "gris" que deja el llenado de evaluación en modo lectura
+    document.querySelectorAll("#modalEvaluacion label").forEach((lbl) => {
+        lbl.style.opacity = "1";
+        lbl.style.color = "";
+        lbl.style.fontWeight = "";
+    });
+
+    // 4. Ya no estamos en lectura: a partir de aquí todo es editable
+    modoLectura = false;
+    actualizarBotonReunionConvoy();
+    actualizarBotonEvaluacion();
+    actualizarBotonAgregar();
+
+    // 5. Aprobador (pendiente: puede cambiarlo | aprobado: queda fijo)
+    await cargarAutorizadores(viaje.risk_level || "bajo");
+
+    // 6. Señales visuales del modo edición
+    const subtitulo = modal?.querySelector(".form-header-title p");
+    if (subtitulo) {
+        if (!subtitulo.dataset.textoOriginal) subtitulo.dataset.textoOriginal = subtitulo.textContent;
+        subtitulo.innerHTML = `Formato F-6.1-VINCO-04 · <span style="background:#0f766e; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700;"><i class="fas fa-pen-to-square"></i> ${esAprobado ? "MODIFICANDO COMO APROBADOR" : "EDITANDO GV"}</span>`;
+    }
+
+    const btnEnviar = document.getElementById("btnEnviarSolicitud");
+    if (btnEnviar) {
+        btnEnviar.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+        btnEnviar.title = "Guardar los cambios del GV";
+    }
+}
+
+// Aprobador fijo (GV aprobado en edición). Lleva un radio oculto marcado para pasar la validación
+function _renderAprobadorFijo() {
+    const grid = document.getElementById("gridAutorizadores");
+    const seccion = document.getElementById("seccionDestinatario");
+    if (!grid || !viajeEnEdicion) return;
+
+    if (seccion) {
+        seccion.style.display = "block";
+        const tituloH3 = seccion.querySelector(".form-section-title");
+        if (tituloH3) tituloH3.innerHTML = '<i class="fas fa-user-check"></i> Aprobador Asignado (no cambia)';
+        const subtituloP = seccion.querySelector(".destinatario-subtitle");
+        if (subtituloP) subtituloP.style.display = "none";
+    }
+
+    grid.innerHTML = `
+        <input type="radio" name="autorizador_id" value="${viajeEnEdicion.approver_id}" checked style="display:none;">
+        <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; width: 100%; max-width: 420px;">
+            <div style="width: 42px; height: 42px; background: #f0f4ff; color: #334c95; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 15px; flex-shrink: 0;">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <div style="flex-grow: 1; line-height: 1.4; overflow: hidden;">
+                <div style="font-weight: 600; font-size: 0.95rem; color: #1e293b;">${_escaparHtml(viajeEnEdicion.approver_nombre)}</div>
+                <div style="font-size: 0.8rem; color: #64748b;">${_escaparHtml(viajeEnEdicion.approver_puesto)}</div>
+            </div>
+            <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">
+                <i class="fas fa-check-circle"></i> Aprobado
+            </span>
+        </div>`;
+    grid.style.display = "flex";
+}
+
+// Restaura textos y variable global al salir del modo edición (lo llama limpiarFormulario)
+function _salirModoEdicionUI() {
+    viajeEnEdicion = null;
+
+    const subtitulo = document.querySelector("#modalFormulario .form-header-title p");
+    if (subtitulo && subtitulo.dataset.textoOriginal) {
+        subtitulo.textContent = subtitulo.dataset.textoOriginal;
+    }
+
+    const btnEnviar = document.getElementById("btnEnviarSolicitud");
+    if (btnEnviar) {
+        btnEnviar.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
+    }
+}
+
+// Evita inyectar HTML desde textos guardados en la BD
+function _escaparHtml(texto) {
+    return String(texto ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 // ====== VARIABLES PARA SEGUIMIENTO DE RUTA ======
 let viajeRutaActivoId = null;
 // ====================================================================
@@ -1325,6 +1541,10 @@ function _mapearInspeccionLigera(insp) {
         anomalias_detectadas: insp.has_anomalies ? "si" : "no",
         comentarios: insp.anomaly_comments || "",
         fotos_originales: insp.formatted_photos || [],
+        // Fotos ya guardadas: al editar se mandan por ruta para conservarlas
+        fotos: (insp.formatted_photos || [])
+            .filter((f) => f.path)
+            .map((f) => ({ path: f.path })),
     };
 }
 
@@ -1393,6 +1613,10 @@ function _mapearInspeccionPesada(insp) {
         anomalias_detectadas: insp.has_anomalies ? "si" : "no",
         comentarios: insp.anomaly_comments || "",
         fotos_originales: insp.formatted_photos || [],
+        // Fotos ya guardadas: al editar se mandan por ruta para conservarlas
+        fotos: (insp.formatted_photos || [])
+            .filter((f) => f.path)
+            .map((f) => ({ path: f.path })),
     };
 }
 function _inspeccionTieneNos(mappedInsp) {
@@ -4752,6 +4976,14 @@ async function procederGuardadoLigera(comentarios, anomaliasValor) {
     const arrayFotosBase64 = [];
     for (let i = 0; i < fotosSubidas.ligera.length; i++) {
         let foto = fotosSubidas.ligera[i];
+
+        // ✏️ Foto que ya estaba guardada en el servidor (modo edición): se conserva por su ruta
+        if (!foto.file && foto.path) {
+            arrayFotosBase64.push({ path: foto.path });
+            continue;
+        }
+        if (!foto.file) continue;
+
         let base64String = await convertirArchivoABase64(foto.file);
         arrayFotosBase64.push({
             nombre: foto.name,
@@ -5171,6 +5403,14 @@ async function procederGuardadoPesada(comentarios, anomaliasValor) {
     const arrayFotosBase64 = [];
     for (let i = 0; i < fotosSubidas.pesada.length; i++) {
         let foto = fotosSubidas.pesada[i];
+
+        // ✏️ Foto que ya estaba guardada en el servidor (modo edición): se conserva por su ruta
+        if (!foto.file && foto.path) {
+            arrayFotosBase64.push({ path: foto.path });
+            continue;
+        }
+        if (!foto.file) continue;
+
         let base64String = await convertirArchivoABase64(foto.file);
         arrayFotosBase64.push({
             nombre: foto.name,
@@ -5885,6 +6125,12 @@ async function cargarAutorizadores(nivelRiesgo) {
     const grid = document.getElementById("gridAutorizadores");
 
     seccion.style.display = "block";
+
+    // ✏️ GV APROBADO EN EDICIÓN: el aprobador no cambia, se muestra fijo
+    if (viajeEnEdicion && viajeEnEdicion.bloquearAprobador) {
+        _renderAprobadorFijo();
+        return;
+    }
     grid.innerHTML =
         '<p style="padding: 15px; color: #6c757d; font-style: italic;">Buscando personal autorizado...</p>';
 
@@ -5925,6 +6171,14 @@ async function cargarAutorizadores(nivelRiesgo) {
             `;
             grid.insertAdjacentHTML("beforeend", htmlTarjeta);
         });
+
+        // ✏️ En edición dejamos marcado el aprobador que ya tenía el GV (si sigue en la lista)
+        if (viajeEnEdicion && viajeEnEdicion.approver_id) {
+            const radioActual = grid.querySelector(
+                `input[name="autorizador_id"][value="${viajeEnEdicion.approver_id}"]`
+            );
+            if (radioActual) radioActual.checked = true;
+        }
     } catch (error) {
         console.error("Error al obtener autorizadores:", error);
         grid.innerHTML =
@@ -6693,6 +6947,7 @@ function limpiarFormulario() {
     contadorUnidades = 0;
     contadorParadas = 0;
     modoLectura = false;
+    _salirModoEdicionUI(); // ✏️ Quita el modo edición (textos, botón y variable global)
     reunionPreConvoyGuardada = false;
     evaluacionRiesgoGuardada = false;
     puntajeRiesgoTotal = 0;
@@ -7361,8 +7616,10 @@ function convertirFechaParaMySQL(fechaDMA) {
 // FUNCIÓN PARA ENVIAR SOLICITUD AL BACKEND
 // ====================================================================
 function enviarSolicitudAJAX() {
+    const esEdicion = !!(viajeEnEdicion && viajeEnEdicion.id);
+
     Swal.fire({
-        title: "Guardando solicitud...",
+        title: esEdicion ? "Guardando cambios..." : "Guardando solicitud...",
         text: "Por favor espere",
         allowOutsideClick: false,
         didOpen: () => {
@@ -7449,8 +7706,12 @@ function enviarSolicitudAJAX() {
         data.reunion_pre_convoy = datosReunionConvoy;
     }
 
-    fetch("/qhse/management/journeys/store", {
-        method: "POST",
+    const urlGuardado = esEdicion
+        ? `/qhse/management/journeys/${viajeEnEdicion.id}/update`
+        : "/qhse/management/journeys/store";
+
+    fetch(urlGuardado, {
+        method: esEdicion ? "PUT" : "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
@@ -7490,8 +7751,10 @@ function enviarSolicitudAJAX() {
             // SI LLEGÓ AQUÍ, EL JSON ES VÁLIDO (AUNQUE PHP HAYA LLORADO)
             if (result.success) {
                 Swal.fire({
-                    title: "¡Viaje Registrado!",
-                    html: `${result.message}<br><br><span style="font-size: 1.2em;">Folio asignado: <strong>${result.folio}</strong></span>`,
+                    title: esEdicion ? "¡GV Actualizado!" : "¡Viaje Registrado!",
+                    html: esEdicion
+                        ? `${result.message}<br><br><span style="font-size: 1.2em;">Folio: <strong>${result.folio}</strong></span><br><small style="color:#6c757d;">El cambio quedó registrado en el Historial de Actividad.</small>`
+                        : `${result.message}<br><br><span style="font-size: 1.2em;">Folio asignado: <strong>${result.folio}</strong></span>`,
                     icon: "success",
                     confirmButtonColor: "#0056b3",
                 }).then(() => {
@@ -7514,7 +7777,9 @@ function enviarSolicitudAJAX() {
             console.error("Error de Red/Parseo:", error);
             Swal.fire({
                 title: "Error procesando solicitud",
-                text: "El viaje pudo haberse guardado, pero la respuesta del servidor falló. Recarga la página para verificar.",
+                text: esEdicion
+                    ? "Los cambios pudieron haberse guardado, pero la respuesta del servidor falló. Recarga la página para verificar."
+                    : "El viaje pudo haberse guardado, pero la respuesta del servidor falló. Recarga la página para verificar.",
                 icon: "warning",
                 confirmButtonColor: "#dc3545",
             }).then(() => {
@@ -8045,7 +8310,15 @@ async function abrirModalHistorial(folioViaje) {
                     iconClass = "fas fa-user-edit";
                     textColor = "#1d4ed8";
                 }
-                const fechaObj = new Date(log.created_at);
+                // ✏️ NUEVO: Edición del GV
+                let iconStyle = "";
+                if (log.event_type === "edited") {
+                    colorClass = "";
+                    iconStyle = "background-color: #0f766e;";
+                    iconClass = "fas fa-pen-to-square";
+                    textColor = "#115e59";
+                }
+                const fechaObj = new Date(log.event_time || log.created_at);
                 const fechaFormat =
                     fechaObj.toLocaleDateString("es-MX", {
                         day: "2-digit",
@@ -8057,15 +8330,24 @@ async function abrirModalHistorial(folioViaje) {
                         minute: "2-digit",
                     });
 
+                // 👤 NUEVO: Quién hizo la acción
+                const nombreUsuario = _escaparHtml(log.user_name || "Sistema");
+                const descripcionHtml = _escaparHtml(log.description || "").replace(/\n/g, "<br>");
+
                 const htmlExtra = `
                     <div class="timeline-item">
-                        <div class="timeline-icon ${colorClass}">
+                        <div class="timeline-icon ${colorClass}" style="${iconStyle}">
                             <i class="${iconClass}"></i>
                         </div>
                         <div class="timeline-content">
-                            <h4 style="color: ${textColor}">${log.title}</h4>
-                            <span class="timeline-time"><i class="far fa-clock"></i> ${fechaFormat}</span>
-                            <p>${log.description}</p>
+                            <h4 style="color: ${textColor}">${_escaparHtml(log.title || "")}</h4>
+                            <span class="timeline-time" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                                <span><i class="far fa-clock"></i> ${fechaFormat}</span>
+                                <span style="background: #f1f5f9; color: #334155; padding: 2px 8px; border-radius: 10px; font-weight: 600;">
+                                    <i class="fas fa-user"></i> ${nombreUsuario}
+                                </span>
+                            </span>
+                            <p>${descripcionHtml}</p>
                         </div>
                     </div>
                 `;
@@ -8713,10 +8995,3 @@ function enviarNotificacionPush(titulo, mensaje) {
 
 // Arrancamos el motor por primera vez
 iniciarPolling();
-
-
-
-
-
-
-

@@ -188,6 +188,294 @@ class JourneyStoreController extends Controller
             ], 500);
         }
     }
+    // =====================================================================
+    // EDICIÓN DE GV
+    // =====================================================================
+
+    /**
+     * Regla de quién puede editar un GV:
+     *  - PENDIENTE: el solicitante (creador) y los participantes (conductores / pasajeros / relevos).
+     *  - APROBADO : solo el aprobador asignado.
+     *  - Nunca si el viaje ya terminó (Finalizado, Cancelado, No Procede) o fue rechazado/cancelado.
+     * Requiere que $journey tenga cargada la relación 'units'.
+     */
+    public static function userCanEdit(Journey $journey, $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if (in_array($journey->journey_status, ['completed', 'cancelled', 'no_procede'])) {
+            return false;
+        }
+
+        if ($journey->approval_status === 'pending') {
+            return (int) $journey->created_by === (int) $user->id
+                || self::isParticipant($journey, $user->employee_id);
+        }
+
+        if ($journey->approval_status === 'approved') {
+            return (int) $journey->approver_id === (int) $user->id;
+        }
+
+        return false;
+    }
+
+    /**
+     * ¿El empleado es conductor principal, relevo o pasajero en alguna unidad del viaje?
+     */
+    public static function isParticipant(Journey $journey, $employeeId): bool
+    {
+        if (! $employeeId) {
+            return false;
+        }
+
+        return $journey->units->contains(function ($unit) use ($employeeId) {
+            if ((string) $unit->driver_id === (string) $employeeId) {
+                return true;
+            }
+
+            $passengers = [];
+            if (is_string($unit->passengers)) {
+                $passengers = json_decode($unit->passengers, true) ?? [];
+            } elseif (is_array($unit->passengers)) {
+                $passengers = $unit->passengers;
+            }
+
+            foreach ($passengers as $p) {
+                if (isset($p['id']) && (string) $p['id'] === (string) $employeeId) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+    }
+
+    /**
+     * Actualizar un GV existente (lo llama el formulario en modo edición)
+     */
+    public function update(Request $request, $id)
+    {
+        $user    = Auth::user();
+        $journey = Journey::with([
+            'units.lightInspection',
+            'units.heavyInspection',
+            'riskAssessment',
+            'preConvoyMeeting',
+            'approver.employee',
+        ])->findOrFail($id);
+
+        // 1. SEGURIDAD: validar que este usuario puede editar
+        if (! self::userCanEdit($journey, $user)) {
+            $mensaje = $journey->approval_status === 'approved'
+                ? 'Este GV ya está aprobado: solo el aprobador asignado puede modificarlo.'
+                : 'No tienes permiso para editar este GV.';
+
+            return response()->json(['success' => false, 'message' => $mensaje], 403);
+        }
+
+        $data          = $request->all();
+        $esAprobado    = $journey->approval_status === 'approved';
+        $nuevoRiesgo   = $data['riesgo_nivel'] ?? $journey->risk_level;
+        $aprobadorPrev = $journey->approver_id;
+
+        // 2. Si ya está aprobado y el riesgo sube a un nivel que el aprobador no cubre, no se permite
+        if ($esAprobado && $nuevoRiesgo && $nuevoRiesgo !== $journey->risk_level) {
+            $permiso = [
+                'bajo'     => 'aprobar_gv_bajo',
+                'medio'    => 'aprobar_gv_medio',
+                'alto'     => 'aprobar_gv_alto',
+                'muy_alto' => 'aprobar_gv_muy_alto',
+            ][$nuevoRiesgo] ?? null;
+
+            if ($permiso && ! \App\Helpers\PermissionHelper::hasDirectPermission($permiso)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Con los cambios el riesgo quedó en "' . strtoupper(str_replace('_', ' ', $nuevoRiesgo)) .
+                    '" y tu nivel de autorización no lo cubre. Revisa la evaluación o pide a un aprobador de ese nivel que haga el cambio.',
+                ], 422);
+            }
+        }
+
+        // 3. Si está pendiente, debe venir un aprobador válido
+        if (! $esAprobado && empty($data['autorizador_id'])) {
+            return response()->json(['success' => false, 'message' => 'Debe seleccionar un aprobador.'], 422);
+        }
+
+        // 4. Foto "antes" para armar el resumen de cambios del historial
+        $antes = $this->snapshotJourney($journey);
+
+        DB::beginTransaction();
+
+        try {
+            // 5. DATOS GENERALES (no se tocan folio, fecha de solicitud, creador ni estados)
+            $unidades = $data['unidades'] ?? [];
+
+            $journey->update([
+                'destination_region'   => $data['destino_predefinido'] ?? $journey->destination_region,
+                'specific_destination' => $data['destino_especifico'] ?? '',
+                'origin_address'       => $data['origen'] ?? '',
+                'destination_address'  => $data['llegada'] ?? '',
+                'start_date'           => $this->parseDate($data['fecha_inicio'] ?? ''),
+                'end_date'             => $this->parseDate($data['fecha_fin'] ?? ''),
+                'start_time'           => $data['hora_inicio'] ?? '',
+                'end_time'             => $data['hora_fin'] ?? '',
+                'estimated_duration'   => $this->calculateEstimatedDuration($data['hora_inicio'] ?? '', $data['hora_fin'] ?? ''),
+                'has_stops'            => ($data['tiene_paradas'] ?? 'no') === 'si',
+                'planned_stops'        => ($data['tiene_paradas'] ?? 'no') === 'si' ? ($data['paradas'] ?? null) : null,
+                'total_units'          => count($unidades),
+                'fleet_type'           => count($unidades) > 1 ? 'Convoy de Unidades' : 'Unidad Única',
+                'risk_score'           => $data['riesgo_puntaje'] ?? $journey->risk_score,
+                'risk_level'           => $nuevoRiesgo,
+                // Aprobado: el aprobador NO cambia. Pendiente: se respeta el elegido en el formulario.
+                'approver_id'          => $esAprobado ? $journey->approver_id : $data['autorizador_id'],
+            ]);
+
+            // 6. UNIDADES: se eliminan las anteriores (con sus inspecciones) y se vuelven a crear
+            foreach ($journey->units as $unit) {
+                $unit->lightInspection()->delete();
+                $unit->heavyInspection()->delete();
+                $unit->delete();
+            }
+            $this->createUnits($journey, $unidades);
+
+            // 7. EVALUACIÓN DE RIESGO
+            if (isset($data['evaluacion_riesgo'])) {
+                RiskAssessment::where('journey_id', $journey->id)->delete();
+                $this->createRiskAssessment($journey, $data['evaluacion_riesgo']);
+            }
+
+            // 8. REUNIÓN PRE-CONVOY (solo aplica a convoy)
+            PreConvoyMeeting::where('journey_id', $journey->id)->delete();
+            if (count($unidades) > 1 && isset($data['reunion_pre_convoy'])) {
+                $this->createPreConvoyMeeting($journey, $data['reunion_pre_convoy']);
+            }
+
+            // 9. RESUMEN DE CAMBIOS → HISTORIAL
+            $journey->refresh()->load(['units', 'approver.employee']);
+            $despues  = $this->snapshotJourney($journey);
+            $cambios  = $this->diffSnapshots($antes, $despues);
+
+            // Inspecciones rehechas durante la edición (vienen sin created_at)
+            foreach ($unidades as $u) {
+                $insp = $u['inspeccion_ligera'] ?? ($u['inspeccion_pesada'] ?? null);
+                if ($insp && empty($insp['created_at'])) {
+                    $cambios[] = 'Inspección de la unidad ' . ($u['vehiculo'] ?? '') . ' actualizada';
+                }
+            }
+
+            $descripcion = count($cambios) > 0
+                ? "Se modificaron los siguientes datos:\n• " . implode("\n• ", $cambios)
+                : 'Se guardó el GV sin cambios en los datos principales.';
+
+            JourneyLog::create([
+                'journey_id'  => $journey->id,
+                'user_id'     => $user->id,
+                'event_type'  => 'edited',
+                'title'       => $esAprobado ? 'GV Modificado por el Aprobador' : 'GV Editado',
+                'description' => $descripcion,
+                'event_time'  => now(),
+            ]);
+
+            DB::commit();
+
+            // 10. Si estaba pendiente y cambió el aprobador, se le avisa por correo
+            if (! $esAprobado && (int) $aprobadorPrev !== (int) $journey->approver_id) {
+                try {
+                    $nuevoAprobador = User::find($journey->approver_id);
+                    if ($nuevoAprobador && $nuevoAprobador->email) {
+                        Mail::to($nuevoAprobador->email)->send(new JourneyApprovalMail($journey));
+                    }
+                } catch (\Exception $mailEx) {
+                    Log::error('Error enviando correo al nuevo aprobador (edición GV): ' . $mailEx->getMessage());
+                }
+            }
+
+            return response()->json([
+                'success'    => true,
+                'message'    => 'Cambios guardados correctamente',
+                'journey_id' => $journey->id,
+                'folio'      => $journey->folio,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error editando viaje: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar los cambios: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Foto de los datos "legibles" del GV para comparar antes / después
+     */
+    private function snapshotJourney(Journey $journey): array
+    {
+        $fecha = function ($v) {
+            return $v ? \Carbon\Carbon::parse($v)->format('d/m/Y') : '—';
+        };
+        $hora = function ($v) {
+            return $v ? substr((string) $v, 0, 5) : '—';
+        };
+
+        $paradas = collect(is_array($journey->planned_stops) ? $journey->planned_stops : (json_decode($journey->planned_stops ?? '[]', true) ?? []))
+            ->map(fn($p) => trim(($p['motivo'] ?? '') . ' en ' . ($p['lugar'] ?? '')))
+            ->implode(', ');
+
+        $riesgos = ['bajo' => 'Bajo', 'medio' => 'Medio', 'alto' => 'Alto', 'muy_alto' => 'Muy Alto'];
+
+        $snap = [
+            'Destino'             => $journey->destination_region ?: '—',
+            'Destino específico'  => $journey->specific_destination ?: '—',
+            'Saliendo de'         => $journey->origin_address ?: '—',
+            'Llegando a'          => $journey->destination_address ?: '—',
+            'Fecha de inicio'     => $fecha($journey->start_date),
+            'Fecha de término'    => $fecha($journey->end_date),
+            'Hora de inicio'      => $hora($journey->start_time),
+            'Hora de término'     => $hora($journey->end_time),
+            'Eventos programados' => $journey->has_stops ? ($paradas ?: '—') : 'Sin eventos',
+            'Nivel de riesgo'     => $riesgos[$journey->risk_level] ?? ($journey->risk_level ?: '—'),
+            'Aprobador'           => $journey->approver
+                ? ($journey->approver->employee->full_name ?? $journey->approver->name)
+                : '—',
+        ];
+
+        // Unidades: "ECO-12 (Conductor: Juan) · Pasajeros: Ana, Luis"
+        $unidades = $journey->units->map(function ($u) {
+            $pasajeros = is_array($u->passengers) ? $u->passengers : (json_decode($u->passengers ?? '[]', true) ?? []);
+            $nombres   = collect($pasajeros)->map(function ($p) {
+                $n = $p['name'] ?? '';
+                return ! empty($p['is_relay']) ? $n . ' (relevo)' : $n;
+            })->filter()->implode(', ');
+
+            return $u->economic_number . ' (Conductor: ' . ($u->driver_name ?: '—') . ')'
+                . ($nombres ? ' · Pasajeros: ' . $nombres : '');
+        })->implode(' | ');
+
+        $snap['Unidades'] = $unidades ?: '—';
+
+        return $snap;
+    }
+
+    /**
+     * Compara dos snapshots y regresa líneas tipo "Campo: antes → después"
+     */
+    private function diffSnapshots(array $antes, array $despues): array
+    {
+        $cambios = [];
+        foreach ($despues as $campo => $valor) {
+            $previo = $antes[$campo] ?? '—';
+            if ((string) $previo !== (string) $valor) {
+                $cambios[] = "{$campo}: {$previo} → {$valor}";
+            }
+        }
+        return $cambios;
+    }
+
     /**
      * Crear el viaje principal
      */
@@ -358,7 +646,7 @@ class JourneyStoreController extends Controller
         // Procesar fotos si existen
         $photoPaths = $this->processPhotos($inspectionData['fotos'] ?? [], 'L', $journeyUnit->journey->folio);
 
-        LightInspection::create([
+        $inspection = LightInspection::create([
             'journey_unit_id'         => $journeyUnit->id,
             'fuel_level'              => $inspectionData['nivel_gasolina'] ?? '',
             'mileage'                 => isset($inspectionData['kilometraje']) ? (int) str_replace(',', '', $inspectionData['kilometraje']) : 0,
@@ -396,6 +684,9 @@ class JourneyStoreController extends Controller
             'anomaly_comments'        => $inspectionData['comentarios'] ?? null,
             'photo_evidence'          => $photoPaths,
         ]);
+
+        // En edición: si la inspección no se rehízo, conservamos su fecha original
+        $this->preservarFechaInspeccion($inspection, $inspectionData);
     }
 
 /**
@@ -406,7 +697,7 @@ class JourneyStoreController extends Controller
         // Procesar fotos si existen
         $photoPaths = $this->processPhotos($inspectionData['fotos'] ?? [], 'P', $journeyUnit->journey->folio);
 
-        HeavyInspection::create([
+        $inspection = HeavyInspection::create([
             'journey_unit_id'         => $journeyUnit->id,
             'fuel_level'              => $inspectionData['nivel_diesel'] ?? '',
             'mileage'                 => isset($inspectionData['kilometraje']) ? (int) str_replace(',', '', $inspectionData['kilometraje']) : 0,
@@ -464,6 +755,25 @@ class JourneyStoreController extends Controller
             'anomaly_comments'        => $inspectionData['comentarios'] ?? null,
             'photo_evidence'          => $photoPaths,
         ]);
+
+        // En edición: si la inspección no se rehízo, conservamos su fecha original
+        $this->preservarFechaInspeccion($inspection, $inspectionData);
+    }
+
+    /**
+     * Si la inspección viene de la BD (modo edición) trae su created_at original:
+     * lo respetamos para no "mover" la fecha de inspección.
+     */
+    private function preservarFechaInspeccion($inspection, $inspectionData)
+    {
+        if ($inspection && ! empty($inspectionData['created_at'])) {
+            try {
+                $inspection->created_at = \Carbon\Carbon::parse($inspectionData['created_at']);
+                $inspection->save();
+            } catch (\Exception $e) {
+                Log::warning('No se pudo conservar la fecha de inspección: ' . $e->getMessage());
+            }
+        }
     }
 
     /**
@@ -546,6 +856,15 @@ class JourneyStoreController extends Controller
                         $paths[] = $path;
                     }
 
+                }
+                // Caso 1.5: Foto que YA existía (modo edición) → conservamos la ruta guardada
+                elseif (isset($fotoData['path']) && is_string($fotoData['path'])) {
+                    $ruta = ltrim(str_replace('public/', '', $fotoData['path']), '/');
+                    // Seguridad: solo rutas de evidencias de este módulo y sin saltos de carpeta
+                    if (str_starts_with($ruta, 'qhse/management/') && ! str_contains($ruta, '..')
+                        && Storage::disk('public')->exists($ruta)) {
+                        $paths[] = $ruta;
+                    }
                 }
                 // Caso 2: Si es archivo subido (Input file)
                 elseif (isset($fotoData['file']) && $fotoData['file'] instanceof \Illuminate\Http\UploadedFile) {

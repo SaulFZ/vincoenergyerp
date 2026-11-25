@@ -182,6 +182,8 @@ class JourneyQueryController extends Controller
                         'can_approve'        => $journey->approver_id === $user->id,
                         'can_see_history'    => $canSeeAll,
                         'is_participant'     => $isParticipant, // ✅ Basado en employee_id
+                        // ✏️ NUEVO: Pendiente → solicitante/pasajeros | Aprobado → solo el aprobador
+                        'can_edit'           => JourneyStoreController::userCanEdit($journey, $user),
                         'logs_count'         => $journey->logs_count ?? 0,
                     ];
                 }
@@ -312,8 +314,22 @@ public function showEvidence($path)
                 'preConvoyMeeting',
                 'creator',
                 'approver',
-                'logs',
+                'logs'      => function ($q) {
+                    $q->orderBy('created_at', 'asc')->orderBy('id', 'asc');
+                },
+                'logs.user.employee', // 👈 NUEVO: para saber QUIÉN hizo cada acción
             ])->findOrFail($id);
+
+            // 👇 NUEVO: Nombre de quien hizo cada evento del historial (sin exponer todo el usuario)
+            $journey->logs->each(function ($log) {
+                $log->setAttribute(
+                    'user_name',
+                    $log->user
+                        ? ($log->user->employee->full_name ?? $log->user->name)
+                        : 'Sistema'
+                );
+                $log->unsetRelation('user');
+            });
 
             // Formatear fotos de inspecciones
             $journey->units->transform(function ($unit) {
@@ -327,6 +343,7 @@ public function showEvidence($path)
                         ->map(function ($path) {
                             return [
                                 'id'   => uniqid('photo_'),
+                                'path' => $path, // 👈 NUEVO: para conservar la foto al editar el GV
                                 'name' => basename($path),
                                 // AQUÍ ESTÁ EL CAMBIO PRINCIPAL 👇
                                 'url'  => route('management.evidencia', [
@@ -349,6 +366,7 @@ public function showEvidence($path)
                         ->map(function ($path) {
                             return [
                                 'id'   => uniqid('photo_'),
+                                'path' => $path, // 👈 NUEVO: para conservar la foto al editar el GV
                                 'name' => basename($path),
                                 // AQUÍ ESTÁ EL CAMBIO PRINCIPAL 👇
                                 'url'  => route('management.evidencia', [
@@ -419,6 +437,7 @@ public function showEvidence($path)
                     'is_creator'     => $isCreator,
                     'can_approve'    => $canApprove,
                     'is_participant' => $isParticipant, // ✅ Basado en employee_id
+                    'can_edit'       => JourneyStoreController::userCanEdit($journey, $user), // ✏️ NUEVO
                 ],
             ]);
 
