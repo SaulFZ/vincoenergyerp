@@ -27,6 +27,13 @@ use App\Http\Controllers\Operations\Sgc\SgcMaintenanceController;
 use App\Http\Controllers\Operations\Sgc\SgcOperationsController;
 use App\Http\Controllers\Operations\Sgc\SgcServicesController;
 
+/* CONTROLADORES DE LABORATORIO */
+/* Módulo: Tool Room */
+use App\Http\Controllers\Laboratory\ToolRoom\ToolMaintenanceController;
+use App\Http\Controllers\Laboratory\Toolroom\ToolCatalogController;
+use App\Http\Controllers\Laboratory\Toolroom\ToolReportController;
+
+
 /* CONTROLADORES DE QHSE */
 /* Módulo: Incidents */
 use App\Http\Controllers\Qhse\Incidents\IncidentController;
@@ -426,13 +433,21 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/autorizadores/{nivel}', 'getAutorizadores')->name('management.autorizadores');
                 });
 
-                // ---------------------------------------------------
-                // 3. GUARDADO DE NUEVO VIAJE (Transaccional)
+               // ---------------------------------------------------
+                // 3. GUARDADO Y EDICIÓN DE VIAJES (Transaccional)
                 // Controlador: JourneyStoreController
                 // ---------------------------------------------------
-                // IMPORTANTE: Esta es la ruta que llama el fetch() en JS
-                Route::post('/journeys/store', [JourneyStoreController::class, 'store'])
-                    ->name('management.store');
+                Route::controller(JourneyStoreController::class)->group(function () {
+                    // IMPORTANTE: Esta es la ruta que llama el fetch() en JS para crear
+                    Route::post('/journeys/store', 'store')->name('management.store');
+
+                    // ✏️ Edición de GV (Pendiente: solicitante/pasajeros | Aprobado: aprobador)
+                    Route::put('/journeys/{id}/update', 'update')
+                        ->where('id', '[0-9]+')
+                        ->name('management.update');
+                });
+
+
 
                 Route::controller(JourneyQueryController::class)->group(function () {
                     Route::get('/journeys', 'index')->name('management.list');
@@ -450,6 +465,8 @@ Route::middleware(['web', 'auth'])->group(function () {
                     Route::get('/destinations', 'getDestinations')->name('management.destinations');
                     Route::get('/evidencia/{path}', 'showEvidence')->where('path', '.*')->name('management.evidencia');
                 });
+
+
 
                 // ---------------------------------------------------
                 // 5. ACTUALIZACIÓN DE ESTADOS Y BITÁCORA EN RUTA
@@ -673,4 +690,46 @@ Route::middleware(['web', 'auth'])->group(function () {
                 });
             });
         });
-        });
+
+
+
+// ===================================================
+// MÓDULO: LABORATORIO (LABORATORY)
+// ===================================================
+Route::prefix('laboratory')
+    ->middleware(['auth', 'check.permission:laboratory'])
+    ->group(function () {
+
+        // ===================================================
+        // SUBSISTEMA: SALA DE HERRAMIENTAS / PAÑOL (Tool Room)
+        // Prefijo: /laboratory/toolroom
+        // ===================================================
+        Route::prefix('toolroom')
+            ->middleware('check.permission:laboratory,toolroom')
+            ->group(function () {
+
+                // Redirección directa a la vista principal (Mantenimientos)
+                Route::get('/', function () {
+                    return redirect()->route('laboratory.toolroom.maintenance');
+                })->name('laboratory.toolroom');
+
+                // 1. Mantenimientos
+                Route::controller(ToolMaintenanceController::class)->group(function () {
+                    Route::get('/tool-maintenance', 'index')->name('laboratory.toolroom.maintenance');
+                });
+
+                // 2. Catálogo (categorías y equipos en la misma vista)
+                Route::controller(ToolCatalogController::class)->group(function () {
+                    Route::get('/catalog', 'index')->name('laboratory.toolroom.catalog');
+                });
+
+                // 3. Reportes
+                Route::controller(ToolReportController::class)->group(function () {
+                    Route::get('/reports', 'index')->name('laboratory.toolroom.reports');
+                });
+            });
+    });
+
+
+
+});
