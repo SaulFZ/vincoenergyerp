@@ -4670,3 +4670,2692 @@
         border-radius: 12px;
     }
 }
+
+
+/* ========================================================================== */
+/* ✨ REDISEÑO MODAL DE GV (SOLICITUD DE GERENCIAMIENTO) ✨                    */
+/*    - Todo está limitado a #modalFormulario: no afecta a los demás modales  */
+/*    - Usa las mismas variables de color del sistema                          */
+/*    - Pégalo al FINAL del CSS para que tenga prioridad                       */
+/* ========================================================================== */
+
+/* ── 1. CONTENEDOR: encabezado y pie fijos, solo el cuerpo hace scroll ───── */
+#modalFormulario.modal-overlay,
+#modalFormulario *,
+#modalFormulario *::before,
+#modalFormulario *::after {
+    box-sizing: border-box;
+}
+
+#modalFormulario.modal-overlay.active {
+    align-items: center;
+}
+
+#modalFormulario .modal-content {
+    max-width: 1440px;
+    height: calc(100vh - 40px);
+    max-height: calc(100vh - 40px);
+    margin: 0 auto;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--background-gray);
+}
+
+/* ── 2. ENCABEZADO ───────────────────────────────────────────────────────── */
+#modalFormulario .form-header-modal {
+    flex-shrink: 0;
+    padding: 14px 24px;
+    border-radius: 0;
+    border-bottom: 3px solid var(--primary-orange);
+    gap: 16px;
+}
+
+#modalFormulario .form-header-info {
+    gap: 14px;
+}
+
+#modalFormulario .logo-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    padding-right: 14px;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+}
+
+#modalFormulario .logo-img img {
+    max-height: 40px;
+    max-width: 120px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+#modalFormulario .form-header-title h2 {
+    font-size: 18px;
+    letter-spacing: 0.3px;
+}
+
+#modalFormulario .form-header-title p {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+#modalFormulario .header-right-group {
+    align-items: center;
+    gap: 10px;
+}
+
+#modalFormulario .form-document-detail {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    padding: 6px 12px;
+    align-items: flex-start;
+    gap: 3px;
+}
+
+#modalFormulario .request-date {
+    border-right: 1px solid rgba(255, 255, 255, 0.18);
+    padding-right: 12px;
+}
+
+#modalFormulario .form-document-detail label {
+    background: transparent;
+    padding: 0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    opacity: 0.75;
+}
+
+#modalFormulario .form-document-detail span:not(.form-code-value) {
+    font-size: 15px;
+}
+
+#modalFormulario .form-code-value {
+    font-size: 15px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* ── 3. BARRA DE PASOS ───────────────────────────────────────────────────── */
+#modalFormulario .gv-steps {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border-gray);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+#modalFormulario .gv-steps::-webkit-scrollbar {
+    display: none;
+}
+
+#modalFormulario .gv-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 6px 6px;
+    border-radius: 999px;
+    color: var(--medium-gray);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+#modalFormulario .gv-step:hover {
+    background: var(--blue-pale);
+    color: var(--primary-blue);
+}
+
+#modalFormulario .gv-step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--light-gray);
+    color: var(--medium-gray);
+    border: 2px solid var(--border-gray);
+    transition: all 0.2s ease;
+}
+
+#modalFormulario .gv-step.is-active {
+    background: var(--blue-pale);
+    color: var(--primary-blue);
+}
+
+#modalFormulario .gv-step.is-active .gv-step-num {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--white);
+}
+
+#modalFormulario .gv-step-line {
+    flex: 1;
+    min-width: 20px;
+    height: 2px;
+    background: var(--border-gray);
+    border-radius: 2px;
+}
+
+/* ── 4. CUERPO ───────────────────────────────────────────────────────────── */
+#modalFormulario .form-body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px 24px 8px;
+    background: var(--background-gray);
+    scroll-behavior: smooth;
+}
+
+#modalFormulario .form-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+#modalFormulario .form-body::-webkit-scrollbar-thumb {
+    background: var(--border-gray);
+    border-radius: 4px;
+}
+
+/* ── 5. TARJETAS DE CADA PASO ────────────────────────────────────────────── */
+#modalFormulario .gv-card {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: 14px;
+    padding: 20px 22px 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03);
+    scroll-margin-top: 12px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+#modalFormulario .gv-card-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border-gray);
+    flex-wrap: wrap;
+}
+
+#modalFormulario .gv-card-num {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--primary-blue);
+    color: var(--white);
+    font-weight: 800;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(51, 76, 149, 0.3);
+}
+
+#modalFormulario .gv-card-titles {
+    flex: 1;
+    min-width: 220px;
+}
+
+#modalFormulario .gv-card-titles h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--blue-dark);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+#modalFormulario .gv-card-titles p {
+    margin: 3px 0 0;
+    font-size: 12px;
+    color: var(--medium-gray);
+}
+
+#modalFormulario .gv-card-head .unidades-count {
+    margin-left: 0;
+    font-size: 12px;
+    padding: 2px 9px;
+}
+
+#modalFormulario .gv-card-head .unidades-label {
+    font-size: 13px;
+    margin-left: 0;
+}
+
+#modalFormulario .gv-card-head #btnReunionPreConvoy {
+    margin-left: auto;
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+/* ── 6. CAMPOS ───────────────────────────────────────────────────────────── */
+#modalFormulario .gv-grid {
+    display: grid;
+    gap: 18px;
+}
+
+#modalFormulario .gv-grid-general {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+#modalFormulario .form-group label {
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: var(--blue-dark);
+}
+
+#modalFormulario .form-group label i {
+    color: var(--primary-blue);
+    width: 14px;
+    text-align: center;
+}
+
+#modalFormulario .form-group input,
+#modalFormulario .form-group select,
+#modalFormulario .form-group textarea,
+#modalFormulario .custom-select-trigger {
+    height: 42px;
+    padding: 0 14px;
+    border-radius: 10px;
+    background-color: var(--white);
+    font-size: 14px;
+}
+
+#modalFormulario .form-group textarea {
+    height: auto;
+    padding: 10px 14px;
+}
+
+#modalFormulario .form-group input[readonly] {
+    background: var(--light-gray);
+    color: var(--dark-gray);
+    font-weight: 600;
+}
+
+/* ── 7. TRAYECTO (SALIDA → LLEGADA) ──────────────────────────────────────── */
+#modalFormulario .gv-ruta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 90px minmax(0, 1fr);
+    align-items: stretch;
+}
+
+#modalFormulario .gv-ruta-punto {
+    position: relative;
+    border: 1px solid var(--border-gray);
+    border-radius: 12px;
+    padding: 26px 16px 16px;
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+#modalFormulario .gv-ruta-origen {
+    border-top: 3px solid var(--primary-blue);
+}
+
+#modalFormulario .gv-ruta-destino {
+    border-top: 3px solid var(--primary-orange);
+}
+
+#modalFormulario .gv-ruta-tag {
+    position: absolute;
+    top: -12px;
+    left: 14px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--white);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#modalFormulario .gv-ruta-origen .gv-ruta-tag {
+    background: var(--primary-blue);
+}
+
+#modalFormulario .gv-ruta-destino .gv-ruta-tag {
+    background: var(--primary-orange);
+}
+
+#modalFormulario .gv-ruta-fechas {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 12px;
+}
+
+#modalFormulario .gv-ruta-conector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 8px;
+}
+
+#modalFormulario .gv-ruta-linea {
+    flex: 1;
+    height: 0;
+    border-top: 2px dashed var(--border-gray);
+}
+
+#modalFormulario .gv-ruta-icono {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--blue-pale);
+    color: var(--primary-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border: 2px solid var(--white);
+    box-shadow: 0 0 0 1px var(--border-gray);
+}
+
+/* ── 8. EVENTOS EN RUTA ──────────────────────────────────────────────────── */
+#modalFormulario .gv-eventos-toggle {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--background-gray);
+    border: 1px solid var(--border-gray);
+}
+
+#modalFormulario .gv-eventos-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#modalFormulario .gv-eventos-info > i {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--white);
+    color: var(--primary-orange);
+    border: 1px solid var(--border-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+
+#modalFormulario .gv-eventos-info strong {
+    display: block;
+    font-size: 13px;
+    color: var(--blue-dark);
+}
+
+#modalFormulario .gv-eventos-info span {
+    display: block;
+    font-size: 12px;
+    color: var(--medium-gray);
+}
+
+/* Sí / No como selector segmentado (el input sigue siendo el mismo radio) */
+#modalFormulario .radio-group-paradas {
+    display: inline-flex;
+    gap: 0;
+    margin: 0;
+    padding: 3px;
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: 10px;
+}
+
+#modalFormulario .radio-option {
+    position: relative;
+    padding: 7px 22px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--medium-gray);
+    transition: all 0.2s ease;
+}
+
+#modalFormulario .radio-option input[type="radio"],
+#modalFormulario .radio-option input[type="radio"]:checked {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    background: transparent !important;
+    opacity: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+#modalFormulario .radio-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+#modalFormulario .radio-option:has(input:checked) {
+    background: var(--primary-blue);
+    color: var(--white);
+    box-shadow: 0 2px 6px rgba(51, 76, 149, 0.3);
+}
+
+#modalFormulario #contenedorParadas {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--white);
+    border: 1px dashed var(--blue-light);
+}
+
+#modalFormulario .parada-item {
+    border-radius: 10px;
+    border-color: var(--border-gray);
+}
+
+#modalFormulario .parada-header {
+    justify-content: flex-start;
+    padding: 8px 12px;
+}
+
+#modalFormulario .parada-titulo {
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+#modalFormulario .parada-body-compact .form-control-sm {
+    height: 36px;
+    border-radius: 8px;
+}
+
+#modalFormulario .btn-add-parada {
+    margin-top: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+/* ── 9. UNIDADES ─────────────────────────────────────────────────────────── */
+#modalFormulario .unidades-container {
+    max-width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border-gray);
+    background: var(--white);
+}
+
+#modalFormulario .unidades-table th {
+    padding: 12px 8px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#modalFormulario .unidades-table th:last-child {
+    border-right: none;
+}
+
+#modalFormulario .unidades-table th .column-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+#modalFormulario .unidades-table td {
+    padding: 12px 10px;
+    border-right-color: var(--light-gray);
+}
+
+/* Franja de color a la izquierda de cada unidad para separarlas visualmente */
+#modalFormulario .unidades-table td:first-child {
+    box-shadow: inset 4px 0 0 var(--primary-blue);
+}
+
+#modalFormulario .unidades-table tr:hover td {
+    background: rgba(51, 76, 149, 0.04);
+}
+
+#modalFormulario .table-input,
+#modalFormulario .vehicle-select-trigger {
+    border-radius: 8px;
+}
+
+#modalFormulario .btn-add-unidad {
+    margin-top: 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    box-shadow: none;
+}
+
+/* ── 10. EVALUACIÓN Y AUTORIZADOR ────────────────────────────────────────── */
+#modalFormulario #btnEvaluacionRiesgo {
+    margin-top: 0;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+}
+
+#modalFormulario .destinatario-section {
+    margin: 18px 0 0;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-gray);
+    background: var(--background-gray);
+}
+
+#modalFormulario .destinatario-section .form-section-title {
+    font-size: 14px;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 4px;
+    color: var(--blue-dark);
+}
+
+#modalFormulario .destinatario-section .form-section-title i {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+#modalFormulario .destinatario-subtitle {
+    margin: 0 0 14px 40px;
+    font-size: 12px;
+    color: var(--medium-gray);
+}
+
+#modalFormulario .destinatario-card .card-content {
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: var(--white);
+}
+
+/* ── 11. PIE ─────────────────────────────────────────────────────────────── */
+#modalFormulario .form-footer,
+#modalFormulario #_footerLectura {
+    flex-shrink: 0;
+    border-radius: 0 !important;
+    box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.05);
+}
+
+#modalFormulario .form-footer {
+    align-items: center;
+    padding: 14px 24px;
+    background: var(--white);
+    border-top: 1px solid var(--border-gray);
+}
+
+#modalFormulario .gv-footer-hint {
+    margin-right: auto;
+    font-size: 12px;
+    color: var(--medium-gray);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#modalFormulario .gv-footer-hint b {
+    color: var(--accent-red);
+}
+
+#modalFormulario .form-footer .btn-viajes {
+    height: 42px;
+    padding: 0 22px;
+    border-radius: 10px;
+}
+
+#modalFormulario .form-footer .btn-submit {
+    padding: 0 28px;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
+}
+
+/* ── 12. RESPONSIVO ──────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+    #modalFormulario .gv-grid-general {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #modalFormulario .gv-ruta {
+        grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
+    }
+
+    #modalFormulario .gv-ruta-fechas {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    #modalFormulario.modal-overlay.active {
+        align-items: flex-end;
+    }
+
+    #modalFormulario .modal-content {
+        height: 96vh;
+        max-height: 96vh;
+        border-radius: 16px 16px 0 0;
+        overflow: hidden;
+    }
+
+    #modalFormulario .form-header-modal {
+        padding: 12px 14px;
+    }
+
+    #modalFormulario .logo-img {
+        height: 36px;
+        padding: 4px 8px;
+    }
+
+    #modalFormulario .logo-img img {
+        max-height: 26px;
+    }
+
+    #modalFormulario .form-header-title h2 {
+        font-size: 15px;
+    }
+
+    #modalFormulario .form-document-detail {
+        flex: 1;
+    }
+
+    #modalFormulario .gv-steps {
+        padding: 8px 12px;
+        gap: 6px;
+    }
+
+    /* En móvil solo se ve el número del paso, excepto el activo */
+    #modalFormulario .gv-step:not(.is-active) .gv-step-text {
+        display: none;
+    }
+
+    #modalFormulario .gv-step:not(.is-active) {
+        padding: 4px;
+    }
+
+    #modalFormulario .gv-step-line {
+        min-width: 10px;
+    }
+
+    #modalFormulario .form-body {
+        padding: 12px;
+    }
+
+    #modalFormulario .gv-card {
+        padding: 14px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+
+    #modalFormulario .gv-card-num {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+        border-radius: 8px;
+    }
+
+    #modalFormulario .gv-card-titles {
+        min-width: 0;
+    }
+
+    #modalFormulario .gv-card-head #btnReunionPreConvoy {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+    }
+
+    #modalFormulario .gv-grid-general {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* La ruta se apila: Salida ↓ Llegada */
+    #modalFormulario .gv-ruta {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    #modalFormulario .gv-ruta-conector {
+        flex-direction: column;
+        height: 56px;
+        padding: 6px 0;
+    }
+
+    #modalFormulario .gv-ruta-linea {
+        width: 0;
+        height: auto;
+        flex: 1;
+        border-top: none;
+        border-left: 2px dashed var(--border-gray);
+    }
+
+    #modalFormulario .gv-ruta-icono {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+        transform: rotate(90deg);
+    }
+
+    #modalFormulario .gv-ruta-fechas {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #modalFormulario .gv-eventos-toggle {
+        padding: 12px;
+    }
+
+    #modalFormulario .radio-group-paradas {
+        width: 100%;
+    }
+
+    #modalFormulario .radio-option {
+        flex: 1;
+        justify-content: center;
+    }
+
+    #modalFormulario .destinatario-subtitle {
+        margin-left: 0;
+    }
+
+    #modalFormulario .form-footer {
+        display: grid !important;
+        grid-template-columns: 1fr 1.6fr;
+        gap: 10px;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    #modalFormulario .gv-footer-hint {
+        display: none;
+    }
+
+    #modalFormulario .form-footer .btn-viajes {
+        width: 100% !important;
+        height: 46px;
+        margin: 0 !important;
+        justify-content: center;
+        padding: 0 10px;
+        font-size: 14px;
+    }
+
+    #modalFormulario .form-footer #btnCerrarLectura {
+        grid-column: 1 / -1;
+    }
+
+    /* Pie del modo lectura (lo arma journey.js) */
+    #modalFormulario #_footerLectura {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px !important;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+    }
+
+    #modalFormulario #_footerLectura button {
+        width: 100%;
+        justify-content: center;
+        padding: 11px 10px !important;
+        font-size: 13px !important;
+    }
+
+    #modalFormulario #_footerLectura button:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+
+    /* iOS hace zoom si el texto del input es menor a 16px */
+    #modalFormulario input,
+    #modalFormulario select,
+    #modalFormulario textarea {
+        font-size: 16px !important;
+    }
+
+    /* ── UNIDADES COMO TARJETAS ─────────────────────────────── */
+    #modalFormulario .unidades-container {
+        border: none;
+        background: transparent;
+        overflow: visible;
+    }
+
+    #modalFormulario .unidades-table,
+    #modalFormulario .unidades-table tbody,
+    #modalFormulario .unidades-table tr,
+    #modalFormulario .unidades-table td {
+        display: block;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    #modalFormulario .unidades-table thead {
+        display: none;
+    }
+
+    #modalFormulario .unidades-table tbody {
+        counter-reset: gvUnidad;
+    }
+
+    #modalFormulario .unidades-table tr {
+        position: relative;
+        counter-increment: gvUnidad;
+        background: var(--white);
+        border: 1px solid var(--border-gray);
+        border-top: 4px solid var(--primary-blue);
+        border-radius: 12px;
+        margin-bottom: 14px;
+        overflow: visible;
+    }
+
+    #modalFormulario .unidades-table tr::before {
+        content: "Unidad " counter(gvUnidad);
+        display: block;
+        padding: 10px 52px 10px 14px;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--primary-blue);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border-gray);
+        background: var(--blue-pale);
+        border-radius: 8px 8px 0 0;
+    }
+
+    #modalFormulario .unidades-table td,
+    #modalFormulario .unidades-table tr:nth-child(even) td,
+    #modalFormulario .unidades-table tr:hover td {
+        background: transparent;
+        border-right: none;
+        border-bottom: 1px solid var(--light-gray);
+        padding: 12px 14px;
+        text-align: left;
+        box-shadow: none;
+    }
+
+    #modalFormulario .unidades-table td:first-child {
+        box-shadow: none;
+    }
+
+    /* "Conductor" ya lo dice la etiqueta del bloque */
+    #modalFormulario .unidades-table td:nth-child(2) .hour-input-group > div:first-child {
+        display: none !important;
+    }
+
+    #modalFormulario .unidades-table .conductor-completo-group {
+        padding: 0;
+    }
+
+    /* Etiqueta de cada bloque */
+    #modalFormulario .unidades-table td::before {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--medium-gray);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(1)::before { content: "Vehículo e inspección"; }
+    #modalFormulario .unidades-table td:nth-child(2)::before { content: "Conductor"; }
+    #modalFormulario .unidades-table td:nth-child(3)::before { content: "Aptitud física"; }
+    #modalFormulario .unidades-table td:nth-child(4)::before { content: "Vigencias"; }
+    #modalFormulario .unidades-table td:nth-child(5)::before { content: "Horas de sueño"; }
+    #modalFormulario .unidades-table td:nth-child(6)::before { content: "Horas de conducción"; }
+    #modalFormulario .unidades-table td:nth-child(7)::before { content: "Pasajeros"; }
+
+    /* Vehículo + botón de inspección lado a lado */
+    #modalFormulario .unidades-table td:nth-child(1) {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        align-items: center;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(1)::before,
+    #modalFormulario .unidades-table td:nth-child(1) .tipo-vehiculo-text {
+        grid-column: 1 / -1;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(1) .tipo-vehiculo-text {
+        margin: 0;
+        text-align: left;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(1) .tipo-vehiculo-text:empty {
+        display: none;
+    }
+
+    #modalFormulario .vehicle-select-trigger,
+    #modalFormulario .unidades-table td:nth-child(1) [id^="btn-inspeccion-"] {
+        width: 100%;
+        min-height: 44px;
+        margin: 0;
+        font-size: 14px;
+    }
+
+    /* Bloques internos en columnas para aprovechar el ancho */
+    #modalFormulario .unidades-table td:nth-child(3),
+    #modalFormulario .unidades-table td:nth-child(5),
+    #modalFormulario .unidades-table td:nth-child(6) .hour-inputs-group-combined-vertical {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        align-items: start;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(3)::before,
+    #modalFormulario .unidades-table td:nth-child(5)::before {
+        grid-column: 1 / -1;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(4) {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(4)::before {
+        grid-column: 1 / -1;
+    }
+
+    #modalFormulario .unidades-table .hour-input-group {
+        margin: 0 !important;
+        align-items: stretch !important;
+    }
+
+    #modalFormulario .unidades-table td .hour-input-group label {
+        justify-content: flex-start !important;
+        text-align: left;
+        font-size: 11px;
+        min-height: 28px;
+        align-items: flex-end;
+        margin-bottom: 4px;
+    }
+
+    #modalFormulario .unidades-table .table-input,
+    #modalFormulario .unidades-table .table-input.small,
+    #modalFormulario .unidades-table .table-input.large,
+    #modalFormulario .unidades-table .input-porcentaje,
+    #modalFormulario .unidades-table .medicina-select,
+    #modalFormulario .unidades-table .medicina-input-nombre {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        height: 44px !important;
+        margin: 0 !important;
+        text-align: center;
+    }
+
+    #modalFormulario .unidades-table [id^="presion-valor-"] {
+        width: 100% !important;
+    }
+
+    #modalFormulario .unidades-table .input-group-row {
+        width: 100%;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(2) .table-input.has-icon {
+        text-align: left;
+    }
+
+    /* Pasajeros */
+    #modalFormulario .unidades-table .pasajero-container {
+        max-height: none;
+        padding: 0;
+    }
+
+    #modalFormulario .unidades-table .pasajero-input-group {
+        gap: 8px;
+    }
+
+    #modalFormulario .unidades-table .btn-add-pasajero,
+    #modalFormulario .unidades-table .btn-remove-pasajero {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+    }
+
+    #modalFormulario .unidades-table .btn-add-pasajero {
+        width: 100%;
+        gap: 8px;
+    }
+
+    #modalFormulario .unidades-table .btn-add-pasajero::after {
+        content: "Agregar pasajero";
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    /* Botón eliminar unidad: esquina superior derecha de la tarjeta */
+    #modalFormulario .unidades-table td.acciones-td {
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        width: auto !important;
+        padding: 0;
+        border: none;
+        min-height: 0;
+    }
+
+    #modalFormulario .unidades-table td.acciones-td .btn-accion {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        background: var(--white);
+    }
+}
+
+@media (max-width: 480px) {
+    #modalFormulario .modal-content {
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    #modalFormulario .gv-ruta-fechas {
+        grid-template-columns: 1fr;
+    }
+
+    #modalFormulario .header-right-group {
+        gap: 6px;
+    }
+}
+
+/* ========================================================================== */
+/* ✨ MEJORAS GENERALES DE DISEÑO Y RESPONSIVO (TODO EL MÓDULO) ✨              */
+/*    Dashboard, filtros, paginador y modales secundarios                      */
+/*    (Evaluación, Pre-convoy, Inspecciones, Ruta e Historial)                 */
+/*    Mismos colores del sistema. Va DESPUÉS del bloque del modal de GV.       */
+/* ========================================================================== */
+
+/* ── 0. Medidas consistentes en el dashboard ─────────────────────────────── */
+.dashboard-container,
+.dashboard-container *,
+.dashboard-container *::before,
+.dashboard-container *::after {
+    box-sizing: border-box;
+}
+
+/* ── A. BOTÓN "FILTROS" (solo celular) ───────────────────────────────────── */
+.btn-filtros-movil {
+    display: none;
+}
+
+/* ── B. MODALES SECUNDARIOS: encabezado y pie fijos, cuerpo con scroll ───── */
+.modal-overlay:not(#modalFormulario),
+.modal-overlay:not(#modalFormulario) *,
+.modal-overlay:not(#modalFormulario) *::before,
+.modal-overlay:not(#modalFormulario) *::after {
+    box-sizing: border-box;
+}
+
+.modal-overlay:not(#modalFormulario).active {
+    align-items: center;
+}
+
+.modal-overlay:not(#modalFormulario) .modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 40px);
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+.modal-overlay:not(#modalFormulario) .form-header-modal {
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 20px;
+    border-radius: 0;
+    border-bottom: 3px solid var(--primary-orange);
+}
+
+.modal-overlay:not(#modalFormulario) .form-header-modal.header-history {
+    border-bottom-color: #475569;
+}
+
+.modal-overlay:not(#modalFormulario) .form-header-title h2 {
+    font-size: 17px;
+    line-height: 1.25;
+    flex-wrap: wrap;
+}
+
+.modal-overlay:not(#modalFormulario) .form-header-title p {
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.modal-overlay:not(#modalFormulario) .modal-inspeccion-body,
+.modal-overlay:not(#modalFormulario) .modal-content > .form-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--background-gray);
+}
+
+.modal-overlay:not(#modalFormulario) .modal-inspeccion-body {
+    padding: 22px 24px;
+}
+
+.modal-overlay:not(#modalFormulario) .form-footer {
+    flex-shrink: 0;
+    align-items: center;
+    padding: 14px 20px;
+    border-radius: 0;
+    background: var(--white);
+    box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.modal-overlay:not(#modalFormulario) .form-footer .btn-viajes {
+    height: 42px;
+    padding: 0 22px;
+    border-radius: 10px;
+    justify-content: center;
+}
+
+/* Botón Cerrar del encabezado (blanco translúcido sobre el azul) */
+.btn-modal-close {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: var(--primary-blue) !important;
+    border: none !important;
+    height: 38px;
+    padding: 0 16px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+}
+
+.btn-modal-close:hover {
+    background: var(--white) !important;
+    transform: translateY(-1px);
+}
+
+/* ── C. ENCABEZADO DE INSPECCIONES ───────────────────────────────────────── */
+.insp-header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.insp-meta {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    color: var(--white);
+}
+
+.insp-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.insp-meta-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    opacity: 0.75;
+}
+
+.insp-meta-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* journey.js pinta este dato en gris/naranja; sobre el azul se fuerza blanco para que se lea */
+#headerUltimaInspeccionLigera,
+#headerUltimaInspeccionPesada {
+    color: var(--white) !important;
+}
+
+.insp-meta-value i {
+    opacity: 0.8;
+    font-size: 12px;
+}
+
+/* ── D. TÍTULOS DE SECCIÓN DENTRO DE LOS MODALES ─────────────────────────── */
+.modal-overlay:not(#modalFormulario) .inspeccion-modal-title {
+    font-size: 15px;
+    margin: 0 0 14px;
+    padding: 0 0 8px;
+    border-bottom: 2px solid var(--primary-orange);
+}
+
+.modal-overlay:not(#modalFormulario) .header-inspeccion-section {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+/* ── E. INSPECCIÓN / PRE-CONVOY: cada punto como tarjeta con Sí · No · N/A ─ */
+.modal-overlay:not(#modalFormulario) .inspeccion-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-item,
+.modal-overlay:not(#modalFormulario) .inspeccion-item:nth-child(2n),
+.modal-overlay:not(#modalFormulario) .inspeccion-item:nth-last-child(-n + 2) {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: 10px;
+    padding: 10px 12px;
+    gap: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-item:hover {
+    border-color: var(--blue-light);
+}
+
+/* Punto marcado en "No" → se resalta para que no pase desapercibido */
+.modal-overlay:not(#modalFormulario) .inspeccion-item:has(label.no input:checked) {
+    border-color: var(--accent-red);
+    background: #fff5f5;
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-item-label {
+    font-size: 13px;
+    line-height: 1.3;
+    min-width: 0;
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-item-label i {
+    width: 18px;
+    text-align: center;
+    color: var(--primary-blue);
+    flex-shrink: 0;
+}
+
+/* Selector segmentado */
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 0;
+    padding: 3px;
+    border-radius: 9px;
+    background: var(--light-gray);
+    border: 1px solid var(--border-gray);
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group label {
+    position: relative;
+    min-width: 46px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 7px;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--medium-gray);
+    transition: all 0.15s ease;
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group input[type="radio"],
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group input[type="radio"]:checked {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border: 0 !important;
+    background: transparent !important;
+    opacity: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group label:has(input:checked) {
+    color: var(--white);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group label.si:has(input:checked) {
+    background: var(--accent-green);
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group label.no:has(input:checked) {
+    background: var(--accent-red);
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group label.na:has(input:checked) {
+    background: var(--medium-gray);
+}
+
+.modal-overlay:not(#modalFormulario) .inspeccion-radio-group label:not(:has(input:checked)):hover {
+    background: var(--white);
+    color: var(--blue-dark);
+}
+
+/* Líder de convoy */
+#modalPreConvoy #liderConvoy {
+    height: 44px;
+    border-radius: 10px;
+}
+
+/* ── F. EVIDENCIAS Y COMPROMISO ──────────────────────────────────────────── */
+.modal-overlay:not(#modalFormulario) .evidence-container {
+    background: var(--white);
+    border-radius: 12px;
+}
+
+.modal-overlay:not(#modalFormulario) .btn-attach,
+.modal-overlay:not(#modalFormulario) .btn-camera {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.modal-overlay:not(#modalFormulario) .file-upload-box.unified-box {
+    border-radius: 12px;
+}
+
+.modal-overlay:not(#modalFormulario) .driver-commitment {
+    border-radius: 10px;
+    text-align: left;
+}
+
+/* En pantallas táctiles no existe "hover": los botones de ver/eliminar foto quedan visibles */
+@media (hover: none) {
+    .preview-overlay {
+        opacity: 1;
+        align-items: flex-end;
+        padding-bottom: 6px;
+        background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.55) 100%);
+    }
+
+    .btn-preview-action {
+        width: 34px;
+        height: 34px;
+    }
+}
+
+/* ── G. EVALUACIÓN DE RIESGO: opciones como filas seleccionables ─────────── */
+#modalEvaluacion .evaluacion-grid {
+    gap: 14px;
+}
+
+#modalEvaluacion .evaluacion-item {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+#modalEvaluacion .evaluacion-titulo {
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-gray);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+#modalEvaluacion .evaluacion-opciones {
+    gap: 6px;
+}
+
+#modalEvaluacion .evaluacion-radio {
+    align-items: center;
+    padding: 9px 10px;
+    border: 1px solid var(--border-gray);
+    border-radius: 9px;
+    background: var(--white);
+    line-height: 1.35;
+}
+
+#modalEvaluacion .evaluacion-radio:hover {
+    border-color: var(--orange-dark);
+}
+
+#modalEvaluacion .evaluacion-radio input {
+    margin-top: 0;
+    flex-shrink: 0;
+}
+
+#modalEvaluacion .evaluacion-radio:has(input:checked) {
+    border-color: var(--orange-dark);
+    background: #fff8f1;
+    color: var(--dark-gray);
+    font-weight: 600;
+}
+
+#modalEvaluacion .factor-check {
+    border: 1px solid var(--border-gray);
+    border-radius: 9px;
+    padding: 10px 12px;
+    background: var(--white);
+}
+
+#modalEvaluacion .factor-check:has(input:checked) {
+    border-color: var(--orange-dark);
+    background: #fff8f1;
+}
+
+/* ── H. RUTA E HISTORIAL ─────────────────────────────────────────────────── */
+#modalSeguimientoRuta .form-body,
+#modalHistorialActividad .form-body {
+    padding: 18px !important;
+}
+
+#modalHistorialActividad .timeline-container {
+    max-height: none;
+    overflow: visible;
+}
+
+/* ========================================================================== */
+/* 📱 TABLET (≤ 1024px)                                                       */
+/* ========================================================================== */
+@media (max-width: 1024px) {
+    .modal-overlay:not(#modalFormulario) .inspeccion-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .insp-meta-item {
+        padding: 4px 10px;
+    }
+}
+
+/* ========================================================================== */
+/* 📱 CELULAR (≤ 768px)                                                       */
+/* ========================================================================== */
+@media (max-width: 768px) {
+
+    /* ── Dashboard ──────────────────────────────────────────── */
+    .compact-header {
+        padding: 14px 14px 12px;
+    }
+
+    .stat-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 10px;
+    }
+
+    .stat-icon {
+        margin-right: 0;
+    }
+
+    .stat-label {
+        white-space: normal;
+        line-height: 1.2;
+    }
+
+    /* Filtros: la búsqueda siempre visible, lo demás se abre con "Filtros" */
+    .filters-section {
+        padding: 12px 14px;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr auto !important;
+        gap: 10px !important;
+        align-items: end;
+    }
+
+    .filters-grid .filter-search {
+        grid-column: 1 / 2 !important;
+    }
+
+    .filters-grid .filter-search label {
+        display: none;
+    }
+
+    .btn-filtros-movil {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 42px;
+        padding: 0 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border-gray);
+        background: var(--white);
+        color: var(--primary-blue);
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        grid-column: 2 / 3;
+    }
+
+    .btn-filtros-movil .filtros-badge {
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 10px;
+        background: var(--primary-orange);
+        color: var(--white);
+        font-size: 11px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-filtros-movil .filtros-chevron {
+        font-size: 11px;
+        transition: transform 0.2s ease;
+    }
+
+    .filters-section.filtros-abiertos .btn-filtros-movil {
+        background: var(--blue-pale);
+        border-color: var(--primary-blue);
+    }
+
+    .filters-section.filtros-abiertos .filtros-chevron {
+        transform: rotate(180deg);
+    }
+
+    .filters-grid > .filter-group:not(.filter-search),
+    .filters-grid > .filter-actions {
+        display: none;
+        grid-column: 1 / -1;
+    }
+
+    .filters-section.filtros-abiertos .filters-grid > .filter-group:not(.filter-search) {
+        display: flex;
+    }
+
+    .filters-section.filtros-abiertos .filters-grid > .filter-actions {
+        display: flex;
+    }
+
+    .filters-grid .filter-actions .btn-icon {
+        flex: 1;
+        width: auto;
+    }
+
+    .filters-grid input,
+    .filters-grid select,
+    .pagination-limit select {
+        font-size: 16px !important;
+    }
+
+    /* Encabezado de la lista */
+    .table-header {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    /* ── Lista de viajes como TARJETAS ────────────────────────── */
+    .table-responsive-wrapper {
+        overflow-x: visible;
+        padding: 12px;
+        background: var(--background-gray);
+    }
+
+    .table-viajes,
+    .table-viajes tbody,
+    .table-viajes tr,
+    .table-viajes td {
+        display: block;
+        width: 100%;
+        min-width: 0 !important;
+    }
+
+    .table-viajes thead {
+        display: none;
+    }
+
+    .table-viajes tr {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-auto-flow: row dense;
+        background: var(--white);
+        border: 1px solid var(--border-gray);
+        border-left: 4px solid var(--primary-blue);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+    }
+
+    .table-viajes td,
+    .table-viajes tbody tr:hover td {
+        background: transparent;
+        border-bottom: 1px solid var(--light-gray);
+        padding: 9px 12px;
+        white-space: normal !important;
+        text-align: left !important;
+    }
+
+    .table-viajes td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 3px;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--medium-gray);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Distribución de la tarjeta: datos largos a lo ancho, cortos en pareja, estados en tercios */
+    .table-viajes td {
+        grid-column: span 6;
+    }
+
+    .table-viajes td.td-area,
+    .table-viajes td.td-tipo {
+        grid-column: span 3;
+    }
+
+    .table-viajes td.td-riesgo,
+    .table-viajes td.td-estado-gv,
+    .table-viajes td.td-estado-viaje {
+        grid-column: span 2;
+    }
+
+    /* Folio como encabezado de la tarjeta */
+    .table-viajes td.td-folio {
+        grid-column: 1 / -1;
+        background: var(--blue-pale);
+        font-size: 15px;
+        color: var(--primary-blue);
+    }
+
+    .table-viajes td.td-folio::before {
+        display: none;
+    }
+
+    .table-viajes td.td-nombre,
+    .table-viajes td.td-destino,
+    .table-viajes td.td-fechas {
+        grid-column: 1 / -1;
+        min-width: 0 !important;
+    }
+
+    .table-viajes .badge-status,
+    .table-viajes .badge-riesgo {
+        min-width: 0;
+        padding: 4px 10px;
+    }
+
+    /* Acciones: botones grandes y fáciles de tocar */
+    .table-viajes td.td-acciones {
+        grid-column: 1 / -1;
+        border-bottom: none;
+        background: var(--background-gray);
+    }
+
+    .table-viajes td.td-acciones::before {
+        display: none;
+    }
+
+    .table-viajes td.td-acciones > div {
+        justify-content: stretch !important;
+        flex-wrap: wrap;
+    }
+
+    .table-viajes td.td-acciones .btn-action-small {
+        flex: 1;
+        min-width: 44px;
+        height: 40px;
+    }
+
+    /* ── Paginador en una sola línea ─────────────────────────── */
+    .pagination-container {
+        padding: 12px 14px !important;
+        gap: 10px !important;
+    }
+
+    .pagination-left-group {
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 13px;
+    }
+
+    .pagination-controls {
+        flex-wrap: nowrap !important;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .page-btn {
+        min-width: 38px !important;
+        height: 38px !important;
+        padding: 0 8px;
+    }
+
+    .page-btn-nav .page-btn-text {
+        display: none;
+    }
+
+    .page-dots {
+        padding: 0 2px;
+    }
+
+    /* ── Modales secundarios como hoja inferior ───────────────── */
+    .modal-overlay:not(#modalFormulario).active {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .modal-overlay:not(#modalFormulario) .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 94vh;
+        max-height: 94dvh;
+        margin: 0;
+        border-radius: 16px 16px 0 0;
+    }
+
+    /* Encabezado SIEMPRE en fila: título a la izquierda, cerrar a la derecha */
+    .modal-overlay:not(#modalFormulario) .form-header-modal {
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: wrap;
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .form-header-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .modal-overlay:not(#modalFormulario) .form-header-title h2 {
+        font-size: 15px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .form-header-title p {
+        font-size: 11px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .form-header-modal > .form-code-document,
+    .modal-overlay:not(#modalFormulario) .form-header-modal > div:last-child {
+        width: auto !important;
+        flex-wrap: nowrap;
+    }
+
+    /* El botón Cerrar queda solo como "X" */
+    .btn-modal-close {
+        width: 38px;
+        padding: 0 !important;
+        justify-content: center;
+        gap: 0 !important;
+    }
+
+    .btn-modal-close .btn-label {
+        display: none;
+    }
+
+    /* Inspecciones: fila 1 = título + X, fila 2 = fechas */
+    .modal-overlay:not(#modalFormulario) .form-header-modal > .insp-header-right {
+        display: contents !important;
+    }
+
+    .insp-header-right .form-code-document {
+        order: 2;
+    }
+
+    .insp-meta {
+        order: 3;
+        width: 100%;
+        gap: 6px !important;
+    }
+
+    .insp-meta-item {
+        flex: 1;
+        margin: 0 !important;
+        padding: 6px 10px !important;
+    }
+
+    .modal-overlay:not(#modalFormulario) .modal-inspeccion-body {
+        padding: 14px 12px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .inspeccion-modal-title {
+        font-size: 14px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .header-inspeccion-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .header-inspeccion-grid .form-group:first-child {
+        grid-column: 1 / -1;
+    }
+
+    /* Punto de inspección: texto arriba, Sí · No · N/A a todo lo ancho */
+    .modal-overlay:not(#modalFormulario) .inspeccion-item {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .inspeccion-radio-group {
+        display: flex;
+        width: 100%;
+    }
+
+    .modal-overlay:not(#modalFormulario) .inspeccion-radio-group label {
+        flex: 1;
+        height: 40px;
+        font-size: 13px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .evidence-actions-header,
+    .modal-overlay:not(#modalFormulario) .evidence-buttons {
+        width: 100%;
+    }
+
+    .modal-overlay:not(#modalFormulario) .evidence-buttons > button {
+        flex: 1;
+        justify-content: center;
+        height: 42px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .preview-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    /* Evaluación */
+    #modalEvaluacion .evaluacion-item {
+        padding: 12px;
+    }
+
+    #modalEvaluacion .evaluacion-radio {
+        font-size: 13px;
+        padding: 11px 10px;
+    }
+
+    /* Pie de los modales secundarios */
+    .modal-overlay:not(#modalFormulario) .form-footer {
+        display: flex;
+        gap: 10px;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .modal-overlay:not(#modalFormulario) .form-footer .btn-viajes {
+        flex: 1;
+        width: auto;
+        height: 46px;
+        padding: 0 10px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .form-footer .btn-viajes.btn-primary {
+        flex: 1.6;
+    }
+
+    .modal-overlay:not(#modalFormulario) input,
+    .modal-overlay:not(#modalFormulario) select,
+    .modal-overlay:not(#modalFormulario) textarea {
+        font-size: 16px !important;
+    }
+
+    /* Ruta / historial */
+    #modalSeguimientoRuta .form-body,
+    #modalHistorialActividad .form-body {
+        padding: 12px !important;
+    }
+
+    #modalSeguimientoRuta .form-header-modal .btn-camara-close,
+    #modalHistorialActividad .form-header-modal .btn-camara-close {
+        width: 36px !important;
+        height: 36px !important;
+        flex-shrink: 0;
+    }
+
+    /* SweetAlert un poco más cómodo */
+    .swal2-actions button {
+        min-height: 44px;
+    }
+}
+
+/* ========================================================================== */
+/* 📱 CELULAR CHICO (≤ 480px)                                                 */
+/* ========================================================================== */
+@media (max-width: 480px) {
+    .modal-overlay:not(#modalFormulario) .modal-content {
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0;
+    }
+
+    .table-viajes td.td-riesgo,
+    .table-viajes td.td-estado-gv,
+    .table-viajes td.td-estado-viaje {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .table-viajes .badge-status,
+    .table-viajes .badge-riesgo {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .modal-overlay:not(#modalFormulario) .header-inspeccion-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .page-btn {
+        min-width: 34px !important;
+        height: 34px !important;
+        font-size: 13px;
+    }
+}
+
+/* ========================================================================== */
+/* 🔧 AJUSTES v3 (correcciones finas de escritorio y celular)                 */
+/* ========================================================================== */
+
+/* ── 1. Modo lectura: el pie original (Cancelar / Enviar) debe quedar oculto  */
+/*      journey.js le pone id="_footerOriginal" mientras está escondido       */
+#modalFormulario #_footerOriginal {
+    display: none !important;
+}
+
+/* ── 2. Botón eliminar unidad: rojo y sin "brincos" ───────────────────────── */
+#modalFormulario .btn-accion.eliminar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-red);
+    border-color: var(--accent-red);
+    color: var(--white);
+    -webkit-tap-highlight-color: transparent;
+}
+
+#modalFormulario .btn-accion.eliminar:hover {
+    background: #d32f2f;
+    border-color: #d32f2f;
+    color: var(--white);
+}
+
+#modalFormulario .acciones-td {
+    height: auto;
+}
+
+/* ── 3. Toma de medicamento un poco más amplio en escritorio ──────────────── */
+#modalFormulario .medicina-select {
+    width: 80px !important;
+    min-width: 80px !important;
+    height: 32px !important;
+}
+
+#modalFormulario .medicina-input-nombre {
+    max-width: 140px !important;
+    height: 30px !important;
+}
+
+/* ── 4. Modal de SEGUNDO CONDUCTOR ────────────────────────────────────────── */
+#modalRelevo {
+    z-index: 2300;
+}
+
+#modalRelevo .modal-content {
+    max-width: 680px;
+}
+
+#modalRelevo .relevo-avatar {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+}
+
+#modalRelevo .form-header-title p strong {
+    font-weight: 700;
+}
+
+#modalRelevo .relevo-alerta {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #fff5f5;
+    border: 1px solid #fca5a5;
+    color: #b71c1c;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+#modalRelevo .relevo-alerta > i {
+    margin-top: 2px;
+}
+
+#modalRelevo .relevo-bloque {
+    background: var(--white);
+    border: 1px solid var(--border-gray);
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+    margin-bottom: 12px;
+}
+
+#modalRelevo .relevo-bloque-titulo {
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-gray);
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--primary-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#modalRelevo .relevo-bloque-titulo i {
+    color: var(--primary-orange);
+}
+
+#modalRelevo .relevo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 14px;
+}
+
+#modalRelevo .form-group label {
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+#modalRelevo .form-group label i {
+    color: var(--primary-blue);
+}
+
+#modalRelevo .form-group input,
+#modalRelevo .form-group select {
+    height: 42px;
+    padding: 0 12px;
+    border-radius: 10px;
+    width: 100%;
+}
+
+#modalRelevo .form-group input[readonly] {
+    background: var(--light-gray);
+    font-weight: 700;
+    cursor: default;
+}
+
+#modalRelevo .form-group input:disabled,
+#modalRelevo .form-group select:disabled {
+    background: var(--light-gray);
+    color: var(--dark-gray);
+    opacity: 1;
+    -webkit-text-fill-color: var(--dark-gray);
+}
+
+#modalRelevo .relevo-resumen {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+}
+
+#modalRelevo .relevo-dato {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--background-gray);
+    border: 1px solid var(--border-gray);
+}
+
+#modalRelevo .relevo-dato span {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--medium-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+#modalRelevo .relevo-dato input {
+    border: none;
+    background: transparent;
+    padding: 0;
+    height: auto;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--blue-dark);
+    width: 100%;
+    outline: none;
+}
+
+#modalRelevo .relevo-dato-total {
+    background: var(--blue-pale);
+    border-color: var(--blue-light);
+}
+
+#modalRelevo .relevo-dato-total input {
+    color: var(--primary-blue);
+}
+
+#modalRelevo .relevo-dato-total:has(input.relevo-excede) {
+    background: var(--accent-red);
+    border-color: var(--accent-red);
+}
+
+#modalRelevo .relevo-dato-total:has(input.relevo-excede) span,
+#modalRelevo .relevo-dato-total input.relevo-excede {
+    color: var(--white);
+}
+
+#modalRelevo .relevo-aviso {
+    margin-top: 10px;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #b71c1c;
+}
+
+#modalRelevo.relevo-solo-lectura .required {
+    display: none;
+}
+
+/* ========================================================================== */
+/* 📱 CELULAR (≤ 768px)                                                       */
+/* ========================================================================== */
+@media (max-width: 768px) {
+
+    /* ── Tarjetas de la lista: borde más delgado y líneas más ligeras ─────── */
+    .table-viajes tr {
+        border-left-width: 3px;
+        border-radius: 10px;
+    }
+
+    .table-viajes td,
+    .table-viajes tbody tr:hover td {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 8px 12px;
+    }
+
+    .table-viajes td.td-folio {
+        padding: 10px 12px;
+    }
+
+    .table-viajes td.td-nombre,
+    .table-viajes td.td-destino {
+        word-break: break-word;
+    }
+
+    .stat-active,
+    .stat-pending,
+    .stat-completed {
+        border-left-width: 3px;
+    }
+
+    /* ── Modales secundarios a pantalla completa (sin hueco arriba) ───────── */
+    .modal-overlay:not(#modalFormulario).active {
+        align-items: stretch;
+    }
+
+    .modal-overlay:not(#modalFormulario) .modal-content {
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0;
+    }
+
+    /* Pie de los modales secundarios: botones en fila, aunque otro CSS lo cambie */
+    .modal-overlay:not(#modalFormulario) .form-footer {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        gap: 10px !important;
+    }
+
+    .modal-overlay:not(#modalFormulario) .form-footer > .btn-viajes {
+        flex: 1 1 0 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        height: 46px !important;
+        margin: 0 !important;
+        padding: 0 10px !important;
+        justify-content: center !important;
+        font-size: 14px !important;
+        border-radius: 10px !important;
+    }
+
+    .modal-overlay:not(#modalFormulario) .form-footer > .btn-viajes.btn-primary {
+        flex-grow: 1.6 !important;
+    }
+
+    /* ── Encabezado del GV: fecha y folio más compactos ──────────────────── */
+    #modalFormulario .header-right-group {
+        gap: 6px !important;
+    }
+
+    #modalFormulario .form-document-detail {
+        flex: 1;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1px !important;
+        padding: 4px 10px !important;
+        border-radius: 8px;
+        min-width: 0;
+    }
+
+    #modalFormulario .request-date {
+        padding-right: 10px !important;
+    }
+
+    #modalFormulario .form-document-detail label {
+        font-size: 8.5px;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    #modalFormulario .form-document-detail span:not(.form-code-value) {
+        font-size: 13px;
+        line-height: 1.3;
+    }
+
+    #modalFormulario .form-code-value {
+        font-size: 12px;
+        padding: 1px 8px;
+        white-space: nowrap;
+    }
+
+    #modalFormulario .form-header-title h2 {
+        font-size: 14px;
+    }
+
+    #modalFormulario .form-header-title p {
+        font-size: 10.5px;
+    }
+
+    #modalFormulario .logo-img {
+        height: 30px;
+        padding-right: 10px;
+    }
+
+    #modalFormulario .logo-img img {
+        max-height: 28px;
+        max-width: 70px;
+    }
+
+    /* ── Encabezado de cada paso (ej. Paso 3) ─────────────────────────────── */
+    #modalFormulario .gv-card-head {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        gap: 4px 12px;
+    }
+
+    #modalFormulario .gv-card-titles h3 {
+        font-size: 15px;
+        gap: 6px;
+        line-height: 1.25;
+    }
+
+    #modalFormulario .gv-card-titles p {
+        font-size: 11.5px;
+        line-height: 1.35;
+    }
+
+    #modalFormulario .gv-card-head .unidades-label {
+        flex-basis: 100%;
+        font-size: 12px;
+        margin-top: -2px;
+    }
+
+    #modalFormulario .gv-card-head #btnReunionPreConvoy {
+        grid-column: 1 / -1;
+        margin-top: 8px;
+        height: 42px;
+    }
+
+    /* ── Unidad: botón eliminar fijo en la esquina, rojo, sin moverse ────── */
+    #modalFormulario .unidades-table td.acciones-td,
+    #modalFormulario .unidades-table td.acciones-td:focus-within {
+        position: absolute !important;
+        top: 5px !important;
+        right: 8px !important;
+        left: auto !important;
+        bottom: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        width: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        z-index: 5 !important;
+        display: block !important;
+    }
+
+    #modalFormulario .unidades-table td.acciones-td::before {
+        display: none !important;
+    }
+
+    #modalFormulario .unidades-table td.acciones-td .btn-accion,
+    #modalFormulario .unidades-table td.acciones-td .btn-accion:hover,
+    #modalFormulario .unidades-table td.acciones-td .btn-accion:active,
+    #modalFormulario .unidades-table td.acciones-td .btn-accion:focus {
+        width: 32px;
+        height: 32px;
+        margin: 0;
+        border-radius: 8px;
+        transform: none !important;
+        box-shadow: none !important;
+        background: var(--accent-red);
+        border: 1px solid var(--accent-red);
+        color: var(--white);
+        outline: none;
+    }
+
+    /* ── Campos de la unidad alineados (etiquetas de 1 o 2 líneas) ────────── */
+    #modalFormulario .unidades-table td .hour-input-group label {
+        display: flex !important;
+        align-items: flex-end !important;
+        gap: 4px;
+        min-height: 30px;
+        line-height: 1.15;
+        margin-bottom: 5px !important;
+    }
+
+    #modalFormulario .unidades-table td .hour-input-group label i {
+        flex-shrink: 0;
+        margin-bottom: 1px;
+    }
+
+    /* Aptitud física: Alcoholimetría | Presión, y medicamento a todo lo ancho */
+    #modalFormulario .unidades-table td:nth-child(3) {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(3) .hour-input-group:nth-of-type(3) {
+        grid-column: 1 / -1;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+        column-gap: 10px;
+        align-items: end;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(3) .hour-input-group:nth-of-type(3) > label {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(3) .hour-input-group:nth-of-type(3) > .input-group-row {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(3) .medicina-hidden-container {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        align-self: end;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(3) .medicina-label-detail {
+        display: flex !important;
+        align-items: flex-end;
+        gap: 4px;
+        min-height: 30px;
+        margin: 0 0 5px !important;
+        font-size: 11px !important;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    #modalFormulario .unidades-table .medicina-select {
+        text-align: center;
+        text-align-last: center;
+        padding: 0 8px !important;
+    }
+
+    #modalFormulario .unidades-table .medicina-input-nombre {
+        text-align: left !important;
+        padding: 0 12px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Horas: 3 columnas iguales */
+    #modalFormulario .unidades-table td:nth-child(5),
+    #modalFormulario .unidades-table td:nth-child(6) .hour-inputs-group-combined-vertical {
+        gap: 8px !important;
+    }
+
+    #modalFormulario .unidades-table .hour-input-result {
+        border-width: 1px;
+        font-weight: 800;
+    }
+
+    /* Vigencias: el texto completo cabe */
+    #modalFormulario .unidades-table td:nth-child(4) .table-input {
+        font-size: 14px !important;
+        padding: 0 6px !important;
+    }
+
+    /* ── Modal de segundo conductor ───────────────────────────────────────── */
+    #modalRelevo .modal-content {
+        max-width: 100% !important;
+    }
+
+    #modalRelevo .relevo-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    #modalRelevo .relevo-resumen {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #modalRelevo .relevo-bloque {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 420px) {
+    #modalRelevo .relevo-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #modalFormulario .unidades-table td:nth-child(5),
+    #modalFormulario .unidades-table td:nth-child(6) .hour-inputs-group-combined-vertical {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Íconos redondos de los títulos de sección en modales secundarios (Bitácora, etc.) */
+.modal-overlay:not(#modalFormulario) .form-section-title i {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+}
+
+/* ========================================================================== */
+/* 👥 CAMPO DE PASAJERO COMO "INPUT GROUP" (botón de rol pegado a la izquierda) */
+/*    Azul = pasajero (clic para hacerlo relevo) · Verde = segundo conductor    */
+/* ========================================================================== */
+#modalFormulario .pasajero-input-group {
+    align-items: stretch;
+    gap: 6px;
+}
+
+#modalFormulario .pasajero-nombre-container.input-wrapper {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    height: 36px;
+    border: 1px solid var(--border-gray);
+    border-radius: 8px;
+    background: var(--white);
+    overflow: visible;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#modalFormulario .pasajero-nombre-container.input-wrapper:focus-within {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(51, 76, 149, 0.12);
+}
+
+/* Botón de rol (antes era un icono flotante dentro del input) */
+#modalFormulario .pasajero-nombre-container .field-icon.pasajero,
+#modalFormulario .pasajero-nombre-container .field-icon.relevo {
+    position: static !important;
+    left: auto !important;
+    transform: none !important;
+    flex: 0 0 38px;
+    width: 38px !important;
+    height: auto !important;
+    margin: -1px 0 -1px -1px;
+    border-radius: 8px 0 0 8px !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: none !important;
+    transition: background-color 0.2s ease;
+}
+
+#modalFormulario .pasajero-nombre-container .field-icon.pasajero {
+    background-color: var(--primary-blue) !important;
+    color: var(--white) !important;
+}
+
+#modalFormulario .pasajero-nombre-container .field-icon.pasajero:hover {
+    background-color: var(--primary-orange) !important;
+}
+
+#modalFormulario .pasajero-nombre-container .field-icon.relevo {
+    background-color: var(--accent-green) !important;
+    color: var(--white) !important;
+}
+
+#modalFormulario .pasajero-nombre-container .field-icon.relevo:hover {
+    background-color: var(--accent-red) !important;
+}
+
+/* El input ocupa el resto, sin borde propio (el borde es del grupo) */
+#modalFormulario .pasajero-nombre-container .table-input.has-icon {
+    flex: 1;
+    min-width: 0;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 10px !important;
+    border: none !important;
+    border-radius: 0 8px 8px 0;
+    background: transparent;
+    box-shadow: none !important;
+    text-align: left;
+}
+
+/* Segundo conductor: el grupo completo se pinta de verde suave */
+#modalFormulario .pasajero-input-group.es-relevo .pasajero-nombre-container.input-wrapper {
+    border-color: var(--accent-green);
+    background: #f1f8e9;
+}
+
+#modalFormulario .pasajero-input-group.es-relevo .table-input {
+    background: transparent;
+}
+
+#modalFormulario .pasajero-nombre-container .badge-principal {
+    top: 50% !important;
+    right: 8px !important;
+    transform: translateY(-50%);
+}
+
+/* Botón de eliminar pasajero: mismo alto que el grupo */
+#modalFormulario .pasajero-input-group .btn-remove-pasajero {
+    width: 36px;
+    height: 36px;
+    margin-left: 0 !important;
+    border-radius: 8px;
+    flex-shrink: 0;
+    box-shadow: none;
+}
+
+#modalFormulario .btn-add-pasajero {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    #modalFormulario .pasajero-nombre-container.input-wrapper {
+        height: 44px;
+        border-radius: 10px;
+    }
+
+    #modalFormulario .pasajero-nombre-container .field-icon.pasajero,
+    #modalFormulario .pasajero-nombre-container .field-icon.relevo {
+        flex-basis: 46px;
+        width: 46px !important;
+        border-radius: 10px 0 0 10px !important;
+        font-size: 16px;
+    }
+
+    #modalFormulario .pasajero-input-group .btn-remove-pasajero {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+    }
+
+    #modalFormulario .unidades-table .btn-add-pasajero {
+        height: 44px;
+        border-radius: 10px;
+    }
+}

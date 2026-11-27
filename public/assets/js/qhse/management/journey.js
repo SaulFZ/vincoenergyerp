@@ -94,6 +94,7 @@ async function cargarViajes(page = 1, isSilent = false) {
     const wrapper = container.parentElement;
 
     currentPage = page;
+    actualizarIndicadorFiltros();
 
     // 1. Instanciar el Spinner Moderno (Secundario) si no existe
     let spinner = document.getElementById("modernSpinnerOverlay");
@@ -165,6 +166,36 @@ async function cargarViajes(page = 1, isSilent = false) {
         console.error("Error silencioso:", error);
     }
 }
+// ====================================================================
+// 📱 FILTROS EN CELULAR: se muestran / ocultan con el botón "Filtros"
+// ====================================================================
+function toggleFiltrosMovil() {
+    const seccion = document.querySelector(".filters-section");
+    const boton = document.getElementById("btnToggleFiltros");
+    if (!seccion) return;
+    const abierto = seccion.classList.toggle("filtros-abiertos");
+    if (boton) boton.setAttribute("aria-expanded", abierto ? "true" : "false");
+}
+
+// Marca el botón "Filtros" cuando hay algún filtro aplicado (para que se note en celular)
+function actualizarIndicadorFiltros() {
+    const boton = document.getElementById("btnToggleFiltros");
+    if (!boton) return;
+    const activos = [
+        currentSearch,
+        currentFechaSolicitud,
+        currentStatusGv !== "all",
+        currentStatusViaje !== "all",
+        currentRiskLevel !== "all",
+        currentDestination !== "all",
+    ].filter(Boolean).length;
+    const badge = boton.querySelector(".filtros-badge");
+    if (badge) {
+        badge.textContent = activos;
+        badge.style.display = activos > 0 ? "inline-flex" : "none";
+    }
+}
+
 function mostrarError(mensaje) {
     const container = document.getElementById("tablaViajesContainer");
     const errorTemplate = document.getElementById("errorTemplate").innerHTML;
@@ -271,17 +302,19 @@ function renderTablaViajes(viajes, container) {
 
         botonesAccion += `</div>`;
 
+        // data-label: en celular cada fila se muestra como tarjeta con su etiqueta
         html += `
             <tr>
-                <td><strong>${viaje.folio}</strong></td>
-                <td class="td-nombre">${viaje.solicitante}</td>
-                <td>${viaje.area}</td>
-                <td class="td-destino">${viaje.destino}</td> <td style="text-align: center;">${badgeTipoViaje}</td>
-                <td class="td-fechas">${viaje.fechas}</td>
-                <td><span class="badge-riesgo ${viaje.riesgo.clase}">${viaje.riesgo.texto}</span></td>
-                <td><span class="badge-status ${viaje.estado_gv.clase}">${viaje.estado_gv.texto}</span></td>
-                <td><span class="badge-status ${viaje.estado_viaje.clase}">${viaje.estado_viaje.texto}</span></td>
-                <td>${botonesAccion}</td>
+                <td class="td-folio" data-label="Folio"><strong>${viaje.folio}</strong></td>
+                <td class="td-nombre" data-label="Solicitante">${viaje.solicitante}</td>
+                <td class="td-area" data-label="Área">${viaje.area}</td>
+                <td class="td-destino" data-label="Destino">${viaje.destino}</td>
+                <td class="td-tipo" data-label="Tipo" style="text-align: center;">${badgeTipoViaje}</td>
+                <td class="td-fechas" data-label="Fechas">${viaje.fechas}</td>
+                <td class="td-riesgo" data-label="Riesgo"><span class="badge-riesgo ${viaje.riesgo.clase}">${viaje.riesgo.texto}</span></td>
+                <td class="td-estado-gv" data-label="Estado GV"><span class="badge-status ${viaje.estado_gv.clase}">${viaje.estado_gv.texto}</span></td>
+                <td class="td-estado-viaje" data-label="Estado Viaje"><span class="badge-status ${viaje.estado_viaje.clase}">${viaje.estado_viaje.texto}</span></td>
+                <td class="td-acciones" data-label="Acciones">${botonesAccion}</td>
             </tr>
         `;
     });
@@ -327,8 +360,8 @@ function renderPaginacion(pagination, container) {
             ? ""
             : `onclick="cambiarPagina(${pagination.current_page - 1})"`;
     html += `
-                <button class="page-btn" ${prevDisabled} ${prevOnClick}>
-                    <i class="fas fa-chevron-left"></i> Anterior
+                <button class="page-btn page-btn-nav" ${prevDisabled} ${prevOnClick} title="Anterior">
+                    <i class="fas fa-chevron-left"></i> <span class="page-btn-text">Anterior</span>
                 </button>
     `;
 
@@ -350,8 +383,8 @@ function renderPaginacion(pagination, container) {
     let nextOnClick =
         currPage === lastPage ? "" : `onclick="cambiarPagina(${currPage + 1})"`;
     html += `
-                <button class="page-btn" ${nextDisabled} ${nextOnClick}>
-                    Siguiente <i class="fas fa-chevron-right"></i>
+                <button class="page-btn page-btn-nav" ${nextDisabled} ${nextOnClick} title="Siguiente">
+                    <span class="page-btn-text">Siguiente</span> <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
         </div>
@@ -1240,7 +1273,7 @@ async function abrirModalEdicion(idViaje) {
             const msg =
                 result.data.approval_status === "approved"
                     ? "Este GV ya fue aprobado. Solo el aprobador asignado puede modificarlo."
-                    : "Solo el solicitante y los pasajeros pueden editar el GV mientras está Pendiente.";
+                    : "Mientras está Pendiente, el GV lo pueden editar el solicitante, los pasajeros y el aprobador asignado.";
             Swal.fire("Sin permiso", msg, "warning");
             return;
         }
@@ -3196,6 +3229,8 @@ function actualizarBotonAgregar() {
         boton.disabled = true;
         boton.textContent = `Límite de ${MAX_UNIDADES} Unidades Alcanzado`;
     } else {
+        // ✅ Se vuelve a habilitar cuando hay espacio (ej. después de eliminar una unidad)
+        boton.disabled = false;
         const restantes = MAX_UNIDADES - contadorUnidades;
         boton.innerHTML = `<i class="fas fa-plus-circle"></i> Agregar Unidad (${restantes} restante${restantes !== 1 ? "s" : ""
             })`;
@@ -3986,341 +4021,265 @@ function gestionarRolPasajero(unidad, index) {
         ? "Man. Defensivo (Pesada)"
         : "Man. Defensivo (Ligera)";
 
-    Swal.fire({
-        title: `<div style="font-size: 1.1em; color: #0056b3; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">Asignar Segundo Conductor:<br><span style="color: #333; font-weight: 700;">${nombre}</span></div>`,
-        html: `
-            <style>
-                .swal-modal-grid-compact {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 12px 15px;
-                    text-align: left;
-                    margin-top: 5px;
-                }
-                .swal-field-group { display: flex; flex-direction: column; }
-                .swal-field-group label {
-                    font-size: 0.75rem;
-                    font-weight: 700;
-                    margin-bottom: 4px;
-                    color: #6c757d;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-                .swal-field-group input, .swal-field-group select {
-                    width: 100%;
-                    padding: 8px 10px;
-                    border: 1px solid #ced4da;
-                    border-radius: 6px;
-                    font-size: 0.9rem;
-                    transition: border-color 0.2s, box-shadow 0.2s;
-                }
-                .swal-field-group input:focus, .swal-field-group select:focus {
-                    border-color: #80bdff;
-                    outline: 0;
-                    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-                }
-                .swal-section-title {
-                    grid-column: span 2;
-                    font-size: 0.85rem;
-                    color: #0056b3;
-                    padding-bottom: 2px;
-                    border-bottom: 1px dashed #dee2e6;
-                    margin-top: 15px;
-                    margin-bottom: 2px;
-                    font-weight: 800;
-                    text-transform: uppercase;
-                }
-                .input-readonly-colored {
-                    font-weight: bold;
-                    background-color: #e9ecef;
-                    cursor: not-allowed;
-                }
-            </style>
-            <div class="swal-modal-grid-compact">
-                <div class="swal-section-title"><i class="fas fa-user-md"></i> Estado Físico</div>
-                <div class="swal-field-group">
-                    <label>Alcoholimetría (%)</label>
-                    <input id="swal-alcohol-pct" type="number" step="0.1" value="0.0" required>
-                </div>
-                <div class="swal-field-group">
-                    <label>Presión Arterial</label>
-                    <input id="swal-presion-valor" type="text" placeholder="Ej: 120/80">
-                </div>
-                <div class="swal-field-group">
-                    <label>Toma Medicamento</label>
-                    <select id="swal-medicamento">
-                        <option value="">Seleccione...</option>
-                        <option value="si">Sí</option>
-                        <option value="no">No</option>
-                    </select>
-                </div>
-                <div class="swal-field-group" id="swal-medicamento-detalle-container" style="display: none;">
-                    <label>¿Cuál medicamento?</label>
-                    <input id="swal-medicamento-nombre" type="text" placeholder="Especifique nombre...">
-                </div>
-                <div class="swal-section-title"><i class="fas fa-file-alt"></i> Documentación</div>
-                <div class="swal-field-group">
-                    <label>${labelLicenciaModal}</label>
-                    <input id="swal-vigencia-lic" class="input-readonly-colored" type="text" placeholder="Verificando..." readonly>
-                    <input type="hidden" id="swal-hidden-lic-status" value="invalid">
-                </div>
-                <div class="swal-field-group">
-                    <label>${labelCursoModal}</label>
-                    <input id="swal-vigencia-man" class="input-readonly-colored" type="text" placeholder="Verificando..." readonly>
-                    <input type="hidden" id="swal-hidden-man-status" value="invalid">
-                </div>
-                <div class="swal-section-title"><i class="fas fa-bed"></i> Gestión de Sueño y Fatiga</div>
-                <div class="swal-field-group">
-                    <label>Hora Dormir</label>
-                    <input id="swal-dormir" class="flatpickr-modal" placeholder="HH:MM">
-                </div>
-                <div class="swal-field-group">
-                    <label>Hora Despertar</label>
-                    <input id="swal-levantar" class="flatpickr-modal" placeholder="HH:MM">
-                </div>
-                <div class="swal-field-group">
-                    <label>Hrs Dormidas</label>
-                    <input id="swal-hrs-dormidas" type="text" placeholder="0:00" readonly style="background-color: #f8f9fa;">
-                </div>
-                <div class="swal-field-group">
-                    <label>Hr Despierto</label>
-                    <input id="swal-hr-despierto" type="text" placeholder="0:00" readonly style="background-color: #f8f9fa;">
-                </div>
-                <div class="swal-field-group">
-                    <label>Duración Viaje</label>
-                    <input id="swal-duracion-viaje" type="text" value="${duracionViajeStr}" placeholder="0:00" readonly style="background-color: #f8f9fa;">
-                </div>
-                <div class="swal-field-group" style="position: relative;">
-                    <label>Total Horas Activo</label>
-                    <input id="swal-total-hrs" type="text" placeholder="0:00" readonly style="font-weight: 800; background-color: #e9ecef;">
-                    <div id="swal-warning-msg" style="color: #dc3545; font-size: 0.75rem; font-weight: 700; display: none; margin-top: 4px; position: absolute; bottom: -18px;">
-                        <i class="fas fa-exclamation-triangle"></i> Excede 15 hrs sugeridas
-                    </div>
-                </div>
-            </div>
-        `,
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: '<i class="fas fa-save"></i> Guardar Conductor',
-        confirmButtonColor: "#28a745",
-        cancelButtonText: "Cancelar",
-        width: "650px",
-
-        didOpen: () => {
-            flatpickr(".flatpickr-modal", configHora);
-
-            const medicamentoSelect = document.getElementById("swal-medicamento");
-            const medicamentoDetalle = document.getElementById(
-                "swal-medicamento-detalle-container"
-            );
-            if (medicamentoSelect && medicamentoDetalle) {
-                medicamentoSelect.addEventListener("change", function () {
-                    if (this.value === "si") {
-                        medicamentoDetalle.style.display = "flex";
-                    } else {
-                        medicamentoDetalle.style.display = "none";
-                        document.getElementById("swal-medicamento-nombre").value = "";
-                    }
-                });
-            }
-
-            const nombreConductor = document.getElementById(
-                `p-nombre-${unidad}-${index}`
-            ).value;
-            const data = datosConductoresGlobales[nombreConductor];
-            const licInput = document.getElementById("swal-vigencia-lic");
-            const manInput = document.getElementById("swal-vigencia-man");
-            const licStatus = document.getElementById("swal-hidden-lic-status");
-            const manStatus = document.getElementById("swal-hidden-man-status");
-
-            if (data) {
-                const validacion = validarDocumentacionConductor(data, esPesada);
-                licInput.value = validacion.licencia.mensaje;
-                licStatus.value = validacion.licencia.estilo;
-                aplicarEstiloPorValidacion(licInput, validacion.licencia.estilo);
-                manInput.value = validacion.curso.mensaje;
-                manStatus.value = validacion.curso.estilo;
-                aplicarEstiloPorValidacion(manInput, validacion.curso.estilo);
-            } else {
-                licInput.value = "Conductor no encontrado";
-                manInput.value = "Conductor no encontrado";
-                aplicarEstiloGris(licInput);
-                aplicarEstiloGris(manInput);
-                licStatus.value = "missing";
-                manStatus.value = "missing";
-            }
-
-            const dormirInput = document.getElementById("swal-dormir");
-            const levantarInput = document.getElementById("swal-levantar");
-            const hrsDormidasInput = document.getElementById("swal-hrs-dormidas");
-            const hrDespiertoInput = document.getElementById("swal-hr-despierto");
-            const duracionViajeInput = document.getElementById("swal-duracion-viaje");
-            const totalHrsInput = document.getElementById("swal-total-hrs");
-            const warningMsg = document.getElementById("swal-warning-msg");
-
-            function actualizarHorasModal() {
-                const dormir = dormirInput.value;
-                const levantar = levantarInput.value;
-
-                const totalMinutosDormir = parseTimeForCalculation(dormir);
-                let totalMinutosLevantar = parseTimeForCalculation(levantar);
-
-                if (totalMinutosDormir !== null && totalMinutosLevantar !== null) {
-                    if (totalMinutosLevantar <= totalMinutosDormir)
-                        totalMinutosLevantar += 24 * 60;
-                    hrsDormidasInput.value = minutosAStringHora(
-                        totalMinutosLevantar - totalMinutosDormir
-                    );
-                } else {
-                    hrsDormidasInput.value = "0:00";
-                }
-
-                const minutosLevantar = parseTimeForCalculation(levantar);
-                const minutosInicioViaje = parseTimeForCalculation(horaInicioViaje);
-
-                if (minutosLevantar !== null && minutosInicioViaje !== null) {
-                    let diferencia = minutosInicioViaje - minutosLevantar;
-                    if (diferencia < 0) diferencia += 24 * 60;
-                    hrDespiertoInput.value = minutosAStringHora(diferencia);
-                } else {
-                    hrDespiertoInput.value = "0:00";
-                }
-
-                const minutosDespierto = stringHoraAMinutos(hrDespiertoInput.value);
-                const minutosViaje = stringHoraAMinutos(duracionViajeInput.value);
-                const totalMinutos = minutosDespierto + minutosViaje;
-                totalHrsInput.value = minutosAStringHora(totalMinutos);
-
-                // CAMBIO: Ajuste a 960 minutos (16 horas)
-                if (totalMinutos >= 960) {
-                    totalHrsInput.style.backgroundColor = "#dc3545";
-                    totalHrsInput.style.color = "#ffffff";
-                    warningMsg.innerHTML =
-                        '<i class="fas fa-exclamation-triangle"></i> Excede el límite legal de 16 hrs';
-                    warningMsg.style.display = "block";
-                    totalHrsInput.dataset.excede = "true";
-                } else {
-                    totalHrsInput.style.backgroundColor = "#e9ecef";
-                    totalHrsInput.style.color = "#495057";
-                    warningMsg.style.display = "none";
-                    totalHrsInput.dataset.excede = "false";
-                }
-            }
-
-            if (dormirInput)
-                dormirInput.addEventListener("change", actualizarHorasModal);
-            if (levantarInput)
-                levantarInput.addEventListener("change", actualizarHorasModal);
-            actualizarHorasModal();
-        },
-
-        preConfirm: () => {
-            const alcoholPct = document.getElementById("swal-alcohol-pct").value;
-            const dormir = document.getElementById("swal-dormir").value;
-            const levantar = document.getElementById("swal-levantar").value;
-            const medicamento = document.getElementById("swal-medicamento").value;
-            const medicamentoNombre = document.getElementById(
-                "swal-medicamento-nombre"
-            ).value;
-
-            if (!alcoholPct) {
-                Swal.showValidationMessage("Ingrese el porcentaje de alcoholimetría");
-                return false;
-            }
-            if (parseFloat(alcoholPct) > 0.4) {
-                Swal.showValidationMessage("Alcoholimetría no apta (> 0.4)");
-                return false;
-            }
-            if (!dormir || !levantar) {
-                Swal.showValidationMessage("Complete las horas de dormir y despertar");
-                return false;
-            }
-            if (!medicamento) {
-                Swal.showValidationMessage("Seleccione si toma medicamento");
-                return false;
-            }
-            if (medicamento === "si" && !medicamentoNombre) {
-                Swal.showValidationMessage("Especifique el nombre del medicamento");
-                return false;
-            }
-
-            const licStatus = document.getElementById("swal-hidden-lic-status").value;
-            const manStatus = document.getElementById("swal-hidden-man-status").value;
-            const erroresDocs = [];
-
-            if (licStatus === "expired" || licStatus === "missing") {
-                erroresDocs.push(
-                    `${esPesada ? "Licencia Federal" : "Licencia"} (${licStatus === "expired" ? "VENCIDA" : "NO REGISTRADA"
-                    })`
-                );
-            }
-            if (manStatus === "expired" || manStatus === "missing") {
-                erroresDocs.push(
-                    `${esPesada ? "Curso Man. Def. Pesada" : "Curso Man. Def. Ligera"} (${manStatus === "expired" ? "VENCIDO" : "NO REGISTRADO"
-                    })`
-                );
-            }
-
-            if (erroresDocs.length > 0) {
-                Swal.showValidationMessage(
-                    `NO SE PUEDE ASIGNAR:<br>• ${erroresDocs.join("<br>• ")}`
-                );
-                return false;
-            }
-
-            return {
-                alcoholPct,
-                dormir,
-                levantar,
-                presionValor: document.getElementById("swal-presion-valor").value,
-                medicamento,
-                medicamentoNombre,
-                vigenciaLic: document.getElementById("swal-vigencia-lic").value,
-                vigenciaMan: document.getElementById("swal-vigencia-man").value,
-                hrsDormidas: document.getElementById("swal-hrs-dormidas").value,
-                hrDespierto: document.getElementById("swal-hr-despierto").value,
-                duracionViaje: document.getElementById("swal-duracion-viaje").value,
-                totalHrs: document.getElementById("swal-total-hrs").value,
-            };
-        },
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const datos = result.value;
-            Object.assign(fila.dataset, {
-                alcoholPct: datos.alcoholPct,
-                dormir: datos.dormir,
-                levantar: datos.levantar,
-                presionValor: datos.presionValor,
-                medicamento: datos.medicamento,
-                medicamentoNombre: datos.medicamentoNombre,
-                vigenciaLic: datos.vigenciaLic,
-                vigenciaMan: datos.vigenciaMan,
-                hrsDormidas: datos.hrsDormidas,
-                hrDespierto: datos.hrDespierto,
-                duracionViaje: datos.duracionViaje,
-                totalHrs: datos.totalHrs,
-            });
-
-            actualizarIconoPasajero(fila, index, unidad);
-            actualizarBotonVerConductor2(unidad);
-
-            Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "success",
-                title: "Segundo Conductor Asignado Correctamente",
-                showConfirmButton: false,
-                timer: 3000,
-            });
-        }
+    // ✨ Ahora se usa un modal HTML propio (#modalRelevo) en lugar de un SweetAlert
+    abrirModalRelevo({
+        unidad,
+        index,
+        nombre,
+        esPesada,
+        horaInicioViaje,
+        duracionViajeStr,
+        soloLectura: false,
     });
 }
 
+// ====================================================================
+// 👥 MODAL DE SEGUNDO CONDUCTOR (RELEVO) — HTML propio
+//   - Modo asignar: captura los datos y los guarda en el dataset de la fila
+//   - Modo ver: muestra los datos guardados sin poder editarlos
+// ====================================================================
+let relevoContexto = null;
+
+function _relevoEl(id) {
+    return document.getElementById(id);
+}
+
+function abrirModalRelevo(ctx) {
+    const modal = _relevoEl("modalRelevo");
+    if (!modal) return;
+    relevoContexto = ctx;
+
+    const fila = document.getElementById(`fila-p-${ctx.unidad}-${ctx.index}`);
+    const datos = ctx.soloLectura && fila ? fila.dataset : {};
+
+    // Encabezado
+    _relevoEl("relevoTitulo").textContent = ctx.soloLectura
+        ? "Segundo Conductor"
+        : "Asignar Segundo Conductor";
+    _relevoEl("relevoNombre").textContent = ctx.nombre || "—";
+    _relevoEl("relevoUnidad").textContent = `Unidad ${ctx.unidad} · ${ctx.esPesada ? "Pesada" : "Ligera"}`;
+    _relevoEl("relevoLabelLic").textContent = ctx.esPesada ? "Licencia Federal" : "Vigencia Licencia";
+    _relevoEl("relevoLabelMan").textContent = ctx.esPesada
+        ? "Man. Defensivo (Pesada)"
+        : "Man. Defensivo (Ligera)";
+
+    // Limpiar mensaje de error
+    const alerta = _relevoEl("relevoError");
+    alerta.style.display = "none";
+    alerta.innerHTML = "";
+
+    // Valores
+    _relevoEl("rel-alcohol").value = datos.alcoholPct || "0.0";
+    _relevoEl("rel-presion").value = datos.presionValor || "";
+    _relevoEl("rel-medicamento").value = datos.medicamento || "";
+    _relevoEl("rel-medicamento-nombre").value = datos.medicamentoNombre || "";
+    _relevoEl("rel-dormir").value = datos.dormir || "";
+    _relevoEl("rel-levantar").value = datos.levantar || "";
+    _relevoEl("rel-hrs-dormidas").value = datos.hrsDormidas || "0:00";
+    _relevoEl("rel-hr-despierto").value = datos.hrDespierto || "0:00";
+    _relevoEl("rel-duracion").value = datos.duracionViaje || ctx.duracionViajeStr || "0:00";
+    _relevoEl("rel-total").value = datos.totalHrs || "0:00";
+    _toggleRelevoMedicamento();
+
+    // Documentación
+    const licInput = _relevoEl("rel-vigencia-lic");
+    const manInput = _relevoEl("rel-vigencia-man");
+    licInput.removeAttribute("style");
+    manInput.removeAttribute("style");
+
+    if (ctx.soloLectura) {
+        licInput.value = datos.vigenciaLic || "No registrada";
+        manInput.value = datos.vigenciaMan || "No registrada";
+        _relevoEl("rel-lic-status").value = "ok";
+        _relevoEl("rel-man-status").value = "ok";
+    } else {
+        const data = datosConductoresGlobales[ctx.nombre];
+        if (data) {
+            const validacion = validarDocumentacionConductor(data, ctx.esPesada);
+            licInput.value = validacion.licencia.mensaje;
+            _relevoEl("rel-lic-status").value = validacion.licencia.estilo;
+            aplicarEstiloPorValidacion(licInput, validacion.licencia.estilo);
+            manInput.value = validacion.curso.mensaje;
+            _relevoEl("rel-man-status").value = validacion.curso.estilo;
+            aplicarEstiloPorValidacion(manInput, validacion.curso.estilo);
+        } else {
+            licInput.value = "Conductor no encontrado";
+            manInput.value = "Conductor no encontrado";
+            aplicarEstiloGris(licInput);
+            aplicarEstiloGris(manInput);
+            _relevoEl("rel-lic-status").value = "missing";
+            _relevoEl("rel-man-status").value = "missing";
+        }
+    }
+
+    // Relojes (se recrean cada vez para tomar el valor actual)
+    ["rel-dormir", "rel-levantar"].forEach((id) => {
+        const el = _relevoEl(id);
+        if (el._flatpickr) el._flatpickr.destroy();
+        if (!ctx.soloLectura) flatpickr(el, configHora);
+    });
+
+    // Bloqueo en modo ver
+    modal.querySelectorAll(".relevo-editable").forEach((el) => {
+        el.disabled = !!ctx.soloLectura;
+    });
+    _relevoEl("btnGuardarRelevo").style.display = ctx.soloLectura ? "none" : "";
+    _relevoEl("btnCancelarRelevo").innerHTML = ctx.soloLectura
+        ? '<i class="fas fa-times"></i> Cerrar'
+        : '<i class="fas fa-times"></i> Cancelar';
+    modal.classList.toggle("relevo-solo-lectura", !!ctx.soloLectura);
+
+    if (!ctx.soloLectura) _actualizarHorasRelevo();
+    else _pintarTotalRelevo(stringHoraAMinutos(_relevoEl("rel-total").value));
+
+    modal.classList.add("active");
+    const cuerpo = modal.querySelector(".modal-inspeccion-body");
+    if (cuerpo) cuerpo.scrollTop = 0;
+}
+
+function cerrarModalRelevo() {
+    const modal = _relevoEl("modalRelevo");
+    if (modal) modal.classList.remove("active");
+    relevoContexto = null;
+}
+
+function _toggleRelevoMedicamento() {
+    const sel = _relevoEl("rel-medicamento");
+    const cont = _relevoEl("rel-medicamento-detalle");
+    if (!sel || !cont) return;
+    const si = sel.value === "si";
+    cont.style.display = si ? "" : "none";
+    if (!si && !(relevoContexto && relevoContexto.soloLectura)) {
+        _relevoEl("rel-medicamento-nombre").value = "";
+    }
+}
+
+function _pintarTotalRelevo(totalMinutos) {
+    const total = _relevoEl("rel-total");
+    const aviso = _relevoEl("rel-aviso");
+    const excede = totalMinutos >= 960; // 16 horas
+    total.classList.toggle("relevo-excede", excede);
+    total.dataset.excede = excede ? "true" : "false";
+    aviso.style.display = excede ? "flex" : "none";
+}
+
+function _actualizarHorasRelevo() {
+    if (!relevoContexto) return;
+    const dormir = _relevoEl("rel-dormir").value;
+    const levantar = _relevoEl("rel-levantar").value;
+    const horaInicioViaje = relevoContexto.horaInicioViaje;
+
+    const minDormir = parseTimeForCalculation(dormir);
+    let minLevantar = parseTimeForCalculation(levantar);
+
+    if (minDormir !== null && minLevantar !== null) {
+        if (minLevantar <= minDormir) minLevantar += 24 * 60;
+        _relevoEl("rel-hrs-dormidas").value = minutosAStringHora(minLevantar - minDormir);
+    } else {
+        _relevoEl("rel-hrs-dormidas").value = "0:00";
+    }
+
+    const minDesperto = parseTimeForCalculation(levantar);
+    const minInicio = parseTimeForCalculation(horaInicioViaje);
+    if (minDesperto !== null && minInicio !== null) {
+        let diferencia = minInicio - minDesperto;
+        if (diferencia < 0) diferencia += 24 * 60;
+        _relevoEl("rel-hr-despierto").value = minutosAStringHora(diferencia);
+    } else {
+        _relevoEl("rel-hr-despierto").value = "0:00";
+    }
+
+    const totalMinutos =
+        stringHoraAMinutos(_relevoEl("rel-hr-despierto").value) +
+        stringHoraAMinutos(_relevoEl("rel-duracion").value);
+    _relevoEl("rel-total").value = minutosAStringHora(totalMinutos);
+    _pintarTotalRelevo(totalMinutos);
+}
+
+function _errorRelevo(mensaje) {
+    const alerta = _relevoEl("relevoError");
+    alerta.innerHTML = `<i class="fas fa-exclamation-circle"></i><div>${mensaje}</div>`;
+    alerta.style.display = "flex";
+    const cuerpo = _relevoEl("modalRelevo").querySelector(".modal-inspeccion-body");
+    if (cuerpo) cuerpo.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function guardarRelevo() {
+    const ctx = relevoContexto;
+    if (!ctx || ctx.soloLectura) return;
+
+    const alcoholPct = _relevoEl("rel-alcohol").value;
+    const dormir = _relevoEl("rel-dormir").value;
+    const levantar = _relevoEl("rel-levantar").value;
+    const medicamento = _relevoEl("rel-medicamento").value;
+    const medicamentoNombre = _relevoEl("rel-medicamento-nombre").value.trim();
+
+    if (!alcoholPct) return _errorRelevo("Ingrese el porcentaje de alcoholimetría.");
+    if (parseFloat(alcoholPct) > 0.4) return _errorRelevo("Alcoholimetría no apta (mayor a 0.4%).");
+    if (!dormir || !levantar) return _errorRelevo("Complete la hora en que durmió y la hora en que despertó.");
+    if (!medicamento) return _errorRelevo("Indique si toma medicamento.");
+    if (medicamento === "si" && !medicamentoNombre)
+        return _errorRelevo("Especifique el nombre del medicamento.");
+
+    const licStatus = _relevoEl("rel-lic-status").value;
+    const manStatus = _relevoEl("rel-man-status").value;
+    const erroresDocs = [];
+    if (licStatus === "expired" || licStatus === "missing") {
+        erroresDocs.push(
+            `${ctx.esPesada ? "Licencia Federal" : "Licencia"} (${licStatus === "expired" ? "VENCIDA" : "NO REGISTRADA"})`
+        );
+    }
+    if (manStatus === "expired" || manStatus === "missing") {
+        erroresDocs.push(
+            `${ctx.esPesada ? "Curso Man. Def. Pesada" : "Curso Man. Def. Ligera"} (${manStatus === "expired" ? "VENCIDO" : "NO REGISTRADO"})`
+        );
+    }
+    if (erroresDocs.length > 0) {
+        return _errorRelevo(`<strong>No se puede asignar:</strong><br>• ${erroresDocs.join("<br>• ")}`);
+    }
+
+    const fila = document.getElementById(`fila-p-${ctx.unidad}-${ctx.index}`);
+    if (!fila) return cerrarModalRelevo();
+
+    Object.assign(fila.dataset, {
+        alcoholPct,
+        dormir,
+        levantar,
+        presionValor: _relevoEl("rel-presion").value,
+        medicamento,
+        medicamentoNombre,
+        vigenciaLic: _relevoEl("rel-vigencia-lic").value,
+        vigenciaMan: _relevoEl("rel-vigencia-man").value,
+        hrsDormidas: _relevoEl("rel-hrs-dormidas").value,
+        hrDespierto: _relevoEl("rel-hr-despierto").value,
+        duracionViaje: _relevoEl("rel-duracion").value,
+        totalHrs: _relevoEl("rel-total").value,
+    });
+
+    actualizarIconoPasajero(fila, ctx.index, ctx.unidad);
+    actualizarBotonVerConductor2(ctx.unidad);
+    cerrarModalRelevo();
+
+    Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Segundo Conductor asignado correctamente",
+        showConfirmButton: false,
+        timer: 3000,
+    });
+}
+
+// Eventos del modal de relevo (se registran una sola vez)
+document.addEventListener("DOMContentLoaded", () => {
+    _relevoEl("rel-medicamento")?.addEventListener("change", _toggleRelevoMedicamento);
+    _relevoEl("rel-dormir")?.addEventListener("change", _actualizarHorasRelevo);
+    _relevoEl("rel-levantar")?.addEventListener("change", _actualizarHorasRelevo);
+});
+
 function mostrarInfoConductor2(unidadNumero) {
     const container = document.getElementById(`pasajeros-unidad-${unidadNumero}`);
-    const filaRelevo = container?.querySelector(
-        ".pasajero-input-group.es-relevo"
-    );
+    const filaRelevo = container?.querySelector(".pasajero-input-group.es-relevo");
 
     if (!filaRelevo) {
         Swal.fire({
@@ -4332,107 +4291,21 @@ function mostrarInfoConductor2(unidadNumero) {
         return;
     }
 
-    const tipoVehiculoDiv = document.getElementById(
-        `tipo-vehiculo-${unidadNumero}`
-    );
+    const tipoVehiculoDiv = document.getElementById(`tipo-vehiculo-${unidadNumero}`);
     const esPesada =
         tipoVehiculoDiv?.textContent.includes("Pesada") ||
         tipoVehiculoDiv?.classList.contains("tipo-pesada") ||
         false;
-
     const pIdx = filaRelevo.dataset.index;
-    const pNombre = document.getElementById(
-        `p-nombre-${unidadNumero}-${pIdx}`
-    ).value;
-    const pAlcoholPct = filaRelevo.dataset.alcoholPct || "0.0";
-    const pDormir = filaRelevo.dataset.dormir || "";
-    const pLevantar = filaRelevo.dataset.levantar || "";
-    const pPresionValor = filaRelevo.dataset.presionValor || "";
-    const pMedicamento = filaRelevo.dataset.medicamento || "";
-    const pMedicamentoNombre = filaRelevo.dataset.medicamentoNombre || "";
-    const pVigenciaLic = filaRelevo.dataset.vigenciaLic || "";
-    const pVigenciaMan = filaRelevo.dataset.vigenciaMan || "";
-    const pHrsDormidas = filaRelevo.dataset.hrsDormidas || "";
-    const pHrDespierto = filaRelevo.dataset.hrDespierto || "";
-    const pDuracionViaje = filaRelevo.dataset.duracionViaje || "";
-    const pTotalHrs = filaRelevo.dataset.totalHrs || "";
 
-    Swal.fire({
-        title: "Información del Segundo Conductor",
-        html: `
-            <div style="text-align: left; max-width: 600px; margin: 0 auto;">
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <h3 style="color: #0056b3; margin-top: 0;">${pNombre}</h3>
-                    <div style="display: flex; gap: 15px; margin-top: 10px;">
-                        <div>
-                            <strong>${esPesada
-                ? "Licencia Federal"
-                : "Vigencia Licencia"
-            }:</strong><br>
-                            <span style="color: ${pVigenciaLic.includes("No registrada")
-                ? "#dc3545"
-                : "#28a745"
-            }">${pVigenciaLic || "No registrada"}</span>
-                        </div>
-                        <div>
-                            <strong>${esPesada ? "Man. Def. Pesada" : "Man. Def. Ligera"
-            }:</strong><br>
-                            <span style="color: ${pVigenciaMan.includes("No registrada")
-                ? "#dc3545"
-                : "#28a745"
-            }">${pVigenciaMan || "No registrada"}</span>
-                        </div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div>
-                        <strong><i class="fas fa-wind"></i> Alcoholimetría:</strong><br>
-                        <span style="color: ${parseFloat(pAlcoholPct) === 0 ? "#28a745" : "#dc3545"
-            }">${pAlcoholPct}%</span>
-                    </div>
-                    <div>
-                        <strong><i class="fas fa-heartbeat"></i> Presión Arterial:</strong><br>
-                        <span>${pPresionValor || "No registrada"}</span>
-                    </div>
-                    <div>
-                        <strong><i class="fas fa-bed"></i> Hora Durmió:</strong><br>
-                        <span>${pDormir || "No registrada"}</span>
-                    </div>
-                    <div>
-                        <strong><i class="fas fa-sun"></i> Hora Despertó:</strong><br>
-                        <span>${pLevantar || "No registrada"}</span>
-                    </div>
-                    <div>
-                        <strong><i class="fas fa-hourglass-half"></i> Horas Dormidas:</strong><br>
-                        <span>${pHrsDormidas || "No calculado"}</span>
-                    </div>
-                    <div>
-                        <strong><i class="fas fa-pills"></i> Toma Medicamento:</strong><br>
-                        <span style="color: ${pMedicamento === "si" ? "#ffc107" : "#28a745"
-            }">${pMedicamento === "si" ? `Sí (${pMedicamentoNombre})` : "No"
-            }</span>
-                    </div>
-                </div>
-                <div style="background: #e9ecef; padding: 10px; border-radius: 6px; margin-top: 15px;">
-                    <h4 style="color: #0056b3; margin-top: 0; margin-bottom: 10px;">Horas de Conducción:</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div><strong>Hr Despierto:</strong><br><span>${pHrDespierto || "No calculado"
-            }</span></div>
-                        <div><strong>Duración Viaje:</strong><br><span>${pDuracionViaje || "No calculado"
-            }</span></div>
-                        <div style="grid-column: span 2;">
-                            <strong>Total Hrs:</strong><br>
-                            <span style="font-weight: bold; color: #0056b3;">${pTotalHrs || "No calculado"
-            }</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `,
-        icon: "info",
-        confirmButtonText: "Cerrar",
-        confirmButtonColor: "#0056b3",
-        width: 650,
+    abrirModalRelevo({
+        unidad: unidadNumero,
+        index: pIdx,
+        nombre: document.getElementById(`p-nombre-${unidadNumero}-${pIdx}`)?.value || "",
+        esPesada,
+        horaInicioViaje: document.getElementById("horaInicioViaje")?.value,
+        duracionViajeStr: filaRelevo.dataset.duracionViaje || "0:00",
+        soloLectura: true,
     });
 }
 

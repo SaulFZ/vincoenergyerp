@@ -194,7 +194,8 @@ class JourneyStoreController extends Controller
 
     /**
      * Regla de quién puede editar un GV:
-     *  - PENDIENTE: el solicitante (creador) y los participantes (conductores / pasajeros / relevos).
+     *  - PENDIENTE: el solicitante (creador), los participantes (conductores / pasajeros / relevos)
+     *               y el aprobador asignado (puede corregir antes de aprobar).
      *  - APROBADO : solo el aprobador asignado.
      *  - Nunca si el viaje ya terminó (Finalizado, Cancelado, No Procede) o fue rechazado/cancelado.
      * Requiere que $journey tenga cargada la relación 'units'.
@@ -211,6 +212,7 @@ class JourneyStoreController extends Controller
 
         if ($journey->approval_status === 'pending') {
             return (int) $journey->created_by === (int) $user->id
+                || (int) $journey->approver_id === (int) $user->id
                 || self::isParticipant($journey, $user->employee_id);
         }
 
@@ -264,7 +266,12 @@ class JourneyStoreController extends Controller
             'riskAssessment',
             'preConvoyMeeting',
             'approver.employee',
-        ])->findOrFail($id);
+        ])->find($id);
+
+        // Si llega aquí la ruta SÍ existe; si no hay viaje respondemos JSON claro (no la página 404 de Laravel)
+        if (! $journey) {
+            return response()->json(['success' => false, 'message' => 'GV no encontrado.'], 404);
+        }
 
         // 1. SEGURIDAD: validar que este usuario puede editar
         if (! self::userCanEdit($journey, $user)) {
@@ -277,6 +284,7 @@ class JourneyStoreController extends Controller
 
         $data          = $request->all();
         $esAprobado    = $journey->approval_status === 'approved';
+        $editaAprobador = (int) $journey->approver_id === (int) $user->id;
         $nuevoRiesgo   = $data['riesgo_nivel'] ?? $journey->risk_level;
         $aprobadorPrev = $journey->approver_id;
 
@@ -373,7 +381,7 @@ class JourneyStoreController extends Controller
                 'journey_id'  => $journey->id,
                 'user_id'     => $user->id,
                 'event_type'  => 'edited',
-                'title'       => $esAprobado ? 'GV Modificado por el Aprobador' : 'GV Editado',
+                'title'       => $editaAprobador ? 'GV Modificado por el Aprobador' : 'GV Editado',
                 'description' => $descripcion,
                 'event_time'  => now(),
             ]);

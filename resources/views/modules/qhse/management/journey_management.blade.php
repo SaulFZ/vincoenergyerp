@@ -61,6 +61,15 @@
                     </div>
                 </div>
 
+                {{-- 📱 Solo visible en celular: muestra / oculta el resto de filtros --}}
+                <button type="button" class="btn-filtros-movil" id="btnToggleFiltros" onclick="toggleFiltrosMovil()"
+                    aria-expanded="false">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Filtros</span>
+                    <span class="filtros-badge" style="display: none;">0</span>
+                    <i class="fas fa-chevron-down filtros-chevron"></i>
+                </button>
+
                 <div class="filter-group">
                     <label for="solicitud-date">
                         <i class="fas fa-calendar-day"></i> Fecha Solicitud
@@ -327,9 +336,14 @@
         </div>
     </div>
 
-    {{-- MODAL PRINCIPAL DEL FORMULARIO --}}
+    {{-- ================================================================== --}}
+    {{-- MODAL PRINCIPAL DEL FORMULARIO (GV) — REDISEÑO POR PASOS            --}}
+    {{-- Se conservan todos los id / name / onclick que usa journey.js       --}}
+    {{-- ================================================================== --}}
     <div class="modal-overlay" id="modalFormulario">
-        <div class="modal-content">
+        <div class="modal-content gv-modal">
+
+            {{-- ───────── ENCABEZADO (fijo) ───────── --}}
             <div class="form-header-modal">
                 <div class="form-header-info">
                     <div class="logo-img">
@@ -355,13 +369,44 @@
                 </div>
             </div>
 
+            {{-- ───────── BARRA DE PASOS (fija) ───────── --}}
+            <nav class="gv-steps" aria-label="Pasos de la solicitud">
+                {{-- Son <a> (no <button>) para que el modo lectura no los deshabilite --}}
+                <a href="#gvPaso1" class="gv-step is-active" data-target="gvPaso1">
+                    <span class="gv-step-num">1</span>
+                    <span class="gv-step-text">General</span>
+                </a>
+                <span class="gv-step-line"></span>
+                <a href="#gvPaso2" class="gv-step" data-target="gvPaso2">
+                    <span class="gv-step-num">2</span>
+                    <span class="gv-step-text">Trayecto</span>
+                </a>
+                <span class="gv-step-line"></span>
+                <a href="#gvPaso3" class="gv-step" data-target="gvPaso3">
+                    <span class="gv-step-num">3</span>
+                    <span class="gv-step-text">Unidades</span>
+                </a>
+                <span class="gv-step-line"></span>
+                <a href="#gvPaso4" class="gv-step" data-target="gvPaso4">
+                    <span class="gv-step-num">4</span>
+                    <span class="gv-step-text">Evaluación y envío</span>
+                </a>
+            </nav>
+
+            {{-- ───────── CUERPO (con scroll) ───────── --}}
             <form id="formViaje" class="form-body">
-                <div class="form-section">
-                    <h3 class="form-section-title">
-                        <i class="fas fa-info-circle"></i>
-                        Información General
-                    </h3>
-                    <div class="form-grid">
+
+                {{-- PASO 1: INFORMACIÓN GENERAL --}}
+                <section class="form-section gv-card" id="gvPaso1">
+                    <header class="gv-card-head">
+                        <span class="gv-card-num">1</span>
+                        <div class="gv-card-titles">
+                            <h3>Información General</h3>
+                            <p>Quién solicita el viaje y hacia dónde se dirige.</p>
+                        </div>
+                    </header>
+
+                    <div class="gv-grid gv-grid-general">
                         <div class="form-group">
                             <label>
                                 <i class="fas fa-user-tie"></i>
@@ -386,7 +431,6 @@
                             </label>
 
                             <div class="custom-select-wrapper" id="wrapperDestino">
-
                                 <div class="custom-select-trigger" onclick="toggleMenuDestino()">
                                     <span id="labelDestinoSeleccionado">Seleccione un destino...</span>
                                     <i class="fas fa-chevron-down" style="font-size: 0.8em; color: #6c757d;"></i>
@@ -403,123 +447,158 @@
                         <div class="form-group">
                             <label>
                                 <i class="fas fa-pencil-alt"></i>
-                                Especifique Destino
+                                Especifique Destino <span class="required">*</span>
                             </label>
                             <input type="text" name="destino_especifico" id="destinoEspecifico"
-                                placeholder="Especifique el destino aquí" required>
+                                placeholder="Instalación, pozo, empresa o dirección" required>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- PASO 2: TRAYECTO --}}
+                <section class="form-section gv-card" id="gvPaso2">
+                    <header class="gv-card-head">
+                        <span class="gv-card-num">2</span>
+                        <div class="gv-card-titles">
+                            <h3>Detalles del Trayecto</h3>
+                            <p>Punto de salida, punto de llegada y horarios estimados.</p>
+                        </div>
+                    </header>
+
+                    <div class="gv-ruta">
+                        {{-- ORIGEN --}}
+                        <div class="gv-ruta-punto gv-ruta-origen">
+                            <div class="gv-ruta-tag"><i class="fas fa-circle-dot"></i> Salida</div>
+
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-map-pin"></i>
+                                    Saliendo de <span class="required">*</span>
+                                </label>
+                                <input type="text" name="origen" placeholder="Ej: Villahermosa, Tabasco" required>
+                            </div>
+
+                            <div class="gv-ruta-fechas">
+                                <div class="form-group">
+                                    <label>
+                                        <i class="fas fa-calendar-day"></i>
+                                        Fecha de Inicio <span class="required">*</span>
+                                    </label>
+                                    <div class="datetime-input-wrapper">
+                                        <input type="text" name="fecha_inicio" id="fechaInicioViaje"
+                                            placeholder="Seleccione fecha" required>
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <i class="fas fa-clock"></i>
+                                        Hora de Inicio <span class="required">*</span>
+                                    </label>
+                                    <div class="datetime-input-wrapper">
+                                        <input type="text" name="hora_inicio" id="horaInicioViaje" placeholder="HH:MM"
+                                            required>
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label style="font-size: 13px; color: var(--blue-dark);">
-                                <i class="fas fa-map-signs"></i>
-                                Eventos?
-                            </label>
-                            <div class="radio-group-paradas">
-                                <label class="radio-option">
-                                    <input type="radio" name="tiene_paradas" value="no" checked
-                                        onclick="toggleSeccionParadas(false)">
-                                    No
+                        {{-- CONECTOR VISUAL --}}
+                        <div class="gv-ruta-conector" aria-hidden="true">
+                            <span class="gv-ruta-linea"></span>
+                            <span class="gv-ruta-icono"><i class="fas fa-truck-moving"></i></span>
+                            <span class="gv-ruta-linea"></span>
+                        </div>
+
+                        {{-- LLEGADA --}}
+                        <div class="gv-ruta-punto gv-ruta-destino">
+                            <div class="gv-ruta-tag"><i class="fas fa-flag-checkered"></i> Llegada</div>
+
+                            <div class="form-group">
+                                <label>
+                                    <i class="fas fa-map-marker"></i>
+                                    Llegando a <span class="required">*</span>
                                 </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="tiene_paradas" value="si"
-                                        onclick="toggleSeccionParadas(true)">
-                                    Sí
-                                </label>
+                                <input type="text" name="llegada" placeholder="Ej: Villahermosa, Tabasco" required>
+                            </div>
+
+                            <div class="gv-ruta-fechas">
+                                <div class="form-group">
+                                    <label>
+                                        <i class="fas fa-calendar-check"></i>
+                                        Fecha de Término <span class="required">*</span>
+                                    </label>
+                                    <div class="datetime-input-wrapper">
+                                        <input type="text" name="fecha_fin" id="fechaFinViaje"
+                                            placeholder="Seleccione fecha" required>
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <i class="fas fa-clock"></i>
+                                        Hora de Término <span class="required">*</span>
+                                    </label>
+                                    <div class="datetime-input-wrapper">
+                                        <input type="text" name="hora_fin" id="horaFinViaje" placeholder="HH:MM">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <h3 class="form-section-title">
-                        <i class="fas fa-route"></i>
-                        Detalles del Trayecto
-                    </h3>
-
-                    <div class="trayecto-grid">
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-map-pin"></i>
-                                Saliendo de <span class="required">*</span>
-                            </label>
-                            <input type="text" name="origen" placeholder="Ej: Villahermosa, Tabasco" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-calendar-day"></i>
-                                Fecha de Inicio <span class="required">*</span>
-                            </label>
-                            <div class="datetime-input-wrapper">
-                                <input type="text" name="fecha_inicio" id="fechaInicioViaje"
-                                    placeholder="Seleccione fecha" required>
-                                <i class="fas fa-calendar-alt"></i>
+                    {{-- EVENTOS EN RUTA --}}
+                    <div class="gv-eventos-toggle">
+                        <div class="gv-eventos-info">
+                            <i class="fas fa-map-signs"></i>
+                            <div>
+                                <strong>¿El viaje tendrá eventos en ruta?</strong>
+                                <span>Combustible, alimentos, reportes o cambio de conductor (máx. 4).</span>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-clock"></i>
-                                Hora de Inicio <span class="required">*</span>
+                        <div class="radio-group-paradas">
+                            <label class="radio-option">
+                                <input type="radio" name="tiene_paradas" value="no" checked
+                                    onclick="toggleSeccionParadas(false)">
+                                No
                             </label>
-                            <div class="datetime-input-wrapper">
-                                <input type="text" name="hora_inicio" id="horaInicioViaje" placeholder="HH:MM"
-                                    required>
-                                <i class="fas fa-clock"></i>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-clock"></i>
-                                Hora de Término
+                            <label class="radio-option">
+                                <input type="radio" name="tiene_paradas" value="si"
+                                    onclick="toggleSeccionParadas(true)">
+                                Sí
                             </label>
-                            <div class="datetime-input-wrapper">
-                                <input type="text" name="hora_fin" id="horaFinViaje" placeholder="HH:MM">
-                                <i class="fas fa-clock"></i>
-                            </div>
                         </div>
-
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-calendar-check"></i>
-                                Fecha de Término
-                            </label>
-                            <div class="datetime-input-wrapper">
-                                <input type="text" name="fecha_fin" id="fechaFinViaje" placeholder="Seleccione fecha"
-                                    required>
-                                <i class="fas fa-calendar-alt"></i>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-map-marker"></i>
-                                Llegando a
-                            </label>
-                            <input type="text" name="llegada" placeholder="Ej: Villahermosa, Tabasco" required>
-                        </div>
-
-
-
                     </div>
 
                     <div id="contenedorParadas" class="hidden">
                         <div id="listaParadas">
                         </div>
                         <button type="button" class="btn-add-parada" id="btnAgregarParada" onclick="agregarParada()">
-                            <i class="fas fa-plus"></i> Agregar Otro eventos
+                            <i class="fas fa-plus"></i> Agregar otro evento
                         </button>
                     </div>
-                </div>
-                <div class="form-section">
-                    <h3 class="form-section-title">
-                        <i class="fas fa-truck-moving"></i>
-                        Conductor y Unidad Solicitada
-                        <span class="unidades-count" id="contadorUnidades">0</span>
-                        <span class="unidades-label" id="label-tipo-unidad"></span>
+                </section>
+
+                {{-- PASO 3: UNIDADES Y CONDUCTORES --}}
+                <section class="form-section gv-card" id="gvPaso3">
+                    <header class="gv-card-head">
+                        <span class="gv-card-num">3</span>
+                        <div class="gv-card-titles">
+                            <h3>
+                                Conductor y Unidad Solicitada
+                                <span class="unidades-count" id="contadorUnidades">0</span>
+                                <span class="unidades-label" id="label-tipo-unidad"></span>
+                            </h3>
+                            <p>Vehículo, aptitud física, vigencias, horas de sueño e inspección de cada unidad.</p>
+                        </div>
                         <button type="button" class="btn-viajes btn-secondary-convoy" id="btnReunionPreConvoy"
                             onclick="gestionarModalPreConvoy(true)"
                             title="Realizar la reunión antes de enviar la solicitud.">
                             <i class="fas fa-handshake"></i> Reunión Pre-convoy
                         </button>
-                    </h3>
+                    </header>
 
                     <div class="unidades-container">
                         <table class="unidades-table" id="tablaUnidades">
@@ -560,10 +639,22 @@
                         <i class="fas fa-plus-circle"></i>
                         Agregar Unidad (Máximo 5)
                     </button>
+                </section>
+
+                {{-- PASO 4: EVALUACIÓN Y AUTORIZACIÓN --}}
+                <section class="form-section gv-card" id="gvPaso4">
+                    <header class="gv-card-head">
+                        <span class="gv-card-num">4</span>
+                        <div class="gv-card-titles">
+                            <h3>Evaluación y Autorización</h3>
+                            <p>Calcula el nivel de riesgo del viaje y elige quién lo autoriza.</p>
+                        </div>
+                    </header>
 
                     <button type="button" id="btnEvaluacionRiesgo" onclick="gestionarModalEvaluacion(true)" disabled>
                         <i class="fas fa-list-check"></i> Realizar Evaluación del Viaje (Requerido)
                     </button>
+
                     <div class="form-section destinatario-section" id="seccionDestinatario" style="display: none;">
                         <h3 class="form-section-title">
                             <i class="fas fa-paper-plane"></i>
@@ -577,10 +668,14 @@
                         <div class="destinatario-grid" id="gridAutorizadores">
                         </div>
                     </div>
-                </div>
+                </section>
             </form>
 
+            {{-- ───────── PIE (fijo) ───────── --}}
             <div class="form-footer">
+                <span class="gv-footer-hint">
+                    <i class="fas fa-circle-info"></i> Los campos con <b>*</b> son obligatorios
+                </span>
                 <button type="button" class="btn-viajes btn-cancel" onclick="gestionarModalFormulario(false)">
                     <i class="fas fa-times"></i>
                     Cancelar
@@ -610,8 +705,9 @@
                     </div>
                 </div>
                 <div class="form-code-document">
-                    <button type="button" class="btn-viajes btn-cancel" onclick="gestionarModalEvaluacion(false)">
-                        <i class="fas fa-times"></i> Cerrar
+                    <button type="button" class="btn-viajes btn-cancel btn-modal-close" onclick="gestionarModalEvaluacion(false)"
+                        title="Cerrar">
+                        <i class="fas fa-times"></i> <span class="btn-label">Cerrar</span>
                     </button>
                 </div>
             </div>
@@ -828,8 +924,9 @@
                     </div>
                 </div>
                 <div class="form-code-document">
-                    <button type="button" class="btn-viajes btn-cancel" onclick="gestionarModalPreConvoy(false)">
-                        <i class="fas fa-times"></i> Cerrar
+                    <button type="button" class="btn-viajes btn-cancel btn-modal-close" onclick="gestionarModalPreConvoy(false)"
+                        title="Cerrar">
+                        <i class="fas fa-times"></i> <span class="btn-label">Cerrar</span>
                     </button>
                 </div>
             </div>
@@ -986,52 +1083,28 @@
                 </div>
 
                 {{-- ZONA DERECHA: ÚLTIMA INSPECCIÓN, FECHA Y BOTÓN CERRAR --}}
-                <div style="display: flex; align-items: center; gap: 15px;">
-
-                    <div class="header-meta-info"
-                        style="display: flex; align-items: center; color: white; font-size: 13px;">
-
-                        {{-- 1. NUEVO: Bloque Última Inspección (A la izquierda de la fecha) --}}
-                        <div
-                            style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 15px; padding-right: 15px; border-right: 1px solid rgba(255,255,255,0.3);">
-                            {{-- Título pequeñito --}}
-                            <span
-                                style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                Última Inspección
+                <div class="insp-header-right">
+                    <div class="header-meta-info insp-meta">
+                        <div class="insp-meta-item">
+                            <span class="insp-meta-label">Última Inspección</span>
+                            <span class="insp-meta-value">
+                                <i class="fas fa-history"></i>
+                                <span id="headerUltimaInspeccionLigera">--/--/----</span>
                             </span>
-                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
-                                <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
-                                {{-- El dato (Usamos un ID nuevo para llenarlo con JS) --}}
-                                <span id="headerUltimaInspeccionLigera" style="font-weight: 700; font-size: 13px;">
-                                    --/--/----
-                                </span>
-                            </div>
-
                         </div>
-
-                        {{-- 2. Fecha de Inspección --}}
-                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                            <span
-                                style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                Fecha de Inspección
-                            </span>
-                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
-                                <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
+                        <div class="insp-meta-item">
+                            <span class="insp-meta-label">Fecha de Inspección</span>
+                            <span class="insp-meta-value">
+                                <i class="fas fa-calendar-day"></i>
                                 <span id="fechaActualInspeccionLigera">{{ date('d/m/Y') }}</span>
-                            </div>
+                            </span>
                         </div>
-
                     </div>
 
-                    {{-- Separador vertical sutil --}}
-                    <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.3);"></div>
-
-                    {{-- Botón Cerrar --}}
                     <div class="form-code-document">
-                        <button type="button" class="btn-viajes btn-cancel"
-                            onclick="gestionarModalInspeccionLigera(false)"
-                            style="background: rgba(255,255,255,0.9); color: var(--primary-blue); border: none;">
-                            <i class="fas fa-times"></i> Cerrar
+                        <button type="button" class="btn-viajes btn-cancel btn-modal-close"
+                            onclick="gestionarModalInspeccionLigera(false)" title="Cerrar">
+                            <i class="fas fa-times"></i> <span class="btn-label">Cerrar</span>
                         </button>
                     </div>
                 </div>
@@ -1544,48 +1617,28 @@
                 </div>
 
                 {{-- ZONA DERECHA: ÚLTIMA INSPECCIÓN, FECHA Y BOTÓN CERRAR --}}
-                <div style="display: flex; align-items: center; gap: 15px;">
-
-                    {{-- Bloque de información (Inspector y Fecha) --}}
-                    <div class="header-meta-info"
-                        style="display: flex; align-items: center; color: white; font-size: 13px;">
-
-                        <div
-                            style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 15px; padding-right: 15px; border-right: 1px solid rgba(255,255,255,0.3);">
-                            {{-- Título pequeñito --}}
-                            <span
-                                style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                Última Inspección
-                            </span>
-                            {{-- El dato (ID ESPECÍFICO PARA PESADA) --}}
-                            <span id="headerUltimaInspeccionPesada" style="font-weight: 700; font-size: 13px;">
-                                --/--/----
+                <div class="insp-header-right">
+                    <div class="header-meta-info insp-meta">
+                        <div class="insp-meta-item">
+                            <span class="insp-meta-label">Última Inspección</span>
+                            <span class="insp-meta-value">
+                                <i class="fas fa-history"></i>
+                                <span id="headerUltimaInspeccionPesada">--/--/----</span>
                             </span>
                         </div>
-
-                        {{-- 2. Fecha de Inspección --}}
-                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                            <span
-                                style="font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                Fecha de Inspección
-                            </span>
-                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
-                                <i class="fas fa-calendar-day" style="opacity: 0.8;"></i>
+                        <div class="insp-meta-item">
+                            <span class="insp-meta-label">Fecha de Inspección</span>
+                            <span class="insp-meta-value">
+                                <i class="fas fa-calendar-day"></i>
                                 <span id="fechaActualInspeccionPesada">{{ date('d/m/Y') }}</span>
-                            </div>
+                            </span>
                         </div>
-
                     </div>
 
-                    {{-- Separador vertical sutil --}}
-                    <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.3);"></div>
-
-                    {{-- Botón Cerrar --}}
                     <div class="form-code-document">
-                        <button type="button" class="btn-viajes btn-cancel"
-                            onclick="gestionarModalInspeccionPesada(false)"
-                            style="background: rgba(255,255,255,0.9); color: var(--primary-blue); border: none;">
-                            <i class="fas fa-times"></i> Cerrar
+                        <button type="button" class="btn-viajes btn-cancel btn-modal-close"
+                            onclick="gestionarModalInspeccionPesada(false)" title="Cerrar">
+                            <i class="fas fa-times"></i> <span class="btn-label">Cerrar</span>
                         </button>
                     </div>
                 </div>
@@ -1642,8 +1695,6 @@
                             <input type="text" name="kilometraje" class="form-control input-highlight"
                                 oninput="formatearKilometraje(this)" placeholder="Ej: 20,000" required>
                         </div>
-                        <div class="form-group"></div>
-                        <div class="form-group"></div>
                     </div>
                 </div>
 
@@ -2347,6 +2398,130 @@
         </div>
     </div>
 
+    {{-- ================================================================== --}}
+    {{-- MODAL: SEGUNDO CONDUCTOR (RELEVO) — lo controla journey.js         --}}
+    {{-- ================================================================== --}}
+    <div class="modal-overlay" id="modalRelevo">
+        <div class="modal-content relevo-modal">
+            <div class="form-header-modal">
+                <div class="form-header-info">
+                    <div class="relevo-avatar"><i class="fas fa-people-arrows"></i></div>
+                    <div class="form-header-title">
+                        <h2 id="relevoTitulo">Asignar Segundo Conductor</h2>
+                        <p><strong id="relevoNombre">—</strong> · <span id="relevoUnidad">Unidad</span></p>
+                    </div>
+                </div>
+                <div class="form-code-document">
+                    <button type="button" class="btn-viajes btn-cancel btn-modal-close" onclick="cerrarModalRelevo()"
+                        title="Cerrar">
+                        <i class="fas fa-times"></i> <span class="btn-label">Cerrar</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-inspeccion-body">
+                <div class="relevo-alerta" id="relevoError" style="display: none;"></div>
+
+                {{-- ESTADO FÍSICO --}}
+                <section class="relevo-bloque">
+                    <h4 class="relevo-bloque-titulo"><i class="fas fa-user-md"></i> Estado físico</h4>
+                    <div class="relevo-grid">
+                        <div class="form-group">
+                            <label for="rel-alcohol"><i class="fas fa-wind"></i> Alcoholimetría (%) <span class="required">*</span></label>
+                            <input id="rel-alcohol" class="relevo-editable" type="number" step="0.1" min="0" value="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="rel-presion"><i class="fas fa-heartbeat"></i> Presión arterial</label>
+                            <input id="rel-presion" class="relevo-editable" type="text" placeholder="Ej: 120/80">
+                        </div>
+                        <div class="form-group">
+                            <label for="rel-medicamento"><i class="fas fa-pills"></i> Toma medicamento <span class="required">*</span></label>
+                            <select id="rel-medicamento" class="relevo-editable">
+                                <option value="">Seleccione...</option>
+                                <option value="si">Sí</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="rel-medicamento-detalle" style="display: none;">
+                            <label for="rel-medicamento-nombre"><i class="fas fa-prescription"></i> ¿Cuál medicamento? <span class="required">*</span></label>
+                            <input id="rel-medicamento-nombre" class="relevo-editable" type="text" placeholder="Nombre del medicamento">
+                        </div>
+                    </div>
+                </section>
+
+                {{-- DOCUMENTACIÓN --}}
+                <section class="relevo-bloque">
+                    <h4 class="relevo-bloque-titulo"><i class="fas fa-id-card"></i> Documentación</h4>
+                    <div class="relevo-grid">
+                        <div class="form-group">
+                            <label for="rel-vigencia-lic" id="relevoLabelLic">Vigencia Licencia</label>
+                            <input id="rel-vigencia-lic" type="text" placeholder="Verificando..." readonly>
+                            <input type="hidden" id="rel-lic-status" value="invalid">
+                        </div>
+                        <div class="form-group">
+                            <label for="rel-vigencia-man" id="relevoLabelMan">Man. Defensivo</label>
+                            <input id="rel-vigencia-man" type="text" placeholder="Verificando..." readonly>
+                            <input type="hidden" id="rel-man-status" value="invalid">
+                        </div>
+                    </div>
+                </section>
+
+                {{-- SUEÑO Y FATIGA --}}
+                <section class="relevo-bloque">
+                    <h4 class="relevo-bloque-titulo"><i class="fas fa-bed"></i> Sueño y fatiga</h4>
+                    <div class="relevo-grid">
+                        <div class="form-group">
+                            <label for="rel-dormir"><i class="fas fa-moon"></i> Hora en que durmió <span class="required">*</span></label>
+                            <div class="datetime-input-wrapper">
+                                <input id="rel-dormir" class="relevo-editable" type="text" placeholder="HH:MM">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="rel-levantar"><i class="fas fa-sun"></i> Hora en que despertó <span class="required">*</span></label>
+                            <div class="datetime-input-wrapper">
+                                <input id="rel-levantar" class="relevo-editable" type="text" placeholder="HH:MM">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relevo-resumen">
+                        <div class="relevo-dato">
+                            <span>Hrs dormidas</span>
+                            <input id="rel-hrs-dormidas" type="text" value="0:00" readonly>
+                        </div>
+                        <div class="relevo-dato">
+                            <span>Hrs despierto</span>
+                            <input id="rel-hr-despierto" type="text" value="0:00" readonly>
+                        </div>
+                        <div class="relevo-dato">
+                            <span>Duración viaje</span>
+                            <input id="rel-duracion" type="text" value="0:00" readonly>
+                        </div>
+                        <div class="relevo-dato relevo-dato-total">
+                            <span>Total activo</span>
+                            <input id="rel-total" type="text" value="0:00" readonly>
+                        </div>
+                    </div>
+
+                    <div class="relevo-aviso" id="rel-aviso" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i> Excede el límite de 16 horas activo
+                    </div>
+                </section>
+            </div>
+
+            <div class="form-footer">
+                <button type="button" class="btn-viajes btn-cancel" id="btnCancelarRelevo" onclick="cerrarModalRelevo()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn-viajes btn-primary" id="btnGuardarRelevo" onclick="guardarRelevo()">
+                    <i class="fas fa-save"></i> Guardar Conductor
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{-- MODAL PARA USAR CÁMARA --}}
 
     <div class="modal-camara" id="modalCamara">
@@ -2380,4 +2555,85 @@
 
 @push('scripts')
     <script src="{{ asset('assets/js/qhse/management/journey.js') }}"></script>
+
+    {{-- Navegación por pasos del modal de GV (solo visual: no toca la lógica de journey.js) --}}
+    <script>
+        (function() {
+            const modal = document.getElementById('modalFormulario');
+            if (!modal) return;
+
+            const cuerpo = modal.querySelector('.form-body');
+            const pasos = Array.from(modal.querySelectorAll('.gv-step'));
+            const MARGEN = 12; // espacio entre la barra de pasos y la tarjeta
+            let navegando = false; // mientras el scroll lo provoca un clic, no recalculamos
+            let temporizador = null;
+
+            function marcarPaso(id) {
+                pasos.forEach(p => p.classList.toggle('is-active', p.dataset.target === id));
+            }
+
+            // Posición real de una sección dentro del cuerpo (no depende de offsetParent)
+            function posicionDe(seccion) {
+                return seccion.getBoundingClientRect().top - cuerpo.getBoundingClientRect().top + cuerpo.scrollTop;
+            }
+
+            function terminarNavegacion() {
+                navegando = false;
+                clearTimeout(temporizador);
+            }
+
+            // Clic en un paso → lleva esa tarjeta justo debajo de la barra de pasos
+            pasos.forEach(p => {
+                p.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const destino = document.getElementById(p.dataset.target);
+                    if (!destino || !cuerpo) return;
+
+                    const maximo = cuerpo.scrollHeight - cuerpo.clientHeight;
+                    const objetivo = Math.max(0, Math.min(posicionDe(destino) - MARGEN, maximo));
+
+                    marcarPaso(p.dataset.target);
+                    navegando = true;
+                    clearTimeout(temporizador);
+                    temporizador = setTimeout(terminarNavegacion, 900); // respaldo si no llega "scrollend"
+                    cuerpo.scrollTo({ top: objetivo, behavior: 'smooth' });
+                });
+            });
+
+            if (!cuerpo) return;
+
+            cuerpo.addEventListener('scrollend', terminarNavegacion);
+
+            // Al hacer scroll se ilumina el paso cuya tarjeta está arriba
+            cuerpo.addEventListener('scroll', function() {
+                if (navegando) return;
+
+                const secciones = pasos.map(p => document.getElementById(p.dataset.target)).filter(Boolean);
+                if (!secciones.length) return;
+
+                // Hasta arriba → paso 1 | hasta abajo → último paso
+                if (cuerpo.scrollTop < 20) return marcarPaso(secciones[0].id);
+                if (cuerpo.scrollTop + cuerpo.clientHeight >= cuerpo.scrollHeight - 4) {
+                    return marcarPaso(secciones[secciones.length - 1].id);
+                }
+
+                const linea = cuerpo.getBoundingClientRect().top + 90;
+                let actual = secciones[0];
+                secciones.forEach(sec => {
+                    if (sec.getBoundingClientRect().top <= linea) actual = sec;
+                });
+                marcarPaso(actual.id);
+            }, { passive: true });
+
+            // Cada vez que se abre el modal, regresa al paso 1
+            new MutationObserver(function() {
+                if (modal.classList.contains('active')) {
+                    terminarNavegacion();
+                    cuerpo.scrollTop = 0;
+                    marcarPaso('gvPaso1');
+                }
+            }).observe(modal, { attributes: true, attributeFilter: ['class'] });
+        })();
+    </script>
+
 @endpush
