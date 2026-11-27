@@ -1,7 +1,7 @@
 /**
- * ⚠️ FUNCIÓN CLAVE: Inicializa todos los scripts y eventos del calendario
- * después de que el HTML parcial ha sido cargado en el modal.
- * @param {string | null} employeeId - El ID del empleado actual (null si es vista principal).
+- ⚠️ FUNCIÓN CLAVE: Inicializa todos los scripts y eventos del calendario
+- después de que el HTML parcial ha sido cargado en el modal.
+- @param {string | null} employeeId - El ID del empleado actual (null si es vista principal).
  */
 function initializeModalCalendarScripts(employeeId) {
 
@@ -521,9 +521,8 @@ function handleBaseDescriptionChange() {
             commissionedField.style.display = 'block';
             commissionedActivityTypeField.style.display = 'block'; // 🆕 Mostrar el nuevo campo
             conditionalFields.style.display = 'block';
-            if (foodBonusContainer) foodBonusContainer.style.display = 'none';
+            if (foodBonusContainer) foodBonusContainer.style.display = 'block'; // ✅ Habilitado Bono de Comida en Comisionado
             if (fieldBonusContainer) fieldBonusContainer.style.display = 'block';
-            if (foodBonusSelect) foodBonusSelect.selectedIndex = 0;
             wellNameInput.value = '';
 
             const radioNo = document.getElementById('service-bonus-no');
@@ -1973,7 +1972,7 @@ saveBtn.addEventListener('click', function () {
 
         const currentActivityType = document.getElementById('activity-type').value;
 
-        if (['P', 'N', 'B'].includes(currentActivityType) || !currentActivityType) {
+        if (['P', 'N', 'B', 'C'].includes(currentActivityType) || !currentActivityType) {
             const foodBonusStatus = getFieldStatus(currentActivity, 'food_bonus');
             if (!statusesToBlockField.includes(foodBonusStatus)) {
                 formData.food_bonus_number = document.getElementById('food-bonus').value || null;
