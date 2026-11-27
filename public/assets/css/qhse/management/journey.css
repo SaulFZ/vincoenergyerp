@@ -6212,18 +6212,38 @@
         padding: 14px 14px 12px;
     }
 
+    /* Contadores: icono a la izquierda, número a la DERECHA, etiqueta abajo */
     .stat-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
-        padding: 10px;
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            "icono numero"
+            "etiqueta etiqueta";
+        align-items: center;
+        gap: 6px 8px;
+        padding: 10px !important;
+    }
+
+    .stat-info {
+        display: contents;
     }
 
     .stat-icon {
-        margin-right: 0;
+        grid-area: icono;
+        margin-right: 0 !important;
+    }
+
+    .stat-number {
+        grid-area: numero;
+        justify-self: end;
+        text-align: right;
+        margin: 0;
+        font-size: 1.35rem !important;
+        line-height: 1;
     }
 
     .stat-label {
+        grid-area: etiqueta;
         white-space: normal;
         line-height: 1.2;
     }
@@ -6314,10 +6334,35 @@
         font-size: 16px !important;
     }
 
-    /* Encabezado de la lista */
+    /* Encabezado de la lista: "Recientes" y "Nueva Solicitud" en una sola fila */
     .table-header {
-        flex-direction: column;
-        align-items: stretch !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        padding: 10px 14px !important;
+    }
+
+    .table-header h3 {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        font-size: 1rem;
+    }
+
+    .table-header .header-actions {
+        flex-shrink: 0;
+        width: auto !important;
+    }
+
+    .table-header .btn-viajes.btn-primary {
+        width: auto !important;
+        height: 38px;
+        padding: 0 14px !important;
+        font-size: 13px;
+        white-space: nowrap;
+        border-radius: 8px;
     }
 
     /* ── Lista de viajes como TARJETAS ────────────────────────── */
@@ -6645,6 +6690,17 @@
     /* SweetAlert un poco más cómodo */
     .swal2-actions button {
         min-height: 44px;
+    }
+}
+
+@media (max-width: 360px) {
+    .stat-card {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "icono etiqueta numero";
+    }
+
+    .table-header .btn-viajes.btn-primary {
+        padding: 0 10px !important;
     }
 }
 
